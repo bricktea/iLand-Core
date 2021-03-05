@@ -3,7 +3,7 @@
 --       未经许可 禁止盈利性用途      --
 ----------------------------------------
 -- 插件版本，请勿修改
-local plugin_version = '1.0.9'
+local plugin_version = '1.0.9hotfix'
 local latest_version = plugin_version
 local newLand = {}
 local TRS_Form={}
@@ -276,7 +276,7 @@ function Func_Buy_giveup(playername)
         mc:runcmd('title "' .. playername .. '" actionbar 没有可以放弃的圈地许可')
         return
     end
-	newland[playername]=nil
+	newLand[playername]=nil
 	mc:runcmd('title "' .. playername .. '" actionbar 许可已被放弃')
 end
 function Func_Buy_createOrder(playername)
@@ -423,7 +423,7 @@ function Func_Buy_callback(playername)
 	land_data[landId].setting.allow_exploding=false
 	land_data[landId].setting.allow_attack=false
 	land_data[landId].setting.allow_open_chest=false
-	land_data[landId].setting.allow_open_barrel=false --开桶，须pyr补充插件配合
+	land_data[landId].setting.allow_open_barrel=false
 	land_data[landId].setting.allow_pickupitem=false
 	land_data[landId].setting.allow_dropitem=true
 	land_data[landId].setting.allow_use_item=true
