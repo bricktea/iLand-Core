@@ -7,17 +7,18 @@ local plugin_version = '1.1.0'
 local latest_version = plugin_version
 local newLand = {}
 local TRS_Form={}
+local i18n_data={}
 -- Check File and Load Library
-if (tool:IfFile('./ilua/lib/json.lua') == false) then
-    print('[ILand] Where is my json library??!!')
+if (tool:IfFile('./ilua/lib/dkjson.lua') == false) then
+    print('[ILand] ERR!!! json library not found, plugin is closing...')
     return false
 end
 if (tool:IfFile('./ilua/iland/config.json') == false) then
-    print('[ILand] Where is my config file??!!')
+    print('[ILand] ERR!!! configure file not found, plugin is closing...')
     return false
 end
 if (tool:IfFile('./ilua/xuiddb.net.lua') == false) then
-    print('[ILand] Where is my depending plugin(xuiddb)??!!')
+    print('[ILand] ERR!!! xuiddb not found, plugin is closing...')
     return false
 end
 local json = require('./ilua/lib/dkjson')
@@ -62,6 +63,11 @@ do --update configure file
 		cfg.money.credit_name=cfg.scoreboard.credit_name
 		cfg.money.scoreboard_objname=cfg.scoreboard.name
 		cfg.scoreboard=nil
+		cfg.manager.i18n={}
+		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW","en_US"}
+		cfg.manager.i18n.default_language="zh_CN"
+		cfg.manager.i18n.auto_language_byIP=false
+		cfg.manager.i18n.allow_players_select_lang=true
 		iland_save()
 	end
 end
@@ -74,6 +80,11 @@ if(cfg.update_check) then
 		print('[ILand] 此服务器正在使用旧版领地插件，新版本 '..latest_version..' 已发布！')
 		print('[ILand] 存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。')
 	end
+end
+-- load language files
+for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+	if(not(tool:IfFile('./ilua/iland/lang/'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
+	i18n_data[v]=json.decode(tool:ReadAllText('./ilua/iland/lang/'..v..'.json'))
 end
 -- Functions
 function Event_PlayerJoin(a)
@@ -456,7 +467,7 @@ function Func_Buy_callback(playername)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
 	newLand[playername]=nil
-	TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','领地购买成功！是否现在打开领地管理器？。','看看','取消')
+	TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','领地购买成功！是否现在打开领地管理器？','看看','取消')
 end
 function Func_Manager_open(playername)
 	local uuid=luaapi:GetUUID(playername)
@@ -739,6 +750,10 @@ function isTextNum(text)
 		return false
 	end
 	return true
+end
+function I18N(a,b) --a=key b=playername
+	local n=i18n_data[cfg.manager.i18n.default_language][a]
+	if(n==nil) then return '' else return n end
 end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)

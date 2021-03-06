@@ -1,22 +1,28 @@
 {
-  "update_check":true,
-  "money":{
-    "protocol":"scoreboard",
-    "credit_name":"金币",
-    "scoreboard_objname":"money"
-  },
-  "land":{
-    "land_max_square":2000,
-    "player_max_lands":5,
-    "land_min_square":4
-  },
-  "land_buy":{
-    "price_sky":2,
-    "refund_rate":0.9,
-    "price_ground":10
-  },
   "manager":{
-    "operator":[]
+    "operator":[],
+    "i18n":{
+      "enabled_languages":["zh_CN"],
+      "default_language":"zh_CN",
+      "auto_language_byIP":false,
+      "allow_players_select_lang":true
+    }
   },
-  "version":110
+  "money":{
+    "scoreboard_objname":"money",
+    "protocol":"scoreboard",
+    "credit_name":"金币"
+  },
+  "version":110,
+  "land":{
+    "land_min_square":4,
+    "land_max_square":2000,
+    "player_max_lands":5
+  },
+  "update_check":true,
+  "land_buy":{
+    "refund_rate":0.9,
+    "price_ground":10,
+    "price_sky":2
+  }
 }
