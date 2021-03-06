@@ -1,0 +1,21 @@
+{
+  "scoreboard": {
+    "credit_name": "金币",
+    "name": "money"
+  },
+  "land": {
+    "player_max_lands": 5,
+    "land_min_square": 4,
+    "land_max_square": 2000
+  },
+  "land_buy": {
+    "price_sky": 2,
+    "price_ground": 10,
+    "refund_rate": 0.9
+  },
+  "manager": {
+    "operator": []
+  },
+  "update_check": true,
+  "version": 107
+}
