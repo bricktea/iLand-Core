@@ -20,11 +20,6 @@ if (tool:IfFile('./ilua/xuiddb.net.lua') == false) then
     print('[ILand] Where is my depending plugin(xuiddb)??!!')
     return false
 end
-if (tool:IfFile('./py/iLand_Enhance.py') == true) then
-    print('[ILand] BDSpyrunner Enhance founded!')
-else
-	print('[ILand] BDSpyrunner Enhance not found!')
-end
 local json = require('./ilua/lib/json')
 -- Encode Json File
 cfg = json.decode(tool:ReadAllText('./ilua/iland/config.json'))
@@ -73,7 +68,6 @@ if(cfg.update_check) then
 end
 -- Functions
 function Event_PlayerJoin(a)
-	print(DbGetXUID(a.playername))
 	TRS_Form[a.playername]={}
 end
 function Monitor_CommandArrived(a)
