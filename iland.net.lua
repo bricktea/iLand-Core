@@ -161,7 +161,7 @@ function Monitor_FormArrived(a)
 		-- [1]null [2]true [3]0 [4]false [5]0
 		local result=json.decode(a.selected)
 		if(result[2]==true) then
-			local x=luaapi:GetXUID(TRS_Form[a.playername].playerList[result[3]+1])
+			local x=DbGetXUID(TRS_Form[a.playername].playerList[result[3]+1])
 			local n=#land_data[lid].setting.share+1
 			if(luaapi:GetXUID(a.playername)==x) then
 				mc:runcmd('title "' .. a.playername .. '" actionbar 不能将您自己添加到信任列表中')
@@ -231,12 +231,17 @@ function Monitor_FormArrived(a)
 			nid=nid+1
 		end
 		if(id=='') then mc:runcmd('title "' .. a.playername .. '" actionbar 未选择任何领地');return end
-		-- 1=teleport 2=delete
+		-- 1=teleport 2=transfer 3=delete
 		if(result[4]==1) then
 			luaapi:teleport(uuid,land_data[id].range.start_x,land_data[id].range.start_y,land_data[id].range.start_z,land_data[id].range.dim)
 			mc:runcmd('title "' .. a.playername .. '" actionbar 已传送到 '..id)
 		end
 		if(result[4]==2) then
+			TRS_Form[a.playername].playerList=getAllPlayersList()
+			TRS_Form[a.playername].betsflid=id
+			TRS_Form[a.playername].opftland=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"强制将领地过户，领地所有权限将被转移。"},{"default":0,"options":'..json.encode(TRS_Form[a.playername].playerList)..',"type":"dropdown","text":"选择目标玩家"}],"type":"custom_form","title":"Force TransferLand"}')
+		end
+		if(result[4]==3) then
 			land_data[id]=nil
 			for ownerxuid,val in pairs(land_owners) do
 				local nmsl=isValInList(val,id)
@@ -258,12 +263,25 @@ function Monitor_FormArrived(a)
 	--- Land Transfer ---
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
-		local go=luaapi:GetXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
 		if(go==xuid) then mc:runcmd('title "' .. a.playername .. '" actionbar 不可以向自己过户领地');return end
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		table.insert(land_owners[go],#land_owners[go]+1,lid)
 		iland_save()
 		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',lid..' 已过户给 '..getPlayernameFromXUID(go),'返回上级菜单','关闭')
+	end
+	--- OP ForceTransfer Land ---
+	if(TRS_Form[a.playername].opftland==a.formid) then
+		local result=json.decode(a.selected)
+		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		for ownerxuid,val in pairs(land_owners) do
+			local nmsl=isValInList(val,TRS_Form[a.playername].betsflid)
+			if(nmsl~=-1) then
+				table.remove(land_owners[ownerxuid],nmsl)
+			end
+		end
+		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',TRS_Form[a.playername].betsflid..' 已过户给 '..getPlayernameFromXUID(go),'返回上级菜单','关闭')
 	end
 end
 function Func_Buy_giveup(playername)
@@ -506,7 +524,7 @@ function Func_Manager_Operator(playername)
 		end 
 		table.insert(lst,#lst+1,landId..' ('..name..')')
 	end
-	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"这里是管理员领地管理器, 可以直接编辑插件设置和管理全服领地, 尝试一下吧!"},{"type":"label","text":"§l领地数据管理"},{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"选择要管理的领地"},{"default":0,"steps":["啥也不干","传送到此领地","删除此领地"],"type":"step_slider","text":"选择要进行的操作"},{"type":"label","text":"§l计分板相关"},{"placeholder":"这里是服务器的通用货币名称，如金币","default":"'..cfg.scoreboard.credit_name..'","type":"input","text":"货币名称 (类型: 字符串)"},{"placeholder":"记录货币信息的计分板项目，一般为money","default":"'..cfg.scoreboard.name..'","type":"input","text":"计分板对应项名称 (类型: 字符串)"},{"type":"label","text":"§l领地配置相关"},{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"玩家最多拥有领地 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"最大圈地面积 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"最小圈地面积 (类型: 整数)"},{"type":"label","text":"§l领地购买相关"},{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"底面积价格 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"高度价格 (类型: 整数)"},{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"删除领地退款率 (％)"},{"type":"label","text":"§l插件设置"},{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"允许自动检查更新"}],"type":"custom_form","title":"LandMgr for Operator"}')
+	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"这里是管理员领地管理器, 可以直接编辑插件设置和管理全服领地, 尝试一下吧!"},{"type":"label","text":"§l领地数据管理"},{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"选择要管理的领地"},{"default":0,"steps":["啥也不干","传送到此领地","转移此领地","删除此领地"],"type":"step_slider","text":"选择要进行的操作"},{"type":"label","text":"§l计分板相关"},{"placeholder":"这里是服务器的通用货币名称，如金币","default":"'..cfg.scoreboard.credit_name..'","type":"input","text":"货币名称 (类型: 字符串)"},{"placeholder":"记录货币信息的计分板项目，一般为money","default":"'..cfg.scoreboard.name..'","type":"input","text":"计分板对应项名称 (类型: 字符串)"},{"type":"label","text":"§l领地配置相关"},{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"玩家最多拥有领地 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"最大圈地面积 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"最小圈地面积 (类型: 整数)"},{"type":"label","text":"§l领地购买相关"},{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"底面积价格 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"高度价格 (类型: 整数)"},{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"删除领地退款率 (％)"},{"type":"label","text":"§l插件设置"},{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"允许自动检查更新"}],"type":"custom_form","title":"LandMgr for Operator"}')
 end
 -- Minecraft 监听事件
 function onDestroyBlock(e)
