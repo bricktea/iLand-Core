@@ -3,7 +3,7 @@
 --       未经许可 禁止盈利性用途      --
 ----------------------------------------
 -- 插件版本，请勿修改
-local plugin_version = '1.0.9hotfix'
+local plugin_version = '1.1.0'
 local latest_version = plugin_version
 local newLand = {}
 local TRS_Form={}
@@ -20,14 +20,14 @@ if (tool:IfFile('./ilua/xuiddb.net.lua') == false) then
     print('[ILand] Where is my depending plugin(xuiddb)??!!')
     return false
 end
-local json = require('./ilua/lib/json')
+local json = require('./ilua/lib/dkjson')
 -- Encode Json File
 cfg = json.decode(tool:ReadAllText('./ilua/iland/config.json'))
 land_data = json.decode(tool:ReadAllText('./ilua/iland/data.json'))
 land_owners = json.decode(tool:ReadAllText('./ilua/iland/owners.json'))
 function iland_save() --需要提前...
 	local a=tool:WorkingPath()
-	tool:WriteAllText(a..'ilua\\iland\\config.json',json.encode(cfg))
+	tool:WriteAllText(a..'ilua\\iland\\config.json',json.encode(cfg,{indent=true}))
 	tool:WriteAllText(a..'ilua\\iland\\data.json',json.encode(land_data))
 	tool:WriteAllText(a..'ilua\\iland\\owners.json',json.encode(land_owners))
 end
@@ -53,6 +53,15 @@ do --update configure file
 		for landId, val in pairs(land_data) do
 			land_data[landId].setting.allow_open_barrel=false
 		end
+		iland_save()
+	end
+	if(cfg.version==107) then
+		cfg.version=110
+		cfg.money={}
+		cfg.money.protocol='scoreboard'
+		cfg.money.credit_name=cfg.scoreboard.credit_name
+		cfg.money.scoreboard_objname=cfg.scoreboard.name
+		cfg.scoreboard=nil
 		iland_save()
 	end
 end
@@ -81,7 +90,7 @@ function Monitor_CommandArrived(a)
 		else
 			land_count=tostring(#land_owners[xuid])
 		end
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, 'Land v' .. plugin_version, '欢淫使用领地系统，宁现在有'..land_count..'块领地。\n今日地价：'..cfg.land_buy.price_ground..cfg.scoreboard.credit_name..'/平面格, '..cfg.land_buy.price_sky..cfg.scoreboard.credit_name..'/高', '打开领地管理器', '关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, 'Land v' .. plugin_version, '欢淫使用领地系统，宁现在有'..land_count..'块领地。\n今日地价：'..cfg.land_buy.price_ground..cfg.money.credit_name..'/平面格, '..cfg.land_buy.price_sky..cfg.money.credit_name..'/高', '打开领地管理器', '关闭')
         return false
     end
     if (string.len(key) > 5 and string.sub(key, 1, 5) == '/land') then
@@ -150,10 +159,10 @@ function Monitor_FormArrived(a)
 	end
 	--- Del Land ---
 	if(TRS_Form[a.playername].delland==a.formid) then
-		mc:runcmd('scoreboard players add "' .. a.playername .. '" ' .. cfg.scoreboard.name .. ' ' .. TRS_Form[a.playername].landvalue)
 		land_data[lid]=nil
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		iland_save()
+		money_add(a.playername,TRS_Form[a.playername].landvalue)
 		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭')
 	end
 	--- Land Trust ---
@@ -217,8 +226,8 @@ function Monitor_FormArrived(a)
 		cfg.land.player_max_lands=tonumber(result[9])
 		cfg.land.land_max_square=tonumber(result[10])
 		cfg.land.land_min_square=tonumber(result[11])
-		cfg.scoreboard.credit_name=result[6]
-		cfg.scoreboard.name=result[7]
+		cfg.money.credit_name=result[6]
+		cfg.money.scoreboard_objname=result[7]
 		cfg.land_buy.refund_rate=result[15]/100
 		cfg.land_buy.price_ground=tonumber(result[13])
 		cfg.land_buy.price_sky=tonumber(result[14])
@@ -355,7 +364,7 @@ function Func_Buy_createOrder(playername)
 	end
 	--- 购买
     newLand[playername].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
-    newLand[playername].formid = mc:sendModalForm(uuid,'领地购买','圈地成功！\n长\\宽\\高: ' ..length ..'\\' ..width..'\\' ..height..'格\n体积: ' ..vol..'块\n价格: ' ..newLand[playername].landprice..cfg.scoreboard.credit_name .. '\n钱包: ' .. mc:getscoreboard(uuid, cfg.scoreboard.name) .. cfg.scoreboard.credit_name,'购买','放弃')
+    newLand[playername].formid = mc:sendModalForm(uuid,'领地购买','圈地成功！\n长\\宽\\高: ' ..length ..'\\' ..width..'\\' ..height..'格\n体积: ' ..vol..'块\n价格: ' ..newLand[playername].landprice..cfg.money.credit_name .. '\n钱包: ' .. money_get(playername) .. cfg.money.credit_name,'购买','放弃')
 end
 function Func_Buy_selectRange(playername, xyz, dim, mode)
     if (newLand[playername]==nil) then
@@ -410,12 +419,12 @@ end
 function Func_Buy_callback(playername)
     local uuid = luaapi:GetUUID(playername)
 	local xuid = luaapi:GetXUID(playername)
-    local player_credits = mc:getscoreboard(uuid, cfg.scoreboard.name)
+    local player_credits = money_get(playername)
     if (newLand[playername].landprice > player_credits) then
         mc:runcmd('title "' .. playername .. '" actionbar 余额不足！\n您的领地购买订单已暂存，可重新用“/land buy”打开\n放弃此次购买请使用“/land giveup”')
         return
     else
-        mc:runcmd('scoreboard players remove "' .. playername .. '" ' .. cfg.scoreboard.name .. ' ' .. newLand[playername].landprice)
+        money_del(playername,newLand[playername].landprice)
     end
     mc:runcmd('title "' .. playername .. '" actionbar 购买成功！\n正在为您注册领地...')
 	math.randomseed(os.time())
@@ -508,7 +517,7 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
-		TRS_Form[a].delland=mc:sendModalForm(uuid,'删除领地','您确定要删除您的领地吗？\n'..'如果确定，您将得到'..TRS_Form[a].landvalue..cfg.scoreboard.credit_name..'退款。然后您的领地将失去保护，配置文件将立刻删除。','确定','取消')
+		TRS_Form[a].delland=mc:sendModalForm(uuid,'删除领地','您确定要删除您的领地吗？\n'..'如果确定，您将得到'..TRS_Form[a].landvalue..cfg.money.credit_name..'退款。然后您的领地将失去保护，配置文件将立刻删除。','确定','取消')
 	end
 end
 function Func_Manager_Operator(playername)
@@ -524,7 +533,7 @@ function Func_Manager_Operator(playername)
 		end 
 		table.insert(lst,#lst+1,landId..' ('..name..')')
 	end
-	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"这里是管理员领地管理器, 可以直接编辑插件设置和管理全服领地, 尝试一下吧!"},{"type":"label","text":"§l领地数据管理"},{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"选择要管理的领地"},{"default":0,"steps":["啥也不干","传送到此领地","转移此领地","删除此领地"],"type":"step_slider","text":"选择要进行的操作"},{"type":"label","text":"§l计分板相关"},{"placeholder":"这里是服务器的通用货币名称，如金币","default":"'..cfg.scoreboard.credit_name..'","type":"input","text":"货币名称 (类型: 字符串)"},{"placeholder":"记录货币信息的计分板项目，一般为money","default":"'..cfg.scoreboard.name..'","type":"input","text":"计分板对应项名称 (类型: 字符串)"},{"type":"label","text":"§l领地配置相关"},{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"玩家最多拥有领地 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"最大圈地面积 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"最小圈地面积 (类型: 整数)"},{"type":"label","text":"§l领地购买相关"},{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"底面积价格 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"高度价格 (类型: 整数)"},{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"删除领地退款率 (％)"},{"type":"label","text":"§l插件设置"},{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"允许自动检查更新"}],"type":"custom_form","title":"LandMgr for Operator"}')
+	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"这里是管理员领地管理器, 可以直接编辑插件设置和管理全服领地, 尝试一下吧!"},{"type":"label","text":"§l领地数据管理"},{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"选择要管理的领地"},{"default":0,"steps":["啥也不干","传送到此领地","转移此领地","删除此领地"],"type":"step_slider","text":"选择要进行的操作"},{"type":"label","text":"§l计分板相关"},{"placeholder":"这里是服务器的通用货币名称，如金币","default":"'..cfg.money.credit_name..'","type":"input","text":"货币名称 (类型: 字符串)"},{"placeholder":"记录货币信息的计分板项目，一般为money","default":"'..cfg.money.scoreboard_objname..'","type":"input","text":"计分板对应项名称 (类型: 字符串)"},{"type":"label","text":"§l领地配置相关"},{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"玩家最多拥有领地 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"最大圈地面积 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"最小圈地面积 (类型: 整数)"},{"type":"label","text":"§l领地购买相关"},{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"底面积价格 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"高度价格 (类型: 整数)"},{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"删除领地退款率 (％)"},{"type":"label","text":"§l插件设置"},{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"允许自动检查更新"}],"type":"custom_form","title":"LandMgr for Operator"}')
 end
 -- Minecraft 监听事件
 function onDestroyBlock(e)
@@ -615,6 +624,15 @@ function onStartOpenBarrel(e)
 	mc:disconnectClient(luaapi:GetUUID(e.playername),'你再开个试试？')-- 妈的，干就完了
 end
 -- 拓展功能函数
+function money_add(a,b) --a=playername b=value
+	mc:runcmd('scoreboard players add "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
+end
+function money_del(a,b) --a=playername b=value
+	mc:runcmd('scoreboard players del "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
+end
+function money_get(a) --a=playername
+	return(mc:getscoreboard(luaapi:GetUUID(a),cfg.money.scoreboard_objname))
+end
 function getLandFromPos(pos,dim)
 	for landId, val in pairs(land_data) do
 		if(land_data[landId].range.dim~=dim) then goto JUMPOUT_4 end

@@ -1,1 +1,22 @@
-{"land":{"land_min_square":4,"land_max_square":2000,"player_max_lands":5},"manager":{"operator":["2535431675202881"]},"version":107,"land_buy":{"price_sky":2,"price_ground":10,"refund_rate":0.9},"scoreboard":{"name":"money","credit_name":"金币"},"update_check":true}
+{
+  "update_check":true,
+  "money":{
+    "protocol":"scoreboard",
+    "credit_name":"金币",
+    "scoreboard_objname":"money"
+  },
+  "land":{
+    "land_max_square":2000,
+    "player_max_lands":5,
+    "land_min_square":4
+  },
+  "land_buy":{
+    "price_sky":2,
+    "refund_rate":0.9,
+    "price_ground":10
+  },
+  "manager":{
+    "operator":[]
+  },
+  "version":110
+}
