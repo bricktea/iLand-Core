@@ -432,12 +432,12 @@ function Func_Buy_callback(playername)
 	local xuid = luaapi:GetXUID(playername)
     local player_credits = money_get(playername)
     if (newLand[playername].landprice > player_credits) then
-        mc:runcmd('title "' .. playername .. '" actionbar 余额不足！\n您的领地购买订单已暂存，可重新用“/land buy”打开\n放弃此次购买请使用“/land giveup”')
+        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.moneynotenough',playername))
         return
     else
         money_del(playername,newLand[playername].landprice)
     end
-    mc:runcmd('title "' .. playername .. '" actionbar 购买成功！\n正在为您注册领地...')
+    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.succeed',playername)
 	math.randomseed(os.time())
 	landId='id'..tostring(math.random(100000,999999))
 	land_data[landId]={}
@@ -467,27 +467,28 @@ function Func_Buy_callback(playername)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
 	newLand[playername]=nil
-	TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','领地购买成功！是否现在打开领地管理器？','看看','取消')
+	TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.buyland.succeed',playername),I18N('gui.general.looklook',playername),I18N('gui.general.cancel',playername))
 end
 function Func_Manager_open(playername)
 	local uuid=luaapi:GetUUID(playername)
 	local xuid=luaapi:GetXUID(playername)
-	local welcome='Welcome to use Land Manager.'
 	local b=luaapi:createPlayerObject(uuid)
 	local lid=getLandFromPos(json.decode(b.Position),b.DimensionId)
 	if(lid~=-1) then
-		welcome=welcome..'\n您现在正在: §l'..lid..' §r上'
+		welcome=gsubEx(gui.landmgr.content,'<a>',lid)
 	end
 	if(land_owners[xuid]~=nil) then
 		if(#land_owners[xuid]==0) then
-			mc:runcmd('title "' .. playername .. '" actionbar 你还没有领地哦，使用“/land new”开始创建一个吧！')
+			mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.landmgr.failed',playername))
 			return
 		end
 	else
-		mc:runcmd('title "' .. playername .. '" actionbar 你还没有领地哦，使用“/land new”开始创建一个吧！')
+		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.landmgr.failed',playername))
 		return
 	end
-	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcome..'"},{"default":0,"steps":["查看领地信息","编辑领地权限","编辑信任名单","编辑领地Tag","领地过户","删除领地"],"type":"step_slider","text":"选择要进行的操作"},{"default":0,"options":'..json.encode(land_owners[xuid])..',"type":"dropdown","text":"选择你要管理的领地"}],"type":"custom_form","title":"选择目标领地"}}]}')
+	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcome..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
+													{"default":0,"options":'..json.encode(land_owners[xuid])..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
+													"type":"custom_form","title":"'..I18N('gui.landmgr.title',playername)..'"}}]}')
 end
 function Func_Manager_callback(a,b) --a=playername b=selected
 	local xuid=luaapi:GetXUID(a)
@@ -500,11 +501,22 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local vol = length * width * height
 		local squ = length * width
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'领地信息','所有者:'..a..'\n范围(range): '..land_data[TRS_Form[a].landid].range.start_x..','..land_data[TRS_Form[a].landid].range.start_y..','..land_data[TRS_Form[a].landid].range.start_z..' -> '..land_data[TRS_Form[a].landid].range.end_x..','..land_data[TRS_Form[a].landid].range.end_y..','..land_data[TRS_Form[a].landid].range.end_z..'\n长/宽/高: '..length..'/'..width..'/'..height..'\n底面积: '..squ..' 平方格    体积: '..vol..' 立方格','爷知道了','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_x,'<c>',land_data[TRS_Form[a].landid].range.start_y,'<d>',land_data[TRS_Form[a].landid].range.start_z,'<e>',land_data[TRS_Form[a].landid].range.end_x,'<f>',land_data[TRS_Form[a].landid].range.end_y,'<g>',land_data[TRS_Form[a].landid].range.end_z,'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
 	end
 	if(result[2]==1) then --编辑领地权限
 		local d=land_data[TRS_Form[a].landid].setting
-		TRS_Form[a].lperm=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"编辑陌生人在领地内所拥有的权限"},{"default":'..tostring(d.allow_place)..',"type":"toggle","text":"允许放置方块"},{"default":'..tostring(d.allow_destory)..',"type":"toggle","text":"允许破坏方块"},{"default":'..tostring(d.allow_open_chest)..',"type":"toggle","text":"允许开箱子"},{"default":'..tostring(d.allow_attack)..',"type":"toggle","text":"允许攻击生物"},{"default":'..tostring(d.allow_dropitem)..',"type":"toggle","text":"允许丢物品"},{"default":'..tostring(d.allow_pickupitem)..',"type":"toggle","text":"允许捡起物品"},{"default":'..tostring(d.allow_use_item)..',"type":"toggle","text":"允许使用物品"},{"default":'..tostring(d.allow_open_barrel)..',"type":"toggle","text":"允许开桶"},{"type":"label","text":"编辑领地内可以发生的事件"},{"default":'..tostring(d.allow_exploding)..',"type":"toggle","text":"允许爆炸"}],"type":"custom_form","title":"Land Perms"}')
+		TRS_Form[a].lperm=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landmgr.landperm.options.title',a)..'"},\
+															{"default":'..tostring(d.allow_place)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.place',a)..'"},\
+															{"default":'..tostring(d.allow_destory)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.destroy',a)..'"},\
+															{"default":'..tostring(d.allow_open_chest)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.openchest',a)..'"},\
+															{"default":'..tostring(d.allow_attack)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.attack',a)..'"},\
+															{"default":'..tostring(d.allow_dropitem)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.dropitem',a)..'"},\
+															{"default":'..tostring(d.allow_pickupitem)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.pickupitem',a)..'"},\
+															{"default":'..tostring(d.allow_use_item)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.ustitem',a)..'"},\
+															{"default":'..tostring(d.allow_open_barrel)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.openbarrel',a)..'"},\
+															{"type":"label","text":"'..I18N('gui.landmgr.landperm.editevent',a)..'"},\
+															{"default":'..tostring(d.allow_exploding)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.exploding',a)..'"}],\
+															"type":"custom_form","title":"'..I18N('gui.landmgr.landperm.title',a)..'"}')
 	end
 	if(result[2]==2) then --编辑信任名单
 		TRS_Form[a].playerList = getAllPlayersList()
@@ -515,20 +527,25 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		for i, v in pairs(d) do
 			d[i]=getPlayernameFromXUID(d[i])
 		end
-		TRS_Form[a].ltrust=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"打开欲操作项的开关，完成后提交。"},{"default":false,"type":"toggle","text":"添加受信任玩家\n受信任玩家将拥有所有领地权限，但不能进行权限编辑或删除领地。"},{"type":"dropdown","text":"选择一个玩家","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'},{"default":false,"type":"toggle","text":"删除受信任玩家"},{"type":"dropdown","text":"选择一个玩家","default":0,"options":'..json.encode(d)..'}],"type":"custom_form","title":"Land Trust"}')
+		TRS_Form[a].ltrust=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landtrust.tip',a)..'"},\
+															{"default":false,"type":"toggle","text":"'..I18N('gui.landtrust.addtrust',a)..'"},\
+															{"type":"dropdown","text":"'..I18N('gui.landtrust.selectplayer',a)..'","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'},\
+															{"default":false,"type":"toggle","text":"'..I18N('gui.landtrust.rmtrust',a)..'"},\
+															{"type":"dropdown","text":"'..I18N('gui.landtrust.selectplayer',a)..'","default":0,"options":'..json.encode(d)..'}],\
+															"type":"custom_form","title":"'..I18N('gui.landtrust.title',a)..'"}')
 	end
 	if(result[2]==3) then --领地tag
-		TRS_Form[a].ltag=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"领地Tag有助于您区分多个领地，而不改变原有的领地配置"},{"placeholder":"tag here","default":"","type":"input","text":""}],"type":"custom_form","title":"Land Tag"}')
+		TRS_Form[a].ltag=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landtag.tip',a)..'"},{"placeholder":"tag here","default":"","type":"input","text":""}],"type":"custom_form","title":"'..I18N('gui.landtag.title',a)..'"}')
 	end
 	if(result[2]==4) then --领地过户
 		TRS_Form[a].playerList = getAllPlayersList()
-		TRS_Form[a].ltsf=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"领地过户完成后，所有权限将被转移，您不再是该领地的主人，但原领地的所有配置不会改变。"},{"type":"dropdown","text":"选择目标玩家","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'}],"type":"custom_form","title":"Land Transfer"}')
+		TRS_Form[a].ltsf=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landtransfer.tip',a)..'"},{"type":"dropdown","text":"'..I18N('talk.land.selecttargetplayer',a)..'","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'}],"type":"custom_form","title":"'..I18N('gui.landtransfer.title',a)..'"}')
 	end
 	if(result[2]==5) then --删除领地
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
-		TRS_Form[a].delland=mc:sendModalForm(uuid,'删除领地','您确定要删除您的领地吗？\n'..'如果确定，您将得到'..TRS_Form[a].landvalue..cfg.money.credit_name..'退款。然后您的领地将失去保护，配置文件将立刻删除。','确定','取消')
+		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content','<a>',TRS_Form[a].landvalue,'<b>',cfg.money.credit_name)),I18N('gui.delland.yes',a),I18N('gui.delland.cancel',a))
 	end
 end
 function Func_Manager_Operator(playername)
@@ -536,7 +553,7 @@ function Func_Manager_Operator(playername)
 	local lst={}
 	local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
 	for landId, val in pairs(land_data) do
-		name='找不到该领地的主人'
+		name=I18N('gui.oplandmgr.unknownland',playername)
 		for xuid, pname in pairs(xuiddb) do
 			if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],landId)~=-1) then
 				name=pname
@@ -544,7 +561,24 @@ function Func_Manager_Operator(playername)
 		end 
 		table.insert(lst,#lst+1,landId..' ('..name..')')
 	end
-	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"这里是管理员领地管理器, 可以直接编辑插件设置和管理全服领地, 尝试一下吧!"},{"type":"label","text":"§l领地数据管理"},{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"选择要管理的领地"},{"default":0,"steps":["啥也不干","传送到此领地","转移此领地","删除此领地"],"type":"step_slider","text":"选择要进行的操作"},{"type":"label","text":"§l计分板相关"},{"placeholder":"这里是服务器的通用货币名称，如金币","default":"'..cfg.money.credit_name..'","type":"input","text":"货币名称 (类型: 字符串)"},{"placeholder":"记录货币信息的计分板项目，一般为money","default":"'..cfg.money.scoreboard_objname..'","type":"input","text":"计分板对应项名称 (类型: 字符串)"},{"type":"label","text":"§l领地配置相关"},{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"玩家最多拥有领地 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"最大圈地面积 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"最小圈地面积 (类型: 整数)"},{"type":"label","text":"§l领地购买相关"},{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"底面积价格 (类型: 整数)"},{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"高度价格 (类型: 整数)"},{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"删除领地退款率 (％)"},{"type":"label","text":"§l插件设置"},{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"允许自动检查更新"}],"type":"custom_form","title":"LandMgr for Operator"}')
+	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.oplandmgr.tip',playername)..'"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.landmgr',playername)..'"},\
+													{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"'..I18N('gui.oplandmgr.select',playername)..'"},\
+													{"default":0,"steps":["'..I18N('gui.oplandmgr.donothing',playername)..'","'..I18N('gui.oplandmgr.tp',playername)..'","'..I18N('gui.oplandmgr.transfer',playername)..'","'..I18N('gui.oplandmgr.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.economy',playername)..'"},\
+													{"placeholder":"'..I18N('gui.oplandmgr.creditname',playername)..'","default":"'..cfg.money.credit_name..'","type":"input","text":"'..I18N('gui.oplandmgr.creditnameV',playername)..'"},\
+													{"placeholder":"'..I18N('gui.oplandmgr.sbobject',playername)..'","default":"'..cfg.money.scoreboard_objname..'","type":"input","text":"'..I18N('gui.oplandmgr.sbobjectV',playername)..'"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.landcfg',playername)..'"},\
+													{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"'..I18N('gui.oplandmgr.maxlands',playername)..'"},\
+													{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"'..I18N('gui.oplandmgr.maxsqu',playername)..'"},\
+													{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"'..I18N('gui.oplandmgr.minsqu',playername)..'"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.',playername)..'landbuy"},\
+													{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"'..I18N('gui.oplandmgr.bottomprice',playername)..'"},\
+													{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"'..I18N('gui.oplandmgr.heightprice',playername)..'"},\
+													{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"'..I18N('gui.oplandmgr.refundrate',playername)..'"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.pluginconfig',playername)..'"},\
+													{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"'..I18N('gui.oplandmgr.checkupdate',playername)..'"}],\
+													"type":"custom_form","title":"'..I18N('gui.oplandmgr.title',playername)..'"}')
 end
 -- Minecraft 监听事件
 function onDestroyBlock(e)
@@ -755,6 +789,21 @@ function I18N(a,b) --a=key b=playername
 	local n=i18n_data[cfg.manager.i18n.default_language][a]
 	if(n==nil) then return '' else return n end
 end
+function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
+	local n=string.gsub(m,a,a1)
+	if b~=nil then n=string.gsub(n,b,b1) else return n end
+	if c~=nil then n=string.gsub(n,c,c1) else return n end
+	if d~=nil then n=string.gsub(n,d,d1) else return n end
+	if e~=nil then n=string.gsub(n,e,e1) else return n end
+	if f~=nil then n=string.gsub(n,f,f1) else return n end
+	if g~=nil then n=string.gsub(n,g,g1) else return n end
+	if h~=nil then n=string.gsub(n,h,h1) else return n end
+	if i~=nil then n=string.gsub(n,i,i1) else return n end
+	if j~=nil then n=string.gsub(n,j,j1) else return n end
+	if k~=nil then n=string.gsub(n,k,k1) else return n end
+	if l~=nil then n=string.gsub(n,l,l1) else return n end
+	return n
+end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)
 luaapi:Listen('onFormSelect', Monitor_FormArrived)
@@ -768,11 +817,11 @@ luaapi:Listen('onStartOpenChest',onStartOpenChest)
 luaapi:Listen('onDropItem',onDropItem)
 luaapi:Listen('onPickUpItem',onPickUpItem)
 luaapi:Listen('onStartOpenBarrel',onStartOpenBarrel)
-mc:setCommandDescribe('land', '领地系统主命令')
-mc:setCommandDescribe('land new', '创建一个新领地')
-mc:setCommandDescribe('land giveup', '放弃没有创建完成的领地')
-mc:setCommandDescribe('land a', '三维圈地，选取第一个点')
-mc:setCommandDescribe('land b', '三维圈地，选取第二个点')
-mc:setCommandDescribe('land buy', '购买刚圈好的地')
-mc:setCommandDescribe('land gui', '打开领地管理界面')
+mc:setCommandDescribe('land', I18N('command.land',0))
+mc:setCommandDescribe('land new', I18N('command.land_new',0))
+mc:setCommandDescribe('land giveup', I18N('command.land_giveup',0))
+mc:setCommandDescribe('land a', I18N('command.land_a',0))
+mc:setCommandDescribe('land b', I18N('command.land_b',0))
+mc:setCommandDescribe('land buy', I18N('command.land_buy',0))
+mc:setCommandDescribe('land gui', I18N('command.land_gui',0))
 print('[ILand] plugin loaded! VER:' .. plugin_version)
