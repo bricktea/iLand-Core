@@ -247,23 +247,23 @@ function Monitor_FormArrived(a)
 	end
 	--- OP LandMgr ---
 	if(TRS_Form[a.playername].lmop==a.formid) then
-		-- [1]null          [2]null   [3]选择的领地   [4]要进行的操作
-		-- [5]计分板名称     [6]null   [7]玩家最多领地 [8]最大领地面积 
-		-- [9]最小领地面积   [10]null  [11]底面积价格  [12]高度价格    
-		-- [13]退款率       [14]null   [15]检查更新
+		-- [1]null          [2]null   [3]选择的领地   [4]要进行的操作 [5]null
+		-- [6]计分板名称     [7]null   [8]玩家最多领地 [9]最大领地面积 
+		-- [10]最小领地面积   [11]null  [12]底面积价格  [13]高度价格    
+		-- [14]退款率       [15]null   [16]检查更新
 		local result=json.decode(a.selected)
 		local doi=true
-		if isTextSpecial(result[5]) then doi=false end
-		if not(isTextNum(result[7])) or not(isTextNum(result[8])) or not(isTextNum(result[9])) or not(isTextNum(result[11])) or not(isTextNum(result[12])) then doi=false end
+		if isTextSpecial(result[6]) then doi=false end
+		if not(isTextNum(result[8])) or not(isTextNum(result[9])) or not(isTextNum(result[10])) or not(isTextNum(result[12])) or not(isTextNum(result[13])) then doi=false end
 		if(doi==false) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.oplandmgr.invalidchar',a.playername));return end
-		cfg.land.player_max_lands=tonumber(result[7])
-		cfg.land.land_max_square=tonumber(result[8])
-		cfg.land.land_min_square=tonumber(result[9])
-		cfg.money.scoreboard_objname=result[5]
-		cfg.land_buy.refund_rate=result[13]/100
-		cfg.land_buy.price_ground=tonumber(result[11])
-		cfg.land_buy.price_sky=tonumber(result[12])
-		cfg.update_check=result[15]
+		cfg.land.player_max_lands=tonumber(result[8])
+		cfg.land.land_max_square=tonumber(result[9])
+		cfg.land.land_min_square=tonumber(result[10])
+		cfg.money.scoreboard_objname=result[6]
+		cfg.land_buy.refund_rate=result[14]/100
+		cfg.land_buy.price_ground=tonumber(result[12])
+		cfg.land_buy.price_sky=tonumber(result[13])
+		cfg.update_check=result[16]
 		iland_save()
 		if(result[4]==0) then TRS_Form.mb_lopm=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername));return end
 		local id,nid='',0 --getLandID
