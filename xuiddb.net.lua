@@ -2,8 +2,8 @@
 -- Author: RedbeanW -- License: MIT   --
 ----------------------------------------
 local plugin_version = '1.0.0'
-if (tool:IfFile('./ilua/lib/json.lua') == false) then
-    print('[XuidDB] Where is my json library??!!')
+if (tool:IfFile(luaapi.LibPATH..'json.lua') == false) then
+    print('[XuidDB] ERR!!! json library not found, plugin is closing...')
     return false
 end
 if (tool:IfFile('./xuid.json') == false) then

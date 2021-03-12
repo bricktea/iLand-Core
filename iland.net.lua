@@ -9,7 +9,7 @@ local newLand = {}
 local TRS_Form={}
 local i18n_data={}
 -- Check File and Load Library
-if (tool:IfFile('./ilua/lib/dkjson.lua') == false) then
+if (tool:IfFile(luaapi.LibPATH..'dkjson.lua') == false) then
     print('[ILand] ERR!!! json library not found, plugin is closing...')
     return false
 end
