@@ -83,7 +83,6 @@ do
 		cfg.version=110
 		cfg.money={}
 		cfg.money.protocol='scoreboard'
-		cfg.money.credit_name=cfg.scoreboard.credit_name
 		cfg.money.scoreboard_objname=cfg.scoreboard.name
 		cfg.scoreboard=nil
 		cfg.manager.i18n={}
@@ -124,7 +123,7 @@ function Monitor_CommandArrived(a)
 		else
 			land_count=tostring(#land_owners[xuid])
 		end
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, gsubEx(I18N('gui.land.title',a.playername),'<a>',plugin_version), gsubEx(I18N('gui.land.content',a.playername),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',cfg.money.credit_name,'<d>',cfg.land_buy.price_sky), I18N('talk.landmgr.open',a.playername), I18N('gui.general.close',a.playername))
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, gsubEx(I18N('gui.land.title',a.playername),'<a>',plugin_version), gsubEx(I18N('gui.land.content',a.playername),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',I18N('talk.credit_name',a.playername),'<d>',cfg.land_buy.price_sky), I18N('talk.landmgr.open',a.playername), I18N('gui.general.close',a.playername))
         return false
     end
     if (string.len(key) > 5 and string.sub(key, 1, 5) == '/land') then
@@ -248,24 +247,23 @@ function Monitor_FormArrived(a)
 	end
 	--- OP LandMgr ---
 	if(TRS_Form[a.playername].lmop==a.formid) then
-		-- [1]null          [2]null       [3]选择的领地  [4]要进行的操作 [5]null
-		-- [6]货币名称       [7]计分板名称  [8]null       [9]玩家最多领地 [10]最大领地面积 
-		-- [11]最小领地面积  [12]null      [13]底面积价格 [14]高度价格    [15]退款率
-		-- [16]null         [17]检查更新
+		-- [1]null          [2]null   [3]选择的领地   [4]要进行的操作
+		-- [5]计分板名称     [6]null   [7]玩家最多领地 [8]最大领地面积 
+		-- [9]最小领地面积   [10]null  [11]底面积价格  [12]高度价格    
+		-- [13]退款率       [14]null   [15]检查更新
 		local result=json.decode(a.selected)
 		local doi=true
-		if isTextSpecial(result[3]) or isTextSpecial(result[4]) or isTextSpecial(result[6]) or isTextSpecial(result[7]) then doi=false end
-		if not(isTextNum(result[9])) or not(isTextNum(result[10])) or not(isTextNum(result[11])) or not(isTextNum(result[13])) or not(isTextNum(result[14])) then doi=false end
+		if isTextSpecial(result[5]) then doi=false end
+		if not(isTextNum(result[7])) or not(isTextNum(result[8])) or not(isTextNum(result[9])) or not(isTextNum(result[11])) or not(isTextNum(result[12])) then doi=false end
 		if(doi==false) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.oplandmgr.invalidchar',a.playername));return end
-		cfg.land.player_max_lands=tonumber(result[9])
-		cfg.land.land_max_square=tonumber(result[10])
-		cfg.land.land_min_square=tonumber(result[11])
-		cfg.money.credit_name=result[6]
-		cfg.money.scoreboard_objname=result[7]
-		cfg.land_buy.refund_rate=result[15]/100
-		cfg.land_buy.price_ground=tonumber(result[13])
-		cfg.land_buy.price_sky=tonumber(result[14])
-		cfg.update_check=result[17]
+		cfg.land.player_max_lands=tonumber(result[7])
+		cfg.land.land_max_square=tonumber(result[8])
+		cfg.land.land_min_square=tonumber(result[9])
+		cfg.money.scoreboard_objname=result[5]
+		cfg.land_buy.refund_rate=result[13]/100
+		cfg.land_buy.price_ground=tonumber(result[11])
+		cfg.land_buy.price_sky=tonumber(result[12])
+		cfg.update_check=result[15]
 		iland_save()
 		if(result[4]==0) then TRS_Form.mb_lopm=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername));return end
 		local id,nid='',0 --getLandID
@@ -401,7 +399,7 @@ function Func_Buy_createOrder(playername)
 	end
 	--- 购买
     newLand[playername].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
-	newLand[playername].formid = mc:sendModalForm(uuid,I18N('gui.buyland.title',playername),gsubEx(I18N('gui.buyland.content',playername),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[playername].landprice,'<f>',cfg.money.credit_name,'<g>',money_get(playername)),I18N('gui.general.buy',playername),I18N('gui.general.close',playername))
+	newLand[playername].formid = mc:sendModalForm(uuid,I18N('gui.buyland.title',playername),gsubEx(I18N('gui.buyland.content',playername),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[playername].landprice,'<f>',I18N('talk.credit_name',playername),'<g>',money_get(playername)),I18N('gui.general.buy',playername),I18N('gui.general.close',playername))
 end
 function Func_Buy_selectRange(playername, xyz, dim, mode)
     if (newLand[playername]==nil) then
@@ -572,7 +570,7 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
-		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content'),'<a>',TRS_Form[a].landvalue,'<b>',cfg.money.credit_name),I18N('gui.general.yes',a),I18N('gui.general.cancel',a))
+		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content'),'<a>',TRS_Form[a].landvalue,'<b>',I18N('talk.credit_name',a)),I18N('gui.general.yes',a),I18N('gui.general.cancel',a))
 	end
 end
 function Func_Manager_Operator(playername)
@@ -593,7 +591,6 @@ function Func_Manager_Operator(playername)
 													{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"'..I18N('gui.oplandmgr.select',playername)..'"},\
 													{"default":0,"steps":["'..I18N('gui.oplandmgr.donothing',playername)..'","'..I18N('gui.oplandmgr.tp',playername)..'","'..I18N('gui.oplandmgr.transfer',playername)..'","'..I18N('gui.oplandmgr.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
 													{"type":"label","text":"'..I18N('gui.oplandmgr.economy',playername)..'"},\
-													{"placeholder":"'..I18N('gui.oplandmgr.creditname',playername)..'","default":"'..cfg.money.credit_name..'","type":"input","text":"'..I18N('gui.oplandmgr.creditnameV',playername)..'"},\
 													{"placeholder":"'..I18N('gui.oplandmgr.sbobject',playername)..'","default":"'..cfg.money.scoreboard_objname..'","type":"input","text":"'..I18N('gui.oplandmgr.sbobjectV',playername)..'"},\
 													{"type":"label","text":"'..I18N('gui.oplandmgr.landcfg',playername)..'"},\
 													{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"'..I18N('gui.oplandmgr.maxlands',playername)..'"},\

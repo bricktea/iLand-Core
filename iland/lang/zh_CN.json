@@ -3,6 +3,7 @@
     "#2": "使用ISO3166-1二位字母国家代码，请在此设置本语言文件适用的国家，支持逗号分割以适用多个国家(地区)",
     "#3": "如果作为Default Language，本参数将忽略（ALL）。",
     "COUNTRY_CODE":"CN,SG",
+    "talk.credit_name": "金币",
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "Force TransferLand",
@@ -64,8 +65,6 @@
     "gui.oplandmgr.delland": "删除此领地",
     "gui.oplandmgr.selectoption": "选择要进行的操作",
     "gui.oplandmgr.economy": "§l经济相关",
-    "gui.oplandmgr.creditname": "这里是服务器的通用货币名称，如金币",
-    "gui.oplandmgr.creditnameV": "货币名称 (类型: 字符串)",
     "gui.oplandmgr.sbobject": "记录货币信息的计分板项目，一般为money",
     "gui.oplandmgr.sbobjectV": "计分板对应项名称 (类型: 字符串)",
     "gui.oplandmgr.landcfg": "§l领地配置相关",
