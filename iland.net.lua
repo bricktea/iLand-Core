@@ -312,7 +312,7 @@ function Monitor_FormArrived(a)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		table.insert(land_owners[go],#land_owners[go]+1,lid)
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go))),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP ForceTransfer Land ---
 	if(TRS_Form[a.playername].opftland==a.formid) then
@@ -399,7 +399,7 @@ function Func_Buy_createOrder(playername)
 	end
 	--- 购买
     newLand[playername].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
-	newLand[playername].formid = mc:sendModalForm(uuid,gsubEx(I18N('gui.buyland.content',playername),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[playername].landprice,'<f>',cfg.money.credit_name,'<g>',money_get(playername)),I18N('gui.general.buy',playername),I18N('gui.general.close',playername))
+	newLand[playername].formid = mc:sendModalForm(uuid,I18N('gui.buyland.title',playername),gsubEx(I18N('gui.buyland.content',playername),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[playername].landprice,'<f>',cfg.money.credit_name,'<g>',money_get(playername)),I18N('gui.general.buy',playername),I18N('gui.general.close',playername))
 end
 function Func_Buy_selectRange(playername, xyz, dim, mode)
     if (newLand[playername]==nil) then
@@ -498,8 +498,9 @@ function Func_Manager_open(playername)
 	local xuid=luaapi:GetXUID(playername)
 	local b=luaapi:createPlayerObject(uuid)
 	local lid=getLandFromPos(json.decode(b.Position),b.DimensionId)
+	local welcomeText=I18N('gui.landmgr.content',playername)
 	if(lid~=-1) then
-		welcome=gsubEx(gui.landmgr.content,'<a>',lid)
+		welcomeText=welcomeText..gsubEx(I18N('gui.landmgr.ctplus',playername),'<a>',lid)
 	end
 	if(land_owners[xuid]~=nil) then
 		if(#land_owners[xuid]==0) then
@@ -510,7 +511,7 @@ function Func_Manager_open(playername)
 		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.landmgr.failed',playername))
 		return
 	end
-	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcome..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
+	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcomeText..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
 													{"default":0,"options":'..json.encode(land_owners[xuid])..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
 													"type":"custom_form","title":"'..I18N('gui.landmgr.title',playername)..'"}}]}')
 end
@@ -569,7 +570,7 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
-		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content','<a>',TRS_Form[a].landvalue,'<b>',cfg.money.credit_name)),I18N('gui.delland.yes',a),I18N('gui.delland.cancel',a))
+		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content'),'<a>',TRS_Form[a].landvalue,'<b>',cfg.money.credit_name),I18N('gui.general.yes',a),I18N('gui.general.cancel',a))
 	end
 end
 function Func_Manager_Operator(playername)
@@ -697,7 +698,7 @@ function money_add(a,b) --a=playername b=value
 	mc:runcmd('scoreboard players add "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
 end
 function money_del(a,b) --a=playername b=value
-	mc:runcmd('scoreboard players del "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
+	mc:runcmd('scoreboard players remove "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
 end
 function money_get(a) --a=playername
 	return(mc:getscoreboard(luaapi:GetUUID(a),cfg.money.scoreboard_objname))
