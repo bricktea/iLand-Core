@@ -2,7 +2,8 @@
 -- Author: RedbeanW -- License: MIT   --
 ----------------------------------------
 local plugin_version = '1.0.0'
-if (tool:IfFile(luaapi.LibPATH..'json.lua') == false) then
+local LibPath=luaapi.LibPATH
+if (tool:IfFile(LibPath..'json.lua') == false) then
     print('[XuidDB] ERR!!! json library not found, plugin is closing...')
     return false
 end
@@ -10,7 +11,7 @@ if (tool:IfFile('./xuid.json') == false) then
 	tool:WriteAllText('./xuid.json','{}')
 	print('[XuidDB] Creating xuid.json.')
 end
-json = require('./ilua/lib/json')
+json = require(LibPath..'json')
 local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
 function Event_PlayerJoin(a)
 	if(xuiddb[a.xuid]~=nil) then return end

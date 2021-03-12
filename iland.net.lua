@@ -4,34 +4,36 @@
 ----------------------------------------
 -- 插件版本，请勿修改
 local plugin_version = '1.1.0'
+local libPath=luaapi.LibPATH
+local luaPath=luaapi.LuaPATH
 local latest_version = plugin_version
 local newLand = {}
 local TRS_Form={}
 local i18n_data={}
 -- Check File and Load Library
-if (tool:IfFile(luaapi.LibPATH..'dkjson.lua') == false) then
+if (tool:IfFile(libPath..'dkjson.lua') == false) then
     print('[ILand] ERR!!! json library not found, plugin is closing...')
     return false
 end
-if (tool:IfFile('./ilua/iland/config.json') == false) then
+if (tool:IfFile(luaPath..'iland\\config.json') == false) then
     print('[ILand] ERR!!! configure file not found, plugin is closing...')
     return false
 end
-if (tool:IfFile('./ilua/xuiddb.net.lua') == false) then
+if (tool:IfFile(luaPath..'xuiddb.net.lua') == false) then
     print('[ILand] ERR!!! xuiddb not found, plugin is closing...')
     return false
 end
-local json = require('./ilua/lib/dkjson')
+local json = require(libPath..'dkjson')
 -- Encode Json File
-cfg = json.decode(tool:ReadAllText('./ilua/iland/config.json'))
-land_data = json.decode(tool:ReadAllText('./ilua/iland/data.json'))
-land_owners = json.decode(tool:ReadAllText('./ilua/iland/owners.json'))
+cfg = json.decode(tool:ReadAllText(luaPath..'iland\\config.json'))
+land_data = json.decode(tool:ReadAllText(luaPath..'iland\\data.json'))
+land_owners = json.decode(tool:ReadAllText(luaPath..'iland\\owners.json'))
 -- 功能需要提前load的函数
 function iland_save()
 	local a=tool:WorkingPath()
-	tool:WriteAllText(a..'ilua\\iland\\config.json',json.encode(cfg,{indent=true}))
-	tool:WriteAllText(a..'ilua\\iland\\data.json',json.encode(land_data))
-	tool:WriteAllText(a..'ilua\\iland\\owners.json',json.encode(land_owners))
+	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
+	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
 end
 function I18N(a,b) --a=key b=playername
 	local n=i18n_data[cfg.manager.i18n.default_language][a]
@@ -94,12 +96,12 @@ do
 end
 -- load language files
 for i,v in pairs(cfg.manager.i18n.enabled_languages) do
-	if(not(tool:IfFile('./ilua/iland/lang/'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
-	i18n_data[v]=json.decode(tool:ReadAllText('./ilua/iland/lang/'..v..'.json'))
+	if(not(tool:IfFile(luaPath..'iland\\lang\\'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
+	i18n_data[v]=json.decode(tool:ReadAllText(luaPath..'iland\\lang\\'..v..'.json'))
 end
 -- Check Update
 if(cfg.update_check) then
-	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version','')
+	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version')
 	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
 	if(latest_version=='') then latest_version=plugin_version end
 	if(plugin_version~=latest_version) then
