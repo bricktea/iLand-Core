@@ -24,7 +24,7 @@
     "gui.general.looklook": "看看",
     "gui.general.iknow": "爷知道了",
     "gui.general.cancel": "取消",
-    "gui.land.content": "欢迎使用领地系统，您现在有<a>块领地。\n今日地价：<b>/平面格，<c>/高",
+    "gui.land.content": "欢迎使用领地系统，您现在有<a>块领地。\n今日地价：<b><c>/平面格，<d><c>/高",
     "gui.oplandmgr.trsland.content": "强制将领地过户，领地所有权限将被转移。",
     "gui.buyland.content": "'圈地成功！\n长\\宽\\高: <a>\\<b>\\<c>格\n体积: <d>块\n价格: ' ..<e><f> \n钱包: <g><f>",
     "gui.landmgr.landinfo.content": "所有者:<a>\n范围(range): <b>,<c>,<d> -> <e>,<f>,<g>\n长/宽/高: <h>/<i>/<j>\n底面积: <k> 平方格    体积: <l> 立方格",
@@ -111,5 +111,8 @@
     "command.land_a": "三维圈地，选取第一个点",
     "command.land_b": "三维圈地，选取第二个点",
     "command.land_buy": "购买刚圈好的地",
-    "command.land_gui": "打开领地管理界面"
+    "command.land_gui": "打开领地管理界面",
+
+    "console.newversion": "此服务器正在使用旧版领地插件，新版本 <a> 已发布！",
+    "console.update": "存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。"
 }

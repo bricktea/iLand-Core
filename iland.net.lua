@@ -26,13 +26,34 @@ local json = require('./ilua/lib/dkjson')
 cfg = json.decode(tool:ReadAllText('./ilua/iland/config.json'))
 land_data = json.decode(tool:ReadAllText('./ilua/iland/data.json'))
 land_owners = json.decode(tool:ReadAllText('./ilua/iland/owners.json'))
-function iland_save() --需要提前...
+-- 功能需要提前load的函数
+function iland_save()
 	local a=tool:WorkingPath()
 	tool:WriteAllText(a..'ilua\\iland\\config.json',json.encode(cfg,{indent=true}))
 	tool:WriteAllText(a..'ilua\\iland\\data.json',json.encode(land_data))
 	tool:WriteAllText(a..'ilua\\iland\\owners.json',json.encode(land_owners))
 end
-do --update configure file
+function I18N(a,b) --a=key b=playername
+	local n=i18n_data[cfg.manager.i18n.default_language][a]
+	if(n==nil) then return '' else return n end
+end
+function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
+	local n=string.gsub(m,a,a1)
+	if b~=nil then n=string.gsub(n,b,b1) else return n end
+	if c~=nil then n=string.gsub(n,c,c1) else return n end
+	if d~=nil then n=string.gsub(n,d,d1) else return n end
+	if e~=nil then n=string.gsub(n,e,e1) else return n end
+	if f~=nil then n=string.gsub(n,f,f1) else return n end
+	if g~=nil then n=string.gsub(n,g,g1) else return n end
+	if h~=nil then n=string.gsub(n,h,h1) else return n end
+	if i~=nil then n=string.gsub(n,i,i1) else return n end
+	if j~=nil then n=string.gsub(n,j,j1) else return n end
+	if k~=nil then n=string.gsub(n,k,k1) else return n end
+	if l~=nil then n=string.gsub(n,l,l1) else return n end
+	return n
+end
+-- update configure file
+do
 	if(cfg.version==nil) then --version<1.0.4
 		cfg.version={};cfg.version=103
 		cfg.manager.operator={}
@@ -71,20 +92,20 @@ do --update configure file
 		iland_save()
 	end
 end
+-- load language files
+for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+	if(not(tool:IfFile('./ilua/iland/lang/'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
+	i18n_data[v]=json.decode(tool:ReadAllText('./ilua/iland/lang/'..v..'.json'))
+end
 -- Check Update
 if(cfg.update_check) then
 	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version','')
 	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
 	if(latest_version=='') then latest_version=plugin_version end
 	if(plugin_version~=latest_version) then
-		print('[ILand] 此服务器正在使用旧版领地插件，新版本 '..latest_version..' 已发布！')
-		print('[ILand] 存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。')
+		print('[ILand] '..gsubEx(I18N('console.newversion'),'<a>',latest_version))
+		print('[ILand] '..I18N('console.update'))
 	end
-end
--- load language files
-for i,v in pairs(cfg.manager.i18n.enabled_languages) do
-	if(not(tool:IfFile('./ilua/iland/lang/'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
-	i18n_data[v]=json.decode(tool:ReadAllText('./ilua/iland/lang/'..v..'.json'))
 end
 -- Functions
 function Event_PlayerJoin(a)
@@ -101,7 +122,7 @@ function Monitor_CommandArrived(a)
 		else
 			land_count=tostring(#land_owners[xuid])
 		end
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, 'Land v' .. plugin_version, '欢淫使用领地系统，宁现在有'..land_count..'块领地。\n今日地价：'..cfg.land_buy.price_ground..cfg.money.credit_name..'/平面格, '..cfg.land_buy.price_sky..cfg.money.credit_name..'/高', '打开领地管理器', '关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, gsubEx(I18N('gui.land.title',a.playername),'<a>',plugin_version), gsubEx(I18N('gui.land.content',a.playername),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',cfg.money.credit_name,'<d>',cfg.land_buy.price_sky), I18N('talk.landmgr.open',a.playername), I18N('gui.general.close',a.playername))
         return false
     end
     if (string.len(key) > 5 and string.sub(key, 1, 5) == '/land') then
@@ -166,7 +187,7 @@ function Monitor_FormArrived(a)
 		land_data[lid].setting.allow_use_item=result[8]
 		land_data[lid].setting.allow_open_barrel=result[9]
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- Del Land ---
 	if(TRS_Form[a.playername].delland==a.formid) then
@@ -174,7 +195,7 @@ function Monitor_FormArrived(a)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		iland_save()
 		money_add(a.playername,TRS_Form[a.playername].landvalue)
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- Land Trust ---
 	if(TRS_Form[a.playername].ltrust==a.formid) then
@@ -184,23 +205,23 @@ function Monitor_FormArrived(a)
 			local x=DbGetXUID(TRS_Form[a.playername].playerList[result[3]+1])
 			local n=#land_data[lid].setting.share+1
 			if(luaapi:GetXUID(a.playername)==x) then
-				mc:runcmd('title "' .. a.playername .. '" actionbar 不能将您自己添加到信任列表中')
+				mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtrust.cantaddown',a.playername))
 				return
 			end
 			if(isValInList(land_data[lid].setting.share,x)~=-1) then
-				mc:runcmd('title "' .. a.playername .. '" actionbar 该玩家已存在于信任列表中')
+				mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtrust.alreadyexists',a.playername))
 				return
 			end
 			land_data[lid].setting.share[n]=x
 			iland_save()
-			if(result[4]~=true) then TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭') end
+			if(result[4]~=true) then TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)) end
 		end
 		if(result[4]==true) then
 			if(#land_data[lid].setting.share==0) then return end 
 			local x=land_data[lid].setting.share[result[5]+1]
 			table.remove(land_data[lid].setting.share,isValInList(land_data[lid].setting.share,x))
 			iland_save()
-			TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭')
+			TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 		end
 	end
 	--- Land Tag ---
@@ -221,7 +242,7 @@ function Monitor_FormArrived(a)
 		table.insert(land_owners[xuid],#land_owners[xuid]+1,tag)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP LandMgr ---
 	if(TRS_Form[a.playername].lmop==a.formid) then
@@ -233,7 +254,7 @@ function Monitor_FormArrived(a)
 		local doi=true
 		if isTextSpecial(result[3]) or isTextSpecial(result[4]) or isTextSpecial(result[6]) or isTextSpecial(result[7]) then doi=false end
 		if not(isTextNum(result[9])) or not(isTextNum(result[10])) or not(isTextNum(result[11])) or not(isTextNum(result[13])) or not(isTextNum(result[14])) then doi=false end
-		if(doi==false) then mc:runcmd('title "' .. a.playername .. '" actionbar 修改项存在不合法字符，已中断操作。');return end
+		if(doi==false) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.oplandmgr.invalidchar',a.playername));return end
 		cfg.land.player_max_lands=tonumber(result[9])
 		cfg.land.land_max_square=tonumber(result[10])
 		cfg.land.land_min_square=tonumber(result[11])
@@ -244,22 +265,25 @@ function Monitor_FormArrived(a)
 		cfg.land_buy.price_sky=tonumber(result[14])
 		cfg.update_check=result[17]
 		iland_save()
-		if(result[4]==0) then TRS_Form.mb_lopm=mc:sendModalForm(uuid,'Complete','操作已完成。','返回上级菜单','关闭');return end
+		if(result[4]==0) then TRS_Form.mb_lopm=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername));return end
 		local id,nid='',0 --getLandID
 		for landId,val in pairs(land_data) do 
 			if(nid==result[3]) then id=landId;break end
 			nid=nid+1
 		end
-		if(id=='') then mc:runcmd('title "' .. a.playername .. '" actionbar 未选择任何领地');return end
+	
+		if(id=='') then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('talk.land.unselected',a.playername));return end
 		-- 1=teleport 2=transfer 3=delete
 		if(result[4]==1) then
 			luaapi:teleport(uuid,land_data[id].range.start_x,land_data[id].range.start_y,land_data[id].range.start_z,land_data[id].range.dim)
-			mc:runcmd('title "' .. a.playername .. '" actionbar 已传送到 '..id)
+			mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.oplandmgr.transfered',a.playername),'<a>',id))
 		end
 		if(result[4]==2) then
 			TRS_Form[a.playername].playerList=getAllPlayersList()
 			TRS_Form[a.playername].betsflid=id
-			TRS_Form[a.playername].opftland=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"强制将领地过户，领地所有权限将被转移。"},{"default":0,"options":'..json.encode(TRS_Form[a.playername].playerList)..',"type":"dropdown","text":"选择目标玩家"}],"type":"custom_form","title":"Force TransferLand"}')
+			TRS_Form[a.playername].opftland=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.oplandmgr.trsland.content',a.playername)..'"},\
+																	{"default":0,"options":'..json.encode(TRS_Form[a.playername].playerList)..',"type":"dropdown","text":"'..I18N('talk.land.selecttargetplayer',a.playername)..'"}],\
+																	"type":"custom_form","title":"'..I18N('gui.oplandmgr.trsland.title',a.playername)..'"}')
 		end
 		if(result[4]==3) then
 			land_data[id]=nil
@@ -270,7 +294,7 @@ function Monitor_FormArrived(a)
 				end
 			end
 			iland_save()
-			mc:runcmd('title "' .. a.playername .. '" actionbar '..id..' 已删除')
+			mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.land.deleted',a.playername),'<a>',id))
 		end
 	end
 	--- BackTo Menu => OPMGR/LandMGR ---
@@ -284,11 +308,11 @@ function Monitor_FormArrived(a)
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
 		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		if(go==xuid) then mc:runcmd('title "' .. a.playername .. '" actionbar 不可以向自己过户领地');return end
+		if(go==xuid) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtransfer.canttoown',a.playername));return end
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		table.insert(land_owners[go],#land_owners[go]+1,lid)
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',lid..' 已过户给 '..getPlayernameFromXUID(go),'返回上级菜单','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go))),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP ForceTransfer Land ---
 	if(TRS_Form[a.playername].opftland==a.formid) then
@@ -301,22 +325,22 @@ function Monitor_FormArrived(a)
 			end
 		end
 		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',TRS_Form[a.playername].betsflid..' 已过户给 '..getPlayernameFromXUID(go),'返回上级菜单','关闭')
+		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 end
 function Func_Buy_giveup(playername)
     if (newLand[playername]==nil) then
-        mc:runcmd('title "' .. playername .. '" actionbar 没有可以放弃的圈地许可')
+        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.giveup.failed',playername))
         return
     end
 	newLand[playername]=nil
-	mc:runcmd('title "' .. playername .. '" actionbar 许可已被放弃')
+	mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.giveup.succeed',playername))
 end
 function Func_Buy_createOrder(playername)
     local uuid = luaapi:GetUUID(playername)
 	local xuid = luaapi:GetXUID(playername)
     if (newLand[playername]==nil or newLand[playername].step ~= 2) then
-        mc:runcmd('title "' .. playername .. '" actionbar 购买失败！请按步骤圈地！')
+        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.failbystep',playername))
         return
     end
     local length = math.abs(newLand[playername].posA.x - newLand[playername].posB.x)
@@ -326,17 +350,17 @@ function Func_Buy_createOrder(playername)
     local squ = length * width
 	--- 违规圈地判断
 	if(squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1) then
-		mc:runcmd('title "' .. playername .. '" actionbar 所圈领地太大，请重新圈地。\n请使用“/land a”选择第一个点')
+		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toobig',playername))
 		newLand[playername].step=0
 		return
 	end
 	if(squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1) then
-		mc:runcmd('title "' .. playername .. '" actionbar 所圈领地太小，请重新圈地。\n请使用“/land a”选择第一个点')
+		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toosmall',playername))
 		newLand[playername].step=0
 		return
 	end
 	if(height<3) then
-		mc:runcmd('title "' .. playername .. '" actionbar 三维圈地，高度至少在三格以上。\n请使用“/land a”选择第一个点')
+		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toolow',playername))
 		newLand[playername].step=0
 		return
 	end
@@ -347,7 +371,7 @@ function Func_Buy_createOrder(playername)
 			local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
 			local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
 			if(isPosInCube(edge[i],s_pos,e_pos)==true) then
-				mc:runcmd('title "' .. playername .. '" actionbar 存在领地冲突，请重新圈地。\n请使用“/land a”选择第一个点')
+				mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
 				return
 			end
@@ -366,7 +390,7 @@ function Func_Buy_createOrder(playername)
 		edge=cubeGetEdge(s_pos,e_pos)
 		for i=1,#edge do
 			if(isPosInCube(edge[i],newLand[playername].posA,newLand[playername].posB)==true) then
-				mc:runcmd('title "' .. playername .. '" actionbar 存在领地冲突，请重新圈地。\n请使用“/land a”选择第一个点')
+				mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
 				return
 			end
@@ -375,16 +399,16 @@ function Func_Buy_createOrder(playername)
 	end
 	--- 购买
     newLand[playername].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
-    newLand[playername].formid = mc:sendModalForm(uuid,'领地购买','圈地成功！\n长\\宽\\高: ' ..length ..'\\' ..width..'\\' ..height..'格\n体积: ' ..vol..'块\n价格: ' ..newLand[playername].landprice..cfg.money.credit_name .. '\n钱包: ' .. money_get(playername) .. cfg.money.credit_name,'购买','放弃')
+	newLand[playername].formid = mc:sendModalForm(uuid,gsubEx(I18N('gui.buyland.content',playername),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[playername].landprice,'<f>',cfg.money.credit_name,'<g>',money_get(playername)),I18N('gui.general.buy',playername),I18N('gui.general.close',playername))
 end
 function Func_Buy_selectRange(playername, xyz, dim, mode)
     if (newLand[playername]==nil) then
-        mc:runcmd('title "' .. playername .. '" actionbar 没有圈地许可!!\n请先使用“/land new”获取')
+        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.nolic',playername))
         return
     end
     if (mode == 0) then --posA
         if (mode ~= newLand[playername].step) then
-            mc:runcmd('title "' .. playername .. '" actionbar 选点失败！请按步骤圈地！')
+            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbystep',playername))
             return
         end
 		newLand[playername].dim = dim
@@ -392,38 +416,38 @@ function Func_Buy_selectRange(playername, xyz, dim, mode)
 		newLand[playername].posA.x=math.floor(newLand[playername].posA.x) --省函数...
 		newLand[playername].posA.y=math.floor(newLand[playername].posA.y)-2
 		newLand[playername].posA.z=math.floor(newLand[playername].posA.z)
-		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posA.x .. '\nY=' .. newLand[playername].posA.y .. '\nZ=' .. newLand[playername].posA.z ..'\n请使用“/land b”选定第二个点')
+		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posA.x .. '\nY=' .. newLand[playername].posA.y .. '\nZ=' .. newLand[playername].posA.z ..'\n'..I18N('title.selectrange.spointb',playername))
         newLand[playername].step = 1
     end
     if (mode == 1) then --posB
         if (mode ~= newLand[playername].step) then
-            mc:runcmd('title "' .. playername .. '" actionbar 选点失败！请按步骤圈地！')
+            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbystep',playername))
             return
         end
         if (dim ~= newLand[playername].dim) then
-            mc:runcmd('title "' .. playername .. '" actionbar 选点失败！禁止跨纬度选点！')
+            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbycdim',playername))
             return
         end
 		newLand[playername].posB = xyz
 		newLand[playername].posB.x=math.floor(newLand[playername].posB.x)
 		newLand[playername].posB.y=math.floor(newLand[playername].posB.y)-2
 		newLand[playername].posB.z=math.floor(newLand[playername].posB.z)
-		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posB.x .. '\nY=' .. newLand[playername].posB.y .. '\nZ=' .. newLand[playername].posB.z ..'\n请使用“/land buy”创建订单')
+		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posB.x .. '\nY=' .. newLand[playername].posB.y .. '\nZ=' .. newLand[playername].posB.z ..'\n'..I18N('title.selectrange.bebuy',playername))
         newLand[playername].step = 2
     end
 end
 function Func_Buy_getLicense(playername)
 	if (newLand[playername]~=nil) then
-	    mc:runcmd('title "' .. playername .. '" actionbar 请勿重复请求!!\n请使用“/land a”选定第一个点')
+	    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.alreadyexists',playername))
         return
 	end
 	if(land_owners[luaapi:GetXUID(playername)]~=nil and isValInList(cfg.manager.operator,luaapi:GetXUID(playername))==-1) then
 		if(#land_owners[luaapi:GetXUID(playername)]>cfg.land.player_max_lands) then
-			mc:runcmd('title "' .. playername .. '" actionbar 你想当地主是吧，无产阶级是不能有这么多地的。')
+			mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.limit',playername))
 			return
 		end
 	end
-    mc:runcmd('title "' .. playername .. '" actionbar 已请求新建领地\n现在请输入命令“/land a”')
+    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.succeed',playername))
 	newLand[playername]={}
 	newLand[playername].step=0
 end
@@ -437,7 +461,7 @@ function Func_Buy_callback(playername)
     else
         money_del(playername,newLand[playername].landprice)
     end
-    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.succeed',playername)
+    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.succeed',playername))
 	math.randomseed(os.time())
 	landId='id'..tostring(math.random(100000,999999))
 	land_data[landId]={}
@@ -784,25 +808,6 @@ function isTextNum(text)
 		return false
 	end
 	return true
-end
-function I18N(a,b) --a=key b=playername
-	local n=i18n_data[cfg.manager.i18n.default_language][a]
-	if(n==nil) then return '' else return n end
-end
-function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
-	local n=string.gsub(m,a,a1)
-	if b~=nil then n=string.gsub(n,b,b1) else return n end
-	if c~=nil then n=string.gsub(n,c,c1) else return n end
-	if d~=nil then n=string.gsub(n,d,d1) else return n end
-	if e~=nil then n=string.gsub(n,e,e1) else return n end
-	if f~=nil then n=string.gsub(n,f,f1) else return n end
-	if g~=nil then n=string.gsub(n,g,g1) else return n end
-	if h~=nil then n=string.gsub(n,h,h1) else return n end
-	if i~=nil then n=string.gsub(n,i,i1) else return n end
-	if j~=nil then n=string.gsub(n,j,j1) else return n end
-	if k~=nil then n=string.gsub(n,k,k1) else return n end
-	if l~=nil then n=string.gsub(n,l,l1) else return n end
-	return n
 end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)
