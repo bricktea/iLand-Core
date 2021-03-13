@@ -11,7 +11,7 @@ if (tool:IfFile('./xuid.json') == false) then
 	tool:WriteAllText('./xuid.json','{}')
 	print('[XuidDB] Creating xuid.json.')
 end
-json = require(LibPath..'json')
+json = require(LibPath..'dkjson')
 local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
 function Event_PlayerJoin(a)
 	if(xuiddb[a.xuid]~=nil) then return end
