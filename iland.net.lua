@@ -221,7 +221,7 @@ function Monitor_FormArrived(a)
 		land_data[lid].setting.allow_use_item=result[8]
 		land_data[lid].setting.allow_open_barrel=result[9]
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- Del Land ---
 	if(TRS_Form[a.playername].delland==a.formid) then
@@ -229,7 +229,7 @@ function Monitor_FormArrived(a)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		iland_save()
 		money_add(a.playername,TRS_Form[a.playername].landvalue)
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- Land Trust ---
 	if(TRS_Form[a.playername].ltrust==a.formid) then
@@ -248,14 +248,14 @@ function Monitor_FormArrived(a)
 			end
 			land_data[lid].setting.share[n]=x
 			iland_save()
-			if(result[4]~=true) then TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)) end
+			if(result[4]~=true) then TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)) end
 		end
 		if(result[4]==true) then
 			if(#land_data[lid].setting.share==0) then return end 
 			local x=land_data[lid].setting.share[result[5]+1]
 			table.remove(land_data[lid].setting.share,isValInList(land_data[lid].setting.share,x))
 			iland_save()
-			TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+			TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 		end
 	end
 	--- Land Tag ---
@@ -276,7 +276,7 @@ function Monitor_FormArrived(a)
 		table.insert(land_owners[xuid],#land_owners[xuid]+1,tag)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP LandMgr ---
 	if(TRS_Form[a.playername].lmop==a.formid) then
@@ -298,7 +298,7 @@ function Monitor_FormArrived(a)
 		cfg.land_buy.price_sky=tonumber(result[13])
 		cfg.update_check=result[16]
 		iland_save()
-		if(result[4]==0) then TRS_Form.mb_lopm=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername));return end
+		if(result[4]==0) then TRS_Form[a.playername].mb_lopm=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername));return end
 		local id,nid='',0 --getLandID
 		for landId,val in pairs(land_data) do 
 			if(nid==result[3]) then id=landId;break end
@@ -331,10 +331,10 @@ function Monitor_FormArrived(a)
 		end
 	end
 	--- BackTo Menu => OPMGR/LandMGR ---
-	if(TRS_Form.mb_lopm==a.formid) then
+	if(TRS_Form[a.playername].mb_lopm==a.formid) then
 		Func_Manager_Operator(a.playername)
 	end
-	if(TRS_Form.mb_lmgr==a.formid) then
+	if(TRS_Form[a.playername].mb_lmgr==a.formid) then
 		Func_Manager_open(a.playername)
 	end
 	--- Land Transfer ---
@@ -345,7 +345,7 @@ function Monitor_FormArrived(a)
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		table.insert(land_owners[go],#land_owners[go]+1,lid)
 		iland_save()
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP ForceTransfer Land ---
 	if(TRS_Form[a.playername].opftland==a.formid) then
@@ -358,7 +358,7 @@ function Monitor_FormArrived(a)
 			end
 		end
 		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- I-Cfg ---
 	if(TRS_Form[a.playername].icfgo==a.formid) then
@@ -534,7 +534,7 @@ function Func_Buy_callback(playername)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
 	newLand[playername]=nil
-	TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.buyland.succeed',playername),I18N('gui.general.looklook',playername),I18N('gui.general.cancel',playername))
+	TRS_Form[playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.buyland.succeed',playername),I18N('gui.general.looklook',playername),I18N('gui.general.cancel',playername))
 end
 function Func_Manager_open(playername)
 	local uuid=luaapi:GetUUID(playername)
@@ -569,7 +569,7 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local vol = length * width * height
 		local squ = length * width
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_x,'<c>',land_data[TRS_Form[a].landid].range.start_y,'<d>',land_data[TRS_Form[a].landid].range.start_z,'<e>',land_data[TRS_Form[a].landid].range.end_x,'<f>',land_data[TRS_Form[a].landid].range.end_y,'<g>',land_data[TRS_Form[a].landid].range.end_z,'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
+		TRS_Form[a].mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_x,'<c>',land_data[TRS_Form[a].landid].range.start_y,'<d>',land_data[TRS_Form[a].landid].range.start_z,'<e>',land_data[TRS_Form[a].landid].range.end_x,'<f>',land_data[TRS_Form[a].landid].range.end_y,'<g>',land_data[TRS_Form[a].landid].range.end_z,'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
 	end
 	if(result[2]==1) then --编辑领地权限
 		local d=land_data[TRS_Form[a].landid].setting
