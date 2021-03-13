@@ -103,7 +103,7 @@
     "title.giveup.failed": "没有可以放弃的圈地许可",
     "title.createorder.toobig": "所圈领地太大，请重新圈地。\n请使用“/land a”选择第一个点",
     "title.createorder.toosmall": "所圈领地太小，请重新圈地。\n请使用“/land a”选择第一个点",
-    "title.createorder.toolow": "三维圈地，高度至少在三格以上。\n请使用“/land a”选择第一个点",
+    "title.createorder.toolow": "三维圈地，高度至少在四格以上。\n请使用“/land a”选择第一个点",
     "title.createorder.failbystep": "购买失败！请按步骤圈地！",
     "title.createorder.collision": "存在领地冲突，请重新圈地。\n请使用“/land a”选择第一个点",
     "title.icfg.lang.succeed": "语言已变更为: <a>",
