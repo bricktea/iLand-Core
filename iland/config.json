@@ -2,7 +2,7 @@
   "manager":{
     "operator":[],
     "i18n":{
-      "enabled_languages":["zh_CN"],
+      "enabled_languages":["zh_CN","zh_TW"],
       "default_language":"zh_CN",
       "auto_language_byIP":false,
       "allow_players_select_lang":true
@@ -10,8 +10,7 @@
   },
   "money":{
     "scoreboard_objname":"money",
-    "protocol":"scoreboard",
-    "credit_name":"金币"
+    "protocol":"scoreboard"
   },
   "version":110,
   "land":{

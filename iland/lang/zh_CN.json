@@ -2,7 +2,7 @@
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     "#2": "使用ISO3166-1二位字母国家代码，请在此设置本语言文件适用的国家，支持逗号分割以适用多个国家(地区)",
     "#3": "如果作为Default Language，本参数将忽略（ALL）。",
-    "COUNTRY_CODE":"CN,SG",
+    "COUNTRY_CODE":"CN SG",
     "talk.credit_name": "金币",
     
     "gui.land.title": "Land v<a>",
@@ -17,6 +17,7 @@
     "gui.delland.title": "删除领地",
     "gui.oplandmgr.title": "LandMgr for Operator",
     "gui.landtrust.title": "Land Trust",
+    "gui.icfg.title": "I-Cfg",
     "gui.general.complete": "操作已完成。",
     "gui.general.back": "返回上级菜单",
     "gui.general.close": "关闭",
@@ -77,6 +78,8 @@
     "gui.oplandmgr.refundrate": "删除领地退款率 (％)",
     "gui.oplandmgr.pluginconfig": "§l插件设置",
     "gui.oplandmgr.checkupdate": "允许自动检查更新",
+    "gui.icfg.tip": "在这里编辑领地系统的个人偏好设置。",
+    "gui.icfg.setlang": "§l语言",
     "title.selectrange.nolic": "没有圈地许可!!\n请先使用“/land new”获取",
     "title.selectrange.failbystep": "选点失败！请按步骤圈地！",
     "title.selectrange.failbycdim": "选点失败！禁止跨纬度选点！",
@@ -102,6 +105,7 @@
     "title.createorder.toolow": "三维圈地，高度至少在三格以上。\n请使用“/land a”选择第一个点",
     "title.createorder.failbystep": "购买失败！请按步骤圈地！",
     "title.createorder.collision": "存在领地冲突，请重新圈地。\n请使用“/land a”选择第一个点",
+    "title.icfg.lang.succeed": "语言已变更为: <a>",
     "talk.land.selecttargetplayer": "选择目标玩家",
     "talk.land.unselected":"未选择任何领地",
     "talk.landmgr.open": "打开领地管理器",
@@ -112,6 +116,7 @@
     "command.land_b": "三维圈地，选取第二个点",
     "command.land_buy": "购买刚圈好的地",
     "command.land_gui": "打开领地管理界面",
+    "command.land_cfg": "领地系统个人设置",
 
     "console.newversion": "此服务器正在使用旧版领地插件，新版本 <a> 已发布！",
     "console.update": "存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。"

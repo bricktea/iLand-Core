@@ -26,18 +26,41 @@ end
 local json = require(libPath..'dkjson')
 -- Encode Json File
 cfg = json.decode(tool:ReadAllText(luaPath..'iland\\config.json'))
+playerCfg = json.decode(tool:ReadAllText(luaPath..'iland\\players.json'))
 land_data = json.decode(tool:ReadAllText(luaPath..'iland\\data.json'))
 land_owners = json.decode(tool:ReadAllText(luaPath..'iland\\owners.json'))
 -- 功能需要提前load的函数
 function iland_save()
 	local a=tool:WorkingPath()
 	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
 	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
 	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
 end
 function I18N(a,b) --a=key b=playername
-	local n=i18n_data[cfg.manager.i18n.default_language][a]
-	if(n==nil) then return '' else return n end
+	-- TRS_Form[playerName].language | 临时
+	-- playerCfg[xuid].language      | 永久
+	if b==nil then return i18n_data[cfg.manager.i18n.default_language][a] end
+	-- ↑ Server ; ↓ Player
+	local xuid=luaapi:GetXUID(b)
+	if TRS_Form[b].language==nil then
+		if(playerCfg[xuid].language~=nil) then
+			TRS_Form[b].language=playerCfg[xuid].language
+			goto HOMO1
+		end
+		-- ↑ Custom ; ↓ Auto
+		local f=playerGetCountry(b)
+		if(cfg.manager.i18n.auto_language_byIP) then
+			for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+				for n in string.gmatch(i18n_data[v]['COUNTRY_CODE'], "%S+") do
+					if n==f then TRS_Form[b].language=v;goto HOMO1 end
+				end
+			end 
+		end
+		TRS_Form[b].language=cfg.manager.i18n.default_language
+		:: HOMO1 ::
+	end
+	return i18n_data[TRS_Form[b].language][a]
 end
 function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
 	local n=string.gsub(m,a,a1)
@@ -111,6 +134,13 @@ end
 -- Functions
 function Event_PlayerJoin(a)
 	TRS_Form[a.playername]={}
+	xuid=luaapi:GetXUID(a.playername)
+	if playerCfg[xuid]==nil then 
+		playerCfg[xuid]={};iland_save()
+	else
+		if playerCfg[xuid].language~=nil then TRS_Form[a.playername].language=playerCfg[xuid].language end
+	end
+
 end
 function Monitor_CommandArrived(a)
     local uuid = luaapi:GetUUID(a.playername)
@@ -123,8 +153,8 @@ function Monitor_CommandArrived(a)
 		else
 			land_count=tostring(#land_owners[xuid])
 		end
-		TRS_Form.mb_lmgr=mc:sendModalForm(uuid, gsubEx(I18N('gui.land.title',a.playername),'<a>',plugin_version), gsubEx(I18N('gui.land.content',a.playername),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',I18N('talk.credit_name',a.playername),'<d>',cfg.land_buy.price_sky), I18N('talk.landmgr.open',a.playername), I18N('gui.general.close',a.playername))
-        return false
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid, gsubEx(I18N('gui.land.title',a.playername),'<a>',plugin_version), gsubEx(I18N('gui.land.content',a.playername),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',I18N('talk.credit_name',a.playername),'<d>',cfg.land_buy.price_sky), I18N('talk.landmgr.open',a.playername), I18N('gui.general.close',a.playername))
+		return false
     end
     if (string.len(key) > 5 and string.sub(key, 1, 5) == '/land') then
         key = string.sub(key, 6, string.len(key))
@@ -153,6 +183,9 @@ function Monitor_CommandArrived(a)
 	if (key == 'mgr') then
 		if(isValInList(cfg.manager.operator,xuid)==-1) then return end
 		Func_Manager_Operator(a.playername)
+	end
+	if (key == 'cfg') then
+		Func_Cfg_open(a.playername)
 	end
     return false
 end
@@ -326,6 +359,16 @@ function Monitor_FormArrived(a)
 		end
 		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
 		TRS_Form.mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+	end
+	--- I-Cfg ---
+	if(TRS_Form[a.playername].icfgo==a.formid) then
+		local result=json.decode(a.selected)
+		local n=DbGetXUID(a.playername)
+		local f=cfg.manager.i18n.enabled_languages[result[2]+1]
+		playerCfg[n].language=f
+		TRS_Form[a.playername].language=f
+		iland_save()
+		mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.icfg.lang.succeed',a.playername),'<a>',f))
 	end
 end
 function Func_Buy_giveup(playername)
@@ -604,6 +647,17 @@ function Func_Manager_Operator(playername)
 													{"default":'..tostring(cfg.update_check)..',"type":"toggle","text":"'..I18N('gui.oplandmgr.checkupdate',playername)..'"}],\
 													"type":"custom_form","title":"'..I18N('gui.oplandmgr.title',playername)..'"}')
 end
+function Func_Cfg_open(playername)
+	local uuid=luaapi:GetUUID(playername)
+	local xuid=luaapi:GetXUID(playername)
+	local n=0
+	for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+		if playerCfg[xuid].language==v then n=i;break end
+	end
+	TRS_Form[playername].icfgo=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.icfg.tip',playername)..'"},\
+										{"default":'..(n-1)..',"options":'..json.encode(cfg.manager.i18n.enabled_languages)..',"type":"dropdown","text":"'..I18N('gui.icfg.setlang',playername)..'"}],\
+										"type":"custom_form","title":"'..I18N('gui.icfg.title',playername)..'"}')
+end
 -- Minecraft 监听事件
 function onDestroyBlock(e)
 	local lid=getLandFromPos(e.position,e.dimensionid)
@@ -809,6 +863,17 @@ function isTextNum(text)
 	end
 	return true
 end
+function playerGetCountry(playername)
+	local p=luaapi:createPlayerObject(luaapi:GetUUID(playername))
+	local ip=p.IpPort
+	ip=string.sub(ip,0,string.find(ip,":",0)-1)
+	local n=json.decode(tool:HttpGet('http://ip-api.com/json/'..ip..'?fields=16386'))
+	if n['status']=='fail' then 
+		return 'Mars'
+	else
+		return n['countryCode']
+	end
+end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)
 luaapi:Listen('onFormSelect', Monitor_FormArrived)
@@ -822,11 +887,13 @@ luaapi:Listen('onStartOpenChest',onStartOpenChest)
 luaapi:Listen('onDropItem',onDropItem)
 luaapi:Listen('onPickUpItem',onPickUpItem)
 luaapi:Listen('onStartOpenBarrel',onStartOpenBarrel)
-mc:setCommandDescribe('land', I18N('command.land',0))
-mc:setCommandDescribe('land new', I18N('command.land_new',0))
-mc:setCommandDescribe('land giveup', I18N('command.land_giveup',0))
-mc:setCommandDescribe('land a', I18N('command.land_a',0))
-mc:setCommandDescribe('land b', I18N('command.land_b',0))
-mc:setCommandDescribe('land buy', I18N('command.land_buy',0))
-mc:setCommandDescribe('land gui', I18N('command.land_gui',0))
+mc:setCommandDescribe('land', I18N('command.land'))
+mc:setCommandDescribe('land new', I18N('command.land_new'))
+mc:setCommandDescribe('land giveup', I18N('command.land_giveup'))
+mc:setCommandDescribe('land a', I18N('command.land_a'))
+mc:setCommandDescribe('land b', I18N('command.land_b'))
+mc:setCommandDescribe('land buy', I18N('command.land_buy'))
+mc:setCommandDescribe('land gui', I18N('command.land_gui'))
+mc:setCommandDescribe('land cfg', I18N('command.land_cfg'))
+-- other key: mgr,language(install,setDef,list)
 print('[ILand] plugin loaded! VER:' .. plugin_version)
