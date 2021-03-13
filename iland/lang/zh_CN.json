@@ -112,7 +112,7 @@
     "talk.landmgr.open": "打开领地管理器",
     "sign.listener.ownertitle": "<a>",
     "sign.listener.ownersubtitle": "欢迎回来",
-    "sign.listener.visitortitle":"§k§r 欢迎来到 §k§r",
+    "sign.listener.visitortitle":"Welcome to",
     "sign.listener.visitorsubtitle":"<a> 的领地",
     "command.land": "领地系统主命令",
     "command.land_new": "创建一个新领地",
