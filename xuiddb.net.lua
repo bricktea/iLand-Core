@@ -3,7 +3,7 @@
 ----------------------------------------
 local plugin_version = '1.0.0'
 local LibPath=luaapi.LibPATH
-if (tool:IfFile(LibPath..'json.lua') == false) then
+if (tool:IfFile(LibPath..'dkjson.lua') == false) then
     print('[XuidDB] ERR!!! json library not found, plugin is closing...')
     return false
 end
