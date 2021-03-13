@@ -671,6 +671,7 @@ function onDestroyBlock(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false	
 end
 function onAttack(e)
@@ -681,6 +682,7 @@ function onAttack(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onUseItem(e)
@@ -692,6 +694,7 @@ function onUseItem(e)
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
 	if(e.blockname=='minecraft:barrel') then return end --sbmojang
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onPlacedBlock(e)
@@ -702,6 +705,7 @@ function onPlacedBlock(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onLevelExplode(e)
@@ -718,6 +722,7 @@ function onStartOpenChest(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onPickUpItem(e)
@@ -728,6 +733,7 @@ function onPickUpItem(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onDropItem(e)
@@ -738,6 +744,7 @@ function onDropItem(e)
 	if(isValInList(cfg.manager.operator,xuid)~=-1) then return end --manager
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
+	sendTitle(e.playername,'这里是领地，你无权操作')
 	return false
 end
 function onStartOpenBarrel(e)
@@ -757,18 +764,19 @@ function onMove(e)
 	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	if TRS_Form[e.playername].nowland==lid then return end
 	local xuid=luaapi:GetXUID(e.playername)
-	local name='[NotFound]'
+	local name='!NotFound!'
 	local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
 	if lid==-1 then TRS_Form[e.playername].nowland='';return end
 	for xuid2, pname in pairs(xuiddb) do
 		if(land_owners[xuid2]~=nil and isValInList(land_owners[xuid2],landId)~=-1) then
 			name=pname
+			break
 		end
 	end
 	if land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1 then
 		sendTitle(e.playername,gsubEx(I18N('sign.listener.ownertitle',e.playername),'<a>',lid),I18N('sign.listener.ownersubtitle',e.playername))
 	else
-		sendTitle(e.playername,I18N('sign.listener.visitorsubtitle',e.playername),gsubEx(I18N('sign.listener.visitortitle',e.playername),'<a>',name))
+		sendTitle(e.playername,I18N('sign.listener.visitortitle',e.playername),gsubEx(I18N('sign.listener.visitorsubtitle',e.playername),'<a>',name))
 	end
 	TRS_Form[e.playername].nowland=lid
 end
