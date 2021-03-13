@@ -109,7 +109,7 @@ do
 		cfg.money.scoreboard_objname=cfg.scoreboard.name
 		cfg.scoreboard=nil
 		cfg.manager.i18n={}
-		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW","en_US"}
+		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
 		cfg.manager.i18n.default_language="zh_CN"
 		cfg.manager.i18n.auto_language_byIP=false
 		cfg.manager.i18n.allow_players_select_lang=true
@@ -648,6 +648,7 @@ function Func_Manager_Operator(playername)
 													"type":"custom_form","title":"'..I18N('gui.oplandmgr.title',playername)..'"}')
 end
 function Func_Cfg_open(playername)
+	if not(cfg.manager.i18n.allow_players_select_lang) then return end
 	local uuid=luaapi:GetUUID(playername)
 	local xuid=luaapi:GetXUID(playername)
 	local n=0
@@ -874,6 +875,8 @@ function playerGetCountry(playername)
 		return n['countryCode']
 	end
 end
+function isNearLand(pos,dim,nearVal)
+end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)
 luaapi:Listen('onFormSelect', Monitor_FormArrived)
@@ -894,6 +897,7 @@ mc:setCommandDescribe('land a', I18N('command.land_a'))
 mc:setCommandDescribe('land b', I18N('command.land_b'))
 mc:setCommandDescribe('land buy', I18N('command.land_buy'))
 mc:setCommandDescribe('land gui', I18N('command.land_gui'))
-mc:setCommandDescribe('land cfg', I18N('command.land_cfg'))
+if(cfg.manager.i18n.allow_players_select_lang) then
+mc:setCommandDescribe('land cfg', I18N('command.land_cfg')) end
 -- other key: mgr,language(install,setDef,list)
 print('[ILand] plugin loaded! VER:' .. plugin_version)
