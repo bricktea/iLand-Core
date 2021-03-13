@@ -105,8 +105,11 @@ do
 	if(cfg.version==107) then
 		cfg.version=110
 		cfg.money={}
+		cfg.features={}
 		cfg.money.protocol='scoreboard'
 		cfg.money.scoreboard_objname=cfg.scoreboard.name
+		cfg.features.landSign=false
+		cfg.features.frequency=10
 		cfg.scoreboard=nil
 		cfg.manager.i18n={}
 		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
@@ -620,8 +623,8 @@ function Func_Manager_Operator(playername)
 	local uuid=luaapi:GetUUID(playername)
 	local lst={}
 	local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
+	local name=I18N('gui.oplandmgr.unknownland',playername)
 	for landId, val in pairs(land_data) do
-		name=I18N('gui.oplandmgr.unknownland',playername)
 		for xuid, pname in pairs(xuiddb) do
 			if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],landId)~=-1) then
 				name=pname
@@ -631,7 +634,7 @@ function Func_Manager_Operator(playername)
 	end
 	TRS_Form[playername].lmop=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.oplandmgr.tip',playername)..'"},\
 													{"type":"label","text":"'..I18N('gui.oplandmgr.landmgr',playername)..'"},\
-													{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"'..I18N('gui.oplandmgr.select',playername)..'"},\
+													{"default":0,"options":'..json.encode(lst)..',"type":"dropdown","text":"'..I18N('gui.oplandmgr.selectland',playername)..'"},\
 													{"default":0,"steps":["'..I18N('gui.oplandmgr.donothing',playername)..'","'..I18N('gui.oplandmgr.tp',playername)..'","'..I18N('gui.oplandmgr.transfer',playername)..'","'..I18N('gui.oplandmgr.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
 													{"type":"label","text":"'..I18N('gui.oplandmgr.economy',playername)..'"},\
 													{"placeholder":"'..I18N('gui.oplandmgr.sbobject',playername)..'","default":"'..cfg.money.scoreboard_objname..'","type":"input","text":"'..I18N('gui.oplandmgr.sbobjectV',playername)..'"},\
@@ -639,7 +642,7 @@ function Func_Manager_Operator(playername)
 													{"placeholder":"","default":"'..cfg.land.player_max_lands..'","type":"input","text":"'..I18N('gui.oplandmgr.maxlands',playername)..'"},\
 													{"placeholder":"","default":"'..cfg.land.land_max_square..'","type":"input","text":"'..I18N('gui.oplandmgr.maxsqu',playername)..'"},\
 													{"placeholder":"","default":"'..cfg.land.land_min_square..'","type":"input","text":"'..I18N('gui.oplandmgr.minsqu',playername)..'"},\
-													{"type":"label","text":"'..I18N('gui.oplandmgr.',playername)..'landbuy"},\
+													{"type":"label","text":"'..I18N('gui.oplandmgr.landbuy',playername)..'"},\
 													{"placeholder":"","default":"'..cfg.land_buy.price_ground..'","type":"input","text":"'..I18N('gui.oplandmgr.bottomprice',playername)..'"},\
 													{"placeholder":"","default":"'..cfg.land_buy.price_sky..'","type":"input","text":"'..I18N('gui.oplandmgr.heightprice',playername)..'"},\
 													{"min":0,"max":100,"step":1,"default":'..tostring(cfg.land_buy.refund_rate*100)..',"type":"slider","text":"'..I18N('gui.oplandmgr.refundrate',playername)..'"},\
@@ -746,6 +749,28 @@ function onStartOpenBarrel(e)
 	if(land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1) then return end --主人
 	if(isValInList(land_data[lid].setting.share,xuid)~=-1) then return end --信任
 	mc:disconnectClient(luaapi:GetUUID(e.playername),'你再开个试试？')-- 妈的，干就完了
+end
+function onMove(e)
+	-- dimensionid|XYZ|playername
+	if TRS_Form[e.playername].timestamp==nil then TRS_Form[e.playername].timestamp=os.time() end
+	if os.time()-TRS_Form[e.playername].timestamp<=cfg.features.frequency then return end
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
+	if TRS_Form[e.playername].nowland==lid then return end
+	local xuid=luaapi:GetXUID(e.playername)
+	local name='[NotFound]'
+	local xuiddb=json.decode(tool:ReadAllText('./xuid.json'))
+	if lid==-1 then TRS_Form[e.playername].nowland='';return end
+	for xuid2, pname in pairs(xuiddb) do
+		if(land_owners[xuid2]~=nil and isValInList(land_owners[xuid2],landId)~=-1) then
+			name=pname
+		end
+	end
+	if land_owners[xuid]~=nil and isValInList(land_owners[xuid],lid)~=-1 then
+		sendTitle(e.playername,gsubEx(I18N('sign.listener.ownertitle',e.playername),'<a>',lid),I18N('sign.listener.ownersubtitle',e.playername))
+	else
+		sendTitle(e.playername,I18N('sign.listener.visitorsubtitle',e.playername),gsubEx(I18N('sign.listener.visitortitle',e.playername),'<a>',name))
+	end
+	TRS_Form[e.playername].nowland=lid
 end
 -- 拓展功能函数
 function money_add(a,b) --a=playername b=value
@@ -857,7 +882,7 @@ function isTextSpecial(text)
 		return false
 	end
 	return true
-end
+end	
 function isTextNum(text)
 	if(tonumber(text)==nil) then
 		return false
@@ -867,7 +892,7 @@ end
 function playerGetCountry(playername)
 	local p=luaapi:createPlayerObject(luaapi:GetUUID(playername))
 	local ip=p.IpPort
-	ip=string.sub(ip,0,string.find(ip,":",0)-1)
+	ip=string.sub(ip,0,string.find(ip,"|",0)-1)
 	local n=json.decode(tool:HttpGet('http://ip-api.com/json/'..ip..'?fields=16386'))
 	if n['status']=='fail' then 
 		return 'Mars'
@@ -875,7 +900,14 @@ function playerGetCountry(playername)
 		return n['countryCode']
 	end
 end
-function isNearLand(pos,dim,nearVal)
+function isNearLand(pos,dim,nearVal) end
+function sendTitle(playername,title,subtitle) -- 填写subTitle为大标题模式，否则为actionbar模式
+	if subtitle==nil then
+		mc:runcmd('title "' .. playername .. '" actionbar '..title)
+	else
+		mc:runcmd('title "' .. playername .. '" subtitle '..subtitle)
+		mc:runcmd('title "' .. playername .. '" title '..title)
+	end
 end
 -- 注册监听
 luaapi:Listen('onInputCommand', Monitor_CommandArrived)
@@ -890,6 +922,8 @@ luaapi:Listen('onStartOpenChest',onStartOpenChest)
 luaapi:Listen('onDropItem',onDropItem)
 luaapi:Listen('onPickUpItem',onPickUpItem)
 luaapi:Listen('onStartOpenBarrel',onStartOpenBarrel)
+if(cfg.features.landSign) then
+luaapi:Listen('onMove',onMove) end
 mc:setCommandDescribe('land', I18N('command.land'))
 mc:setCommandDescribe('land new', I18N('command.land_new'))
 mc:setCommandDescribe('land giveup', I18N('command.land_giveup'))
