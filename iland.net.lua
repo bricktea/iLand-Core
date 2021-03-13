@@ -242,11 +242,11 @@ function Monitor_FormArrived(a)
 			local x=DbGetXUID(TRS_Form[a.playername].playerList[result[3]+1])
 			local n=#land_data[lid].setting.share+1
 			if(luaapi:GetXUID(a.playername)==x) then
-				mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtrust.cantaddown',a.playername))
+				sendTitle(a.playername,I18N('title.landtrust.cantaddown',a.playername))
 				return
 			end
 			if(isValInList(land_data[lid].setting.share,x)~=-1) then
-				mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtrust.alreadyexists',a.playername))
+				sendTitle(a.playername,I18N('title.landtrust.alreadyexists',a.playername))
 				return
 			end
 			land_data[lid].setting.share[n]=x
@@ -265,7 +265,7 @@ function Monitor_FormArrived(a)
 	if(TRS_Form[a.playername].ltag==a.formid) then
 		local result=json.decode(a.selected)
 		if(isTextSpecial(result[2])==true) then --防止有nt玩家搞事
-			mc:runcmd('title "' .. a.playername .. '" actionbar NMSL')
+			sendTitle(a.playername,'NMSL')
 			return
 		end
 		local btag=string.find(lid,'_')
@@ -291,7 +291,7 @@ function Monitor_FormArrived(a)
 		local doi=true
 		if isTextSpecial(result[6]) then doi=false end
 		if not(isTextNum(result[8])) or not(isTextNum(result[9])) or not(isTextNum(result[10])) or not(isTextNum(result[12])) or not(isTextNum(result[13])) then doi=false end
-		if(doi==false) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.oplandmgr.invalidchar',a.playername));return end
+		if(doi==false) then sendTitle(a.playername,I18N('title.oplandmgr.invalidchar',a.playername));return end
 		cfg.land.player_max_lands=tonumber(result[8])
 		cfg.land.land_max_square=tonumber(result[9])
 		cfg.land.land_min_square=tonumber(result[10])
@@ -308,11 +308,11 @@ function Monitor_FormArrived(a)
 			nid=nid+1
 		end
 	
-		if(id=='') then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('talk.land.unselected',a.playername));return end
+		if(id=='') then sendTitle(a.playername,I18N('talk.land.unselected',a.playername));return end
 		-- 1=teleport 2=transfer 3=delete
 		if(result[4]==1) then
 			luaapi:teleport(uuid,land_data[id].range.start_x,land_data[id].range.start_y,land_data[id].range.start_z,land_data[id].range.dim)
-			mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.oplandmgr.transfered',a.playername),'<a>',id))
+			sendTitle(a.playername,gsubEx(I18N('title.oplandmgr.transfered',a.playername),'<a>',id))
 		end
 		if(result[4]==2) then
 			TRS_Form[a.playername].playerList=getAllPlayersList()
@@ -330,7 +330,7 @@ function Monitor_FormArrived(a)
 				end
 			end
 			iland_save()
-			mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.land.deleted',a.playername),'<a>',id))
+			sendTitle(a.playername,gsubEx(I18N('title.land.deleted',a.playername),'<a>',id))
 		end
 	end
 	--- BackTo Menu => OPMGR/LandMGR ---
@@ -344,7 +344,7 @@ function Monitor_FormArrived(a)
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
 		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		if(go==xuid) then mc:runcmd('title "' .. a.playername .. '" actionbar '..I18N('title.landtransfer.canttoown',a.playername));return end
+		if(go==xuid) then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
 		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
 		table.insert(land_owners[go],#land_owners[go]+1,lid)
 		iland_save()
@@ -371,22 +371,22 @@ function Monitor_FormArrived(a)
 		playerCfg[n].language=f
 		TRS_Form[a.playername].language=f
 		iland_save()
-		mc:runcmd('title "' .. a.playername .. '" actionbar '..gsubEx(I18N('title.icfg.lang.succeed',a.playername),'<a>',f))
+		sendTitle(a.playername,gsubEx(I18N('title.icfg.lang.succeed',a.playername),'<a>',f))
 	end
 end
 function Func_Buy_giveup(playername)
     if (newLand[playername]==nil) then
-        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.giveup.failed',playername))
+        sendTitle(playername,I18N('title.giveup.failed',playername))
         return
     end
 	newLand[playername]=nil
-	mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.giveup.succeed',playername))
+	sendTitle(playername,I18N('title.giveup.succeed',playername))
 end
 function Func_Buy_createOrder(playername)
     local uuid = luaapi:GetUUID(playername)
 	local xuid = luaapi:GetXUID(playername)
     if (newLand[playername]==nil or newLand[playername].step ~= 2) then
-        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.failbystep',playername))
+		sendTitle(playername,I18N('title.createorder.failbystep',playername))
         return
     end
     local length = math.abs(newLand[playername].posA.x - newLand[playername].posB.x)
@@ -396,17 +396,17 @@ function Func_Buy_createOrder(playername)
     local squ = length * width
 	--- 违规圈地判断
 	if(squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1) then
-		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toobig',playername))
+		sendTitle(playername,I18N('title.createorder.toobig',playername))
 		newLand[playername].step=0
 		return
 	end
 	if(squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1) then
-		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toosmall',playername))
+		sendTitle(playername,I18N('title.createorder.toosmall',playername))
 		newLand[playername].step=0
 		return
 	end
-	if(height<3) then
-		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.toolow',playername))
+	if(height<4) then
+		sendTitle(playername,I18N('title.createorder.toolow',playername))
 		newLand[playername].step=0
 		return
 	end
@@ -417,7 +417,7 @@ function Func_Buy_createOrder(playername)
 			local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
 			local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
 			if(isPosInCube(edge[i],s_pos,e_pos)==true) then
-				mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.collision',playername))
+				sendTitle(playername,I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
 				return
 			end
@@ -436,7 +436,7 @@ function Func_Buy_createOrder(playername)
 		edge=cubeGetEdge(s_pos,e_pos)
 		for i=1,#edge do
 			if(isPosInCube(edge[i],newLand[playername].posA,newLand[playername].posB)==true) then
-				mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.createorder.collision',playername))
+				sendTitle(playername,I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
 				return
 			end
@@ -449,12 +449,12 @@ function Func_Buy_createOrder(playername)
 end
 function Func_Buy_selectRange(playername, xyz, dim, mode)
     if (newLand[playername]==nil) then
-        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.nolic',playername))
+		sendTitle(playername,I18N('title.selectrange.nolic',playername))
         return
     end
     if (mode == 0) then --posA
         if (mode ~= newLand[playername].step) then
-            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbystep',playername))
+			sendTitle(playername,I18N('title.selectrange.failbystep',playername))
             return
         end
 		newLand[playername].dim = dim
@@ -462,38 +462,38 @@ function Func_Buy_selectRange(playername, xyz, dim, mode)
 		newLand[playername].posA.x=math.floor(newLand[playername].posA.x) --省函数...
 		newLand[playername].posA.y=math.floor(newLand[playername].posA.y)-2
 		newLand[playername].posA.z=math.floor(newLand[playername].posA.z)
-		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posA.x .. '\nY=' .. newLand[playername].posA.y .. '\nZ=' .. newLand[playername].posA.z ..'\n'..I18N('title.selectrange.spointb',playername))
+		sendTitle(playername,'DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posA.x .. '\nY=' .. newLand[playername].posA.y .. '\nZ=' .. newLand[playername].posA.z ..'\n'..I18N('title.selectrange.spointb',playername))
         newLand[playername].step = 1
     end
     if (mode == 1) then --posB
         if (mode ~= newLand[playername].step) then
-            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbystep',playername))
+			sendTitle(playername,I18N('title.selectrange.failbystep',playername))
             return
         end
         if (dim ~= newLand[playername].dim) then
-            mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.selectrange.failbycdim',playername))
+			sendTitle(playername,I18N('title.selectrange.failbycdim',playername))
             return
         end
 		newLand[playername].posB = xyz
 		newLand[playername].posB.x=math.floor(newLand[playername].posB.x)
 		newLand[playername].posB.y=math.floor(newLand[playername].posB.y)-2
 		newLand[playername].posB.z=math.floor(newLand[playername].posB.z)
-		mc:runcmd('title "' ..playername .. '" actionbar DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posB.x .. '\nY=' .. newLand[playername].posB.y .. '\nZ=' .. newLand[playername].posB.z ..'\n'..I18N('title.selectrange.bebuy',playername))
-        newLand[playername].step = 2
+        sendTitle(playername,'DIM='..newLand[playername].dim..'\nX=' .. newLand[playername].posB.x .. '\nY=' .. newLand[playername].posB.y .. '\nZ=' .. newLand[playername].posB.z ..'\n'..I18N('title.selectrange.bebuy',playername))
+		newLand[playername].step = 2
     end
 end
 function Func_Buy_getLicense(playername)
 	if (newLand[playername]~=nil) then
-	    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.alreadyexists',playername))
+		sendTitle(playername,I18N('title.getlicense.alreadyexists',playername))
         return
 	end
 	if(land_owners[luaapi:GetXUID(playername)]~=nil and isValInList(cfg.manager.operator,luaapi:GetXUID(playername))==-1) then
 		if(#land_owners[luaapi:GetXUID(playername)]>cfg.land.player_max_lands) then
-			mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.limit',playername))
+			sendTitle(playername,I18N('title.getlicense.limit',playername))
 			return
 		end
 	end
-    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.getlicense.succeed',playername))
+	sendTitle(playername,I18N('title.getlicense.succeed',playername))
 	newLand[playername]={}
 	newLand[playername].step=0
 end
@@ -502,12 +502,12 @@ function Func_Buy_callback(playername)
 	local xuid = luaapi:GetXUID(playername)
     local player_credits = money_get(playername)
     if (newLand[playername].landprice > player_credits) then
-        mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.moneynotenough',playername))
+		sendTitle(playername,I18N('title.buyland.moneynotenough',playername))
         return
     else
         money_del(playername,newLand[playername].landprice)
     end
-    mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.buyland.succeed',playername))
+	sendTitle(playername,I18N('title.buyland.succeed',playername))
 	math.randomseed(os.time())
 	landId='id'..tostring(math.random(100000,999999))
 	land_data[landId]={}
@@ -550,11 +550,11 @@ function Func_Manager_open(playername)
 	end
 	if(land_owners[xuid]~=nil) then
 		if(#land_owners[xuid]==0) then
-			mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.landmgr.failed',playername))
+			sendTitle(playername,I18N('title.landmgr.failed',playername))
 			return
 		end
 	else
-		mc:runcmd('title "' .. playername .. '" actionbar '..I18N('title.landmgr.failed',playername))
+		sendTitle(playername,I18N('title.landmgr.failed',playername))
 		return
 	end
 	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcomeText..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
@@ -905,6 +905,7 @@ function sendTitle(playername,title,subtitle) -- 填写subTitle为大标题模�
 	if subtitle==nil then
 		mc:runcmd('title "' .. playername .. '" actionbar '..title)
 	else
+		mc:runcmd('title "' .. playername .. '" times 20 25 20') --想改的自己改下
 		mc:runcmd('title "' .. playername .. '" subtitle '..subtitle)
 		mc:runcmd('title "' .. playername .. '" title '..title)
 	end
