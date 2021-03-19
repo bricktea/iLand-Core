@@ -211,7 +211,7 @@ function Monitor_FormArrived(a)
 		if(id=='') then sendTitle(a.playername,I18N('talk.land.unselected',a.playername));return end
 		-- 1=teleport 2=transfer 3=delete
 		if(result[4]==1) then
-			luaapi:teleport(uuid,land_data[id].range.start_x,land_data[id].range.start_y,land_data[id].range.start_z,land_data[id].range.dim)
+			luaapi:teleport(uuid,land_data[id].range.start_pos[1],land_data[id].range.start_pos[2],land_data[id].range.start_pos[3],land_data[id].range.dim)
 			sendTitle(a.playername,gsubEx(I18N('title.oplandmgr.transfered',a.playername),'<a>',id))
 		end
 		if(result[4]==2) then
@@ -314,8 +314,8 @@ function Func_Buy_createOrder(playername)
 	for i=1,#edge do
 		for landId, val in pairs(land_data) do
 			if(land_data[landId].range.dim~=newLand[playername].dim) then goto JUMPOUT_1 end --维度不同直接跳过
-			local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
-			local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
+			local s_pos={};s_pos.x=land_data[landId].range.start_pos[1];s_pos.y=land_data[landId].range.start_pos[2];s_pos.z=land_data[landId].range.start_pos[3]
+			local e_pos={};e_pos.x=land_data[landId].range.end_pos[1];e_pos.y=land_data[landId].range.end_pos[2];e_pos.z=land_data[landId].range.end_pos[3]
 			if(isPosInCube(edge[i],s_pos,e_pos)==true) then
 				sendTitle(playername,I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
@@ -327,12 +327,12 @@ function Func_Buy_createOrder(playername)
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
 		if(land_data[landId].range.dim~=newLand[playername].dim) then goto JUMPOUT_2 end --维度不同直接跳过
 		s_pos={};e_pos={}
-		s_pos.x=land_data[landId].range.start_x
-		s_pos.y=land_data[landId].range.start_y
-		s_pos.z=land_data[landId].range.start_z
-		e_pos.x=land_data[landId].range.end_x
-		e_pos.y=land_data[landId].range.end_y
-		e_pos.z=land_data[landId].range.end_z
+		s_pos.x=land_data[landId].range.start_pos[1]
+		s_pos.y=land_data[landId].range.start_pos[2]
+		s_pos.z=land_data[landId].range.start_pos[3]
+		e_pos.x=land_data[landId].range.end_pos[1]
+		e_pos.y=land_data[landId].range.end_pos[2]
+		e_pos.z=land_data[landId].range.end_pos[3]
 		edge=cubeGetEdge(s_pos,e_pos)
 		for i=1,#edge do
 			if(isPosInCube(edge[i],newLand[playername].posA,newLand[playername].posB)==true) then
@@ -409,16 +409,18 @@ function Func_Buy_callback(playername)
     end
 	sendTitle(playername,I18N('title.buyland.succeed',playername))
 	math.randomseed(os.time())
-	landId='id'..tostring(math.random(100000,999999))
+	local landId=getGuid()
 	land_data[landId]={}
 	land_data[landId].range={}
 	land_data[landId].setting={}
-	land_data[landId].range.start_x=newLand[playername].posA.x
-	land_data[landId].range.start_z=newLand[playername].posA.z
-	land_data[landId].range.start_y=newLand[playername].posA.y
-	land_data[landId].range.end_x=newLand[playername].posB.x
-	land_data[landId].range.end_z=newLand[playername].posB.z
-	land_data[landId].range.end_y=newLand[playername].posB.y
+	land_data[landId].range.start_pos={}
+	land_data[landId].range.end_pos={}
+	land_data[landId].range.start_pos[1]=newLand[playername].posA.x
+	land_data[landId].range.start_pos[2]=newLand[playername].posA.y
+	land_data[landId].range.start_pos[3]=newLand[playername].posA.z
+	land_data[landId].range.end_pos[1]=newLand[playername].posB.x
+	land_data[landId].range.end_pos[2]=newLand[playername].posB.y
+	land_data[landId].range.end_pos[3]=newLand[playername].posB.z
 	land_data[landId].range.dim=newLand[playername].dim
 	land_data[landId].setting.share={}
 	land_data[landId].setting.allow_destory=false
@@ -430,6 +432,7 @@ function Func_Buy_callback(playername)
 	land_data[landId].setting.allow_pickupitem=false
 	land_data[landId].setting.allow_dropitem=true
 	land_data[landId].setting.allow_use_item=true
+	land_data[landId].setting.nickname=''
 	iland_save()
 	if(land_owners[xuid]==nil) then
 		land_owners[xuid]={}
@@ -467,12 +470,12 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 	local result=json.decode(b)
 	TRS_Form[a].landid=land_owners[xuid][result[3]+1] --对应玩家正在操作的 landid
 	if(result[2]==0) then --查看领地信息
-	    local length = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x)
-		local width = math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
-		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
+	    local length = math.abs(land_data[TRS_Form[a].landid].range.start_pos[1] - land_data[TRS_Form[a].landid].range.end_pos[1])
+		local height = math.abs(land_data[TRS_Form[a].landid].range.start_pos[2] - land_data[TRS_Form[a].landid].range.end_pos[2])
+		local width = math.abs(land_data[TRS_Form[a].landid].range.start_pos[3] - land_data[TRS_Form[a].landid].range.end_pos[3])
 		local vol = length * width * height
 		local squ = length * width
-		TRS_Form[a].mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_x,'<c>',land_data[TRS_Form[a].landid].range.start_y,'<d>',land_data[TRS_Form[a].landid].range.start_z,'<e>',land_data[TRS_Form[a].landid].range.end_x,'<f>',land_data[TRS_Form[a].landid].range.end_y,'<g>',land_data[TRS_Form[a].landid].range.end_z,'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
+		TRS_Form[a].mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_pos[1],'<c>',land_data[TRS_Form[a].landid].range.start_pos[2],'<d>',land_data[TRS_Form[a].landid].range.start_pos[3],'<e>',land_data[TRS_Form[a].landid].range.end_pos[1],'<f>',land_data[TRS_Form[a].landid].range.end_pos[2],'<g>',land_data[TRS_Form[a].landid].range.end_pos[3],'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
 	end
 	if(result[2]==1) then --编辑领地权限
 		local d=land_data[TRS_Form[a].landid].setting
@@ -513,8 +516,8 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		TRS_Form[a].ltsf=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landtransfer.tip',a)..'"},{"type":"dropdown","text":"'..I18N('talk.land.selecttargetplayer',a)..'","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'}],"type":"custom_form","title":"'..I18N('gui.landtransfer.title',a)..'"}')
 	end
 	if(result[2]==5) then --删除领地
-		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
-		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
+		local height = math.abs(land_data[TRS_Form[a].landid].range.start_pos[2] - land_data[TRS_Form[a].landid].range.end_pos[2])
+		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_pos[1] - land_data[TRS_Form[a].landid].range.end_pos[1]) * math.abs(land_data[TRS_Form[a].landid].range.start_pos[3] - land_data[TRS_Form[a].landid].range.end_pos[3])
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
 		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content'),'<a>',TRS_Form[a].landvalue,'<b>',I18N('talk.credit_name',a)),I18N('gui.general.yes',a),I18N('gui.general.cancel',a))
 	end
@@ -693,8 +696,8 @@ end
 function getLandFromPos(pos,dim)
 	for landId, val in pairs(land_data) do
 		if(land_data[landId].range.dim~=dim) then goto JUMPOUT_4 end
-		local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
-		local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
+		local s_pos={};s_pos.x=land_data[landId].range.start_pos[1];s_pos.y=land_data[landId].range.start_pos[2];s_pos.z=land_data[landId].range.start_pos[3]
+		local e_pos={};e_pos.x=land_data[landId].range.end_pos[1];e_pos.y=land_data[landId].range.end_pos[2];e_pos.z=land_data[landId].range.end_pos[3]
 		if(isPosInCube(pos,s_pos,e_pos)==true) then
 			return landId
 		end
