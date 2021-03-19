@@ -3,7 +3,7 @@
 --       未经许可 禁止盈利性用途      --
 ----------------------------------------
 -- 插件版本，请勿修改
-local plugin_version = '1.1.0'
+local plugin_version = '1.1.1'
 local libPath=luaapi.LibPATH
 local luaPath=luaapi.LuaPATH
 local latest_version = plugin_version
@@ -29,110 +29,10 @@ cfg = json.decode(tool:ReadAllText(luaPath..'iland\\config.json'))
 playerCfg = json.decode(tool:ReadAllText(luaPath..'iland\\players.json'))
 land_data = json.decode(tool:ReadAllText(luaPath..'iland\\data.json'))
 land_owners = json.decode(tool:ReadAllText(luaPath..'iland\\owners.json'))
--- 功能需要提前load的函数
-function iland_save()
-	local a=tool:WorkingPath()
-	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
-	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
-	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
-	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
-end
-function I18N(a,b) --a=key b=playername
-	-- TRS_Form[playerName].language | 临时
-	-- playerCfg[xuid].language      | 永久
-	if b==nil then return i18n_data[cfg.manager.i18n.default_language][a] end
-	-- ↑ Server ; ↓ Player
-	local xuid=luaapi:GetXUID(b)
-	if TRS_Form[b].language==nil then
-		if(playerCfg[xuid].language~=nil) then
-			TRS_Form[b].language=playerCfg[xuid].language
-			goto HOMO1
-		end
-		-- ↑ Custom ; ↓ Auto
-		local f=playerGetCountry(b)
-		if(cfg.manager.i18n.auto_language_byIP) then
-			for i,v in pairs(cfg.manager.i18n.enabled_languages) do
-				for n in string.gmatch(i18n_data[v]['COUNTRY_CODE'], "%S+") do
-					if n==f then TRS_Form[b].language=v;goto HOMO1 end
-				end
-			end 
-		end
-		TRS_Form[b].language=cfg.manager.i18n.default_language
-		:: HOMO1 ::
-	end
-	return i18n_data[TRS_Form[b].language][a]
-end
-function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
-	local n=string.gsub(m,a,a1)
-	if b~=nil then n=string.gsub(n,b,b1) else return n end
-	if c~=nil then n=string.gsub(n,c,c1) else return n end
-	if d~=nil then n=string.gsub(n,d,d1) else return n end
-	if e~=nil then n=string.gsub(n,e,e1) else return n end
-	if f~=nil then n=string.gsub(n,f,f1) else return n end
-	if g~=nil then n=string.gsub(n,g,g1) else return n end
-	if h~=nil then n=string.gsub(n,h,h1) else return n end
-	if i~=nil then n=string.gsub(n,i,i1) else return n end
-	if j~=nil then n=string.gsub(n,j,j1) else return n end
-	if k~=nil then n=string.gsub(n,k,k1) else return n end
-	if l~=nil then n=string.gsub(n,l,l1) else return n end
-	return n
-end
--- update configure file
-do
-	if(cfg.version==nil) then --version<1.0.4
-		cfg.version={};cfg.version=103
-		cfg.manager.operator={}
-		iland_save()
-	end
-	if(cfg.version==103) then
-		cfg.version=106
-		cfg.manager.allow_op_delete_land=nil
-		for landId, val in pairs(land_data) do
-			if(land_data[landId].range==nil) then
-				land_data[landId]=nil
-			end
-		end
-		iland_save()
-	end
-	if(cfg.version==106) then
-		cfg.version=107
-		cfg.update_check=true
-		for landId, val in pairs(land_data) do
-			land_data[landId].setting.allow_open_barrel=false
-		end
-		iland_save()
-	end
-	if(cfg.version==107) then
-		cfg.version=110
-		cfg.money={}
-		cfg.features={}
-		cfg.money.protocol='scoreboard'
-		cfg.money.scoreboard_objname=cfg.scoreboard.name
-		cfg.features.landSign=false
-		cfg.features.frequency=10
-		cfg.scoreboard=nil
-		cfg.manager.i18n={}
-		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
-		cfg.manager.i18n.default_language="zh_CN"
-		cfg.manager.i18n.auto_language_byIP=false
-		cfg.manager.i18n.allow_players_select_lang=true
-		iland_save()
-	end
-end
 -- load language files
 for i,v in pairs(cfg.manager.i18n.enabled_languages) do
 	if(not(tool:IfFile(luaPath..'iland\\lang\\'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
 	i18n_data[v]=json.decode(tool:ReadAllText(luaPath..'iland\\lang\\'..v..'.json'))
-end
--- Check Update
-if(cfg.update_check) then
-	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version')
-	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
-	if(latest_version=='') then latest_version=plugin_version end
-	if(plugin_version~=latest_version) then
-		print('[ILand] '..gsubEx(I18N('console.newversion'),'<a>',latest_version))
-		print('[ILand] '..I18N('console.update'))
-	end
 end
 -- Functions
 function Event_PlayerJoin(a)
@@ -916,6 +816,155 @@ function sendTitle(playername,title,subtitle) -- 填写subTitle为大标题模�
 		mc:runcmd('title "' .. playername .. '" times 20 25 20') --想改的自己改下
 		mc:runcmd('title "' .. playername .. '" subtitle '..subtitle)
 		mc:runcmd('title "' .. playername .. '" title '..title)
+	end
+end
+function getGuid() --来自网络
+    local seed={'e','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}
+    local tb={}
+    for i=1,32 do
+        table.insert(tb,seed[math.random(1,16)])
+    end
+    local sid=table.concat(tb)
+    return string.format('%s-%s-%s-%s-%s',
+        string.sub(sid,1,8),
+        string.sub(sid,9,12),
+        string.sub(sid,13,16),
+        string.sub(sid,17,20),
+        string.sub(sid,21,32)
+    )
+end
+function iland_save()
+	local a=tool:WorkingPath()
+	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
+	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
+end
+function I18N(a,b) --a=key b=playername
+	-- TRS_Form[playerName].language | 临时
+	-- playerCfg[xuid].language      | 永久
+	if b==nil then return i18n_data[cfg.manager.i18n.default_language][a] end
+	-- ↑ Server ; ↓ Player
+	local xuid=luaapi:GetXUID(b)
+	if TRS_Form[b].language==nil then
+		if(playerCfg[xuid].language~=nil) then
+			TRS_Form[b].language=playerCfg[xuid].language
+			goto HOMO1
+		end
+		-- ↑ Custom ; ↓ Auto
+		local f=playerGetCountry(b)
+		if(cfg.manager.i18n.auto_language_byIP) then
+			for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+				for n in string.gmatch(i18n_data[v]['COUNTRY_CODE'], "%S+") do
+					if n==f then TRS_Form[b].language=v;goto HOMO1 end
+				end
+			end 
+		end
+		TRS_Form[b].language=cfg.manager.i18n.default_language
+		:: HOMO1 ::
+	end
+	return i18n_data[TRS_Form[b].language][a]
+end
+function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
+	local n=string.gsub(m,a,a1)
+	if b~=nil then n=string.gsub(n,b,b1) else return n end
+	if c~=nil then n=string.gsub(n,c,c1) else return n end
+	if d~=nil then n=string.gsub(n,d,d1) else return n end
+	if e~=nil then n=string.gsub(n,e,e1) else return n end
+	if f~=nil then n=string.gsub(n,f,f1) else return n end
+	if g~=nil then n=string.gsub(n,g,g1) else return n end
+	if h~=nil then n=string.gsub(n,h,h1) else return n end
+	if i~=nil then n=string.gsub(n,i,i1) else return n end
+	if j~=nil then n=string.gsub(n,j,j1) else return n end
+	if k~=nil then n=string.gsub(n,k,k1) else return n end
+	if l~=nil then n=string.gsub(n,l,l1) else return n end
+	return n
+end
+-- 检查更新
+if(cfg.update_check) then
+	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version')
+	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
+	if(latest_version=='') then latest_version=plugin_version end
+	if(plugin_version~=latest_version) then
+		print('[ILand] '..gsubEx(I18N('console.newversion'),'<a>',latest_version))
+		print('[ILand] '..I18N('console.update'))
+	end
+end
+-- 自动升级配置文件
+do
+	if(cfg.version==nil) then --version<1.0.4
+		cfg.version={};cfg.version=103
+		cfg.manager.operator={}
+		iland_save()
+	end
+	if(cfg.version==103) then
+		cfg.version=106
+		cfg.manager.allow_op_delete_land=nil
+		for landId, val in pairs(land_data) do
+			if(land_data[landId].range==nil) then
+				land_data[landId]=nil
+			end
+		end
+		iland_save()
+	end
+	if(cfg.version==106) then
+		cfg.version=107
+		cfg.update_check=true
+		for landId, val in pairs(land_data) do
+			land_data[landId].setting.allow_open_barrel=false
+		end
+		iland_save()
+	end
+	if(cfg.version==107) then
+		cfg.version=110
+		cfg.money={}
+		cfg.features={}
+		cfg.money.protocol='scoreboard'
+		cfg.money.scoreboard_objname=cfg.scoreboard.name
+		cfg.features.landSign=false
+		cfg.features.frequency=10
+		cfg.scoreboard=nil
+		cfg.manager.i18n={}
+		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
+		cfg.manager.i18n.default_language="zh_CN"
+		cfg.manager.i18n.auto_language_byIP=false
+		cfg.manager.i18n.allow_players_select_lang=true
+		iland_save()
+	end
+	if(cfg.version==110) then
+		--cfg.version=111
+		for i,v in pairs(land_data) do
+			land_data[i].setting.hpos={}
+			if string.find(i,'_',0) ~= nil then 
+				land_data[i].setting.nickname=string.sub(i,string.find(i,'_',0)+1,string.len(i))
+			else
+				land_data[i].setting.nickname=''
+			end
+			land_data[i].range.start_pos={};land_data[i].range.end_pos={}
+			land_data[i].range.start_pos[1]=land_data[i].range.start_x
+			land_data[i].range.start_pos[2]=land_data[i].range.start_y
+			land_data[i].range.start_pos[3]=land_data[i].range.start_z
+			land_data[i].range.end_pos[1]=land_data[i].range.end_x
+			land_data[i].range.end_pos[2]=land_data[i].range.end_y
+			land_data[i].range.end_pos[3]=land_data[i].range.end_z
+			land_data[i].range.start_x=nil
+			land_data[i].range.start_y=nil
+			land_data[i].range.start_z=nil
+			land_data[i].range.end_x=nil
+			land_data[i].range.end_y=nil
+			land_data[i].range.end_z=nil
+			local guid=getGuid()
+			for ownXuid,lands in pairs(land_owners) do
+				local nmd=isValInList(lands,i)
+				if(nmd~=-1) then
+					table.remove(land_owners[ownXuid],nmd)
+				end
+				table.insert(land_owners[ownXuid],#land_owners[ownXuid]+1,guid)
+			end
+			land_data[guid]=land_data[i]
+			land_data[i]=nil
+		end
+		iland_save()
 	end
 end
 -- 注册监听
