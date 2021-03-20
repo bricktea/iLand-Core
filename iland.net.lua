@@ -51,7 +51,7 @@ function Monitor_CommandArrived(a)
 	local xuid = luaapi:GetXUID(a.playername)
     local key = string.gsub(a.cmd, ' ', '', 1)
 	local land_count = ''
-    if (string.len(key) == 5 and key == '/land') then
+    if (string.len(key)==5 and key=='/land') then
 		if(land_owners[xuid]==nil) then
 			land_count='0'
 		else
@@ -95,9 +95,8 @@ function Monitor_CommandArrived(a)
 end
 function Monitor_FormArrived(a)
 	mc:releaseForm(a.formid)
-	if(a.selected=='null') then return end
-	if(a.selected=='false') then return end
-	local xuid=luaapi:GetXUID(a.playername)
+	if (a.selected=='null' or a.selected=='false') then return end
+	local xuid=DbGetXUID(a.playername)
 	local uuid=luaapi:GetUUID(a.playername)
 	local lid=TRS_Form[a.playername].landid --正在操作的landid
 	--- Buy Land ---
@@ -129,9 +128,7 @@ function Monitor_FormArrived(a)
 	end
 	--- Del Land ---
 	if(TRS_Form[a.playername].delland==a.formid) then
-		land_data[lid]=nil
-		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
-		iland_save()
+		ILAPI:removeLand(lid)
 		money_add(a.playername,TRS_Form[a.playername].landvalue)
 		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
@@ -140,30 +137,19 @@ function Monitor_FormArrived(a)
 		-- [1]null [2]true [3]0 [4]false [5]0
 		local result=json.decode(a.selected)
 		if(result[2]==true) then
-			local x=DbGetXUID(TRS_Form[a.playername].playerList[result[3]+1])
-			local n=#land_data[lid].setting.share+1
-			if(luaapi:GetXUID(a.playername)==x) then
-				sendTitle(a.playername,I18N('title.landtrust.cantaddown',a.playername))
-				return
-			end
-			if(isValInList(land_data[lid].setting.share,x)~=-1) then
-				sendTitle(a.playername,I18N('title.landtrust.alreadyexists',a.playername))
-				return
-			end
-			land_data[lid].setting.share[n]=x
-			iland_save()
+			local code=ILAPI:addLandTrust(lid,TRS_Form[a.playername].playerList[result[3]+1])
+			if code==-1 then sendTitle(a.playername,I18N('title.landtrust.alreadyexists',a.playername));return end
+			if code==-2 then sendTitle(a.playername,I18N('title.landtrust.cantaddown',a.playername));return end
 			if(result[4]~=true) then TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)) end
 		end
 		if(result[4]==true) then
-			if(#land_data[lid].setting.share==0) then return end 
-			local x=land_data[lid].setting.share[result[5]+1]
-			table.remove(land_data[lid].setting.share,isValInList(land_data[lid].setting.share,x))
-			iland_save()
+			ILAPI:delLandTrust(lid,getPlayernameFromXUID(land_data[lid].setting.share[result[5]+1]))
 			TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 		end
 	end
 	--- Land Tag ---
 	if(TRS_Form[a.playername].ltag==a.formid) then
+		-- [!]失效，待修改
 		local result=json.decode(a.selected)
 		if(isTextSpecial(result[2])==true) then --防止有nt玩家搞事
 			sendTitle(a.playername,'NMSL')
@@ -244,25 +230,17 @@ function Monitor_FormArrived(a)
 	--- Land Transfer ---
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
-		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		if(go==xuid) then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
-		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
-		table.insert(land_owners[go],#land_owners[go]+1,lid)
-		iland_save()
-		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		local code==ILAPI:transferLand(lid,(trPlayer))
+		if code==-1 then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',trPlayer),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP ForceTransfer Land ---
 	if(TRS_Form[a.playername].opftland==a.formid) then
 		local result=json.decode(a.selected)
-		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		for ownerxuid,val in pairs(land_owners) do
-			local nmsl=isValInList(val,TRS_Form[a.playername].betsflid)
-			if(nmsl~=-1) then
-				table.remove(land_owners[ownerxuid],nmsl)
-			end
-		end
-		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
-		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		ILAPI:transferLand(TRS_Form[a.playername].betsflid,trPlayer)
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',trPlayer,I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- I-Cfg ---
 	if(TRS_Form[a.playername].icfgo==a.formid) then
