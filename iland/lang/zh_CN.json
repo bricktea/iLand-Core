@@ -51,7 +51,6 @@
     "gui.landmgr.landperm.options.openbarrel": "允许开桶",
     "gui.landmgr.landperm.editevent": "编辑领地内可以发生的事件",
     "gui.landmgr.landperm.options.exploding": "允许爆炸",
-    "gui.landmgr.nickname.null": "未命名领地",
     "gui.landtrust.tip": "打开欲操作项的开关，完成后提交。",
     "gui.landtrust.addtrust": "添加受信任玩家\n受信任玩家将拥有所有领地权限，但不能进行权限编辑或删除领地。",
     "gui.landtrust.rmtrust": "删除受信任玩家",

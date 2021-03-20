@@ -3,14 +3,13 @@
 --       未经许可 禁止盈利性用途      --
 ----------------------------------------
 -- 插件版本，请勿修改
-local plugin_version = '1.1.1'
+local plugin_version = '1.1.0'
 local libPath=luaapi.LibPATH
 local luaPath=luaapi.LuaPATH
 local latest_version = plugin_version
 local newLand = {}
 local TRS_Form={}
 local i18n_data={}
-ILAPI={}
 -- Check File and Load Library
 if (tool:IfFile(libPath..'dkjson.lua') == false) then
     print('[ILand] ERR!!! json library not found, plugin is closing...')
@@ -30,10 +29,110 @@ cfg = json.decode(tool:ReadAllText(luaPath..'iland\\config.json'))
 playerCfg = json.decode(tool:ReadAllText(luaPath..'iland\\players.json'))
 land_data = json.decode(tool:ReadAllText(luaPath..'iland\\data.json'))
 land_owners = json.decode(tool:ReadAllText(luaPath..'iland\\owners.json'))
+-- 功能需要提前load的函数
+function iland_save()
+	local a=tool:WorkingPath()
+	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
+	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
+	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
+end
+function I18N(a,b) --a=key b=playername
+	-- TRS_Form[playerName].language | 临时
+	-- playerCfg[xuid].language      | 永久
+	if b==nil then return i18n_data[cfg.manager.i18n.default_language][a] end
+	-- ↑ Server ; ↓ Player
+	local xuid=luaapi:GetXUID(b)
+	if TRS_Form[b].language==nil then
+		if(playerCfg[xuid].language~=nil) then
+			TRS_Form[b].language=playerCfg[xuid].language
+			goto HOMO1
+		end
+		-- ↑ Custom ; ↓ Auto
+		local f=playerGetCountry(b)
+		if(cfg.manager.i18n.auto_language_byIP) then
+			for i,v in pairs(cfg.manager.i18n.enabled_languages) do
+				for n in string.gmatch(i18n_data[v]['COUNTRY_CODE'], "%S+") do
+					if n==f then TRS_Form[b].language=v;goto HOMO1 end
+				end
+			end 
+		end
+		TRS_Form[b].language=cfg.manager.i18n.default_language
+		:: HOMO1 ::
+	end
+	return i18n_data[TRS_Form[b].language][a]
+end
+function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
+	local n=string.gsub(m,a,a1)
+	if b~=nil then n=string.gsub(n,b,b1) else return n end
+	if c~=nil then n=string.gsub(n,c,c1) else return n end
+	if d~=nil then n=string.gsub(n,d,d1) else return n end
+	if e~=nil then n=string.gsub(n,e,e1) else return n end
+	if f~=nil then n=string.gsub(n,f,f1) else return n end
+	if g~=nil then n=string.gsub(n,g,g1) else return n end
+	if h~=nil then n=string.gsub(n,h,h1) else return n end
+	if i~=nil then n=string.gsub(n,i,i1) else return n end
+	if j~=nil then n=string.gsub(n,j,j1) else return n end
+	if k~=nil then n=string.gsub(n,k,k1) else return n end
+	if l~=nil then n=string.gsub(n,l,l1) else return n end
+	return n
+end
+-- update configure file
+do
+	if(cfg.version==nil) then --version<1.0.4
+		cfg.version={};cfg.version=103
+		cfg.manager.operator={}
+		iland_save()
+	end
+	if(cfg.version==103) then
+		cfg.version=106
+		cfg.manager.allow_op_delete_land=nil
+		for landId, val in pairs(land_data) do
+			if(land_data[landId].range==nil) then
+				land_data[landId]=nil
+			end
+		end
+		iland_save()
+	end
+	if(cfg.version==106) then
+		cfg.version=107
+		cfg.update_check=true
+		for landId, val in pairs(land_data) do
+			land_data[landId].setting.allow_open_barrel=false
+		end
+		iland_save()
+	end
+	if(cfg.version==107) then
+		cfg.version=110
+		cfg.money={}
+		cfg.features={}
+		cfg.money.protocol='scoreboard'
+		cfg.money.scoreboard_objname=cfg.scoreboard.name
+		cfg.features.landSign=false
+		cfg.features.frequency=10
+		cfg.scoreboard=nil
+		cfg.manager.i18n={}
+		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
+		cfg.manager.i18n.default_language="zh_CN"
+		cfg.manager.i18n.auto_language_byIP=false
+		cfg.manager.i18n.allow_players_select_lang=true
+		iland_save()
+	end
+end
 -- load language files
 for i,v in pairs(cfg.manager.i18n.enabled_languages) do
 	if(not(tool:IfFile(luaPath..'iland\\lang\\'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
 	i18n_data[v]=json.decode(tool:ReadAllText(luaPath..'iland\\lang\\'..v..'.json'))
+end
+-- Check Update
+if(cfg.update_check) then
+	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version')
+	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
+	if(latest_version=='') then latest_version=plugin_version end
+	if(plugin_version~=latest_version) then
+		print('[ILand] '..gsubEx(I18N('console.newversion'),'<a>',latest_version))
+		print('[ILand] '..I18N('console.update'))
+	end
 end
 -- Functions
 function Event_PlayerJoin(a)
@@ -51,7 +150,7 @@ function Monitor_CommandArrived(a)
 	local xuid = luaapi:GetXUID(a.playername)
     local key = string.gsub(a.cmd, ' ', '', 1)
 	local land_count = ''
-    if (string.len(key)==5 and key=='/land') then
+    if (string.len(key) == 5 and key == '/land') then
 		if(land_owners[xuid]==nil) then
 			land_count='0'
 		else
@@ -95,8 +194,9 @@ function Monitor_CommandArrived(a)
 end
 function Monitor_FormArrived(a)
 	mc:releaseForm(a.formid)
-	if (a.selected=='null' or a.selected=='false') then return end
-	local xuid=DbGetXUID(a.playername)
+	if(a.selected=='null') then return end
+	if(a.selected=='false') then return end
+	local xuid=luaapi:GetXUID(a.playername)
 	local uuid=luaapi:GetUUID(a.playername)
 	local lid=TRS_Form[a.playername].landid --正在操作的landid
 	--- Buy Land ---
@@ -128,7 +228,9 @@ function Monitor_FormArrived(a)
 	end
 	--- Del Land ---
 	if(TRS_Form[a.playername].delland==a.formid) then
-		ILAPI:removeLand(lid)
+		land_data[lid]=nil
+		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
+		iland_save()
 		money_add(a.playername,TRS_Form[a.playername].landvalue)
 		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
@@ -137,24 +239,46 @@ function Monitor_FormArrived(a)
 		-- [1]null [2]true [3]0 [4]false [5]0
 		local result=json.decode(a.selected)
 		if(result[2]==true) then
-			local code=ILAPI:addLandTrust(lid,TRS_Form[a.playername].playerList[result[3]+1])
-			if code==-1 then sendTitle(a.playername,I18N('title.landtrust.alreadyexists',a.playername));return end
-			if code==-2 then sendTitle(a.playername,I18N('title.landtrust.cantaddown',a.playername));return end
+			local x=DbGetXUID(TRS_Form[a.playername].playerList[result[3]+1])
+			local n=#land_data[lid].setting.share+1
+			if(luaapi:GetXUID(a.playername)==x) then
+				sendTitle(a.playername,I18N('title.landtrust.cantaddown',a.playername))
+				return
+			end
+			if(isValInList(land_data[lid].setting.share,x)~=-1) then
+				sendTitle(a.playername,I18N('title.landtrust.alreadyexists',a.playername))
+				return
+			end
+			land_data[lid].setting.share[n]=x
+			iland_save()
 			if(result[4]~=true) then TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)) end
 		end
 		if(result[4]==true) then
-			ILAPI:delLandTrust(lid,getPlayernameFromXUID(land_data[lid].setting.share[result[5]+1]))
+			if(#land_data[lid].setting.share==0) then return end 
+			local x=land_data[lid].setting.share[result[5]+1]
+			table.remove(land_data[lid].setting.share,isValInList(land_data[lid].setting.share,x))
+			iland_save()
 			TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 		end
 	end
-	--- Land Nickname ---
+	--- Land Tag ---
 	if(TRS_Form[a.playername].ltag==a.formid) then
 		local result=json.decode(a.selected)
 		if(isTextSpecial(result[2])==true) then --防止有nt玩家搞事
 			sendTitle(a.playername,'NMSL')
 			return
 		end
-		ILAPI:setLandNickname(lid,result[2])
+		local btag=string.find(lid,'_')
+		local wdnmd=lid
+		if(btag~=nil) then
+			wdnmd=string.sub(lid,0,btag-1)
+		end
+		local tag=wdnmd..'_'..result[2]
+		land_data[tag]=deepcopy(land_data[lid])
+		land_data[lid]=nil
+		table.insert(land_owners[xuid],#land_owners[xuid]+1,tag)
+		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
+		iland_save()
 		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP LandMgr ---
@@ -187,7 +311,7 @@ function Monitor_FormArrived(a)
 		if(id=='') then sendTitle(a.playername,I18N('talk.land.unselected',a.playername));return end
 		-- 1=teleport 2=transfer 3=delete
 		if(result[4]==1) then
-			luaapi:teleport(uuid,land_data[id].range.start_pos[1],land_data[id].range.start_pos[2],land_data[id].range.start_pos[3],land_data[id].range.dim)
+			luaapi:teleport(uuid,land_data[id].range.start_x,land_data[id].range.start_y,land_data[id].range.start_z,land_data[id].range.dim)
 			sendTitle(a.playername,gsubEx(I18N('title.oplandmgr.transfered',a.playername),'<a>',id))
 		end
 		if(result[4]==2) then
@@ -198,7 +322,14 @@ function Monitor_FormArrived(a)
 																	"type":"custom_form","title":"'..I18N('gui.oplandmgr.trsland.title',a.playername)..'"}')
 		end
 		if(result[4]==3) then
-			ILAPI:removeLand(id)
+			land_data[id]=nil
+			for ownerxuid,val in pairs(land_owners) do
+				local nmsl=isValInList(val,id)
+				if(nmsl~=-1) then
+					table.remove(land_owners[ownerxuid],nmsl)
+				end
+			end
+			iland_save()
 			sendTitle(a.playername,gsubEx(I18N('title.land.deleted',a.playername),'<a>',id))
 		end
 	end
@@ -212,17 +343,25 @@ function Monitor_FormArrived(a)
 	--- Land Transfer ---
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
-		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		local code=ILAPI:transferLand(lid,(trPlayer))
-		if code==-1 then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
-		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',trPlayer),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		if(go==xuid) then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
+		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
+		table.insert(land_owners[go],#land_owners[go]+1,lid)
+		iland_save()
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP ForceTransfer Land ---
 	if(TRS_Form[a.playername].opftland==a.formid) then
 		local result=json.decode(a.selected)
-		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		ILAPI:transferLand(TRS_Form[a.playername].betsflid,trPlayer)
-		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',trPlayer,I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)))
+		local go=DbGetXUID(TRS_Form[a.playername].playerList[result[2]+1])
+		for ownerxuid,val in pairs(land_owners) do
+			local nmsl=isValInList(val,TRS_Form[a.playername].betsflid)
+			if(nmsl~=-1) then
+				table.remove(land_owners[ownerxuid],nmsl)
+			end
+		end
+		table.insert(land_owners[go],#land_owners[go]+1,TRS_Form[a.playername].betsflid)
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',getPlayernameFromXUID(go)),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- I-Cfg ---
 	if(TRS_Form[a.playername].icfgo==a.formid) then
@@ -275,8 +414,8 @@ function Func_Buy_createOrder(playername)
 	for i=1,#edge do
 		for landId, val in pairs(land_data) do
 			if(land_data[landId].range.dim~=newLand[playername].dim) then goto JUMPOUT_1 end --维度不同直接跳过
-			local s_pos={};s_pos.x=land_data[landId].range.start_pos[1];s_pos.y=land_data[landId].range.start_pos[2];s_pos.z=land_data[landId].range.start_pos[3]
-			local e_pos={};e_pos.x=land_data[landId].range.end_pos[1];e_pos.y=land_data[landId].range.end_pos[2];e_pos.z=land_data[landId].range.end_pos[3]
+			local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
+			local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
 			if(isPosInCube(edge[i],s_pos,e_pos)==true) then
 				sendTitle(playername,I18N('title.createorder.collision',playername))
 				newLand[playername].step=0
@@ -288,12 +427,12 @@ function Func_Buy_createOrder(playername)
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
 		if(land_data[landId].range.dim~=newLand[playername].dim) then goto JUMPOUT_2 end --维度不同直接跳过
 		s_pos={};e_pos={}
-		s_pos.x=land_data[landId].range.start_pos[1]
-		s_pos.y=land_data[landId].range.start_pos[2]
-		s_pos.z=land_data[landId].range.start_pos[3]
-		e_pos.x=land_data[landId].range.end_pos[1]
-		e_pos.y=land_data[landId].range.end_pos[2]
-		e_pos.z=land_data[landId].range.end_pos[3]
+		s_pos.x=land_data[landId].range.start_x
+		s_pos.y=land_data[landId].range.start_y
+		s_pos.z=land_data[landId].range.start_z
+		e_pos.x=land_data[landId].range.end_x
+		e_pos.y=land_data[landId].range.end_y
+		e_pos.z=land_data[landId].range.end_z
 		edge=cubeGetEdge(s_pos,e_pos)
 		for i=1,#edge do
 			if(isPosInCube(edge[i],newLand[playername].posA,newLand[playername].posB)==true) then
@@ -369,7 +508,34 @@ function Func_Buy_callback(playername)
         money_del(playername,newLand[playername].landprice)
     end
 	sendTitle(playername,I18N('title.buyland.succeed',playername))
-	ILAPI:createLand(playername,newLand[playername].posA,newLand[playername].posB,newLand[playername].dim)
+	math.randomseed(os.time())
+	landId='id'..tostring(math.random(100000,999999))
+	land_data[landId]={}
+	land_data[landId].range={}
+	land_data[landId].setting={}
+	land_data[landId].range.start_x=newLand[playername].posA.x
+	land_data[landId].range.start_z=newLand[playername].posA.z
+	land_data[landId].range.start_y=newLand[playername].posA.y
+	land_data[landId].range.end_x=newLand[playername].posB.x
+	land_data[landId].range.end_z=newLand[playername].posB.z
+	land_data[landId].range.end_y=newLand[playername].posB.y
+	land_data[landId].range.dim=newLand[playername].dim
+	land_data[landId].setting.share={}
+	land_data[landId].setting.allow_destory=false
+	land_data[landId].setting.allow_place=false
+	land_data[landId].setting.allow_exploding=false
+	land_data[landId].setting.allow_attack=false
+	land_data[landId].setting.allow_open_chest=false
+	land_data[landId].setting.allow_open_barrel=false
+	land_data[landId].setting.allow_pickupitem=false
+	land_data[landId].setting.allow_dropitem=true
+	land_data[landId].setting.allow_use_item=true
+	iland_save()
+	if(land_owners[xuid]==nil) then
+		land_owners[xuid]={}
+	end
+	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
+	iland_save()
 	newLand[playername]=nil
 	TRS_Form[playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.buyland.succeed',playername),I18N('gui.general.looklook',playername),I18N('gui.general.cancel',playername))
 end
@@ -377,7 +543,7 @@ function Func_Manager_open(playername)
 	local uuid=luaapi:GetUUID(playername)
 	local xuid=luaapi:GetXUID(playername)
 	local b=luaapi:createPlayerObject(uuid)
-	local lid=ILAPI:positionGetLand(json.decode(b.Position),b.DimensionId)
+	local lid=getLandFromPos(json.decode(b.Position),b.DimensionId)
 	local welcomeText=I18N('gui.landmgr.content',playername)
 	if(lid~=-1) then
 		welcomeText=welcomeText..gsubEx(I18N('gui.landmgr.ctplus',playername),'<a>',lid)
@@ -391,16 +557,8 @@ function Func_Manager_open(playername)
 		sendTitle(playername,I18N('title.landmgr.failed',playername))
 		return
 	end
-	local viewlist={}
-	for i,v in pairs(land_owners[xuid]) do
-		if land_data[land_owners[xuid][i]].setting.nickname~='' then
-			viewlist[i]=land_data[land_owners[xuid][i]].setting.nickname
-		else
-			viewlist[i]='<'..I18N('gui.landmgr.nickname.null',playername)..'> GUID='..land_owners[xuid][i]
-		end
-	end
 	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcomeText..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
-													{"default":0,"options":'..json.encode(viewlist)..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
+													{"default":0,"options":'..json.encode(land_owners[xuid])..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
 													"type":"custom_form","title":"'..I18N('gui.landmgr.title',playername)..'"}}]}')
 end
 function Func_Manager_callback(a,b) --a=playername b=selected
@@ -409,12 +567,12 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 	local result=json.decode(b)
 	TRS_Form[a].landid=land_owners[xuid][result[3]+1] --对应玩家正在操作的 landid
 	if(result[2]==0) then --查看领地信息
-	    local length = math.abs(land_data[TRS_Form[a].landid].range.start_pos[1] - land_data[TRS_Form[a].landid].range.end_pos[1])
-		local height = math.abs(land_data[TRS_Form[a].landid].range.start_pos[2] - land_data[TRS_Form[a].landid].range.end_pos[2])
-		local width = math.abs(land_data[TRS_Form[a].landid].range.start_pos[3] - land_data[TRS_Form[a].landid].range.end_pos[3])
+	    local length = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x)
+		local width = math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
+		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
 		local vol = length * width * height
 		local squ = length * width
-		TRS_Form[a].mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_pos[1],'<c>',land_data[TRS_Form[a].landid].range.start_pos[2],'<d>',land_data[TRS_Form[a].landid].range.start_pos[3],'<e>',land_data[TRS_Form[a].landid].range.end_pos[1],'<f>',land_data[TRS_Form[a].landid].range.end_pos[2],'<g>',land_data[TRS_Form[a].landid].range.end_pos[3],'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
+		TRS_Form[a].mb_lmgr=mc:sendModalForm(uuid,I18N('gui.landmgr.landinfo.title',a),gsubEx(I18N('gui.landmgr.landinfo.content',a),'<a>',a,'<b>',land_data[TRS_Form[a].landid].range.start_x,'<c>',land_data[TRS_Form[a].landid].range.start_y,'<d>',land_data[TRS_Form[a].landid].range.start_z,'<e>',land_data[TRS_Form[a].landid].range.end_x,'<f>',land_data[TRS_Form[a].landid].range.end_y,'<g>',land_data[TRS_Form[a].landid].range.end_z,'<h>',length,'<i>',width,'<j>',height,'<k>',squ,'<l>',vol),I18N('gui.general.iknow',a),I18N('gui.general.close',a))
 	end
 	if(result[2]==1) then --编辑领地权限
 		local d=land_data[TRS_Form[a].landid].setting
@@ -455,8 +613,8 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 		TRS_Form[a].ltsf=mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..I18N('gui.landtransfer.tip',a)..'"},{"type":"dropdown","text":"'..I18N('talk.land.selecttargetplayer',a)..'","default":0,"options":'..json.encode(TRS_Form[a].playerList)..'}],"type":"custom_form","title":"'..I18N('gui.landtransfer.title',a)..'"}')
 	end
 	if(result[2]==5) then --删除领地
-		local height = math.abs(land_data[TRS_Form[a].landid].range.start_pos[2] - land_data[TRS_Form[a].landid].range.end_pos[2])
-		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_pos[1] - land_data[TRS_Form[a].landid].range.end_pos[1]) * math.abs(land_data[TRS_Form[a].landid].range.start_pos[3] - land_data[TRS_Form[a].landid].range.end_pos[3])
+		local height = math.abs(land_data[TRS_Form[a].landid].range.start_y - land_data[TRS_Form[a].landid].range.end_y)
+		local squ = math.abs(land_data[TRS_Form[a].landid].range.start_x - land_data[TRS_Form[a].landid].range.end_x) * math.abs(land_data[TRS_Form[a].landid].range.start_z - land_data[TRS_Form[a].landid].range.end_z)
 		TRS_Form[a].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
 		TRS_Form[a].delland=mc:sendModalForm(uuid,I18N('gui.delland.title',a),gsubEx(I18N('gui.delland.content'),'<a>',TRS_Form[a].landvalue,'<b>',I18N('talk.credit_name',a)),I18N('gui.general.yes',a),I18N('gui.general.cancel',a))
 	end
@@ -506,7 +664,7 @@ function Func_Cfg_open(playername)
 end
 -- Minecraft 监听事件
 function onDestroyBlock(e)
-	local lid=ILAPI:positionGetLand(e.position,e.dimensionid)
+	local lid=getLandFromPos(e.position,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_destory==true) then return end --权限允许
@@ -517,7 +675,7 @@ function onDestroyBlock(e)
 	return false	
 end
 function onAttack(e)
-	local lid=ILAPI:positionGetLand(e.XYZ,e.dimensionid)
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_attack==true) then return end --权限允许
@@ -528,7 +686,7 @@ function onAttack(e)
 	return false
 end
 function onUseItem(e)
-	local lid=ILAPI:positionGetLand(e.position,e.dimensionid)
+	local lid=getLandFromPos(e.position,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_use_item==true) then return end --权限允许
@@ -540,7 +698,7 @@ function onUseItem(e)
 	return false
 end
 function onPlacedBlock(e)
-	local lid=ILAPI:positionGetLand(e.position,e.dimensionid)
+	local lid=getLandFromPos(e.position,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_place==true) then return end --权限允许
@@ -551,13 +709,13 @@ function onPlacedBlock(e)
 	return false
 end
 function onLevelExplode(e)
-	local lid=ILAPI:positionGetLand(e.position,e.dimensionid)
+	local lid=getLandFromPos(e.position,e.dimensionid)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_exploding==true) then return end --权限允许
 	return false
 end
 function onStartOpenChest(e)
-	local lid=ILAPI:positionGetLand(e.position,e.dimensionid)
+	local lid=getLandFromPos(e.position,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_open_chest==true) then return end --权限允许
@@ -568,7 +726,7 @@ function onStartOpenChest(e)
 	return false
 end
 function onPickUpItem(e)
-	local lid=ILAPI:positionGetLand(e.XYZ,e.dimensionid)
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_pickupitem==true) then return end --权限允许
@@ -579,7 +737,7 @@ function onPickUpItem(e)
 	return false
 end
 function onDropItem(e)
-	local lid=ILAPI:positionGetLand(e.XYZ,e.dimensionid)
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_dropitem==true) then return end --权限允许
@@ -590,7 +748,7 @@ function onDropItem(e)
 	return false
 end
 function onStartOpenBarrel(e)
-	local lid=ILAPI:positionGetLand(e.XYZ,e.dimensionid)
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	local xuid=luaapi:GetXUID(e.playername)
 	if(lid==-1) then return end
 	if(land_data[lid].setting.allow_open_barrel==true) then return end --权限允许
@@ -603,7 +761,7 @@ function onMove(e)
 	-- dimensionid|XYZ|playername
 	if TRS_Form[e.playername].timestamp==nil then TRS_Form[e.playername].timestamp=os.time() end
 	if os.time()-TRS_Form[e.playername].timestamp<=cfg.features.frequency then return end
-	local lid=ILAPI:positionGetLand(e.XYZ,e.dimensionid)
+	local lid=getLandFromPos(e.XYZ,e.dimensionid)
 	if TRS_Form[e.playername].nowland==lid then return end
 	local xuid=luaapi:GetXUID(e.playername)
 	local name='!NotFound!'
@@ -622,117 +780,6 @@ function onMove(e)
 	end
 	TRS_Form[e.playername].nowland=lid
 end
--- ILAPI
-function ILAPI.getLand(landid) 
-	-- Return Value | Table:land
-	return land_data[landid]
-end
-function ILAPI.getPlayerLands(playername)
-	-- Return Value | LIST:land
-	local xuid=DbGetXUID(playername)
-	if xuid=='' then return '' end
-	return land_owners[xuid]
-end
-function ILAPI.getLandOwner(landid) 
-	-- Return Value | OwnerXUID
-	for xuid,lands in pairs(land_owners) do
-		if isValInList(lands,landid)~=-1 then
-			return getPlayernameFromXUID(xuid)
-		end
-	end
-end
-function ILAPI.createLand(playername,start_pos,end_pos,dim) 
-	-- Return Value | Void
-	local xuid=DbGetXUID(playername)
-	local landId=getGuid()
-	land_data[landId]={}
-	land_data[landId].range={}
-	land_data[landId].setting={}
-	land_data[landId].range.start_pos={}
-	land_data[landId].range.end_pos={}
-	land_data[landId].range.start_pos[1]=start_pos.x
-	land_data[landId].range.start_pos[2]=start_pos.y
-	land_data[landId].range.start_pos[3]=start_pos.z
-	land_data[landId].range.end_pos[1]=end_pos.x
-	land_data[landId].range.end_pos[2]=end_pos.y
-	land_data[landId].range.end_pos[3]=end_pos.z
-	land_data[landId].range.dim=dim
-	land_data[landId].setting.share={}
-	land_data[landId].setting.allow_destory=false
-	land_data[landId].setting.allow_place=false
-	land_data[landId].setting.allow_exploding=false
-	land_data[landId].setting.allow_attack=false
-	land_data[landId].setting.allow_open_chest=false
-	land_data[landId].setting.allow_open_barrel=false
-	land_data[landId].setting.allow_pickupitem=false
-	land_data[landId].setting.allow_dropitem=true
-	land_data[landId].setting.allow_use_item=true
-	land_data[landId].setting.nickname=''
-	if(land_owners[xuid]==nil) then
-		land_owners[xuid]={}
-	end
-	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
-	--iland_save()
-end
-function ILAPI.removeLand(landid) 
-	-- Return Value | Void
-	land_data[landid]=nil
-	for ownerxuid,val in pairs(land_owners) do
-		local key=isValInList(val,landid)
-		if(key~=-1) then
-			table.remove(land_owners[ownerxuid],key)
-		end
-	end
-	iland_save()
-end
-function ILAPI.positionGetLand(pos,dim)
-	-- Return Value | LandID & -1
-	for landId, val in pairs(land_data) do
-		if(land_data[landId].range.dim~=dim) then goto JUMPOUT_4 end
-		local s_pos={};s_pos.x=land_data[landId].range.start_pos[1];s_pos.y=land_data[landId].range.start_pos[2];s_pos.z=land_data[landId].range.start_pos[3]
-		local e_pos={};e_pos.x=land_data[landId].range.end_pos[1];e_pos.y=land_data[landId].range.end_pos[2];e_pos.z=land_data[landId].range.end_pos[3]
-		if(isPosInCube(pos,s_pos,e_pos)==true) then
-			return landId
-		end
-		:: JUMPOUT_4 ::
-	end
-	return -1
-end
-function ILAPI.addLandTrust(landid,playername) 
-	-- Return Value | [-1] AlreadyExisted | [-2] CantAddOwn | [0] Succeed
-	local addXuid=DbGetXUID(playername)
-	if isValInList(land_data[landid].setting.share,addXuid)~=-1 then return -1 end
-	if getLandOwner(landid)==addXuid then return -2 end
-	land_data[landid].setting.share[#land_data[lid].setting.share+1]=addXuid
-	iland_save()
-	return 0
-end
-function ILAPI.delLandTrust(landid,playername)
-	-- Return Value | [-1] NotFound | [0] Succeed
-	key=isValInList(land_data[landid].setting.share,playername)
-	if key==-1 then return -1 end
-	table.remove(land_data[landid].setting.share,key)
-	iland_save()
-	return 0
-end
-function ILAPI.transferLand(landid,playername) 
-	-- Return Value | [-1] CantTrOwn | [0] Succeed
-	local toXuid=DbGetXUID(playername)
-	local fmXuid=ILAPI:getLandOwner(landid)
-	if toXuid==fmXuid then return -1 end
-	table.remove(land_owners[fmXuid],isValInList(land_owners[fmXuid],landid))
-	table.insert(land_owners[toXuid],#land_owners[toXuid]+1,landid)
-	iland_save()
-	return 0
-end
-function ILAPI.getLandNickname(landid)
-	return(land_data[landid].setting.nickname)
-end
-function ILAPI.setLandNickname(landid,nickname)
-	land_data[landid].setting.nickname=nickname
-	iland_save()
-end
-function ILAPI.isNearLand(pos,dim,nearVal) end
 -- 拓展功能函数
 function money_add(a,b) --a=playername b=value
 	mc:runcmd('scoreboard players add "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
@@ -742,6 +789,18 @@ function money_del(a,b) --a=playername b=value
 end
 function money_get(a) --a=playername
 	return(mc:getscoreboard(luaapi:GetUUID(a),cfg.money.scoreboard_objname))
+end
+function getLandFromPos(pos,dim)
+	for landId, val in pairs(land_data) do
+		if(land_data[landId].range.dim~=dim) then goto JUMPOUT_4 end
+		local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
+		local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
+		if(isPosInCube(pos,s_pos,e_pos)==true) then
+			return landId
+		end
+		:: JUMPOUT_4 ::
+	end
+	return -1
 end
 function cubeGetEdge(posA,posB)
 	local edge={}
@@ -849,6 +908,7 @@ function playerGetCountry(playername)
 		return n['countryCode']
 	end
 end
+function isNearLand(pos,dim,nearVal) end
 function sendTitle(playername,title,subtitle) -- 填写subTitle为大标题模式，否则为actionbar模式
 	if subtitle==nil then
 		mc:runcmd('title "' .. playername .. '" actionbar '..title)
@@ -856,156 +916,6 @@ function sendTitle(playername,title,subtitle) -- 填写subTitle为大标题模�
 		mc:runcmd('title "' .. playername .. '" times 20 25 20') --想改的自己改下
 		mc:runcmd('title "' .. playername .. '" subtitle '..subtitle)
 		mc:runcmd('title "' .. playername .. '" title '..title)
-	end
-end
-function getGuid() --来自网络
-    local seed={'e','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}
-    local tb={}
-    for i=1,32 do
-        table.insert(tb,seed[math.random(1,16)])
-    end
-    local sid=table.concat(tb)
-    return string.format('%s-%s-%s-%s-%s',
-        string.sub(sid,1,8),
-        string.sub(sid,9,12),
-        string.sub(sid,13,16),
-        string.sub(sid,17,20),
-        string.sub(sid,21,32)
-    )
-end
-function iland_save()
-	local a=tool:WorkingPath()
-	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
-	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
-	print(json.encode(land_data))
-	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
-	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
-end
-function I18N(a,b) --a=key b=playername
-	-- TRS_Form[playerName].language | 临时
-	-- playerCfg[xuid].language      | 永久
-	if b==nil then return i18n_data[cfg.manager.i18n.default_language][a] end
-	-- ↑ Server ; ↓ Player
-	local xuid=luaapi:GetXUID(b)
-	if TRS_Form[b].language==nil then
-		if(playerCfg[xuid].language~=nil) then
-			TRS_Form[b].language=playerCfg[xuid].language
-			goto HOMO1
-		end
-		-- ↑ Custom ; ↓ Auto
-		local f=playerGetCountry(b)
-		if(cfg.manager.i18n.auto_language_byIP) then
-			for i,v in pairs(cfg.manager.i18n.enabled_languages) do
-				for n in string.gmatch(i18n_data[v]['COUNTRY_CODE'], "%S+") do
-					if n==f then TRS_Form[b].language=v;goto HOMO1 end
-				end
-			end 
-		end
-		TRS_Form[b].language=cfg.manager.i18n.default_language
-		:: HOMO1 ::
-	end
-	return i18n_data[TRS_Form[b].language][a]
-end
-function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
-	local n=string.gsub(m,a,a1)
-	if b~=nil then n=string.gsub(n,b,b1) else return n end
-	if c~=nil then n=string.gsub(n,c,c1) else return n end
-	if d~=nil then n=string.gsub(n,d,d1) else return n end
-	if e~=nil then n=string.gsub(n,e,e1) else return n end
-	if f~=nil then n=string.gsub(n,f,f1) else return n end
-	if g~=nil then n=string.gsub(n,g,g1) else return n end
-	if h~=nil then n=string.gsub(n,h,h1) else return n end
-	if i~=nil then n=string.gsub(n,i,i1) else return n end
-	if j~=nil then n=string.gsub(n,j,j1) else return n end
-	if k~=nil then n=string.gsub(n,k,k1) else return n end
-	if l~=nil then n=string.gsub(n,l,l1) else return n end
-	return n
-end
--- 检查更新
-if(cfg.update_check) then
-	local t=tool:HttpGet('http://cdisk.amd.rocks/tmp/ILAND/version')
-	latest_version=string.sub(t,string.find(t,'<',1)+1,string.find(t,'>',1)-1)
-	if(latest_version=='') then latest_version=plugin_version end
-	if(plugin_version~=latest_version) then
-		print('[ILand] '..gsubEx(I18N('console.newversion'),'<a>',latest_version))
-		print('[ILand] '..I18N('console.update'))
-	end
-end
--- 自动升级配置文件
-do
-	if(cfg.version==nil) then --version<1.0.4
-		cfg.version={};cfg.version=103
-		cfg.manager.operator={}
-		iland_save()
-	end
-	if(cfg.version==103) then
-		cfg.version=106
-		cfg.manager.allow_op_delete_land=nil
-		for landId, val in pairs(land_data) do
-			if(land_data[landId].range==nil) then
-				land_data[landId]=nil
-			end
-		end
-		iland_save()
-	end
-	if(cfg.version==106) then
-		cfg.version=107
-		cfg.update_check=true
-		for landId, val in pairs(land_data) do
-			land_data[landId].setting.allow_open_barrel=false
-		end
-		iland_save()
-	end
-	if(cfg.version==107) then
-		cfg.version=110
-		cfg.money={}
-		cfg.features={}
-		cfg.money.protocol='scoreboard'
-		cfg.money.scoreboard_objname=cfg.scoreboard.name
-		cfg.features.landSign=false
-		cfg.features.frequency=10
-		cfg.scoreboard=nil
-		cfg.manager.i18n={}
-		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
-		cfg.manager.i18n.default_language="zh_CN"
-		cfg.manager.i18n.auto_language_byIP=false
-		cfg.manager.i18n.allow_players_select_lang=true
-		iland_save()
-	end
-	if(cfg.version==110) then
-		cfg.version=111
-		for i,v in pairs(land_data) do
-			land_data[i].setting.hpos={}
-			if string.find(i,'_',0) ~= nil then 
-				land_data[i].setting.nickname=string.sub(i,string.find(i,'_',0)+1,string.len(i))
-			else
-				land_data[i].setting.nickname=''
-			end
-			land_data[i].range.start_pos={};land_data[i].range.end_pos={}
-			land_data[i].range.start_pos[1]=land_data[i].range.start_x
-			land_data[i].range.start_pos[2]=land_data[i].range.start_y
-			land_data[i].range.start_pos[3]=land_data[i].range.start_z
-			land_data[i].range.end_pos[1]=land_data[i].range.end_x
-			land_data[i].range.end_pos[2]=land_data[i].range.end_y
-			land_data[i].range.end_pos[3]=land_data[i].range.end_z
-			land_data[i].range.start_x=nil
-			land_data[i].range.start_y=nil
-			land_data[i].range.start_z=nil
-			land_data[i].range.end_x=nil
-			land_data[i].range.end_y=nil
-			land_data[i].range.end_z=nil
-			local guid=getGuid()
-			for ownXuid,lands in pairs(land_owners) do
-				local nmd=isValInList(lands,i)
-				if(nmd~=-1) then
-					table.remove(land_owners[ownXuid],nmd)
-				end
-				table.insert(land_owners[ownXuid],#land_owners[ownXuid]+1,guid)
-			end
-			land_data[guid]=land_data[i]
-			land_data[i]=nil
-		end
-		iland_save()
 	end
 end
 -- 注册监听
