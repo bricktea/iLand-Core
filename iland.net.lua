@@ -147,25 +147,14 @@ function Monitor_FormArrived(a)
 			TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 		end
 	end
-	--- Land Tag ---
+	--- Land Nickname ---
 	if(TRS_Form[a.playername].ltag==a.formid) then
-		-- [!]失效，待修改
 		local result=json.decode(a.selected)
 		if(isTextSpecial(result[2])==true) then --防止有nt玩家搞事
 			sendTitle(a.playername,'NMSL')
 			return
 		end
-		local btag=string.find(lid,'_')
-		local wdnmd=lid
-		if(btag~=nil) then
-			wdnmd=string.sub(lid,0,btag-1)
-		end
-		local tag=wdnmd..'_'..result[2]
-		land_data[tag]=deepcopy(land_data[lid])
-		land_data[lid]=nil
-		table.insert(land_owners[xuid],#land_owners[xuid]+1,tag)
-		table.remove(land_owners[xuid],isValInList(land_owners[xuid],lid))
-		iland_save()
+		ILAPI:setLandNickname(lid,result[2])
 		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',I18N('gui.general.complete',a.playername),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
 	--- OP LandMgr ---
@@ -209,14 +198,7 @@ function Monitor_FormArrived(a)
 																	"type":"custom_form","title":"'..I18N('gui.oplandmgr.trsland.title',a.playername)..'"}')
 		end
 		if(result[4]==3) then
-			land_data[id]=nil
-			for ownerxuid,val in pairs(land_owners) do
-				local nmsl=isValInList(val,id)
-				if(nmsl~=-1) then
-					table.remove(land_owners[ownerxuid],nmsl)
-				end
-			end
-			iland_save()
+			ILAPI:removeLand(id)
 			sendTitle(a.playername,gsubEx(I18N('title.land.deleted',a.playername),'<a>',id))
 		end
 	end
@@ -231,7 +213,7 @@ function Monitor_FormArrived(a)
 	if(TRS_Form[a.playername].ltsf==a.formid) then
 		local result=json.decode(a.selected)
 		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
-		local code==ILAPI:transferLand(lid,(trPlayer))
+		local code=ILAPI:transferLand(lid,(trPlayer))
 		if code==-1 then sendTitle(a.playername,I18N('title.landtransfer.canttoown',a.playername));return end
 		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',lid,'<b>',trPlayer),I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
 	end
@@ -240,7 +222,7 @@ function Monitor_FormArrived(a)
 		local result=json.decode(a.selected)
 		local trPlayer=getPlayernameFromXUID(TRS_Form[a.playername].playerList[result[2]+1])
 		ILAPI:transferLand(TRS_Form[a.playername].betsflid,trPlayer)
-		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',trPlayer,I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername))
+		TRS_Form[a.playername].mb_lmgr=mc:sendModalForm(uuid,'Complete',gsubEx(I18N('title.landtransfer.complete',a.playername),'<a>',TRS_Form[a.playername].betsflid,'<b>',trPlayer,I18N('gui.general.back',a.playername),I18N('gui.general.close',a.playername)))
 	end
 	--- I-Cfg ---
 	if(TRS_Form[a.playername].icfgo==a.formid) then
@@ -409,8 +391,16 @@ function Func_Manager_open(playername)
 		sendTitle(playername,I18N('title.landmgr.failed',playername))
 		return
 	end
+	local viewlist={}
+	for i,v in pairs(land_owners[xuid]) do
+		if land_data[land_owners[xuid][i]].setting.nickname~='' then
+			viewlist[i]=land_data[land_owners[xuid][i]].setting.nickname
+		else
+			viewlist[i]='<'..I18N('gui.landmgr.nickname.null',playername)..'> GUID='..land_owners[xuid][i]
+		end
+	end
 	TRS_Form[playername].mgr = mc:sendCustomForm(uuid,'{"content":[{"type":"label","text":"'..welcomeText..'"},{"default":0,"steps":["'..I18N('gui.landmgr.options.landinfo',playername)..'","'..I18N('gui.landmgr.options.landperm',playername)..'","'..I18N('gui.landmgr.options.landtrust',playername)..'","'..I18N('gui.landmgr.options.landtag',playername)..'","'..I18N('gui.landmgr.options.landtransfer',playername)..'","'..I18N('gui.landmgr.options.delland',playername)..'"],"type":"step_slider","text":"'..I18N('gui.oplandmgr.selectoption',playername)..'"},\
-													{"default":0,"options":'..json.encode(land_owners[xuid])..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
+													{"default":0,"options":'..json.encode(viewlist)..',"type":"dropdown","text":"'..I18N('gui.landmgr.select',playername)..'"}],\
 													"type":"custom_form","title":"'..I18N('gui.landmgr.title',playername)..'"}}]}')
 end
 function Func_Manager_callback(a,b) --a=playername b=selected
@@ -635,14 +625,12 @@ end
 -- ILAPI
 function ILAPI.getLand(landid) 
 	-- Return Value | Table:land
-	if land_data[landid] == nil then return '' end
 	return land_data[landid]
 end
 function ILAPI.getPlayerLands(playername)
 	-- Return Value | LIST:land
 	local xuid=DbGetXUID(playername)
 	if xuid=='' then return '' end
-	if land_owners[xuid] == nil then return '' end
 	return land_owners[xuid]
 end
 function ILAPI.getLandOwner(landid) 
@@ -684,7 +672,7 @@ function ILAPI.createLand(playername,start_pos,end_pos,dim)
 		land_owners[xuid]={}
 	end
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
-	iland_save()
+	--iland_save()
 end
 function ILAPI.removeLand(landid) 
 	-- Return Value | Void
@@ -736,6 +724,13 @@ function ILAPI.transferLand(landid,playername)
 	table.insert(land_owners[toXuid],#land_owners[toXuid]+1,landid)
 	iland_save()
 	return 0
+end
+function ILAPI.getLandNickname(landid)
+	return(land_data[landid].setting.nickname)
+end
+function ILAPI.setLandNickname(landid,nickname)
+	land_data[landid].setting.nickname=nickname
+	iland_save()
 end
 function ILAPI.isNearLand(pos,dim,nearVal) end
 -- 拓展功能函数
@@ -882,6 +877,7 @@ function iland_save()
 	local a=tool:WorkingPath()
 	tool:WriteAllText(luaPath..'iland\\config.json',json.encode(cfg,{indent=true}))
 	tool:WriteAllText(luaPath..'iland\\players.json',json.encode(playerCfg,{indent=true}))
+	print(json.encode(land_data))
 	tool:WriteAllText(luaPath..'iland\\data.json',json.encode(land_data))
 	tool:WriteAllText(luaPath..'iland\\owners.json',json.encode(land_owners))
 end
@@ -977,7 +973,7 @@ do
 		iland_save()
 	end
 	if(cfg.version==110) then
-		--cfg.version=111
+		cfg.version=111
 		for i,v in pairs(land_data) do
 			land_data[i].setting.hpos={}
 			if string.find(i,'_',0) ~= nil then 

@@ -1,31 +1,31 @@
 {
-  "update_check":true,
-  "money":{
-    "protocol":"scoreboard",
-    "scoreboard_objname":"money"
-  },
-  "version":110,
-  "features":{
-    "landSign":false,
-    "frequency":10
-  },
   "land_buy":{
     "price_sky":2,
-    "price_ground":10,
-    "refund_rate":0.9
-  },
-  "manager":{
-    "operator":[],
-    "i18n":{
-      "allow_players_select_lang":true,
-      "default_language":"zh_CN",
-      "enabled_languages":["zh_CN","zh_TW"],
-      "auto_language_byIP":false
-    }
+    "refund_rate":0.9,
+    "price_ground":10
   },
   "land":{
     "land_min_square":4,
-    "land_max_square":2000,
-    "player_max_lands":5
+    "player_max_lands":5,
+    "land_max_square":2000
+  },
+  "version":111,
+  "features":{
+    "frequency":10,
+    "landSign":false
+  },
+  "update_check":true,
+  "money":{
+    "scoreboard_objname":"money",
+    "protocol":"scoreboard"
+  },
+  "manager":{
+    "i18n":{
+      "default_language":"zh_CN",
+      "enabled_languages":["zh_CN"],
+      "auto_language_byIP":false,
+      "allow_players_select_lang":true
+    },
+    "operator":["2535431675202881"]
   }
 }
