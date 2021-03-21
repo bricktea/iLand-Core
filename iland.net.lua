@@ -583,7 +583,7 @@ function Func_Manager_callback(a,b) --a=playername b=selected
 															{"default":'..tostring(d.allow_attack)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.attack',a)..'"},\
 															{"default":'..tostring(d.allow_dropitem)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.dropitem',a)..'"},\
 															{"default":'..tostring(d.allow_pickupitem)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.pickupitem',a)..'"},\
-															{"default":'..tostring(d.allow_use_item)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.ustitem',a)..'"},\
+															{"default":'..tostring(d.allow_use_item)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.useitem',a)..'"},\
 															{"default":'..tostring(d.allow_open_barrel)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.openbarrel',a)..'"},\
 															{"type":"label","text":"'..I18N('gui.landmgr.landperm.editevent',a)..'"},\
 															{"default":'..tostring(d.allow_exploding)..',"type":"toggle","text":"'..I18N('gui.landmgr.landperm.options.exploding',a)..'"}],\
