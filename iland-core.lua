@@ -8,11 +8,11 @@
 local plugin_version = '1.1.1'
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local lib_path = ''
-local ILAPI,newLand,TRS_Form,i18n_data={}
+local ILAPI={};local newLand={};local TRS_Form={};local i18n_data={}
 local json = require('cjson')
 
 -- check file
-if IfFile(data..'config.json') == false then
+if IfFile(data_path..'config.json') == false then
 	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
 end
 
@@ -24,8 +24,8 @@ local land_owners = json.decode(ReadAllText(data_path..'owners.json'))
 
 -- load language file
 for i,v in pairs(cfg.manager.i18n.enabled_languages) do
-	if(not(tool:IfFile(luaPath..'iland\\lang\\'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
-	i18n_data[v]=json.decode(tool:ReadAllText(luaPath..'iland\\lang\\'..v..'.json'))
+	if(not(IfFile(data_path..'lang\\'..v..'.json'))) then print('[ILand] ERR!!! language file('..v..') not found, plugin is closing...') return false end
+	i18n_data[v]=json.decode(ReadAllText(data_path..'lang\\'..v..'.json'))
 end
 
 -- listen -> event
@@ -91,5 +91,133 @@ function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
 	if l~=nil then n=string.gsub(n,l,l1) else return n end
 	return n
 end
+
+function money_add(a,b) --a=playername b=value
+	runCmd('scoreboard players add "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
+end
+function money_del(a,b) --a=playername b=value
+	runCmd('scoreboard players remove "'..a..'" "'..cfg.money.scoreboard_objname..'" '..b)
+end
+-- function money_get(a) --a=playername
+--	return(mc:getscoreboard(luaapi:GetUUID(a),cfg.money.scoreboard_objname))
+-- end
+function getLandFromPos(pos,dim)
+	for landId, val in pairs(land_data) do
+		if(land_data[landId].range.dim~=dim) then goto JUMPOUT_4 end
+		local s_pos={};s_pos.x=land_data[landId].range.start_x;s_pos.y=land_data[landId].range.start_y;s_pos.z=land_data[landId].range.start_z
+		local e_pos={};e_pos.x=land_data[landId].range.end_x;e_pos.y=land_data[landId].range.end_y;e_pos.z=land_data[landId].range.end_z
+		if(isPosInCube(pos,s_pos,e_pos)==true) then
+			return landId
+		end
+		:: JUMPOUT_4 ::
+	end
+	return -1
+end
+function cubeGetEdge(posA,posB)
+	local edge={}
+	local p=0
+	-- [Debug] print(edge[p].x,edge[p].y,edge[p].z,' ',edge[p-1].x,edge[p-1].y,edge[p-1].z,' ',edge[p-2].x,edge[p-2].y,edge[p-2].z,' ',edge[p-3].x,edge[p-3].y,edge[p-3].z)
+	for i=1,math.abs(math.abs(posA.y)-math.abs(posB.y))+1 do
+		if(posA.y>posB.y) then
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-i;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-i;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-i;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-i;edge[p].z=posA.z
+		else
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y+i-2;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y+i-2;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y+i-2;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y+i-2;edge[p].z=posA.z
+		end
+	end
+	for i=1,math.abs(math.abs(posA.x)-math.abs(posB.x))+1 do
+		if(posA.x>posB.x) then
+			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posA.y-1;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posB.y-1;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posA.y-1;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posB.y-1;edge[p].z=posB.z
+		else
+			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posA.y-1;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posB.y-1;edge[p].z=posA.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posA.y-1;edge[p].z=posB.z
+			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posB.y-1;edge[p].z=posB.z
+		end
+	end
+	for i=1,math.abs(math.abs(posA.z)-math.abs(posB.z))+1 do
+		if(posA.z>posB.z) then
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-1;edge[p].z=posA.z-i+1
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-1;edge[p].z=posA.z-i+1
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posB.y-1;edge[p].z=posA.z-i+1
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posB.y-1;edge[p].z=posA.z-i+1
+		else
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-1;edge[p].z=posA.z+i-1
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-1;edge[p].z=posA.z+i-1
+			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posB.y-1;edge[p].z=posA.z+i-1
+			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posB.y-1;edge[p].z=posA.z+i-1
+		end
+	end
+	return edge
+end
+function isPosInCube(pos,posA,posB)
+	if((pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x)==true) then
+		if((pos.y>=posA.y and pos.y<=posB.y) or (pos.y<=posA.y and pos.y>=posB.y)==true) then
+			if((pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z)==true) then
+				return true
+			else
+				return false
+			end
+		else
+			return false
+		end
+	else
+		return false
+	end
+end
+function isValInList(list, value)
+	for i, nowValue in pairs(list) do
+        if nowValue == value then
+            return i
+        end
+    end
+    return -1
+end
+function deepcopy(orig) --参(chao)考(xi)自lua-users.org
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+function isTextSpecial(text)
+	local flag='[%s%p%c%z]'
+	if(string.find(text,flag)==nil) then
+		return false
+	end
+	return true
+end	
+function isTextNum(text)
+	if(tonumber(text)==nil) then
+		return false
+	end
+	return true
+end
+function playerGetCountry(playerptr)
+	local ip=Actor:getIP(playerptr)
+	ip=string.sub(ip,0,string.find(ip,"|",0)-1)
+	local n=json.decode(get('http://ip-api.com/json/'..ip..'?fields=16386'))
+	if n['status']=='fail' then 
+		return 'Mars'
+	else
+		return n['countryCode']
+	end
+end
+function isNearLand(pos,dim,nearVal) end
 
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version)
