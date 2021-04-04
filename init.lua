@@ -57,7 +57,7 @@ function EXCEPTION(e)
 	return e.."\n"..tracebackex()
 end
 
-local G_EVENTS={["onJoin"]=1,["onLeft"]=2,["onChat"]=3,["onCMD"]=4,["onMobDie"]=5,["onLCMD"]=6,["onMobHurt"]=7,["onPlayerDestroyBlock"]=8,["onPlayerPlaceBlock"]=9,["onPlayerUseItem"]=9,["onPlayerOpenChest"]=10,["onPlayerOpenBarrel"]=11,["onPlayerCloseBarrel"]=12,["onPlayerCloseChest"]=13,["onPlayerAttack"]=14,["onPlayerRespawn"]=15}
+local G_EVENTS={["onJoin"]=1,["onLeft"]=2,["onChat"]=3,["onCMD"]=4,["onMobDie"]=5,["onLCMD"]=6,["onMobHurt"]=7,["onPlayerDestroyBlock"]=8,["onPlayerPlaceBlock"]=9,["onPlayerUseItem"]=9,["onPlayerOpenChest"]=10,["onPlayerOpenBarrel"]=11,["onPlayerCloseBarrel"]=12,["onPlayerCloseChest"]=13,["onPlayerAttack"]=14,["onPlayerRespawn"]=15,["onExplode"]=17,["onPlayerTakeItem"]=18,["onPlayerDropItem"]=19}
 function Listen(ename,cb)
 	if G_EVENTS[ename]==nil then
 		error("cant find event")
@@ -146,4 +146,5 @@ function IfFile(path)
 		file:close();return true
 	end
 end
+
 print("LuaInit loaded!!")
