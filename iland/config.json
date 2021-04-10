@@ -1,0 +1,1 @@
+{"features":{"landSign":false,"frequency":10},"manager":{"operator":{},"default_language":"zh_CN"},"update_check":true,"money":{"protocol":"scoreboard","scoreboard_objname":"money"},"land":{"land_min_square":4,"land_max_square":2000,"player_max_lands":5},"land_buy":{"refund_rate":0.9,"price_sky":2,"price_ground":10},"version":111}
