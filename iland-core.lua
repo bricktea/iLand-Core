@@ -313,11 +313,23 @@ end
 
 function money_add(player,value)
 	local playername=Actor:getName(player)
-	runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	if cfg.money.protocol=='scoreboard' then
+		runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	end
+	if cfg.money.protocol=='llmoney' then
+		runCmd('money add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	end
+	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
 function money_del(player,value)
 	local playername=Actor:getName(player)
-	runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	if cfg.money.protocol=='scoreboard' then
+		runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	end
+	if cfg.money.protocol=='llmoney' then
+		runCmd('money reduce "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+	end
+	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
 function money_get(player)
 	local playername=Actor:getName(player)
