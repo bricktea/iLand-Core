@@ -33,6 +33,9 @@ function EV_playerJoin(e)
 		iland_save()
 	end
 end
+function EV_playerLeft(e)
+	TRS_Form[e]=nil
+end
 -- form -> callback
 function FORM_NULL(a,b,c,d) end
 function FORM_land(player,index,text)
@@ -123,7 +126,6 @@ function FORM_land_gui_transfer(player,raw,data)
 	local xuid=Actor:getXuid(player)
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
 	if go==xuid then Actor:sendText(player,_tr('title.landtransfer.canttoown'),5);return end
-	if land_owners[go]==nil then land_owners[go]={} end
 	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
 	table.insert(land_owners[go],#land_owners[go]+1,landid)
 	iland_save()
@@ -479,7 +481,7 @@ function ILAPI_GetOwner(landid)
 	-- if not found, return '?'
 	for i,v in pairs(land_owners) do
 		if isValInList(v,landid)~=-1 then
-			return i;break
+			return i
 		end
 	end
 	return '?'
@@ -707,6 +709,39 @@ function split(str,reps) -- [NOTICE] This function from: blog.csdn.net
     return resultStrList
 end
 
+-- minecraft -> events
+function IL_LIS_onPlayerDestroyBlock(e) end
+function IL_LIS_onPlayerPlaceBlock(e) end
+function IL_LIS_onPlayerUseItem(e) end
+function IL_LIS_onPlayerOpenChest(e) end
+function IL_LIS_onPlayerOpenBarrel(e) end
+function IL_LIS_onPlayerAttack(e) end
+function IL_LIS_onExplode(e) end
+function IL_LIS_onPlayerTakeItem(e) end
+function IL_LIS_onPlayerDropItem(e) end
+
+-- listen events,
 Listen('onCMD',IL_CmdFunc)
 Listen('onJoin',EV_playerJoin)
+Listen('onLeft',EV_playerLeft)
+Listen('onPlayerDestroyBlock',IL_LIS_onPlayerDestroyBlock)
+Listen('onPlayerPlaceBlock',IL_LIS_onPlayerPlaceBlock)
+Listen('onPlayerUseItem',IL_LIS_onPlayerUseItem)
+Listen('onPlayerOpenChest',IL_LIS_onPlayerOpenChest)
+Listen('onPlayerOpenBarrel',IL_LIS_onPlayerOpenBarrel)
+Listen('onPlayerAttack',IL_LIS_onPlayerAttack)
+Listen('onExplode',IL_LIS_onExplode)
+Listen('onPlayerTakeItem',IL_LIS_onPlayerTakeItem)
+Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
+
+-- register cmd.
+-- PERMISSION_LEVEL - Any[0] GameMasters[1] Admin[2] Host[3] Owner[4] Internal[5]
+makeCommand(MainCmd,_tr('command.land'),1)
+makeCommand(MainCmd..' new',_tr('command.land_new'),1)
+makeCommand(MainCmd..' a',_tr('command.land_a'),1)
+makeCommand(MainCmd..' b',_tr('command.land_b'),1)
+makeCommand(MainCmd..' buy',_tr('command.land_buy'),1)
+makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
+makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
+--makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version)

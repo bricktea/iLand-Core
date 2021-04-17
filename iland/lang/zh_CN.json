@@ -121,7 +121,7 @@
     "command.land_b": "三维圈地，选取第二个点",
     "command.land_buy": "购买刚圈好的地",
     "command.land_gui": "打开领地管理界面",
-    "command.land_cfg": "领地系统个人设置",
+    "command.land_mgr": "打开OP领地控制台界面",
 
     "console.newversion": "此服务器正在使用旧版领地插件，新版本 <a> 已发布！",
     "console.update": "存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。"
