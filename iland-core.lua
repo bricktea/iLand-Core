@@ -34,6 +34,7 @@ function EV_playerJoin(e)
 	end
 end
 -- form -> callback
+function FORM_NULL(a,b,c,d) end
 function FORM_land(player,index,text)
 	if text==_tr('gui.general.close') then return end
 	-- GUI(player,'land_mgr',xxx)
@@ -49,13 +50,186 @@ function FORM_land_buy(player,index,text)
 	Actor:sendText(player,_tr('title.buyland.succeed'),5)
 	ILAPI_CreateLand(player,newLand[player].posA,newLand[player].posB,newLand[player].dim)
 	newLand[player]=nil
-	GUI(player,'modalForm','FORM_land_gui',
+	GUI(player,'ModalForm','FORM_land_gui',
 								"Complete.",
 								_tr('gui.buyland.succeed'),
 								_tr('gui.general.looklook'),
 								_tr('gui.general.cancel'))
 end
-function FORM_land_gui(a,b,c,d,e,f,g)
+function FORM_land_gui_perm(player,raw,data)
+	local landid=TRS_Form[player].landid
+	-- [1]null     [2]PlaceBlock [3]DestoryBlock [4]openChest  [5]Attack 
+	-- [6]DropItem [7]PickupItem [8]UseItem      [9]openBarrel [10]null
+	-- [11]Explode
+	land_data[landid].permissions.allow_destory=raw[3]
+	land_data[landid].permissions.allow_place=raw[2]
+	land_data[landid].permissions.allow_exploding=raw[11]
+	land_data[landid].permissions.allow_attack=raw[5]
+	land_data[landid].permissions.allow_open_chest=raw[4]
+	land_data[landid].permissions.allow_pickupitem=raw[7]
+	land_data[landid].permissions.allow_dropitem=raw[6]
+	land_data[landid].permissions.allow_use_item=raw[8]
+	land_data[landid].permissions.allow_open_barrel=raw[9]
+	iland_save()
+end
+function FORM_land_gui_trust(player,raw,data)
+	local landid=TRS_Form[player].landid
+	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
+	if raw[2]==1 then
+		if raw[3]==0 then return end
+		local x=Actor:str2xid(TRS_Form[player].playerList[raw[3]+1])
+		local n=#land_data[landid].settings.share+1
+		if(Actor:getXuid(player)==x) then
+			Actor:sendText(player,_tr('title.landtrust.cantaddown'),5);return
+		end
+		if(isValInList(land_data[landid].settings.share,x)~=-1) then
+			Actor:sendText(player,_tr('title.landtrust.alreadyexists'),5);return
+		end
+		land_data[landid].settings.share[n]=x
+		iland_save()
+		if(result[4]~=1) then 
+			GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+													'Complete.',
+													_tr('gui.general.back'),
+													_tr('gui.general.close'))
+		end
+	end
+	if raw[4]==1 then
+		if raw[3]==0 then return end
+		local x=land_data[landid].settings.share[raw[5]+1]
+		table.remove(land_data[landid].settings.share,isValInList(land_data[landid].settings.share,x))
+		iland_save()
+		GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+													'Complete.',
+													_tr('gui.general.back'),
+													_tr('gui.general.close'))
+	end
+end
+function FORM_land_gui_name(player,raw,data)
+	local landid=TRS_Form[player].landid
+	if isTextSpecial(raw[2]) then
+		Actor:sendText(player,'FAILED',5);return
+	end
+	land_data[landid].settings.nickname=raw[2]
+	iland_save()
+	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+												'Complete.',
+												_tr('gui.general.back'),
+												_tr('gui.general.close'))
+end
+function FORM_land_gui_transfer(player,raw,data)
+	if raw[2]==0 then return end
+	local landid=TRS_Form[player].landid
+	local xuid=Actor:getXuid(player)
+	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
+	if go==xuid then Actor:sendText(player,_tr('title.landtransfer.canttoown'),5);return end
+	if land_owners[go]==nil then land_owners[go]={} end
+	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
+	table.insert(land_owners[go],#land_owners[go]+1,landid)
+	iland_save()
+	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+									gsubEx(_tr('title.landtransfer.complete'),
+										'<a>',ILAPI_GetNickname(landid),
+										'<b>',Actor:xid2str(go)),
+									_tr('gui.general.back'),
+									_tr('gui.general.close'))
+end
+function FORM_land_gui_delete(player,index,text)
+	if index==1 then return end
+	local landid=TRS_Form[player].landid
+	local xuid=Actor:getXuid(player)
+	land_data[landid]=nil
+	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
+	money_add(player,TRS_Form[player].landvalue)
+	iland_save()
+	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+										'Complete.',
+										_tr('gui.general.back'),
+										_tr('gui.general.close'))
+end
+function FORM_land_gui(player,raw,data)
+	local xuid=Actor:getXuid(player)
+	local landid=land_owners[xuid][raw[3]+1]
+	TRS_Form[player].landid=landid
+	if raw[2]==0 then --查看领地信息
+		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
+		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
+		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
+		local vol = length * width * height
+		local squ = length * width
+		local nname=ILAPI_GetNickname(landid)
+		if nname=='' then nname='<'.._tr('gui.landmgr.unnamed')..'>' end
+		GUI(player,'ModalForm','FORM_NULL',_tr('gui.landmgr.landinfo.title'),
+									gsubEx(_tr('gui.landmgr.landinfo.content'),
+										'<a>',Actor:getName(player),
+										'<m>',landid,
+										'<n>',nname,
+										'<b>',land_data[landid].range.start_position[1],
+										'<c>',land_data[landid].range.start_position[2],
+										'<d>',land_data[landid].range.start_position[3],
+										'<e>',land_data[landid].range.end_position[1],
+										'<f>',land_data[landid].range.end_position[2],
+										'<g>',land_data[landid].range.end_position[3],
+										'<h>',length,'<i>',width,'<j>',height,
+										'<k>',squ,'<l>',vol),
+									_tr('gui.general.iknow'),
+									_tr('gui.general.close'))
+	end
+	if raw[2]==1 then --编辑领地权限
+		local d=land_data[landid].permissions
+		GUI(player,'lmgr_landperm','FORM_land_gui_perm',_tr('gui.landmgr.landperm.title'),
+							_tr('gui.landmgr.landperm.options.title'),
+							_tr('gui.landmgr.landperm.options.place'),tostring(d.allow_place),
+							_tr('gui.landmgr.landperm.options.destroy'),tostring(d.allow_destory),
+							_tr('gui.landmgr.landperm.options.openchest'),tostring(d.allow_open_chest),
+							_tr('gui.landmgr.landperm.options.attack'),tostring(d.allow_attack),
+							_tr('gui.landmgr.landperm.options.dropitem'),tostring(d.allow_dropitem),
+							_tr('gui.landmgr.landperm.options.pickupitem'),tostring(d.allow_pickupitem),
+							_tr('gui.landmgr.landperm.options.useitem'),tostring(d.allow_use_item),
+							_tr('gui.landmgr.landperm.options.openbarrel'),tostring(d.allow_open_barrel),
+							_tr('gui.landmgr.landperm.editevent'),
+							_tr('gui.landmgr.landperm.options.exploding'),tostring(d.allow_exploding)
+						)
+	end
+	if raw[2]==2 then --编辑信任名单
+		TRS_Form[player].playerList = {'['.._tr('gui.general.plzchose')..']'} --wait for fix.
+		local d=shacopy(land_data[landid].settings.share)
+		for i, v in pairs(d) do
+			d[i]=Actor:xid2str(d[i])
+		end
+		table.insert(d,1,'['.._tr('gui.general.plzchose')..']') -- fuck bugs.
+		GUI(player,'lmgr_landtrust','FORM_land_gui_trust',_tr('gui.landtrust.title'),
+												_tr('gui.landtrust.tip'),
+												_tr('gui.landtrust.addtrust'),
+												_tr('gui.landtrust.selectplayer'),json.encode(TRS_Form[player].playerList),
+												_tr('gui.landtrust.rmtrust'),
+												_tr('gui.landtrust.selectplayer'),json.encode(d))
+	end
+	if raw[2]==3 then --领地nickname
+		local nickn=ILAPI_GetNickname(landid)
+		if nickn=='' then nickn='['.._tr('gui.landmgr.unnamed')..']' end
+		GUI(player,'lmgr_landname','FORM_land_gui_name',_tr('gui.landtag.title'),
+														_tr('gui.landtag.tip'),
+														nickn)
+	end
+	if raw[2]==4 then --领地过户
+		TRS_Form[player].playerList = {'['.._tr('gui.general.plzchose')..']','redbeanw'} --wait for fix.
+		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
+									_tr('gui.landtransfer.tip'),
+									_tr('talk.land.selecttargetplayer'),
+									json.encode(TRS_Form[player].playerList))
+	end
+	if raw[2]==5 then --删除领地
+		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
+		local squ = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) * math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
+		TRS_Form[player].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
+		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
+												gsubEx(_tr('gui.delland.content'),
+													'<a>',TRS_Form[player].landvalue,
+													'<b>',_tr('talk.credit_name')),
+												_tr('gui.general.yes'),
+												_tr('gui.general.cancel'))
+	end
 end
 function IL_BP_SelectRange(player, vec4, mode)
     if (newLand[player]==nil) then
@@ -150,7 +324,7 @@ function IL_BP_CreateOrder(player)
 	end
 	--- 购买
     newLand[player].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
-	GUI(player,'modalForm','FORM_land_buy', -- %1 callback
+	GUI(player,'ModalForm','FORM_land_buy', -- %1 callback
 						_tr('gui.buyland.title'), --%2 title
 						gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[player].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)), -- %3 content
 						_tr('gui.general.buy'), -- %4 button1
@@ -175,13 +349,19 @@ function IL_Manager_GUI(player)
 		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
 	end
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
-	GUI(player,'LandManager','FORM_land_gui', -- %1 callback
+	local lands={}
+	for i,v in pairs(land_owners[xuid]) do
+		local f=ILAPI_GetNickname(v)
+		if f=='' then f='['.._tr('gui.landmgr.unnamed')..'] '..v end
+		lands[i]=f
+	end
+	GUI(player,'lmgr','FORM_land_gui', -- %1 callback
 								_tr('gui.landmgr.title'), -- %2 title
 								welcomeText, -- %3 label
-								_tr('gui.oplandmgr.selectoption'), --%4 slider->text
-								json.encode(features), -- %5 slider->steps
+								_tr('gui.oplandmgr.selectoption'), --%4 dropdown->text
+								json.encode(features), -- %5 dropdown->args
 								_tr('gui.landmgr.select'), -- %6 dropdown->text
-								json.encode(land_owners[xuid])) -- %7 dropdown->args
+								json.encode(lands)) -- %7 dropdown->args
 end
 function IL_CmdFunc(player,cmd)
 	if player==0 then return end
@@ -189,7 +369,7 @@ function IL_CmdFunc(player,cmd)
 	-- [ ] Main Command
 	if cmd == MainCmd then
 		land_count=tostring(#land_owners[xuid])
-		GUI(player,'modalForm','FORM_land', -- %1 callback
+		GUI(player,'ModalForm','FORM_land', -- %1 callback
 						gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
 						gsubEx(_tr('gui.land.content'),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',_tr('talk.credit_name'),'<d>',cfg.land_buy.price_sky), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
 						_tr('talk.landmgr.open'), --%4 button1
@@ -245,29 +425,37 @@ function ILAPI_CreateLand(playerptr,startpos,endpos,dimensionid)
 	local xuid=Actor:getXuid(playerptr)
 	local landId=getGuid()
 	land_data[landId]={}
+	land_data[landId].settings={}
+	land_data[landId].settings.share={}
+	land_data[landId].settings.nickname=""
 	land_data[landId].range={}
 	land_data[landId].range.start_position={}
-	land_data[landId].range.end_position={}
-	land_data[landId].setting={}
-	land_data[landId].setting.share={}
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
 	table.insert(land_data[landId].range.start_position,2,startpos.y)
 	table.insert(land_data[landId].range.start_position,3,startpos.z)
+	land_data[landId].range.end_position={}
 	table.insert(land_data[landId].range.end_position,1,endpos.x)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
 	land_data[landId].range.dim=dimensionid
-	land_data[landId].setting.allow_destory=false
-	land_data[landId].setting.allow_place=false
-	land_data[landId].setting.allow_exploding=false
-	land_data[landId].setting.allow_attack=false
-	land_data[landId].setting.allow_open_chest=false
-	land_data[landId].setting.allow_open_barrel=false
-	land_data[landId].setting.allow_pickupitem=false
-	land_data[landId].setting.allow_dropitem=true
-	land_data[landId].setting.allow_use_item=true
+	land_data[landId].permissions.allow_destory=false
+	land_data[landId].permissions.allow_place=false
+	land_data[landId].permissions.allow_exploding=false
+	land_data[landId].permissions.allow_attack=false
+	land_data[landId].permissions.allow_open_chest=false
+	land_data[landId].permissions.allow_open_barrel=false
+	land_data[landId].permissions.allow_pickupitem=false
+	land_data[landId].permissions.allow_dropitem=true
+	land_data[landId].permissions.allow_use_item=true
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
+end
+function ILAPI_GetNickname(landid)
+	if land_data[landid]==nil then 
+		print('[ILAPI] WARN!! Getting nil land('..landid..').')
+		return '' 
+	end
+	return land_data[landid].settings.nickname
 end
 -- feature function
 function iland_save()
@@ -295,39 +483,41 @@ function getGuid() -- [NOTICE] This function is from Internet.
         string.sub(sid,21,32)
     )
 end
-function gsubEx(m,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1)
-	local n=string.gsub(m,a,a1)
-	if b~=nil then n=string.gsub(n,b,b1) else return n end
-	if c~=nil then n=string.gsub(n,c,c1) else return n end
-	if d~=nil then n=string.gsub(n,d,d1) else return n end
-	if e~=nil then n=string.gsub(n,e,e1) else return n end
-	if f~=nil then n=string.gsub(n,f,f1) else return n end
-	if g~=nil then n=string.gsub(n,g,g1) else return n end
-	if h~=nil then n=string.gsub(n,h,h1) else return n end
-	if i~=nil then n=string.gsub(n,i,i1) else return n end
-	if j~=nil then n=string.gsub(n,j,j1) else return n end
-	if k~=nil then n=string.gsub(n,k,k1) else return n end
-	if l~=nil then n=string.gsub(n,l,l1) else return n end
-	return n
+function gsubEx(y,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1,m,m1,n,n1)
+	local z=string.gsub(y,a,a1)
+	if b~=nil then z=string.gsub(z,b,b1) else return z end
+	if c~=nil then z=string.gsub(z,c,c1) else return z end
+	if d~=nil then z=string.gsub(z,d,d1) else return z end
+	if e~=nil then z=string.gsub(z,e,e1) else return z end
+	if f~=nil then z=string.gsub(z,f,f1) else return z end
+	if g~=nil then z=string.gsub(z,g,g1) else return z end
+	if h~=nil then z=string.gsub(z,h,h1) else return z end
+	if i~=nil then z=string.gsub(z,i,i1) else return z end
+	if j~=nil then z=string.gsub(z,j,j1) else return z end
+	if k~=nil then z=string.gsub(z,k,k1) else return z end
+	if l~=nil then z=string.gsub(z,l,l1) else return z end
+	if m~=nil then z=string.gsub(z,m,m1) else return z end
+	if n~=nil then z=string.gsub(z,n,n1) else return z end
+	return z
 end
 
 function money_add(player,value)
 	local playername=Actor:getName(player)
 	if cfg.money.protocol=='scoreboard' then
-		runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+		runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	if cfg.money.protocol=='llmoney' then
-		runCmd('money add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+		runCmd('money add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
 function money_del(player,value)
 	local playername=Actor:getName(player)
 	if cfg.money.protocol=='scoreboard' then
-		runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+		runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	if cfg.money.protocol=='llmoney' then
-		runCmd('money reduce "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value)
+		runCmd('money reduce "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
@@ -447,6 +637,13 @@ function isValInList(list, value)
         end
     end
     return -1
+end
+function shacopy(orig)
+	local r={}
+	for i=1,#orig do
+		r[i]=orig[i]
+	end
+	return r
 end
 function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
     local orig_type = type(orig)
