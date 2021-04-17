@@ -363,6 +363,22 @@ function IL_Manager_GUI(player)
 								_tr('gui.landmgr.select'), -- %6 dropdown->text
 								json.encode(lands)) -- %7 dropdown->args
 end
+function IL_Manager_OPGUI(player)
+	---------------
+	-- # UNDONE. --
+	---------------
+	local landlst={}
+	for i,v in pairs(land_data) do
+		if land_data[i].settings.nickname=='' then
+			landlst[i]='['..gui.landmgr.unnamed..'] '..i
+		else
+			local thisOwner=ILAPI_GetOwner(i)
+			if thisOwner~='?' then thisOwner=Actor:xid2str(thisOwner) end
+			landlst[i]=land_data[i].settings.nickname..' ('..thisOwner..') ['..i..']'
+		end
+	end
+	local features={_tr('gui.oplandmgr.donothing'),_tr('gui.oplandmgr.tp'),_tr('gui.oplandmgr.transfer'),_tr('gui.oplandmgr.delland')}
+end
 function IL_CmdFunc(player,cmd)
 	if player==0 then return end
 	local xuid=Actor:getXuid(player)
@@ -413,6 +429,8 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
+		if isValInList(cfg.manager.operator,xuid)==-1 then return end
+		--IL_Manager_OPGUI(player)
 	end
 	-- [X] Disable Output
 	if string.sub(cmd,1,5)==MainCmd..' ' or string.sub(cmd,1,4)==MainCmd then
@@ -456,6 +474,15 @@ function ILAPI_GetNickname(landid)
 		return '' 
 	end
 	return land_data[landid].settings.nickname
+end
+function ILAPI_GetOwner(landid)
+	-- if not found, return '?'
+	for i,v in pairs(land_owners) do
+		if isValInList(v,landid)~=-1 then
+			return i;break
+		end
+	end
+	return '?'
 end
 -- feature function
 function iland_save()
