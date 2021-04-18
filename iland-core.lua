@@ -38,9 +38,9 @@ function EV_playerLeft(e)
 end
 -- form -> callback
 function FORM_NULL(a,b,c,d) end
-function FORM_land(player,index,text)
-	if text==_tr('gui.general.close') then return end
-	-- GUI(player,'land_mgr',xxx)
+function FORM_BACK_LandMgr(player,index,text)
+	if index==1 then return end
+	IL_Manager_GUI(player)
 end
 function FORM_land_buy(player,index,text)
 	local xuid = Actor:getXuid(player)
@@ -74,6 +74,10 @@ function FORM_land_gui_perm(player,raw,data)
 	land_data[landid].permissions.allow_use_item=raw[8]
 	land_data[landid].permissions.allow_open_barrel=raw[9]
 	iland_save()
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
+													'Complete.',
+													_tr('gui.general.back'),
+													_tr('gui.general.close'))
 end
 function FORM_land_gui_trust(player,raw,data)
 	local landid=TRS_Form[player].landid
@@ -91,7 +95,7 @@ function FORM_land_gui_trust(player,raw,data)
 		land_data[landid].settings.share[n]=x
 		iland_save()
 		if(result[4]~=1) then 
-			GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+			GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
 													_tr('gui.general.back'),
 													_tr('gui.general.close'))
@@ -102,7 +106,7 @@ function FORM_land_gui_trust(player,raw,data)
 		local x=land_data[landid].settings.share[raw[5]+1]
 		table.remove(land_data[landid].settings.share,isValInList(land_data[landid].settings.share,x))
 		iland_save()
-		GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
 													_tr('gui.general.back'),
 													_tr('gui.general.close'))
@@ -115,7 +119,7 @@ function FORM_land_gui_name(player,raw,data)
 	end
 	land_data[landid].settings.nickname=raw[2]
 	iland_save()
-	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 												'Complete.',
 												_tr('gui.general.back'),
 												_tr('gui.general.close'))
@@ -129,7 +133,7 @@ function FORM_land_gui_transfer(player,raw,data)
 	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
 	table.insert(land_owners[go],#land_owners[go]+1,landid)
 	iland_save()
-	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 									gsubEx(_tr('title.landtransfer.complete'),
 										'<a>',ILAPI_GetNickname(landid),
 										'<b>',Actor:xid2str(go)),
@@ -144,7 +148,7 @@ function FORM_land_gui_delete(player,index,text)
 	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
 	money_add(player,TRS_Form[player].landvalue)
 	iland_save()
-	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 										'Complete.',
 										_tr('gui.general.back'),
 										_tr('gui.general.close'))
@@ -161,7 +165,7 @@ function FORM_land_gui(player,raw,data)
 		local squ = length * width
 		local nname=ILAPI_GetNickname(landid)
 		if nname=='' then nname='<'.._tr('gui.landmgr.unnamed')..'>' end
-		GUI(player,'ModalForm','FORM_NULL',_tr('gui.landmgr.landinfo.title'),
+		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.landmgr.landinfo.title'),
 									gsubEx(_tr('gui.landmgr.landinfo.content'),
 										'<a>',Actor:getName(player),
 										'<m>',landid,
@@ -389,7 +393,7 @@ function IL_CmdFunc(player,cmd)
 	-- [ ] Main Command
 	if cmd == MainCmd then
 		land_count=tostring(#land_owners[xuid])
-		GUI(player,'ModalForm','FORM_land', -- %1 callback
+		GUI(player,'ModalForm','FORM_BACK_LandMgr', -- %1 callback
 						gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
 						gsubEx(_tr('gui.land.content'),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',_tr('talk.credit_name'),'<d>',cfg.land_buy.price_sky), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
 						_tr('talk.landmgr.open'), --%4 button1
