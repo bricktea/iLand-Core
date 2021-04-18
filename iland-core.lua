@@ -194,12 +194,13 @@ function FORM_land_gui(player,raw,data)
 						)
 	end
 	if raw[2]==2 then --编辑信任名单
-		TRS_Form[player].playerList = {'['.._tr('gui.general.plzchose')..']'} --wait for fix.
+		TRS_Form[player].playerList = GetOnlinePlayerList(2)
 		local d=shacopy(land_data[landid].settings.share)
 		for i, v in pairs(d) do
 			d[i]=Actor:xid2str(d[i])
 		end
-		table.insert(d,1,'['.._tr('gui.general.plzchose')..']') -- fuck bugs.
+		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
+		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtrust','FORM_land_gui_trust',_tr('gui.landtrust.title'),
 												_tr('gui.landtrust.tip'),
 												_tr('gui.landtrust.addtrust'),
@@ -215,7 +216,8 @@ function FORM_land_gui(player,raw,data)
 														nickn)
 	end
 	if raw[2]==4 then --领地过户
-		TRS_Form[player].playerList = {'['.._tr('gui.general.plzchose')..']','redbeanw'} --wait for fix.
+		TRS_Form[player].playerList = GetOnlinePlayerList(2)
+		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
 									_tr('gui.landtransfer.tip'),
 									_tr('talk.land.selecttargetplayer'),
@@ -342,7 +344,7 @@ end
 function IL_Manager_GUI(player)
 	local xuid=Actor:getXuid(player)
 	local xyz=pos2vec({Actor:getPos(player)})
-	local lid=getLandFromPos(xyz)
+	local lid=ILAPI_PosGetLand(xyz)
 	local welcomeText=_tr('gui.landmgr.content')
 	if(lid~=-1) then
 		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',lid)
@@ -486,7 +488,28 @@ function ILAPI_GetOwner(landid)
 	end
 	return '?'
 end
+function ILAPI_PosGetLand(vec4)
+	for landId, val in pairs(land_data) do
+		if(land_data[landId].range.dim~=vec4.dim) then goto JUMPOUT_4 end
+		local s_pos={};s_pos.x=land_data[landId].range.start_position[1];s_pos.y=land_data[landId].range.start_position[2];s_pos.z=land_data[landId].range.start_position[3]
+		local e_pos={};e_pos.x=land_data[landId].range.end_position[1];e_pos.y=land_data[landId].range.end_position[2];e_pos.z=land_data[landId].range.end_position[3]
+		if(isPosInCube(vec4,s_pos,e_pos)==true) then
+			return landId
+		end
+		:: JUMPOUT_4 ::
+	end
+	return -1
+end
 -- feature function
+function GetOnlinePlayerList(mode) -- [0]playerptr [1]xuid [2]playername
+	local b={}
+	for i,v in pairs(TRS_Form) do
+		if mode==0 then b[#b+1]=i end
+		if mode==1 then b[#b+1]=Actor:getXuid(i) end
+		if mode==2 then b[#b+1]=Actor:getName(i) end
+	end
+	return b
+end
 function iland_save()
 	WriteAllText(data_path..'config.json',json.encode(cfg))
 	WriteAllText(data_path..'players.json',json.encode(playerCfg))
@@ -586,18 +609,6 @@ function sendTitle(player,title,subtitle)
 	if subtitle~=nil then
 	mc:runcmd('title "' .. playername .. '" subtitle '..subtitle) end
 	mc:runcmd('title "' .. playername .. '" title '..title)
-end
-function getLandFromPos(vec4)
-	for landId, val in pairs(land_data) do
-		if(land_data[landId].range.dim~=vec4.dim) then goto JUMPOUT_4 end
-		local s_pos={};s_pos.x=land_data[landId].range.start_position[1];s_pos.y=land_data[landId].range.start_position[2];s_pos.z=land_data[landId].range.start_position[3]
-		local e_pos={};e_pos.x=land_data[landId].range.end_position[1];e_pos.y=land_data[landId].range.end_position[2];e_pos.z=land_data[landId].range.end_position[3]
-		if(isPosInCube(vec4,s_pos,e_pos)==true) then
-			return landId
-		end
-		:: JUMPOUT_4 ::
-	end
-	return -1
 end
 function cubeGetEdge(posA,posB)
 	local edge={}
