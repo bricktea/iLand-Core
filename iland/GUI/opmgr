@@ -1,0 +1,17 @@
+type=full,cb=%1,title=%2
+type=label,text=%3
+type=label,text=%4
+type=dropdown,text=%5,args=%6
+type=dropdown,text=%7,args=%8
+type=label,text=%9
+type=input,text=%10,placeholder=%11
+type=label,text=%12
+type=input,text=%13,placeholder=%14
+type=input,text=%15,placeholder=%16
+type=input,text=%17,placeholder=%18
+type=label,text=%19
+type=input,text=%20,placeholder=%21
+type=input,text=%22,placeholder=%23
+type=slider,text=%24,min=%25,max=%26,def=%27
+type=label,text=%28
+type=toggle,text=%29,def=%30

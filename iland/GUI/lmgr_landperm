@@ -1,0 +1,12 @@
+type=full,cb=%1,title=%2
+type=label,text=%3
+type=toggle,text=%4,def=%5
+type=toggle,text=%6,def=%7
+type=toggle,text=%8,def=%9
+type=toggle,text=%10,def=%11
+type=toggle,text=%12,def=%13
+type=toggle,text=%14,def=%15
+type=toggle,text=%16,def=%17
+type=toggle,text=%18,def=%19
+type=label,text=%20
+type=toggle,text=%21,def=%22

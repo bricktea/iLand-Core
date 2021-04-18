@@ -752,9 +752,6 @@ function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 	return -1
 end
 function IL_LIS_onPlayerUseItem(player,idk,x,y,z,dim)
-	sb=Block:get(x,y,z,0)
-	print(x,y,z)
-	print(Block:getId(sb))
 	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
@@ -764,7 +761,6 @@ function IL_LIS_onPlayerUseItem(player,idk,x,y,z,dim)
 	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
-
 	return -1
 end
 function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
@@ -788,6 +784,9 @@ function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
 	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	--
+	-- # problem: UseItem拦截导致此事件不能call
+	--
 	Actor:forceKick(player)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
