@@ -53,8 +53,7 @@ function FORM_land_buy(player,index,text)
 	Actor:sendText(player,_tr('title.buyland.succeed'),5)
 	ILAPI_CreateLand(player,newLand[player].posA,newLand[player].posB,newLand[player].dim)
 	newLand[player]=nil
-	GUI(player,'ModalForm','FORM_land_gui',
-								"Complete.",
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',"Complete.",
 								_tr('gui.buyland.succeed'),
 								_tr('gui.general.looklook'),
 								_tr('gui.general.cancel'))
@@ -349,9 +348,11 @@ function IL_Manager_GUI(player)
 	local xuid=Actor:getXuid(player)
 	local xyz=pos2vec({Actor:getPos(player)})
 	local lid=ILAPI_PosGetLand(xyz)
+	local nname=ILAPI_GetNickname(lid)
+	if nname=='' then nname=lid end
 	local welcomeText=_tr('gui.landmgr.content')
 	if(lid~=-1) then
-		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',lid)
+		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
 	end
 	if(#land_owners[xuid]==0) then
 		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
@@ -464,6 +465,7 @@ function ILAPI_CreateLand(playerptr,startpos,endpos,dimensionid)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
 	land_data[landId].range.dim=dimensionid
+	land_data[landId].permissions={}
 	land_data[landId].permissions.allow_destory=false
 	land_data[landId].permissions.allow_place=false
 	land_data[landId].permissions.allow_exploding=false
@@ -725,22 +727,111 @@ function split(str,reps) -- [NOTICE] This function from: blog.csdn.net
 end
 
 -- minecraft -> events
-function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z) end
-function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z) end
-function IL_LIS_onPlayerUseItem(player,idk,x,y,z) end
-function IL_LIS_onPlayerOpenChest(a,b,c,d,e) 
-	-- print(a,b,c,d,e)
-	-- PROBLEM!!!
+function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_destory==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
 end
-function IL_LIS_onPlayerOpenBarrel(a,b,c,d,e)
-	-- print(a,b,c,d,e)
-	-- PROBLEM!!!
+function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_place==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
 end
-function IL_LIS_onPlayerAttack(player,mobptr) end
-function IL_LIS_onExplode(ptr,x,y,z) end
-function IL_LIS_onPlayerTakeItem(player,itemptr) end
+function IL_LIS_onPlayerUseItem(player,idk,x,y,z,dim)
+	sb=Block:get(x,y,z,0)
+	print(x,y,z)
+	print(Block:getId(sb))
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_use_item==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+
+	return -1
+end
+function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_open_chest==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
+end
+function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_open_barrel==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:forceKick(player)
+end
+function IL_LIS_onPlayerAttack(player,mobptr)
+	local pos=pos2vec({Actor:getPos(player)})
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_attack==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
+end
+function IL_LIS_onExplode(ptr,x,y,z)
+	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local landid=ILAPI_PosGetLand(pos)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_exploding==1 then return end -- Perm Allow
+	return -1
+end
+function IL_LIS_onPlayerTakeItem(player,itemptr)
+	local pos=pos2vec({Actor:getPos(player)})
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_pickupitem==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
+end
 function IL_LIS_onPlayerDropItem(player,itemptr)
-	-- PROBLEM!!!
+	local pos=pos2vec({Actor:getPos(player)})
+	local landid=ILAPI_PosGetLand(pos)
+	local xuid=Actor:getXuid(player)
+	if landid==-1 then return end -- No Land
+	if land_data[landid].permissions.allow_dropitem==1 then return end -- Perm Allow
+	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	return -1
 end
 
 -- listen events,
