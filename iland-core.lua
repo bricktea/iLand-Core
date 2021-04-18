@@ -725,15 +725,23 @@ function split(str,reps) -- [NOTICE] This function from: blog.csdn.net
 end
 
 -- minecraft -> events
-function IL_LIS_onPlayerDestroyBlock(e) end
-function IL_LIS_onPlayerPlaceBlock(e) end
-function IL_LIS_onPlayerUseItem(e) end
-function IL_LIS_onPlayerOpenChest(e) end
-function IL_LIS_onPlayerOpenBarrel(e) end
-function IL_LIS_onPlayerAttack(e) end
-function IL_LIS_onExplode(e) end
-function IL_LIS_onPlayerTakeItem(e) end
-function IL_LIS_onPlayerDropItem(e) end
+function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z) end
+function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z) end
+function IL_LIS_onPlayerUseItem(player,idk,x,y,z) end
+function IL_LIS_onPlayerOpenChest(a,b,c,d,e) 
+	-- print(a,b,c,d,e)
+	-- PROBLEM!!!
+end
+function IL_LIS_onPlayerOpenBarrel(a,b,c,d,e)
+	-- print(a,b,c,d,e)
+	-- PROBLEM!!!
+end
+function IL_LIS_onPlayerAttack(player,mobptr) end
+function IL_LIS_onExplode(ptr,x,y,z) end
+function IL_LIS_onPlayerTakeItem(player,itemptr) end
+function IL_LIS_onPlayerDropItem(player,itemptr)
+	-- PROBLEM!!!
+end
 
 -- listen events,
 Listen('onCMD',IL_CmdFunc)
