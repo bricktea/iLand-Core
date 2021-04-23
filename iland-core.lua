@@ -753,7 +753,8 @@ function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
-function IL_LIS_onPlayerUseItem(player,idk,x,y,z,dim)
+function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
+	if blockname=='minecraft:barrel' then return end -- sb mojang
 	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
@@ -786,10 +787,7 @@ function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
 	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
-	--
-	-- # problem: UseItem拦截导致此事件不能call
-	--
-	Actor:forceKick(player)
+	Actor:teleport(player,x,y+10,z,dim)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=pos2vec({Actor:getPos(player)})
