@@ -27,6 +27,7 @@ local i18n_data = json.decode(ReadAllText(data_path..'lang\\'..cfg.manager.defau
 -- listen -> event
 function EV_playerJoin(e)
 	TRS_Form[e]={}
+	TRS_Form[e].inland='null'
 	local xuid=Actor:getXuid(e)
 	if land_owners[xuid]==nil then
 		land_owners[xuid]={}
@@ -346,16 +347,17 @@ function IL_BP_GiveUp(player)
 end
 function IL_Manager_GUI(player)
 	local xuid=Actor:getXuid(player)
+	if #land_owners[xuid]==0 then
+		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
+	end
+
 	local xyz=pos2vec({Actor:getPos(player)})
 	local lid=ILAPI_PosGetLand(xyz)
 	local nname=ILAPI_GetNickname(lid)
 	if nname=='' then nname=lid end
 	local welcomeText=_tr('gui.landmgr.content')
-	if(lid~=-1) then
+	if lid~=-1 then
 		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
-	end
-	if(#land_owners[xuid]==0) then
-		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
 	end
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
@@ -611,10 +613,10 @@ function pos2vec(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 end
 function sendTitle(player,title,subtitle)
 	local playername = Actor:getName(player)
-	mc:runcmd('title "' .. playername .. '" times 20 25 20')
+	runCmdEx('title "' .. playername .. '" times 20 25 20')
 	if subtitle~=nil then
-	mc:runcmd('title "' .. playername .. '" subtitle '..subtitle) end
-	mc:runcmd('title "' .. playername .. '" title '..title)
+	runCmdEx('title "' .. playername .. '" subtitle '..subtitle) end
+	runCmdEx('title "' .. playername .. '" title '..title)
 end
 function cubeGetEdge(posA,posB)
 	local edge={}
@@ -832,6 +834,26 @@ function IL_LIS_onPlayerDropItem(player,itemptr)
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
+function IL_TCB_LandSign()
+	local players=GetOnlinePlayerList(0)
+	for i,v in pairs(players) do
+		local xyz=pos2vec({Actor:getPos(v)})
+		local landid=ILAPI_PosGetLand(xyz)
+		if landid==-1 then TRS_Form[v].inland='null';return end -- no land here
+		if landid==TRS_Form[v].inland then return end -- signed
+		local owner=ILAPI_GetOwner(landid)
+		local ownername='?'
+		if owner~='?' then ownername=Actor:xid2str(owner) end
+		local slname=ILAPI_GetNickname(landid)
+		if slname=='' then slname='<'.._tr('gui.landmgr.unnamed')..'>' end
+		if Actor:getXuid(v)==owner then
+			sendTitle(v,gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
+		else
+			sendTitle(v,_tr('sign.listener.visitortitle'),gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+		end
+		TRS_Form[v].inland=landid
+	end
+end
 
 -- listen events,
 Listen('onCMD',IL_CmdFunc)
@@ -846,6 +868,11 @@ Listen('onPlayerAttack',IL_LIS_onPlayerAttack)
 Listen('onExplode',IL_LIS_onExplode)
 Listen('onPlayerTakeItem',IL_LIS_onPlayerTakeItem)
 Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
+
+-- timer -> landsign
+if cfg.features.landSign then
+schedule("IL_TCB_LandSign",cfg.features.frequency*2,0)
+end
 
 -- register cmd.
 -- PERMISSION_LEVEL - Any[0] GameMasters[1] Admin[2] Host[3] Owner[4] Internal[5]
