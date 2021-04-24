@@ -725,7 +725,7 @@ function money_add(player,value)
 		runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	if cfg.money.protocol=='llmoney' then
-		runCmd('money add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
+		runCmd('money add "'..playername..'" '..value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
@@ -735,7 +735,7 @@ function money_del(player,value)
 		runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
 	end
 	if cfg.money.protocol=='llmoney' then
-		runCmd('money reduce "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
+		runCmd('money reduce "'..playername..'" '..value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
 end
