@@ -78,6 +78,7 @@
     "gui.oplandmgr.refundrate": "删除领地退款率 (％)",
     "gui.oplandmgr.pluginconfig": "§l插件设置",
     "gui.oplandmgr.checkupdate": "允许自动检查更新",
+    "gui.oplandmgr.enablelandsign": "开启领地进入提示",
     "gui.oplandmgr.selectland": "选择目标领地",
     "title.selectrange.nolic": "没有圈地许可!!\n请先使用“/land new”获取",
     "title.selectrange.failbystep": "选点失败！请按步骤圈地！",
