@@ -1,1 +1,29 @@
-{"version":111,"manager":{"default_language":"zh_CN","operator":["2535431675202881"]},"money":{"protocol":"scoreboard","scoreboard_objname":"money"},"features":{"frequency":10,"landSign":false},"land_buy":{"price_ground":10,"price_sky":2,"refund_rate":0.9},"update_check":true,"land":{"land_min_square":4,"player_max_lands":5,"land_max_square":2000}}
+{
+    "version": 111,
+    "update_check": true,
+    "manager": {
+        "default_language": "zh_CN",
+        "operator": [
+            "put xuid here,",
+            "1145141919810233"
+        ]
+    },
+    "money": {
+        "scoreboard_objname": "money",
+        "protocol": "scoreboard"
+    },
+    "land": {
+        "land_max_square": 50000,
+        "player_max_lands": 5,
+        "land_min_square": 4
+    },
+    "land_buy": {
+        "price_sky": 20,
+        "price_ground": 4,
+        "refund_rate": 0.9
+    },
+    "features": {
+        "landSign": true,
+        "frequency": 10
+    }
+}
