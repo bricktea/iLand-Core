@@ -8,11 +8,11 @@
 local plugin_version = '1.1.1'
 --local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\' <DEV>
 local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
-local lib_path = ''
 local newLand={};local TRS_Form={}
 local MainCmd = 'land'
 local debug_mode=false
-local json = require('cjson')
+local json = require('cjson.safe')
+local request = require('requests')
 
 -- check file
 if IfFile(data_path..'config.json') == false then
@@ -23,6 +23,100 @@ end
 local cfg = json.decode(ReadAllText(data_path..'config.json'))
 land_data = json.decode(ReadAllText(data_path..'data.json'))
 land_owners = json.decode(ReadAllText(data_path..'owners.json'))
+
+-- preload function
+function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+function iland_save()
+	WriteAllText(data_path..'config.json',json.encode(cfg))
+	WriteAllText(data_path..'players.json',json.encode(playerCfg))
+	WriteAllText(data_path..'data.json',json.encode(land_data))
+	WriteAllText(data_path..'owners.json',json.encode(land_owners))
+end
+
+-- cfg -> updater
+do
+	if cfg.version==nil then --version<1.0.4
+		cfg.version={};cfg.version=103
+		cfg.manager.operator={}
+		iland_save()
+	end
+	if cfg.version==103 then
+		cfg.version=106
+		cfg.manager.allow_op_delete_land=nil
+		for landId, val in pairs(land_data) do
+			if(land_data[landId].range==nil) then
+				land_data[landId]=nil
+			end
+		end
+		iland_save()
+	end
+	if cfg.version==106 then
+		cfg.version=107
+		cfg.update_check=true
+		for landId, val in pairs(land_data) do
+			land_data[landId].setting.allow_open_barrel=false
+		end
+		iland_save()
+	end
+	if cfg.version==107 then
+		cfg.version=110
+		cfg.money={}
+		cfg.features={}
+		cfg.money.protocol='scoreboard'
+		cfg.money.scoreboard_objname=cfg.scoreboard.name
+		cfg.features.landSign=false
+		cfg.features.frequency=10
+		cfg.scoreboard=nil
+		cfg.manager.i18n={}
+		cfg.manager.i18n.enabled_languages={"zh_CN","zh_TW"}
+		cfg.manager.i18n.default_language="zh_CN"
+		cfg.manager.i18n.auto_language_byIP=false
+		cfg.manager.i18n.allow_players_select_lang=true
+		iland_save()
+	end
+	if cfg.version==110 then
+		cfg.version=111
+		cfg.manager.default_language=cfg.manager.i18n.default_language
+		cfg.manager.i18n=nil
+		for landid,data in pairs(land_data) do
+			land_data[landid].settings={}
+			land_data[landid].settings.share=deepcopy(land_data[landid].setting.share)
+			land_data[landid].permissions=deepcopy(land_data[landid].setting)
+			land_data[landid].setting=nil
+			land_data[landid].permissions.share=nil
+			land_data[landid].range.start_position={}
+			land_data[landid].range.end_position={}
+			land_data[landid].range.start_position[1]=deepcopy(land_data[landid].range.start_x)
+			land_data[landid].range.start_position[2]=deepcopy(land_data[landid].range.start_y)
+			land_data[landid].range.start_position[3]=deepcopy(land_data[landid].range.start_z)
+			land_data[landid].range.end_position[1]=deepcopy(land_data[landid].range.end_x)
+			land_data[landid].range.end_position[2]=deepcopy(land_data[landid].range.end_y)
+			land_data[landid].range.end_position[3]=deepcopy(land_data[landid].range.end_z)
+			land_data[landid].range.start_x=nil
+			land_data[landid].range.start_y=nil
+			land_data[landid].range.start_z=nil
+			land_data[landid].range.end_x=nil
+			land_data[landid].range.end_y=nil
+			land_data[landid].range.end_z=nil
+		end
+		iland_save()
+	end
+end
+
+-- load language file
 local i18n_data = json.decode(ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 
 -- listen -> event
@@ -39,7 +133,6 @@ function EV_playerLeft(e)
 	TRS_Form[e]=nil
 end
 -- form -> callback
-function FORM_NULL(a,b,c,d) end
 function FORM_BACK_LandOPMgr(player,index,text)
 	if index==1 then return end
 	IL_Manager_OPGUI(player)
@@ -578,6 +671,7 @@ function ILAPI_PosGetLand(vec4)
 	end
 	return -1
 end
+
 -- feature function
 function GetOnlinePlayerList(mode) -- [0]playerptr [1]xuid [2]playername
 	local b={}
@@ -587,12 +681,6 @@ function GetOnlinePlayerList(mode) -- [0]playerptr [1]xuid [2]playername
 		if mode==2 then b[#b+1]=Actor:getName(i) end
 	end
 	return b
-end
-function iland_save()
-	WriteAllText(data_path..'config.json',json.encode(cfg))
-	WriteAllText(data_path..'players.json',json.encode(playerCfg))
-	WriteAllText(data_path..'data.json',json.encode(land_data))
-	WriteAllText(data_path..'owners.json',json.encode(land_owners))
 end
 function _tr(a)
 	return i18n_data[a]
@@ -630,7 +718,6 @@ function gsubEx(y,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1,m,
 	if n~=nil then z=string.gsub(z,n,n1) else return z end
 	return z
 end
-
 function money_add(player,value)
 	local playername=Actor:getName(player)
 	if cfg.money.protocol=='scoreboard' then
@@ -763,20 +850,6 @@ function shacopy(orig)
 	end
 	return r
 end
-function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[deepcopy(orig_key)] = deepcopy(orig_value)
-        end
-        setmetatable(copy, deepcopy(getmetatable(orig)))
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 function isTextSpecial(text)
 	local flag='[%s%p%c%z]'
 	if string.find(text,flag)==nil then
@@ -800,6 +873,7 @@ end
 function toBool(num)
 	if num==0 then return false else return true end
 end
+
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
@@ -944,8 +1018,23 @@ if cfg.features.landSign then
 schedule("IL_TCB_LandSign",cfg.features.frequency*2,0)
 end
 
+-- check update
+if cfg.update_check then
+	local response=request.get('http://cdisk.amd.rocks/tmp/ILAND/v111_version')
+	if response.status_code~=200 then
+		print('[ILand] ERR!! Get version info failed.('..response.status_code..')')
+	end
+	local data=json.decode(response.text)
+	if data.version~=plugin_version then
+		print('[ILand] '.._tr('console.newversion'),'<a>',data.version)
+		print('[ILand] '.._tr('console.update'))
+	end
+	if data.t_e then
+		print('[ILand] '..data.text)
+	end
+end
+
 -- register cmd.
--- PERMISSION_LEVEL - Any[0] GameMasters[1] Admin[2] Host[3] Owner[4] Internal[5]
 makeCommand(MainCmd,_tr('command.land'),1)
 makeCommand(MainCmd..' new',_tr('command.land_new'),1)
 makeCommand(MainCmd..' a',_tr('command.land_a'),1)
