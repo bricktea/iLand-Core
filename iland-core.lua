@@ -604,7 +604,7 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
-		--if isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if isValInList(cfg.manager.operator,xuid)==-1 then return end
 		IL_Manager_OPGUI(player)
 	end
 	-- [X] Disable Output
