@@ -1027,7 +1027,7 @@ if cfg.update_check then
 	end
 	local data=json.decode(response.text)
 	if data.version~=plugin_version then
-		print('[ILand] '.._tr('console.newversion'),'<a>',data.version)
+		print('[ILand] '..gsubEx(_tr('console.newversion'),'<a>',data.version))
 		print('[ILand] '.._tr('console.update'))
 	end
 	if data.t_e then
