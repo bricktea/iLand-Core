@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.1'
+local plugin_version = '1.1.1hotfix'
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
