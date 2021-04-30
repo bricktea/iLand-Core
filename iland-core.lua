@@ -981,7 +981,7 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z)
-	local pos=buildVec(x,y,z,dim)
+	local pos=pos2vec({Actor:getPos(ptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
