@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.1hotfix'
+local plugin_version = '1.1.2'
 --local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
@@ -898,6 +898,12 @@ function calculation_price(length,width,height)
 	local t=cfg.land_buy.price
 	if cfg.land_buy.calculation == 'm-1' then
 		price=length*width*t[1]+height*t[2]
+	end
+	if cfg.land_buy.calculation == 'm-2' then
+		price=length*width*height*t[1]
+	end
+	if cfg.land_buy.calculation == 'm-3' then
+		price=length*width*t[1]
 	end
 	return math.floor(price)
 end
