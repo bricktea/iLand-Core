@@ -1,3 +1,3 @@
-type=full,cb=%1,title=%2
-type=label,text=%3
-type=input,text="",placeholder=%4
+type=full,cb=%1,title="%2"
+type=label,text="%3"
+type=input,text="",placeholder="%4"

@@ -1,9 +1,9 @@
-type=full,cb=%1,title=%2
+type=full,cb=%1,title="%2"
 type=label,text="%3"
 type=label,text="%4"
-type=dropdown,text=%5,args=%6
-type=dropdown,text=%7,args=%8
-type=slider,text=%9,min=0,max=100,def=%10
-type=label,text=%11
-type=toggle,text=%12,def=%13
-type=toggle,text=%14,def=%15
+type=dropdown,text="%5",args=%6
+type=dropdown,text="%7",args=%8
+type=slider,text="%9",min=0,max=100,def=%10
+type=label,text="%11"
+type=toggle,text="%12",def=%13
+type=toggle,text="%14",def=%15

@@ -1,3 +1,3 @@
 type=simple,cb=%1,title="%2",content="%3\n\n§lPlease Chose..."
-text=%4,img=textures/ui/confirm
-text=%5,img=textures/ui/crossout
+text="%4",img=textures/ui/confirm
+text="%5",img=textures/ui/crossout
