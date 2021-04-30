@@ -1,5 +1,5 @@
 {
-    "version": 111,
+    "version": 112,
     "update_check": true,
     "manager": {
         "default_language": "zh_CN",
@@ -11,19 +11,22 @@
     "money": {
         "scoreboard_objname": "money",
         "protocol": "scoreboard"
-    },
+    }, 
     "land": {
         "land_max_square": 50000,
         "player_max_lands": 5,
         "land_min_square": 4
     },
     "land_buy": {
-        "price_sky": 20,
-        "price_ground": 4,
+        "calculation": "m-1",
+        "price": [20,4],
         "refund_rate": 0.9
     },
     "features": {
         "landSign": true,
-        "frequency": 10
+        "edgeProtect": true,
+        "chunk_side": 16,
+        "edge_distance": 4,
+        "sign_frequency": 10
     }
 }

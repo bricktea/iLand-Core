@@ -6,11 +6,11 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.1hotfix'
-local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
--- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
+--local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
+local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
 local MainCmd = 'land'
-local debug_mode=false
+local debug_mode = false
 local json = require('cjson.safe')
 local request = require('requests')
 
@@ -325,8 +325,9 @@ function FORM_land_gui(player,raw,data)
 	end
 	if raw[2]==5 then --删除领地
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
-		local squ = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) * math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
-		TRS_Form[player].landvalue=math.floor((squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)*cfg.land_buy.refund_rate)
+		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
+		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
+		TRS_Form[player].landvalue=math.floor(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
 												gsubEx(_tr('gui.delland.content'),
 													'<a>',TRS_Form[player].landvalue,
@@ -390,9 +391,7 @@ function FORM_land_mgr(player,raw,data)
 									_tr('gui.general.close'))
 end
 function IL_BP_SelectRange(player, vec4, mode)
-    if newLand[player]==nil then
-		Actor:sendText(player,_tr('title.selectrange.nolic'),5);return
-    end
+    if newLand[player]==nil then return end
     if mode==0 then -- point a
         if mode~=newLand[player].step then
 			Actor:sendText(player,_tr('title.selectrange.failbystep'),5);return
@@ -419,6 +418,9 @@ function IL_BP_SelectRange(player, vec4, mode)
         Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'.._tr('title.selectrange.bebuy'),5)
 		newLand[player].step = 2
     end
+	if mode==2 then
+		IL_BP_CreateOrder(player)
+	end
 end
 function IL_BP_CreateOrder(player)
 	local xuid = Actor:getXuid(player)
@@ -481,7 +483,7 @@ function IL_BP_CreateOrder(player)
 		:: JUMPOUT_2 ::
 	end
 	--- 购买
-    newLand[player].landprice = math.floor(squ * cfg.land_buy.price_ground + height * cfg.land_buy.price_sky)
+    newLand[player].landprice = calculation_price(length,width,height)
 	GUI(player,'ModalForm','FORM_land_buy', -- %1 callback
 						_tr('gui.buyland.title'), --%2 title
 						gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[player].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)), -- %3 content
@@ -555,7 +557,7 @@ function IL_CmdFunc(player,cmd)
 		land_count=tostring(#land_owners[xuid])
 		GUI(player,'ModalForm','FORM_BACK_LandMgr', -- %1 callback
 						gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
-						gsubEx(_tr('gui.land.content'),'<a>',land_count,'<b>',cfg.land_buy.price_ground,'<c>',_tr('talk.credit_name'),'<d>',cfg.land_buy.price_sky), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
+						gsubEx(_tr('gui.land.content'),'<a>',land_count), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
 						_tr('talk.landmgr.open'), --%4 button1
 						_tr('gui.general.close')) --%5 button2
 	end
@@ -572,20 +574,6 @@ function IL_CmdFunc(player,cmd)
 		Actor:sendText(player,_tr('title.getlicense.succeed'),5)
 		newLand[player]={}
 		newLand[player].step=0
-	end
-	-- [a] Select point A
-	if cmd == MainCmd..' a' then
-		local xyz=pos2vec({Actor:getPos(player)})
-		IL_BP_SelectRange(player,xyz,0)
-	end
-	-- [b] Select point B
-	if cmd == MainCmd..' b' then
-		local xyz=pos2vec({Actor:getPos(player)})
-		IL_BP_SelectRange(player,xyz,1)
-	end
-	-- [buy] Create order to buy land
-	if cmd == MainCmd..' buy' then
-		IL_BP_CreateOrder(player)
 	end
 	-- [giveup] Give up incp land
 	if cmd == MainCmd..' giveup' then
@@ -895,10 +883,33 @@ end
 function toBool(num)
 	if num==0 then return false else return true end
 end
+function buildVec(x,y,z,dim)
+	local t={}
+	t.x=x
+	t.y=y
+	t.z=z
+	if dim~=nil then
+		t.dim=dim
+	end
+	return t
+end
+function calculation_price(length,width,height)
+	local price=0
+	local t=cfg.land_buy.price
+	if cfg.land_buy.calculation == 'm-1' then
+		price=length*width*t[1]+height*t[2]
+	end
+	return math.floor(price)
+end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	if newLand[player]~=nil and Item:getName(Actor:getHand(player))=='Wooden Axe' then
+		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
+		return -1
+	end
+
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -910,7 +921,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	return -1
 end
 function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -923,7 +934,7 @@ function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 end
 function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 	if blockname=='minecraft:barrel' then return end -- sb mojang
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -935,7 +946,7 @@ function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 	return -1
 end
 function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -947,7 +958,7 @@ function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
 	return -1
 end
 function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -970,7 +981,7 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z)
-	local pos={};pos.x=x;pos.y=y;pos.z=z;pos.dim=dim
+	local pos=buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
@@ -1037,7 +1048,7 @@ Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 
 -- timer -> landsign
 if cfg.features.landSign then
-schedule("IL_TCB_LandSign",cfg.features.frequency*2,0)
+schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
 end
 
 -- check update
@@ -1059,9 +1070,6 @@ end
 -- register cmd.
 makeCommand(MainCmd,_tr('command.land'),1)
 makeCommand(MainCmd..' new',_tr('command.land_new'),1)
-makeCommand(MainCmd..' a',_tr('command.land_a'),1)
-makeCommand(MainCmd..' b',_tr('command.land_b'),1)
-makeCommand(MainCmd..' buy',_tr('command.land_buy'),1)
 makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
 makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
 makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
