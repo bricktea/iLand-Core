@@ -151,7 +151,7 @@ function FORM_land_buy(player,index,text)
 		money_del(player,newLand[player].landprice)
 	end
 	Actor:sendText(player,_tr('title.buyland.succeed'),5)
-	ILAPI_CreateLand(player,newLand[player].posA,newLand[player].posB,newLand[player].dim)
+	ILAPI_CreateLand(xuid,newLand[player].posA,newLand[player].posB,newLand[player].dim)
 	newLand[player]=nil
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',"Complete.",
 								_tr('gui.buyland.succeed'),
@@ -242,11 +242,8 @@ end
 function FORM_land_gui_delete(player,index,text)
 	if index==1 then return end
 	local landid=TRS_Form[player].landid
-	local xuid=Actor:getXuid(player)
-	land_data[landid]=nil
-	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
+	ILAPI_DeleteLand(landid)
 	money_add(player,TRS_Form[player].landvalue)
-	iland_save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 										'Complete.',
 										_tr('gui.general.back'),
@@ -384,11 +381,7 @@ function FORM_land_mgr(player,raw,data)
 		return
 	end
 	if raw[4]==3 then -- delete land.
-		local owner=ILAPI_GetOwner(landid)
-		land_data[landid]=nil
-		if owner=='?' then return end
-		table.remove(land_owners[owner],isValInList(land_owners[owner],landid))
-		iland_save()
+		ILAPI_DeleteLand(landid)
 	end
 
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
@@ -614,9 +607,12 @@ function IL_CmdFunc(player,cmd)
 end
 
 -- ILAPI
-function ILAPI_CreateLand(playerptr,startpos,endpos,dimensionid)
-	local xuid=Actor:getXuid(playerptr)
-	local landId=getGuid()
+function ILAPI_CreateLand(xuid,startpos,endpos,dimensionid)
+	local landId
+	while true do
+		landId=getGuid()
+		if land_data[landId]==nil then break end
+	end
 	land_data[landId]={}
 	land_data[landId].settings={}
 	land_data[landId].settings.share={}
@@ -644,15 +640,37 @@ function ILAPI_CreateLand(playerptr,startpos,endpos,dimensionid)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
 end
+function ILAPI_DeleteLand(landid)
+	if land_data[landid]==nil then
+		if debug_mode then print('[ILAPI] [DeleteLand] WARN!! Deleting nil land('..landid..').') end
+		return
+	end
+	local owner=ILAPI_GetOwner(landid)
+	if owner~='?' then
+		table.remove(land_owners[owner],isValInList(land_owners[owner],landid))
+	end
+	land_data[landid]=nil
+	iland_save()
+end
+function ILAPI_GetPlayerLands(xuid)
+	if land_owners[xuid]==nil then 
+		if debug_mode then print('[ILAPI] [GetPlayerLands] WARN!! Getting nil player('..xuid..').') end
+		return ''
+	end
+	return land_owners[xuid]
+end
 function ILAPI_GetNickname(landid)
 	if land_data[landid]==nil then 
-		if debug_mode then print('[ILAPI] WARN!! Getting nil land('..landid..').') end
-		return '' 
+		if debug_mode then print('[ILAPI] [GetNickname] WARN!! Getting nil land('..landid..').') end
+		return ''
 	end
 	return land_data[landid].settings.nickname
 end
 function ILAPI_GetOwner(landid)
-	-- if not found, return '?'
+	if land_data[landid]==nil then
+		if debug_mode then print('[ILAPI] [GetOwner] WARN!! Getting nil land('..landid..').') end
+		return '?'
+	end
 	for i,v in pairs(land_owners) do
 		if isValInList(v,landid)~=-1 then
 			return i
@@ -671,6 +689,9 @@ function ILAPI_PosGetLand(vec4)
 		:: JUMPOUT_4 ::
 	end
 	return -1
+end
+function ILAPI_GetVersion()
+	return plugin_version
 end
 
 -- feature function
