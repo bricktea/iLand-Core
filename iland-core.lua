@@ -144,6 +144,22 @@ do
 		end
 		iland_save()
 	end
+	if cfg.version==111 then
+		cfg.version=112
+		cfg.land_buy.calculation='m-1'
+		cfg.land_buy.price={}
+		cfg.land_buy.price[1]=deepcopy(cfg.land_buy.price_ground)
+		cfg.land_buy.price[2]=deepcopy(cfg.land_buy.price_sky)
+		cfg.land_buy.price_ground=nil
+		cfg.land_buy.price_sky=nil
+		cfg.features.chunk_side=16
+		cfg.features.sign_frequency=deepcopy(cfg.features.frequency)
+		cfg.features.frequency=nil
+		for landId,val in pairs(land_data) do
+			land_data[landid].settings.describe=''
+		end
+		iland_save()
+	end
 end
 
 -- load language file

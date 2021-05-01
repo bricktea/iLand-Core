@@ -24,7 +24,6 @@
     },
     "features": {
         "landSign": true,
-        "edgeProtect": true,
         "chunk_side": 16,
         "sign_frequency": 2
     }
