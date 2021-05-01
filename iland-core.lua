@@ -26,6 +26,32 @@ land_owners = json.decode(ReadAllText(data_path..'owners.json'))
 
 -- load chunks
 local chunkMap={}
+function buildChunks()
+	for landid,dfa in pairs(land_data) do
+		local p = cfg.features.chunk_side
+		if p<=4 then p=16 end
+
+		local aCx=math.floor(dfa.range.start_position[1]/p)
+		local aCz=math.floor(dfa.range.start_position[3]/p)
+		local bCx=math.floor(dfa.range.end_position[1]/p)
+		local bCz=math.floor(dfa.range.end_position[3]/p)
+		local cCx=math.floor(dfa.range.start_position[1]/p)
+		local cCz=math.floor(dfa.range.end_position[3]/p)
+		local dCx=math.floor(dfa.range.end_position[1]/p)
+		local dCz=math.floor(dfa.range.start_position[3]/p)
+
+		chunkMap[aCx]={};chunkMap[bCx]={};chunkMap[cCx]={};chunkMap[dCx]={}
+		chunkMap[aCx][aCz]={};chunkMap[bCx][bCz]={};chunkMap[cCx][cCz]={};chunkMap[dCx][dCz]={}
+
+		table.insert(chunkMap[aCx][aCz],#chunkMap[aCx][aCz]+1,landid)
+		table.insert(chunkMap[bCx][bCz],#chunkMap[bCx][bCz]+1,landid)
+		table.insert(chunkMap[cCx][cCz],#chunkMap[cCx][cCz]+1,landid)
+		table.insert(chunkMap[dCx][dCz],#chunkMap[dCx][dCz]+1,landid)
+	end
+	return 1
+end
+buildChunks()
+
 
 -- preload function
 function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
@@ -427,7 +453,7 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].dim = vec4.dim
 		newLand[player].posA = vec4
 		newLand[player].posA.x=math.floor(newLand[player].posA.x) --省函数...
-		newLand[player].posA.y=math.floor(newLand[player].posA.y)-2
+		newLand[player].posA.y=math.floor(newLand[player].posA.y)
 		newLand[player].posA.z=math.floor(newLand[player].posA.z)
 		Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'.._tr('title.selectrange.spointb'),5)
         newLand[player].step = 1
@@ -441,7 +467,7 @@ function IL_BP_SelectRange(player, vec4, mode)
         end
 		newLand[player].posB = vec4
 		newLand[player].posB.x=math.floor(newLand[player].posB.x)
-		newLand[player].posB.y=math.floor(newLand[player].posB.y)-2
+		newLand[player].posB.y=math.floor(newLand[player].posB.y)
 		newLand[player].posB.z=math.floor(newLand[player].posB.z)
         Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'.._tr('title.selectrange.bebuy'),5)
 		newLand[player].step = 2
@@ -656,6 +682,7 @@ function ILAPI_CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].permissions.allow_use_item=true
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
+	buildChunks()
 end
 function ILAPI_DeleteLand(landid)
 	if land_data[landid]==nil then
@@ -668,6 +695,7 @@ function ILAPI_DeleteLand(landid)
 	end
 	land_data[landid]=nil
 	iland_save()
+	buildChunks()
 end
 function ILAPI_GetPlayerLands(xuid)
 	if land_owners[xuid]==nil then 
@@ -703,14 +731,25 @@ function ILAPI_GetOwner(landid)
 	return '?'
 end
 function ILAPI_PosGetLand(vec4)
-	for landId, val in pairs(land_data) do
-		if land_data[landId].range.dim~=vec4.dim then goto JUMPOUT_4 end
-		local s_pos={};s_pos.x=land_data[landId].range.start_position[1];s_pos.y=land_data[landId].range.start_position[2];s_pos.z=land_data[landId].range.start_position[3]
-		local e_pos={};e_pos.x=land_data[landId].range.end_position[1];e_pos.y=land_data[landId].range.end_position[2];e_pos.z=land_data[landId].range.end_position[3]
-		if isPosInCube(vec4,s_pos,e_pos)==true then
-			return landId
+	local f=pos2chunk(vec4)
+	local lads={}
+	if chunkMap[f.x]~=nil then
+		if chunkMap[f.x][f.z]~=nil then
+			for n,landId in pairs(chunkMap[f.x][f.z]) do
+				if land_data[landId].range.dim~=vec4.dim then goto JUMPOUT_4 end
+				if isPosInCube(vec4,
+								buildVec(land_data[landId].range.start_position[1],land_data[landId].range.start_position[2],land_data[landId].range.start_position[3]),
+								buildVec(land_data[landId].range.end_position[1],land_data[landId].range.end_position[2],land_data[landId].range.end_position[3])
+							)==true then
+					return landId
+				end
+				:: JUMPOUT_4 ::
+			end
+		else
+			return -1
 		end
-		:: JUMPOUT_4 ::
+	else
+		return -1
 	end
 	return -1
 end
@@ -942,6 +981,14 @@ function calculation_price(length,width,height)
 		price=length*width*t[1]
 	end
 	return math.floor(price)
+end
+function pos2chunk(vec2)
+	local p = cfg.features.chunk_side
+	if p<=4 then p=16 end
+	a={}
+	a.x=math.floor(vec2.x/p)
+	a.z=math.floor(vec2.z/p)
+	return a
 end
 
 -- minecraft -> events
