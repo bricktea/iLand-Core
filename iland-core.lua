@@ -24,6 +24,9 @@ local cfg = json.decode(ReadAllText(data_path..'config.json'))
 land_data = json.decode(ReadAllText(data_path..'data.json'))
 land_owners = json.decode(ReadAllText(data_path..'owners.json'))
 
+-- load chunks
+local chunkMap={}
+
 -- preload function
 function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
     local orig_type = type(orig)
@@ -133,6 +136,7 @@ end
 function EV_playerLeft(e)
 	TRS_Form[e]=nil
 end
+
 -- form -> callback
 function FORM_BACK_LandOPMgr(player,index,text)
 	if index==1 then return end
@@ -435,17 +439,17 @@ function IL_BP_CreateOrder(player)
     local squ = length * width
 	--- 违规圈地判断
 	if squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toobig'),5)
+		Actor:sendText(player,_tr('title.createorder.toobig').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
 	end
 	if squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toosmall'),5)
+		Actor:sendText(player,_tr('title.createorder.toosmall').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
 	end
 	if height<4 then
-		Actor:sendText(player,_tr('title.createorder.toolow'),5)
+		Actor:sendText(player,_tr('title.createorder.toolow').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
 	end
@@ -456,7 +460,7 @@ function IL_BP_CreateOrder(player)
 			local s_pos={};s_pos.x=land_data[landId].range.start_position[1];s_pos.y=land_data[landId].range.start_position[2];s_pos.z=land_data[landId].range.start_position[3]
 			local e_pos={};e_pos.x=land_data[landId].range.end_position[1];e_pos.y=land_data[landId].range.end_position[2];e_pos.z=land_data[landId].range.end_position[2]
 			if isPosInCube(edge[i],s_pos,e_pos)==true then
-				Actor:sendText(player,_tr('title.createorder.collision'),5)
+				Actor:sendText(player,_tr('title.createorder.collision').._tr('title.selectrange.spointa'),5)
 				newLand[player].step=0
 				return
 			end
@@ -475,7 +479,7 @@ function IL_BP_CreateOrder(player)
 		edge=cubeGetEdge(s_pos,e_pos)
 		for i=1,#edge do
 			if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-				Actor:sendText(player,_tr('title.createorder.collision'),5)
+				Actor:sendText(player,_tr('title.createorder.collision').._tr('title.selectrange.spointa'),5)
 				newLand[player].step=0
 				return
 			end
@@ -564,14 +568,14 @@ function IL_CmdFunc(player,cmd)
 	-- [new] Create newLand
 	if cmd == MainCmd..' new' then
 		if newLand[player]~=nil then
-			Actor:sendText(player,_tr('title.getlicense.alreadyexists'),5);return -1
+			Actor:sendText(player,_tr('title.getlicense.alreadyexists').._tr('title.selectrange.spointa'),5);return -1
 		end
 		if isValInList(cfg.manager.operator,xuid)==-1 then
 			if #land_owners[xuid]>=cfg.land.player_max_lands then
 				Actor:sendText(player,_tr('title.getlicense.limit'),5);return -1
 			end
 		end
-		Actor:sendText(player,_tr('title.getlicense.succeed'),5)
+		Actor:sendText(player,_tr('title.getlicense.succeed').._tr('title.selectrange.spointa'),5)
 		newLand[player]={}
 		newLand[player].step=0
 	end
@@ -605,6 +609,7 @@ function ILAPI_CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].settings={}
 	land_data[landId].settings.share={}
 	land_data[landId].settings.nickname=""
+	land_data[landId].settings.describe=""
 	land_data[landId].range={}
 	land_data[landId].range.start_position={}
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
