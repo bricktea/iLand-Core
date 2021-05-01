@@ -7,8 +7,8 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.2'
 local numV = 112
---local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
-local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
+local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
+-- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
 local MainCmd = 'land'
 local debug_mode = false
