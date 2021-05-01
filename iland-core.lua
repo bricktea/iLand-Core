@@ -227,6 +227,23 @@ function FORM_land_gui_name(player,raw,data)
 												_tr('gui.general.back'),
 												_tr('gui.general.close'))
 end
+function FORM_land_gui_describe(player,raw,data)
+	local landid=TRS_Form[player].landid
+	if isTextSpecial(gsubEx(raw[2],
+							'$','Y', -- allow some spec.
+							',','Y',
+							'.','Y',
+							'!','Y'
+						)) then
+		Actor:sendText(player,'FAILED',5);return
+	end
+	land_data[landid].settings.describe=raw[2]
+	iland_save()
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
+												'Complete.',
+												_tr('gui.general.back'),
+												_tr('gui.general.close'))
+end
 function FORM_land_gui_transfer(player,raw,data)
 	if raw[2]==0 then return end
 	local landid=TRS_Form[player].landid
@@ -319,7 +336,14 @@ function FORM_land_gui(player,raw,data)
 														_tr('gui.landtag.tip'),
 														nickn)
 	end
-	if raw[2]==4 then --领地过户
+	if raw[2]==4 then --领地describe
+		local desc=ILAPI_GetDescribe(landid)
+		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
+		GUI(player,'lmgr_landdescribe','FORM_land_gui_describe',_tr('gui.landdescribe.title'),
+															_tr('gui.landdescribe.tip'),
+															desc)
+	end
+	if raw[2]==5 then --领地过户
 		TRS_Form[player].playerList = GetOnlinePlayerList(2)
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
@@ -327,7 +351,7 @@ function FORM_land_gui(player,raw,data)
 									_tr('talk.land.selecttargetplayer'),
 									json.encode(TRS_Form[player].playerList))
 	end
-	if raw[2]==5 then --删除领地
+	if raw[2]==6 then --删除领地
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
@@ -515,7 +539,7 @@ function IL_Manager_GUI(player)
 	if lid~=-1 then
 		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
 	end
-	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
+	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(land_owners[xuid]) do
 		local f=ILAPI_GetNickname(v)
@@ -658,6 +682,13 @@ function ILAPI_GetNickname(landid)
 		return ''
 	end
 	return land_data[landid].settings.nickname
+end
+function ILAPI_GetDescribe(landid)
+	if land_data[landid]==nil then 
+		if debug_mode then print('[ILAPI] [GetDescribe] WARN!! Getting nil land('..landid..').') end
+		return ''
+	end
+	return land_data[landid].settings.describe
 end
 function ILAPI_GetOwner(landid)
 	if land_data[landid]==nil then
@@ -1038,6 +1069,12 @@ function IL_TCB_LandSign()
 			sendTitle(v,gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
 		else
 			sendTitle(v,_tr('sign.listener.visitortitle'),gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+			if land_data[landid].settings.describe~='' then
+				Actor:sendText(v,'§l§b[§a LAND §b] §r'..gsubEx(land_data[landid].settings.describe,
+																	'$visitor',Actor:getName(v),
+																	'$n','\n'
+																),0)
+			end
 		end
 		TRS_Form[v].inland=landid
 	end
