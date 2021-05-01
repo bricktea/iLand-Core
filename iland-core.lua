@@ -6,6 +6,7 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.2'
+local numV = 112
 --local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
@@ -147,6 +148,10 @@ end
 
 -- load language file
 local i18n_data = json.decode(ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+if i18n_data.VERSION ~= numV then
+	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..numV..')')
+	return
+end
 
 -- listen -> event
 function EV_playerJoin(e)
