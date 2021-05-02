@@ -127,7 +127,7 @@ do
 		cfg.features.sign_frequency=deepcopy(cfg.features.frequency)
 		cfg.features.frequency=nil
 		for landId,val in pairs(land_data) do
-			land_data[landid].settings.describe=''
+			land_data[landId].settings.describe=''
 		end
 		iland_save()
 	end
