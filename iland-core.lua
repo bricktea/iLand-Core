@@ -25,35 +25,6 @@ local cfg = json.decode(ReadAllText(data_path..'config.json'))
 land_data = json.decode(ReadAllText(data_path..'data.json'))
 land_owners = json.decode(ReadAllText(data_path..'owners.json'))
 
--- load chunks
-local chunkMap={}
-function buildChunks()
-	for landid,dfa in pairs(land_data) do
-		local p = cfg.features.chunk_side
-		if p<=4 then p=16 end
-
-		local aCx=math.floor(dfa.range.start_position[1]/p)
-		local aCz=math.floor(dfa.range.start_position[3]/p)
-		local bCx=math.floor(dfa.range.end_position[1]/p)
-		local bCz=math.floor(dfa.range.end_position[3]/p)
-		local cCx=math.floor(dfa.range.start_position[1]/p)
-		local cCz=math.floor(dfa.range.end_position[3]/p)
-		local dCx=math.floor(dfa.range.end_position[1]/p)
-		local dCz=math.floor(dfa.range.start_position[3]/p)
-
-		chunkMap[aCx]={};chunkMap[bCx]={};chunkMap[cCx]={};chunkMap[dCx]={}
-		chunkMap[aCx][aCz]={};chunkMap[bCx][bCz]={};chunkMap[cCx][cCz]={};chunkMap[dCx][dCz]={}
-
-		table.insert(chunkMap[aCx][aCz],#chunkMap[aCx][aCz]+1,landid)
-		table.insert(chunkMap[bCx][bCz],#chunkMap[bCx][bCz]+1,landid)
-		table.insert(chunkMap[cCx][cCz],#chunkMap[cCx][cCz]+1,landid)
-		table.insert(chunkMap[dCx][dCz],#chunkMap[dCx][dCz]+1,landid)
-	end
-	return 1
-end
-buildChunks()
-
-
 -- preload function
 function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
     local orig_type = type(orig)
@@ -168,6 +139,34 @@ if i18n_data.VERSION ~= numV then
 	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..numV..')')
 	return
 end
+
+-- load chunks
+local chunkMap={}
+function buildChunks()
+	for landid,dfa in pairs(land_data) do
+		local p = cfg.features.chunk_side
+		if p<=4 then p=16 end
+
+		local aCx=math.floor(dfa.range.start_position[1]/p)
+		local aCz=math.floor(dfa.range.start_position[3]/p)
+		local bCx=math.floor(dfa.range.end_position[1]/p)
+		local bCz=math.floor(dfa.range.end_position[3]/p)
+		local cCx=math.floor(dfa.range.start_position[1]/p)
+		local cCz=math.floor(dfa.range.end_position[3]/p)
+		local dCx=math.floor(dfa.range.end_position[1]/p)
+		local dCz=math.floor(dfa.range.start_position[3]/p)
+
+		chunkMap[aCx]={};chunkMap[bCx]={};chunkMap[cCx]={};chunkMap[dCx]={}
+		chunkMap[aCx][aCz]={};chunkMap[bCx][bCz]={};chunkMap[cCx][cCz]={};chunkMap[dCx][dCz]={}
+
+		table.insert(chunkMap[aCx][aCz],#chunkMap[aCx][aCz]+1,landid)
+		table.insert(chunkMap[bCx][bCz],#chunkMap[bCx][bCz]+1,landid)
+		table.insert(chunkMap[cCx][cCz],#chunkMap[cCx][cCz]+1,landid)
+		table.insert(chunkMap[dCx][dCz],#chunkMap[dCx][dCz]+1,landid)
+	end
+	return 1
+end
+buildChunks()
 
 -- listen -> event
 function EV_playerJoin(e)
