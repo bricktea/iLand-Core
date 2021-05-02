@@ -27,7 +27,7 @@
     "gui.land.content": "Welcome to the territory system, you now have a <a> block of territory.",
     "gui.oplandmgr.trsland.content": "Forced to transfer ownership of the general, all rights of the territory will be transferred.",
     "gui.buyland.content": "Successful enclosure! \\nLength\\Width\\Height: <a>\\<b>\\<c>Grid\\n Volume: <d>Block\\n Price: <e><f> \\nWallet: <g><f>",
-    "gui.landmgr.landinfo.content": "Owner:<a>\\nLandID: <m>\\nnickname: <n>\\nrange (range): <b>,<c>,<d > -> <e>,<f>,<g>\\nLength/Width/Height: <h>/<i>/<j>\\nBottom area: <k> Square volume: <l> Cube",
+    "gui.landmgr.landinfo.content": "Owner:<a>\\nLandID: <m>\\nnickname: <n>\\nrange (range): <b>,<c>,<d> -> <e>,<f>,<g>\\nLength/Width/Height: <h>/<i>/<j>\\nBottom area: <k> Square volume: <l> Cube",
     "gui.delland.content": "Are you sure you want to delete your territory? \\nIf you are sure, you will get a <a><b> refund. Then your territory will lose its protection and the configuration file will be deleted immediately. ",
     "gui.landmgr.content": "Welcome to use Land Manager.",
     "gui.landmgr.ctplus": "\\nYou are now on §l<a>§r",
