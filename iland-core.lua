@@ -7,6 +7,7 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.2'
 local numV = 112
+local minLLVer = 210504
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
@@ -18,6 +19,14 @@ local request = require('requests')
 -- check file
 if IfFile(data_path..'config.json') == false then
 	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
+end
+
+-- check lllua
+if tonumber(lllVersion()) <= minLLVer then
+	print('[ILand] ERR!! LLLua too old, please use latest version, here ↓')
+	print('[ILand] ERR!! https://www.minebbs.com/resources/litelualoader-lua.2390/')
+	print('[ILand] ERR!! Plugin closing...')
+	return
 end
 
 -- load data file
@@ -1088,7 +1097,7 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
-function IL_LIS_onExplode(ptr,x,y,z)
+function IL_LIS_onExplode(ptr,x,y,z,dim)
 	local pos=pos2vec({Actor:getPos(ptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	if landid==-1 then return end -- No Land
