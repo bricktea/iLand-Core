@@ -150,34 +150,70 @@ if i18n_data.VERSION ~= numV then
 end
 
 -- load chunks
-local chunkMap={}
+local ChunkMap={}
+function pos2chunk(posx,posz)
+	local p = cfg.features.chunk_side
+	if p<=4 then p=16 end
+	a={}
+	a.x=math.floor(posx/p)
+	a.z=math.floor(posz/p)
+	return a
+end
 function buildChunks()
-	for landid,dfa in pairs(land_data) do
-		local p = cfg.features.chunk_side
-		if p<=4 then p=16 end
-
-		local aCx=math.floor(dfa.range.start_position[1]/p)
-		local aCz=math.floor(dfa.range.start_position[3]/p)
-		local bCx=math.floor(dfa.range.end_position[1]/p)
-		local bCz=math.floor(dfa.range.end_position[3]/p)
-		local cCx=math.floor(dfa.range.start_position[1]/p)
-		local cCz=math.floor(dfa.range.end_position[3]/p)
-		local dCx=math.floor(dfa.range.end_position[1]/p)
-		local dCz=math.floor(dfa.range.start_position[3]/p)
-
-		chunkMap[aCx]={};chunkMap[bCx]={};chunkMap[cCx]={};chunkMap[dCx]={}
-		chunkMap[aCx][aCz]={};chunkMap[bCx][bCz]={};chunkMap[cCx][cCz]={};chunkMap[dCx][dCz]={}
-
-		table.insert(chunkMap[aCx][aCz],#chunkMap[aCx][aCz]+1,landid)
-		table.insert(chunkMap[bCx][bCz],#chunkMap[bCx][bCz]+1,landid)
-		table.insert(chunkMap[cCx][cCz],#chunkMap[cCx][cCz]+1,landid)
-		table.insert(chunkMap[dCx][dCz],#chunkMap[dCx][dCz]+1,landid)
+	function chkmap(x,z)
+		if ChunkMap[x] == nil then ChunkMap[x] = {} end
+		if ChunkMap[x][z] == nil then ChunkMap[x][z] = {} end
 	end
-	return 1
+	local size = cfg.features.chunk_side
+	for landId,data in pairs(land_data) do
+		local sX = data.range.start_position[1]
+		local sZ = data.range.start_position[3]
+		local eX = data.range.end_position[1]
+		local eZ = data.range.end_position[3]
+		local count = 0
+		while (sX+size*count<=eX) do
+			local t = pos2chunk(sX+size*count,sZ+size*count)
+			chkmap(t.x,t.z)
+			table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
+			local count2 = 0
+			while (sZ+size*count2<=eZ) do
+				local t = pos2chunk(sX+size*count,sZ+size*count2)
+				chkmap(t.x,t.z)
+				table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
+				count2 = count2 + 1
+			end
+			count = count +1
+		end
+	end
 end
 buildChunks()
 
+-- load land VecMap
+local vecMap={}
+function buildVec(x,y,z,dim)
+	local t={}
+	t.x=x
+	t.y=y
+	t.z=z
+	if dim~=nil then
+		t.dim=dim
+	end
+	return t
+end
+function buildVecMap()
+	for landId,data in pairs(land_data) do
+		local spos = land_data[landId].range.start_position
+		local epos = land_data[landId].range.end_position
+		vecMap[landId]={}
+		vecMap[landId].a={};vecMap[landId].b={}
+		vecMap[landId].a = buildVec(spos[1],spos[2],spos[3]) --start
+		vecMap[landId].b = buildVec(epos[1],epos[2],epos[3]) --end
+	end
+end
+buildVecMap()
+
 -- listen -> event
+PPP=0
 function EV_playerJoin(e)
 	TRS_Form[e]={}
 	TRS_Form[e].inland='null'
@@ -186,6 +222,7 @@ function EV_playerJoin(e)
 		land_owners[xuid]={}
 		iland_save()
 	end
+	PPP=e
 end
 function EV_playerLeft(e)
 	TRS_Form[e]=nil
@@ -759,25 +796,13 @@ function ILAPI_GetOwner(landid)
 	return '?'
 end
 function ILAPI_PosGetLand(vec4)
-	local f=pos2chunk(vec4)
-	local lads={}
-	if chunkMap[f.x]~=nil then
-		if chunkMap[f.x][f.z]~=nil then
-			for n,landId in pairs(chunkMap[f.x][f.z]) do
-				if land_data[landId].range.dim~=vec4.dim then goto JUMPOUT_4 end
-				if isPosInCube(vec4,
-								buildVec(land_data[landId].range.start_position[1],land_data[landId].range.start_position[2],land_data[landId].range.start_position[3]),
-								buildVec(land_data[landId].range.end_position[1],land_data[landId].range.end_position[2],land_data[landId].range.end_position[3])
-							)==true then
-					return landId
-				end
-				:: JUMPOUT_4 ::
+	local c = pos2chunk(vec4.x,vec4.z)
+	if ChunkMap[c.x]~=nil and ChunkMap[c.x][c.z]~=nil then
+		for n,landId in pairs(ChunkMap[c.x][c.z]) do
+			if vec4.dim==land_data[landId].range.dim and isPosInCube(vec4,vecMap[landId].a,vecMap[landId].b) then
+				return landId
 			end
-		else
-			return -1
 		end
-	else
-		return -1
 	end
 	return -1
 end
@@ -986,16 +1011,6 @@ end
 function toBool(num)
 	if num==0 then return false else return true end
 end
-function buildVec(x,y,z,dim)
-	local t={}
-	t.x=x
-	t.y=y
-	t.z=z
-	if dim~=nil then
-		t.dim=dim
-	end
-	return t
-end
 function calculation_price(length,width,height)
 	local price=0
 	local t=cfg.land_buy.price
@@ -1009,14 +1024,6 @@ function calculation_price(length,width,height)
 		price=length*width*t[1]
 	end
 	return math.floor(price)
-end
-function pos2chunk(vec2)
-	local p = cfg.features.chunk_side
-	if p<=4 then p=16 end
-	a={}
-	a.x=math.floor(vec2.x/p)
-	a.z=math.floor(vec2.z/p)
-	return a
 end
 
 -- minecraft -> events
@@ -1098,8 +1105,10 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z,dim)
+	print(x,y,z,dim)
 	local pos=pos2vec({x,y,z,dim})
 	local landid=ILAPI_PosGetLand(pos)
+	print(landid)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
 	return -1
@@ -1172,6 +1181,23 @@ Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 -- timer -> landsign
 if cfg.features.landSign then
 schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
+end
+
+function TEST()
+	if PPP~=0 then
+		local v = pos2vec({Actor:getPos(PPP)})
+		print(ILAPI_PosGetLand(v))
+		print(v.x,v.y,v.z)
+	end
+end
+schedule("TEST",1,0)
+
+for i,v in pairs(ChunkMap) do
+	for a,b in pairs(v) do
+		for n,f in pairs(b) do
+			print(i,v,a,b,n,f)
+		end
+	end
 end
 
 -- check update
