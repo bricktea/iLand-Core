@@ -54,6 +54,33 @@ function iland_save()
 	WriteAllText(data_path..'data.json',json.encode(land_data))
 	WriteAllText(data_path..'owners.json',json.encode(land_owners))
 end
+function pos2chunk(posx,posz)
+	local p = cfg.features.chunk_side
+	if p<=4 then p=16 end
+	a={}
+	a.x=math.modf(posx/p)
+	a.z=math.modf(posz/p)
+	return a
+end
+function buildVec(x,y,z,dim)
+	local t={}
+	t.x=x
+	t.y=y
+	t.z=z
+	if dim~=nil then
+		t.dim=dim
+	end
+	return t
+end
+function formatXYZ(sX,sY,sZ,eX,eY,eZ)
+	local A=buildVec(sX,sY,sZ)
+	local B=buildVec(eX,eY,eZ)
+	local tmp1
+	if A.x>B.x then tmp1=A.x;A.x=B.x;B.x=tmp1 end
+	if A.y>B.y then tmp1=A.y;A.y=B.y;B.y=tmp1 end
+	if A.z>B.z then tmp1=A.z;A.z=B.z;B.z=tmp1 end
+	return A,B
+end
 
 -- cfg -> updater
 do
@@ -140,6 +167,27 @@ do
 		end
 		iland_save()
 	end
+	if cfg.version==112 then
+		-- cfg.version=113
+		for landId,data in pairs(land_data) do
+			local sX=land_data[landId].range.start_position[1]
+			local sY=land_data[landId].range.start_position[2]
+			local sZ=land_data[landId].range.start_position[3]
+			local eX=land_data[landId].range.end_position[1]
+			local eY=land_data[landId].range.end_position[2]
+			local eZ=land_data[landId].range.end_position[3]
+			local result={formatXYZ(sX,sY,sZ,eX,eY,eZ)}
+			local posA=result[1]
+			local posB=result[2]
+			land_data[landId].range.start_position[1]=posA.x
+			land_data[landId].range.start_position[2]=posA.y
+			land_data[landId].range.start_position[3]=posA.z
+			land_data[landId].range.end_position[1]=posB.x
+			land_data[landId].range.end_position[2]=posB.y
+			land_data[landId].range.end_position[3]=posB.z
+		end
+		iland_save()
+	end
 end
 
 -- load language file
@@ -151,14 +199,6 @@ end
 
 -- load chunks
 local ChunkMap={}
-function pos2chunk(posx,posz)
-	local p = cfg.features.chunk_side
-	if p<=4 then p=16 end
-	a={}
-	a.x=math.modf(posx/p)
-	a.z=math.modf(posz/p)
-	return a
-end
 function buildChunks()
 	function chkmap(x,z)
 		if ChunkMap[x] == nil then ChunkMap[x] = {} end
@@ -190,16 +230,6 @@ buildChunks()
 
 -- load land VecMap
 local vecMap={}
-function buildVec(x,y,z,dim)
-	local t={}
-	t.x=x
-	t.y=y
-	t.z=z
-	if dim~=nil then
-		t.dim=dim
-	end
-	return t
-end
 function buildVecMap()
 	for landId,data in pairs(land_data) do
 		local spos = land_data[landId].range.start_position
@@ -244,7 +274,10 @@ function FORM_land_buy(player,index,text)
 		money_del(player,newLand[player].landprice)
 	end
 	Actor:sendText(player,_tr('title.buyland.succeed'),5)
-	ILAPI_CreateLand(xuid,newLand[player].posA,newLand[player].posB,newLand[player].dim)
+	local A=newLand[player].posA
+	local B=newLand[player].posB
+	local result={formatXYZ(A.x,A.y,A.z,B.x,B.y,B.z)}
+	ILAPI_CreateLand(xuid,result[1],result[2],newLand[player].dim)
 	newLand[player]=nil
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',"Complete.",
 								_tr('gui.buyland.succeed'),
@@ -621,6 +654,7 @@ function IL_Manager_GUI(player)
 	end
 
 	local xyz=pos2vec({Actor:getPos(player)})
+	xyz.y=xyz.y-1
 	local lid=ILAPI_PosGetLand(xyz)
 	local nname=ILAPI_GetNickname(lid)
 	if nname=='' then nname=lid end
