@@ -5,8 +5,8 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.2'
-local numV = 112
+local plugin_version = '1.1.3'
+local langVer = 112
 local minLLVer = 210504
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
@@ -168,7 +168,7 @@ do
 		iland_save()
 	end
 	if cfg.version==112 then
-		-- cfg.version=113
+		cfg.version=113
 		for landId,data in pairs(land_data) do
 			local sX=land_data[landId].range.start_position[1]
 			local sY=land_data[landId].range.start_position[2]
@@ -192,14 +192,15 @@ end
 
 -- load language file
 local i18n_data = json.decode(ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-if i18n_data.VERSION ~= numV then
-	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..numV..')')
+if i18n_data.VERSION ~= langVer then
+	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
 	return
 end
 
 -- load chunks
 local ChunkMap={}
 function buildChunks()
+	ChunkMap={}
 	function chkmap(x,z)
 		if ChunkMap[x] == nil then ChunkMap[x] = {} end
 		if ChunkMap[x][z] == nil then ChunkMap[x][z] = {} end
@@ -231,6 +232,7 @@ buildChunks()
 -- load land VecMap
 local vecMap={}
 function buildVecMap()
+	vecMap={}
 	for landId,data in pairs(land_data) do
 		local spos = land_data[landId].range.start_position
 		local epos = land_data[landId].range.end_position
@@ -780,6 +782,7 @@ function ILAPI_CreateLand(xuid,startpos,endpos,dimensionid)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	iland_save()
 	buildChunks()
+	buildVecMap()
 end
 function ILAPI_DeleteLand(landid)
 	if land_data[landid]==nil then
@@ -793,6 +796,7 @@ function ILAPI_DeleteLand(landid)
 	land_data[landid]=nil
 	iland_save()
 	buildChunks()
+	buildVecMap()
 end
 function ILAPI_GetPlayerLands(xuid)
 	if land_owners[xuid]==nil then 
