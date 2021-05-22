@@ -155,8 +155,8 @@ function pos2chunk(posx,posz)
 	local p = cfg.features.chunk_side
 	if p<=4 then p=16 end
 	a={}
-	a.x=math.floor(posx/p)
-	a.z=math.floor(posz/p)
+	a.x=math.modf(posx/p)
+	a.z=math.modf(posz/p)
 	return a
 end
 function buildChunks()
@@ -213,7 +213,6 @@ end
 buildVecMap()
 
 -- listen -> event
-PPP=0
 function EV_playerJoin(e)
 	TRS_Form[e]={}
 	TRS_Form[e].inland='null'
@@ -222,7 +221,6 @@ function EV_playerJoin(e)
 		land_owners[xuid]={}
 		iland_save()
 	end
-	PPP=e
 end
 function EV_playerLeft(e)
 	TRS_Form[e]=nil
@@ -446,7 +444,7 @@ function FORM_land_gui(player,raw,data)
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
-		TRS_Form[player].landvalue=math.floor(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
+		TRS_Form[player].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
 												gsubEx(_tr('gui.delland.content'),
 													'<a>',TRS_Form[player].landvalue,
@@ -517,9 +515,9 @@ function IL_BP_SelectRange(player, vec4, mode)
         end
 		newLand[player].dim = vec4.dim
 		newLand[player].posA = vec4
-		newLand[player].posA.x=math.floor(newLand[player].posA.x) --省函数...
-		newLand[player].posA.y=math.floor(newLand[player].posA.y)
-		newLand[player].posA.z=math.floor(newLand[player].posA.z)
+		newLand[player].posA.x=math.modf(newLand[player].posA.x) --省函数...
+		newLand[player].posA.y=math.modf(newLand[player].posA.y)
+		newLand[player].posA.z=math.modf(newLand[player].posA.z)
 		Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'.._tr('title.selectrange.spointb'),5)
         newLand[player].step = 1
     end
@@ -531,9 +529,9 @@ function IL_BP_SelectRange(player, vec4, mode)
 			Actor:sendText(player,_tr('title.selectrange.failbycdim'),5);return
         end
 		newLand[player].posB = vec4
-		newLand[player].posB.x=math.floor(newLand[player].posB.x)
-		newLand[player].posB.y=math.floor(newLand[player].posB.y)
-		newLand[player].posB.z=math.floor(newLand[player].posB.z)
+		newLand[player].posB.x=math.modf(newLand[player].posB.x)
+		newLand[player].posB.y=math.modf(newLand[player].posB.y)
+		newLand[player].posB.z=math.modf(newLand[player].posB.z)
         Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'.._tr('title.selectrange.bebuy'),5)
 		newLand[player].step = 2
     end
@@ -900,9 +898,9 @@ function money_get(player)
 end
 function pos2vec(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 	local t={}
-	t.x=table[1]
-	t.y=table[2]
-	t.z=table[3]
+	t.x=math.modf(table[1])
+	t.y=math.modf(table[2])
+	t.z=math.modf(table[3])
 	t.dim=table[4]
 	return t
 end
@@ -959,19 +957,14 @@ function cubeGetEdge(posA,posB)
 	return edge
 end
 function isPosInCube(pos,posA,posB)
-	if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x)==true then
-		if (pos.y>=posA.y and pos.y<=posB.y) or (pos.y<=posA.y and pos.y>=posB.y)==true then
-			if (pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z)==true then
+	if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x) then
+		if (pos.y>=posA.y and pos.y<=posB.y) or (pos.y<=posA.y and pos.y>=posB.y) then
+			if (pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z) then
 				return true
-			else
-				return false
 			end
-		else
-			return false
 		end
-	else
-		return false
 	end
+	return false
 end
 function isValInList(list, value)
 	for i, nowValue in pairs(list) do
@@ -1023,7 +1016,7 @@ function calculation_price(length,width,height)
 	if cfg.land_buy.calculation == 'm-3' then
 		price=length*width*t[1]
 	end
-	return math.floor(price)
+	return math.modf(price)
 end
 
 -- minecraft -> events
@@ -1093,7 +1086,7 @@ function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
 	Actor:teleport(player,x,y+10,z,dim)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
-	local pos=pos2vec({Actor:getPos(player)})
+	local pos=pos2vec({Actor:getPos(mobptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -1105,16 +1098,14 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z,dim)
-	print(x,y,z,dim)
 	local pos=pos2vec({x,y,z,dim})
 	local landid=ILAPI_PosGetLand(pos)
-	print(landid)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
 	return -1
 end
 function IL_LIS_onPlayerTakeItem(player,itemptr)
-	local pos=pos2vec({Actor:getPos(player)})
+	local pos=pos2vec({Actor:getPos(itemptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -1127,6 +1118,7 @@ function IL_LIS_onPlayerTakeItem(player,itemptr)
 end
 function IL_LIS_onPlayerDropItem(player,itemptr)
 	local pos=pos2vec({Actor:getPos(player)})
+	pos.y=pos.y-1
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
@@ -1141,6 +1133,7 @@ function IL_TCB_LandSign()
 	local players=GetOnlinePlayerList(0)
 	for i,v in pairs(players) do
 		local xyz=pos2vec({Actor:getPos(v)})
+		xyz.y=xyz.y-1
 		local landid=ILAPI_PosGetLand(xyz)
 		if landid==-1 then TRS_Form[v].inland='null';return end -- no land here
 		if landid==TRS_Form[v].inland then return end -- signed
@@ -1181,23 +1174,6 @@ Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 -- timer -> landsign
 if cfg.features.landSign then
 schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
-end
-
-function TEST()
-	if PPP~=0 then
-		local v = pos2vec({Actor:getPos(PPP)})
-		print(ILAPI_PosGetLand(v))
-		print(v.x,v.y,v.z)
-	end
-end
-schedule("TEST",1,0)
-
-for i,v in pairs(ChunkMap) do
-	for a,b in pairs(v) do
-		for n,f in pairs(b) do
-			print(i,v,a,b,n,f)
-		end
-	end
 end
 
 -- check update
