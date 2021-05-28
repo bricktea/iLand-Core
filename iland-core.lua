@@ -12,7 +12,7 @@ local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={}
 local MainCmd = 'land'
-local debug_mode = false
+local debug_mode = true
 local json = require('cjson.safe')
 local request = require('requests')
 
@@ -245,11 +245,12 @@ end
 buildVecMap()
 
 -- listen -> event
+debug_landquery = 0
 function EV_playerJoin(e)
 	TRS_Form[e]={}
 	TRS_Form[e].inland='null'
 	local xuid=Actor:getXuid(e)
-	if land_owners[xuid]==nil then
+	if land_owners[xuid] == nil then
 		land_owners[xuid]={}
 		iland_save()
 	end
@@ -741,6 +742,10 @@ function IL_CmdFunc(player,cmd)
 		if isValInList(cfg.manager.operator,xuid)==-1 then return end
 		IL_Manager_OPGUI(player)
 	end
+	-- [debug] Start to debug
+	if cmd == MainCmd..' debug' and debug_mode then
+		debug_landquery = player
+	end
 	-- [X] Disable Output
 	if string.sub(cmd,1,5)==MainCmd..' ' or string.sub(cmd,1,4)==MainCmd then
 		return -1
@@ -1059,6 +1064,7 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
+	-- print(Item:getFullName(Actor:getHand(player)))
 	if newLand[player]~=nil and Item:getName(Actor:getHand(player))=='Wooden Axe' then
 		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
 		return -1
@@ -1212,6 +1218,18 @@ Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 -- timer -> landsign
 if cfg.features.landSign then
 schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
+end
+
+-- timer -> debugger
+function DEBUG_LANDQUERY()
+	if debug_landquery == 0 then return end
+	local xyz=pos2vec({Actor:getPos(debug_landquery)})
+	xyz.y=xyz.y-1
+	local landid=ILAPI_PosGetLand(xyz)
+	print('[ILand] Debugger: '..landid)
+end
+if debug_mode then
+schedule("DEBUG_LANDQUERY",3,0)
 end
 
 -- check update
