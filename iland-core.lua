@@ -58,8 +58,8 @@ function pos2chunk(posx,posz)
 	local p = cfg.features.chunk_side
 	if p<=4 then p=16 end
 	a={}
-	a.x=math.modf(posx/p)
-	a.z=math.modf(posz/p)
+	a.x=math.floor(posx/p)
+	a.z=math.floor(posz/p)
 	return a
 end
 function buildVec(x,y,z,dim)
