@@ -596,7 +596,7 @@ function IL_BP_CreateOrder(player)
 		newLand[player].step=0
 		return
 	end
-	if height<4 then
+	if height<2 then
 		Actor:sendText(player,_tr('title.createorder.toolow').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
