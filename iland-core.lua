@@ -76,9 +76,9 @@ function formatXYZ(sX,sY,sZ,eX,eY,eZ)
 	local A=buildVec(sX,sY,sZ)
 	local B=buildVec(eX,eY,eZ)
 	local tmp1
-	if A.x>B.x then tmp1=A.x;A.x=B.x;B.x=tmp1 end
-	if A.y>B.y then tmp1=A.y;A.y=B.y;B.y=tmp1 end
-	if A.z>B.z then tmp1=A.z;A.z=B.z;B.z=tmp1 end
+	if A.x>B.x then A.x,B.x = B.x,A.x end
+	if A.y>B.y then A.y,B.y = B.y,A.y end
+	if A.z>B.z then A.z,B.z = B.z,A.z end
 	return A,B
 end
 
