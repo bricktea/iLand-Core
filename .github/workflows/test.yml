@@ -30,7 +30,7 @@ jobs:
         run: |
           cp -a iland-core.lua D:/out/lua
           cp -a iland/* D:/out/data/iland
-          cp -a data/iland/GUI/* D:/out/GUI
+          cp -a iland/GUI/* D:/out/GUI
         shell: bash
         
       - name: Download language file
