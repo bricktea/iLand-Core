@@ -24,9 +24,10 @@ jobs:
       - name: Move files
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          mv -f iland-core.lua lua\
-          mv -f iland\* data\
-          mv -f data\iland\GUI .
+          ls
+          mv iland-core.lua lua\iland-core.lua
+          mv iland data\
+          mv data\iland\GUI .\
           
       - name: Remove files
         working-directory: ${{env.GITHUB_WORKSPACE}}
