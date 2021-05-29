@@ -10,46 +10,36 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v2
       
-      - name: Mkdirs
+      - name: MkDirs
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          mkdir lua
-          mkdir data
+          mkdir D:/out
+          mkdir D:/out/lua
+          mkdir D:/out/data
+          mkdir D:/out/GUI
+          mkdir D:/out/data/iland
+          mkdir D:/out/data/iland/lang
         
-      - name: Move files
+      - name: Copy Dev files
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          ls
-          mv iland-core.lua lua\iland-core.lua
-          mv iland data\
-          mv data\iland\GUI .\
-          
-      - name: Remove files
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: |
-          rm init.lua
-          rm *.md
+          cp -a iland-core.lua D:/out/lua
+          cp -a iland/* D:/out/data/iland
+          cp -a data/iland/GUI/* D:/out/GUI
         
       - name: Download language file
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          cd data\iland\
           git clone https://github.com/McAirLand/translation.git
-          mv translation lang
-        
-      - name: Move files
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: |
-          mkdir \out
-          mv * \out\
-        
+          cp -a translation/* D:/out/data/iland/lang
+
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
         with:
           name: iLand
-          path: \out\
+          path: D:/out/
