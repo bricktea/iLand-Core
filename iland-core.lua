@@ -84,28 +84,9 @@ end
 
 -- cfg -> updater
 do
-	if cfg.version==nil then --version<1.0.4
-		cfg.version={};cfg.version=103
-		cfg.manager.operator={}
-		iland_save()
-	end
-	if cfg.version==103 then
-		cfg.version=106
-		cfg.manager.allow_op_delete_land=nil
-		for landId, val in pairs(land_data) do
-			if(land_data[landId].range==nil) then
-				land_data[landId]=nil
-			end
-		end
-		iland_save()
-	end
-	if cfg.version==106 then
-		cfg.version=107
-		cfg.update_check=true
-		for landId, val in pairs(land_data) do
-			land_data[landId].setting.allow_open_barrel=false
-		end
-		iland_save()
+	if cfg.version==nil or cfg.version<107 then
+		print('[ILand] Configure file too old, you must rebuild it.')
+		return
 	end
 	if cfg.version==107 then
 		cfg.version=110
