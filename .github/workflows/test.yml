@@ -20,22 +20,28 @@ jobs:
         run: |
           mkdir lua
           mkdir data
-          mv iland-core.lua lua
-          mv iland data\
+          mv iland-core.lua lua\
+          mv iland\* data\
           rm init.lua
           rm *.md
           mv data\iland\GUI .
+        shell: bash
+        
       - name: Download language file
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           cd data\iland\
           git clone https://github.com/McAirLand/translation.git
           mv translation lang
+        shell: bash
+        
       - name: Move files
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           mkdir \out
           mv * \out\
+        shell: bash
+        
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
         with:
