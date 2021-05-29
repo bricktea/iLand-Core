@@ -39,7 +39,14 @@ jobs:
           git clone https://github.com/McAirLand/translation.git
           cp -a translation/* D:/out/data/iland/lang
         shell: bash
-
+        
+      - name: Remove useless files
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          rm -rf D:/out/data/iland/GUI
+          rm -rf D:/out/data/iland/lang/README.md
+        shell: bash
+      
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
         with:
