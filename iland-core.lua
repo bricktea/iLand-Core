@@ -167,7 +167,7 @@ do
 		end
 		iland_save()
 	end
-	if cfg.version==112 then
+	if cfg.version==112 or cfg.version==113 then
 		cfg.version=113
 		for landId,data in pairs(land_data) do
 			local sX=land_data[landId].range.start_position[1]
@@ -602,38 +602,25 @@ function IL_BP_CreateOrder(player)
 		newLand[player].step=0
 		return
 	end
+	--- 领地冲突判断
 	local edge=cubeGetEdge(newLand[player].posA,newLand[player].posB)
 	for i=1,#edge do
-		for landId, val in pairs(land_data) do
-			if land_data[landId].range.dim~=newLand[player].dim then goto JUMPOUT_1 end --维度不同直接跳过
-			local s_pos={};s_pos.x=land_data[landId].range.start_position[1];s_pos.y=land_data[landId].range.start_position[2];s_pos.z=land_data[landId].range.start_position[3]
-			local e_pos={};e_pos.x=land_data[landId].range.end_position[1];e_pos.y=land_data[landId].range.end_position[2];e_pos.z=land_data[landId].range.end_position[2]
-			if isPosInCube(edge[i],s_pos,e_pos)==true then
-				Actor:sendText(player,_tr('title.createorder.collision').._tr('title.selectrange.spointa'),5)
-				newLand[player].step=0
-				return
-			end
-			:: JUMPOUT_1 ::
+		local tryLand = ILAPI_PosGetLand(edge[i])
+		if tryLand ~= -1 then
+			Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
+			newLand[player].step=0;return
 		end
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
-		if land_data[landId].range.dim~=newLand[player].dim then goto JUMPOUT_2 end --维度不同直接跳过
-		s_pos={};e_pos={}
-		s_pos.x=land_data[landId].range.start_position[1]
-		s_pos.y=land_data[landId].range.start_position[2]
-		s_pos.z=land_data[landId].range.start_position[3]
-		e_pos.x=land_data[landId].range.end_position[1]
-		e_pos.y=land_data[landId].range.end_position[2]
-		e_pos.z=land_data[landId].range.end_position[3]
-		edge=cubeGetEdge(s_pos,e_pos)
-		for i=1,#edge do
-			if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-				Actor:sendText(player,_tr('title.createorder.collision').._tr('title.selectrange.spointa'),5)
-				newLand[player].step=0
-				return
+		if land_data[landId].range.dim==newLand[player].dim then
+			edge=cubeGetEdge(vecMap[landId].a,vecMap[landId].b)
+			for i=1,#edge do
+				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
+					Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
+					newLand[player].step=0;return
+				end
 			end
 		end
-		:: JUMPOUT_2 ::
 	end
 	--- 购买
     newLand[player].landprice = calculation_price(length,width,height)
@@ -957,44 +944,43 @@ end
 function cubeGetEdge(posA,posB)
 	local edge={}
 	local p=0
-	-- [Debug] print(edge[p].x,edge[p].y,edge[p].z,' ',edge[p-1].x,edge[p-1].y,edge[p-1].z,' ',edge[p-2].x,edge[p-2].y,edge[p-2].z,' ',edge[p-3].x,edge[p-3].y,edge[p-3].z)
 	for i=1,math.abs(math.abs(posA.y)-math.abs(posB.y))+1 do
 		if posA.y>posB.y then
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-i;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-i;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-i;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-i;edge[p].z=posA.z
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-i,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-i,posB.z)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-i,posB.z)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-i,posA.z)
 		else
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y+i-2;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y+i-2;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y+i-2;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y+i-2;edge[p].z=posA.z
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y+i-2,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y+i-2,posB.z)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y+i-2,posB.z)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y+i-2,posA.z)
 		end
 	end
 	for i=1,math.abs(math.abs(posA.x)-math.abs(posB.x))+1 do
 		if posA.x>posB.x then
-			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posA.y-1;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posB.y-1;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posA.y-1;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x-i+1;edge[p].y=posB.y-1;edge[p].z=posB.z
+			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posA.y-1,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posB.y-1,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posA.y-1,posB.z)
+			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posB.y-1,posB.z)
 		else
-			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posA.y-1;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posB.y-1;edge[p].z=posA.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posA.y-1;edge[p].z=posB.z
-			p=#edge+1;edge[p]={};edge[p].x=posA.x+i-1;edge[p].y=posB.y-1;edge[p].z=posB.z
+			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posA.y-1,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posB.y-1,posA.z)
+			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posA.y-1,posB.z)
+			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posB.y-1,posB.z)
 		end
 	end
 	for i=1,math.abs(math.abs(posA.z)-math.abs(posB.z))+1 do
 		if posA.z>posB.z then
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-1;edge[p].z=posA.z-i+1
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-1;edge[p].z=posA.z-i+1
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posB.y-1;edge[p].z=posA.z-i+1
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posB.y-1;edge[p].z=posA.z-i+1
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=buildVec(posA.x,posB.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=buildVec(posB.x,posB.y-1,posA.z-i+1)
 		else
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posA.y-1;edge[p].z=posA.z+i-1
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posA.y-1;edge[p].z=posA.z+i-1
-			p=#edge+1;edge[p]={};edge[p].x=posA.x;edge[p].y=posB.y-1;edge[p].z=posA.z+i-1
-			p=#edge+1;edge[p]={};edge[p].x=posB.x;edge[p].y=posB.y-1;edge[p].z=posA.z+i-1
+			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=buildVec(posA.x,posB.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=buildVec(posB.x,posB.y-1,posA.z+i-1)
 		end
 	end
 	return edge
