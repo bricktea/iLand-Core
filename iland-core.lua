@@ -5,14 +5,14 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.3'
-local langVer = 112
+local plugin_version = '1.1.4'
+local langVer = 114
 local minLLVer = 210504
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={}
 local MainCmd = 'land'
-local debug_mode = true
+local debug_mode = false
 local json = require('cjson.safe')
 local request = require('requests')
 
@@ -252,10 +252,13 @@ function FORM_BACK_LandMgr(player,index,text)
 	IL_Manager_GUI(player)
 end
 function FORM_land_buy(player,index,text)
+	if index~=0 then 
+		Actor:sendText(player,_tr('title.buyland.ordersaved'),5);return
+	end
 	local xuid = Actor:getXuid(player)
 	local player_credits = money_get(player)
 	if newLand[player].landprice>player_credits then
-		Actor:sendText(player,_tr('title.buyland.moneynotenough'),5);return
+		Actor:sendText(player,_tr('title.buyland.moneynotenough').._tr('title.buyland.ordersaved'),5);return
 	else
 		money_del(player,newLand[player].landprice)
 	end
