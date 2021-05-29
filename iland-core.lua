@@ -7,7 +7,7 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.4'
 local langVer = 114
-local minLLVer = 210504
+local minLLVer = 210516
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={}
@@ -1049,8 +1049,7 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
-	-- print(Item:getFullName(Actor:getHand(player)))
-	if newLand[player]~=nil and Item:getName(Actor:getHand(player))=='Wooden Axe' then
+	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))=='minecraft:wooden_axe' then
 		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
 		return -1
 	end
