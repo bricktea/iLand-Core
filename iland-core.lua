@@ -168,6 +168,8 @@ do
 			land_data[landId].range.end_position[3]=posB.z
 		end
 		cfg.features.particles=true
+		cfg.features.selection_tool='minecraft:wooden_axe'
+		cfg.features.particle_effects='minecraft:villager_happy'
 		iland_save()
 	end
 end
@@ -1049,7 +1051,7 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
-	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))=='minecraft:wooden_axe' then
+	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
 		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
 		return -1
 	end
@@ -1187,7 +1189,7 @@ end
 function IL_TCB_SelectionParticles()
 	for player,posarr in pairs(ArrayParticles) do
 		for n,pos in pairs(posarr) do
-			runCmdEx('execute @a[name="'..Actor:getName(player)..'"] ~ ~ ~ particle "minecraft:villager_happy" '..pos.x..' '..tostring(pos.y+1)..' '..pos.z)
+			runCmdEx('execute @a[name="'..Actor:getName(player)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1)..' '..pos.z)
 		end
 	end
 end
