@@ -31,12 +31,14 @@ jobs:
           cp -a iland-core.lua D:/out/lua
           cp -a iland/* D:/out/data/iland
           cp -a data/iland/GUI/* D:/out/GUI
+        shell: bash
         
       - name: Download language file
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           git clone https://github.com/McAirLand/translation.git
           cp -a translation/* D:/out/data/iland/lang
+        shell: bash
 
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
