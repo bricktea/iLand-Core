@@ -72,7 +72,7 @@ function buildVec(x,y,z,dim)
 	end
 	return t
 end
-function formatXYZ(sX,sY,sZ,eX,eY,eZ)
+function fmCube(sX,sY,sZ,eX,eY,eZ)
 	local A=buildVec(sX,sY,sZ)
 	local B=buildVec(eX,eY,eZ)
 	local tmp1
@@ -157,7 +157,7 @@ do
 			local eX=land_data[landId].range.end_position[1]
 			local eY=land_data[landId].range.end_position[2]
 			local eZ=land_data[landId].range.end_position[3]
-			local result={formatXYZ(sX,sY,sZ,eX,eY,eZ)}
+			local result={fmCube(sX,sY,sZ,eX,eY,eZ)}
 			local posA=result[1]
 			local posB=result[2]
 			land_data[landId].range.start_position[1]=posA.x
@@ -193,12 +193,12 @@ function buildChunks()
 		local eX = data.range.end_position[1]
 		local eZ = data.range.end_position[3]
 		local count = 0
-		while (sX+size*count<=eX) do
+		while (sX+size*count<=eX+size) do
 			local t = pos2chunk(sX+size*count,sZ+size*count)
 			chkmap(t.x,t.z)
 			table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
 			local count2 = 0
-			while (sZ+size*count2<=eZ) do
+			while (sZ+size*count2<=eZ+size) do
 				local t = pos2chunk(sX+size*count,sZ+size*count2)
 				chkmap(t.x,t.z)
 				table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
@@ -260,7 +260,7 @@ function FORM_land_buy(player,index,text)
 	Actor:sendText(player,_tr('title.buyland.succeed'),5)
 	local A=newLand[player].posA
 	local B=newLand[player].posB
-	local result={formatXYZ(A.x,A.y,A.z,B.x,B.y,B.z)}
+	local result={fmCube(A.x,A.y,A.z,B.x,B.y,B.z)}
 	ILAPI_CreateLand(xuid,result[1],result[2],newLand[player].dim)
 	newLand[player]=nil
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',"Complete.",
@@ -815,6 +815,13 @@ function ILAPI_PosGetLand(vec4)
 	end
 	return -1
 end
+function ILAPI_GetChunk(vec2)
+	local r = pos2chunk(vec2.x,vec2.z)
+	if ChunkMap[r.x]~=nil and ChunkMap[r.x][r.z]~=nil then
+		return ChunkMap[r.x][r.z]
+	end
+	return -1
+end
 function ILAPI_GetVersion()
 	return plugin_version
 end
@@ -909,9 +916,9 @@ function money_get(player)
 end
 function pos2vec(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 	local t={}
-	t.x=math.modf(table[1])
-	t.y=math.modf(table[2])
-	t.z=math.modf(table[3])
+	t.x=math.floor(table[1])
+	t.y=math.floor(table[2])
+	t.z=math.floor(table[3])
 	t.dim=table[4]
 	return t
 end
@@ -1193,7 +1200,16 @@ function DEBUG_LANDQUERY()
 	local xyz=pos2vec({Actor:getPos(debug_landquery)})
 	xyz.y=xyz.y-1
 	local landid=ILAPI_PosGetLand(xyz)
-	print('[ILand] Debugger: '..landid)
+	local N = ILAPI_GetChunk(xyz)
+	local F = pos2chunk(xyz.x,xyz.z)
+	print('[ILand] Debugger: [Query] '..landid)
+	if N==-1 then
+		print('[ILand] Debugger: [Chunk] not found')
+	else
+		for i,v in pairs(N) do
+			print('[ILand] Debugger: [Chunk] ('..F.x..','..F.z..') '..i..' '..v)
+		end
+	end
 end
 if debug_mode then
 schedule("DEBUG_LANDQUERY",3,0)
