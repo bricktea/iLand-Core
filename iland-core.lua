@@ -10,7 +10,7 @@ local langVer = 112
 local minLLVer = 210504
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
-local newLand={};local TRS_Form={}
+local newLand={};local TRS_Form={};local ArrayParticles={}
 local MainCmd = 'land'
 local debug_mode = true
 local json = require('cjson.safe')
@@ -149,7 +149,7 @@ do
 		iland_save()
 	end
 	if cfg.version==112 or cfg.version==113 then
-		cfg.version=113
+		-- cfg.version=114
 		for landId,data in pairs(land_data) do
 			local sX=land_data[landId].range.start_position[1]
 			local sY=land_data[landId].range.start_position[2]
@@ -167,6 +167,7 @@ do
 			land_data[landId].range.end_position[2]=posB.y
 			land_data[landId].range.end_position[3]=posB.z
 		end
+		cfg.features.particles=true
 		iland_save()
 	end
 end
@@ -238,6 +239,7 @@ function EV_playerJoin(e)
 end
 function EV_playerLeft(e)
 	TRS_Form[e]=nil
+	ArrayParticles[e]=nil
 end
 
 -- form -> callback
@@ -551,12 +553,16 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].posB.z=math.modf(newLand[player].posB.z)
         Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'.._tr('title.selectrange.bebuy'),5)
 		newLand[player].step = 2
+
+		ArrayParticles[player]={}
+		ArrayParticles[player]=cubeGetEdge(newLand[player].posA,newLand[player].posB)
     end
 	if mode==2 then
 		IL_BP_CreateOrder(player)
 	end
 end
 function IL_BP_CreateOrder(player)
+	ArrayParticles[player]=nil
 	local xuid = Actor:getXuid(player)
     if newLand[player]==nil or newLand[player].step~=2 then
 		Actor:sendText(player,_tr('title.createorder.failbystep'),5)
@@ -586,9 +592,10 @@ function IL_BP_CreateOrder(player)
 	--- 领地冲突判断
 	local edge=cubeGetEdge(newLand[player].posA,newLand[player].posB)
 	for i=1,#edge do
+		edge[i].dim=newLand[player].dim
 		local tryLand = ILAPI_PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
+			Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand).._tr('title.selectrange.spointa'),5)
 			newLand[player].step=0;return
 		end
 	end
@@ -616,6 +623,7 @@ function IL_BP_GiveUp(player)
         Actor:sendText(player,_tr('title.giveup.failed'),5);return
     end
 	newLand[player]=nil
+	ArrayParticles[player]=nil
 	Actor:sendText(player,_tr('title.giveup.succeed'),5)
 end
 function IL_Manager_GUI(player)
@@ -1174,6 +1182,13 @@ function IL_TCB_LandSign()
 		TRS_Form[v].inland=landid
 	end
 end
+function IL_TCB_SelectionParticles()
+	for player,posarr in pairs(ArrayParticles) do
+		for n,pos in pairs(posarr) do
+			runCmdEx('execute @a[name="'..Actor:getName(player)..'"] ~ ~ ~ particle "minecraft:villager_happy" '..pos.x..' '..tostring(pos.y+1)..' '..pos.z)
+		end
+	end
+end
 
 -- listen events,
 Listen('onCMD',IL_CmdFunc)
@@ -1192,6 +1207,11 @@ Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 -- timer -> landsign
 if cfg.features.landSign then
 schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
+end
+
+-- timer -> particles
+if cfg.features.particles then
+	schedule("IL_TCB_SelectionParticles",2,0)
 end
 
 -- timer -> debugger
