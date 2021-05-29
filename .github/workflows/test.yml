@@ -1,0 +1,43 @@
+name: Package iLand-Core
+
+on:
+  push:
+    branches: [ LiteLoader-Lua ]
+  pull_request:
+    branches: [ LiteLoader-Lua ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Organize the catalog
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          mkdir lua
+          mkdir data
+          mv iland-core.lua lua
+          mv iland data\
+          rm init.lua
+          rm *.md
+          mv data\iland\GUI .
+      - name: Download language file
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          cd data\iland\
+          git clone https://github.com/McAirLand/translation.git
+          mv translation lang
+      - name: Move files
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          mkdir \out
+          mv * \out\
+      - name: Upload DevPack
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: iLand
+          path: \out\
