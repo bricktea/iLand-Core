@@ -20,6 +20,7 @@ jobs:
         run: |
           mkdir D:/out
           mkdir D:/out/lua
+          mkdir D:/out/lualib
           mkdir D:/out/data
           mkdir D:/out/GUI
           mkdir D:/out/data/iland
@@ -29,6 +30,7 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           cp -a iland-core.lua D:/out/lua
+          cp -a init.lua D:/out/lua
           cp -a iland/* D:/out/data/iland
           cp -a iland/GUI/* D:/out/GUI
         shell: bash
@@ -39,6 +41,11 @@ jobs:
           git clone https://github.com/McAirLand/translation.git
           cp -a translation/* D:/out/data/iland/lang
         shell: bash
+
+      - name: Download lualib
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          curl -L -o D:/out/lualib/dkjson.lua "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3"
         
       - name: Remove useless files
         working-directory: ${{env.GITHUB_WORKSPACE}}
