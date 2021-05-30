@@ -7,7 +7,7 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.4'
 local langVer = 114
-local minLLVer = 210516
+local minLLVer = 210530
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={}
@@ -1060,7 +1060,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 		Actor:sendText(player,gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
 		cfg.features.selection_tool=Item:getFullName(Actor:getHand(player))
 		iland_save()
-		TRS_Form[player].selectool==-1
+		TRS_Form[player].selectool=-1
 		return -1
 	end
 	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
