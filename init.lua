@@ -111,20 +111,6 @@ _MSGH={}
 package.cpath=".\\plugins\\LiteLuaLoader\\lualib\\?.dll"
 package.path=".\\plugins\\LiteLuaLoader\\lua\\?.lua;.\\plugins\\LiteLuaLoader\\lualib\\?.lua;.\\plugins\\LiteLuaLoader\\lua\\?\\init.lua"
 
-local Reqid2cb={}
-local HttpWorker=startThread("plugins/LiteLuaLoader/lua/async/ahttp.lua",function (reqid,text,code)
-	Reqid2cb[reqid](text,code)
-end)
-function get(url,cb)
-	local id
-	while true do
-		id=math.random(2000000000)
-		if Reqid2cb[id]==nil then break end
-	end
-	Reqid2cb[id]=cb
-	TSendMsg(HttpWorker,"get",id,url)
-end
-
 function ReadAllText(path)
 	local file=assert(io.open(path,'r'))
 	local data=''
