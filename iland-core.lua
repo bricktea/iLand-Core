@@ -13,8 +13,7 @@ local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={}
 local MainCmd = 'land'
 local debug_mode = false
-local json = require('cjson.safe')
-local request = require('requests')
+local json = require('dkjson')
 
 -- check file
 if IfFile(data_path..'config.json') == false then
@@ -1061,6 +1060,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 		Actor:sendText(player,gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
 		cfg.features.selection_tool=Item:getFullName(Actor:getHand(player))
 		iland_save()
+		TRS_Form[player].selectool==-1
 		return -1
 	end
 	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
@@ -1253,17 +1253,18 @@ end
 
 -- check update
 if cfg.update_check then
-	local response=request.get('http://cdisk.amd.rocks/tmp/ILAND/v111_version')
-	if response.status_code~=200 then
-		print('[ILand] ERR!! Get version info failed.('..response.status_code..')')
-	end
-	local data=json.decode(response.text)
-	if data.version~=plugin_version then
-		print('[ILand] '..gsubEx(_tr('console.newversion'),'<a>',data.version))
-		print('[ILand] '.._tr('console.update'))
-	end
-	if data.t_e then
-		print('[ILand] '..data.text)
+	local result=Utils:Get('http://cdisk.amd.rocks','/tmp/ILAND/v111_version')
+	if result~=nil then
+		local data=json.decode(result['body'])
+		if data.version~=plugin_version then
+			print('[ILand] '..gsubEx(_tr('console.newversion'),'<a>',data.version))
+			print('[ILand] '.._tr('console.update'))
+		end
+		if data.t_e then
+			print('[ILand] '..data.text)
+		end
+	else
+		print('[ILand] ERR!! Get version info failed.')
 	end
 end
 
@@ -1273,4 +1274,5 @@ makeCommand(MainCmd..' new',_tr('command.land_new'),1)
 makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
 makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
 makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
+makeCommand(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),5)
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version)
