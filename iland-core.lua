@@ -49,9 +49,9 @@ function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
     return copy
 end
 function iland_save()
-	WriteAllText(data_path..'config.json',json.encode(cfg))
+	WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
 	WriteAllText(data_path..'data.json',json.encode(land_data))
-	WriteAllText(data_path..'owners.json',json.encode(land_owners))
+	WriteAllText(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
 function pos2chunk(posx,posz)
 	local p = cfg.features.chunk_side
