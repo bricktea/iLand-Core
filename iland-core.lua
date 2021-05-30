@@ -723,6 +723,12 @@ function IL_CmdFunc(player,cmd)
 		if isValInList(cfg.manager.operator,xuid)==-1 then return end
 		IL_Manager_OPGUI(player)
 	end
+	-- [mgr selectool] Set land_select tool
+	if cmd == MainCmd..' mgr selectool' then
+		if isValInList(cfg.manager.operator,xuid)==-1 then return end
+		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
+		TRS_Form[player].selectool=0
+	end
 	-- [debug] Start to debug
 	if cmd == MainCmd..' debug' and debug_mode then
 		debug_landquery = player
@@ -1051,6 +1057,12 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
+	if TRS_Form[player].selectool==0 then
+		Actor:sendText(player,gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
+		cfg.features.selection_tool=Item:getFullName(Actor:getHand(player))
+		iland_save()
+		return -1
+	end
 	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
 		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
 		return -1
