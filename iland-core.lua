@@ -148,7 +148,7 @@ do
 		iland_save()
 	end
 	if cfg.version==112 or cfg.version==113 then
-		-- cfg.version=114
+		cfg.version=114
 		for landId,data in pairs(land_data) do
 			local sX=land_data[landId].range.start_position[1]
 			local sY=land_data[landId].range.start_position[2]
