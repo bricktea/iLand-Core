@@ -1,0 +1,25 @@
+中文：
+
+安装：
+1. 将压缩包解包
+2. 复制所有文件到 \plugins\LiteLuaLoader 目录
+3. 检查iland-core.lua 是否在 \LiteLuaLoader\lua 目录下
+4. 开服测试
+
+更新：
+1. 将压缩包解包
+2. 删除解压结果中 data\iland 目录中的 config.json,data.json,owners.json
+3. 重复“安装”2-4步
+
+English:
+
+Install:
+1. Unpack the compressed package
+2. Copy all files to the \plugins\LiteLuaLoader directory
+3. Check whether iland-core.lua is in the \LiteLuaLoader\lua directory
+4. Open server test
+
+Update:
+1. Unpack the compressed package
+2. Delete config.json, data.json, owners.json in the data\iland directory in the decompression result
+3. Repeat the "Install" step 2-4

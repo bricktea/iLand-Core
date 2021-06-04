@@ -33,6 +33,7 @@ jobs:
           cp -a init.lua D:/out/lua
           cp -a iland/* D:/out/data/iland
           cp -a iland/GUI/* D:/out/GUI
+          cp -a install_upgrade_guide.txt D:/out
         shell: bash
         
       - name: Download language file
