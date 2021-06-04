@@ -1,18 +1,11 @@
-> Version **1.1.4**
- 
- - [x] 修复服务器语言不是因为导致的木斧无效问题
- - [x] 支持设定圈地工具
- - [x] 修复BuildChunk中的两处潜在问题
- - [x] 修复负数坐标导致的问题
- - [x] 修复领地冲突检测中的一处问题
- - [x] 优化陈旧代码
- - [x] 取消对1.0.9之前的配置文件自动转换支持
- - [x] 圈地粒子效果
- - [x] ILAPI_GetChunk
- - [x] 修复领地购买GUI的一处问题
-
  > Version **1.1.5**
 
  - [ ] OpLMgr更多配置项
+ - [ ] Lmgr更多配置项
+ - [ ] 从Core分离Libs（AirLibs）
  - [ ] 优化VecMap，ChunkMap重载方式
+ - [ ] 修复 Issue: （MineBBS）iland.6145/post-38217
+ - [ ] 修复 Issue：（MineBBS）iland.6145/post-38223
  - [ ] 多圈地方式
+ - [ ] 合并领地
+ - [ ] LandSign边缘显示
