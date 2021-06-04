@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.4'
+local plugin_version = '1.1.4hotfix'
 local langVer = 114
 local minLLVer = 210530
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
