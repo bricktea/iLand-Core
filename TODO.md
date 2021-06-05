@@ -2,9 +2,9 @@
 
  - [ ] OpLMgr更多配置项
  - [ ] Lmgr更多配置项
- - [ ] 从Core分离Libs（AirLibs）
+ - [x] 从Core分离Libs（AirLibs）
  - [ ] 优化VecMap，ChunkMap重载方式
- - [ ] 修复 Issue: （MineBBS）iland.6145/post-38217
+ - [x] 修复 Issue: （MineBBS）iland.6145/post-38217
  - [ ] 修复 Issue：（MineBBS）iland.6145/post-38223
  - [ ] 多圈地方式
  - [ ] 合并领地

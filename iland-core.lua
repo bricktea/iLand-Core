@@ -370,9 +370,9 @@ function FORM_land_gui(player,raw,data)
 	local landid=land_owners[xuid][raw[3]+1]
 	TRS_Form[player].landid=landid
 	if raw[2]==0 then --查看领地信息
-		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
-		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
-		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
+		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1 
+		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
+		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
 		local nname=ILAPI.GetNickname(landid)
@@ -447,9 +447,9 @@ function FORM_land_gui(player,raw,data)
 									json.encode(TRS_Form[player].playerList))
 	end
 	if raw[2]==6 then --删除领地
-		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2])
-		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1])
-		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
+		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
+		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1
+		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
 		TRS_Form[player].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
 												AIR.gsubEx(_tr('gui.delland.content'),
@@ -555,9 +555,9 @@ function IL_BP_CreateOrder(player)
 		Actor:sendText(player,_tr('title.createorder.failbystep'),5)
         return
     end
-    local length = math.abs(newLand[player].posA.x - newLand[player].posB.x)
-    local width = math.abs(newLand[player].posA.z - newLand[player].posB.z)
-    local height = math.abs(newLand[player].posA.y - newLand[player].posB.y)
+    local length = math.abs(newLand[player].posA.x - newLand[player].posB.x) + 1
+    local width = math.abs(newLand[player].posA.z - newLand[player].posB.z) + 1
+    local height = math.abs(newLand[player].posA.y - newLand[player].posB.y) + 1
     local vol = length * width * height
     local squ = length * width
 	--- 违规圈地判断
