@@ -154,6 +154,12 @@ do
 		cfg.features.particle_effects='minecraft:villager_happy'
 		iland_save()
 	end
+	if cfg.version==114 then
+		cfg.version=115
+		for landId,data in pairs(land_data) do
+		end
+		-- iland_save()
+	end
 end
 
 -- load language file
@@ -367,9 +373,9 @@ function FORM_land_gui_delete(player,index,text)
 end
 function FORM_land_gui(player,raw,data)
 	local xuid=Actor:getXuid(player)
-	local landid=land_owners[xuid][raw[3]+1]
+	local landid=land_owners[xuid][raw[2]+1]
 	TRS_Form[player].landid=landid
-	if raw[2]==0 then --查看领地信息
+	if raw[3]==0 then --查看领地信息
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1 
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
@@ -393,7 +399,7 @@ function FORM_land_gui(player,raw,data)
 									_tr('gui.general.iknow'),
 									_tr('gui.general.close'))
 	end
-	if raw[2]==1 then --编辑领地权限
+	if raw[3]==1 then --编辑领地权限
 		local d=land_data[landid].permissions
 		GUI(player,'lmgr_landperm','FORM_land_gui_perm',_tr('gui.landmgr.landperm.title'),
 							_tr('gui.landmgr.landperm.options.title'),
@@ -409,7 +415,7 @@ function FORM_land_gui(player,raw,data)
 							_tr('gui.landmgr.landperm.options.exploding'),tostring(d.allow_exploding)
 						)
 	end
-	if raw[2]==2 then --编辑信任名单
+	if raw[3]==2 then --编辑信任名单
 		TRS_Form[player].playerList = GetOnlinePlayerList(2)
 		local d=AIR.shacopy(land_data[landid].settings.share)
 		for i, v in pairs(d) do
@@ -424,21 +430,21 @@ function FORM_land_gui(player,raw,data)
 												_tr('gui.landtrust.rmtrust'),
 												_tr('gui.landtrust.selectplayer'),json.encode(d))
 	end
-	if raw[2]==3 then --领地nickname
+	if raw[3]==3 then --领地nickname
 		local nickn=ILAPI.GetNickname(landid)
 		if nickn=='' then nickn='['.._tr('gui.landmgr.unnamed')..']' end
 		GUI(player,'lmgr_landname','FORM_land_gui_name',_tr('gui.landtag.title'),
 														_tr('gui.landtag.tip'),
 														nickn)
 	end
-	if raw[2]==4 then --领地describe
+	if raw[3]==4 then --领地describe
 		local desc=ILAPI.GetDescribe(landid)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
 		GUI(player,'lmgr_landdescribe','FORM_land_gui_describe',_tr('gui.landdescribe.title'),
 															_tr('gui.landdescribe.tip'),
 															desc)
 	end
-	if raw[2]==5 then --领地过户
+	if raw[3]==5 then --领地过户
 		TRS_Form[player].playerList = GetOnlinePlayerList(2)
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
@@ -446,7 +452,7 @@ function FORM_land_gui(player,raw,data)
 									_tr('talk.land.selecttargetplayer'),
 									json.encode(TRS_Form[player].playerList))
 	end
-	if raw[2]==6 then --删除领地
+	if raw[3]==6 then --删除领地
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
@@ -638,10 +644,10 @@ function IL_Manager_GUI(player)
 	GUI(player,'lmgr','FORM_land_gui', -- %1 callback
 								_tr('gui.landmgr.title'), -- %2 title
 								welcomeText, -- %3 label
-								_tr('gui.oplandmgr.selectoption'), --%4 dropdown->text
-								json.encode(features), -- %5 dropdown->args
-								_tr('gui.landmgr.select'), -- %6 dropdown->text
-								json.encode(lands)) -- %7 dropdown->args
+								_tr('gui.landmgr.select'), -- %4 dropdown->text
+								json.encode(lands), -- %5 dropdown->args
+								_tr('gui.oplandmgr.selectoption'), --%6 dropdown->text
+								json.encode(features)) -- %7 dropdown->args
 end
 function IL_Manager_OPGUI(player)
 	local landlst={}
@@ -1029,7 +1035,7 @@ function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:forceKick(player)
+	return -1
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
