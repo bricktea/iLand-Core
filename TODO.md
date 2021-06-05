@@ -6,6 +6,7 @@
  - [ ] 优化VecMap，ChunkMap重载方式
  - [x] 修复 Issue: （MineBBS）iland.6145/post-38217
  - [x] 修复 Issue：（MineBBS）iland.6145/post-38223
+ - [x] 开桶拦截方式修改
  - [ ] 多圈地方式
  - [ ] 合并领地
  - [ ] LandSign边缘显示
