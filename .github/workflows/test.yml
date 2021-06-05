@@ -30,7 +30,6 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           cp -a iland-core.lua D:/out/lua
-          cp -a init.lua D:/out/lua
           cp -a iland/* D:/out/data/iland
           cp -a iland/GUI/* D:/out/GUI
           cp -a install_upgrade_guide.txt D:/out
@@ -47,8 +46,9 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           curl -L -o D:/out/lualib/dkjson.lua "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3"
+          curl -L -o D:/out/lualib/airLibs.lua "https://raw.githubusercontent.com/McAirLand/AirLibs/main/airLibs.lua"
         
-      - name: Remove useless files
+      - name: Remove unuseful files
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           rm -rf D:/out/data/iland/GUI
@@ -58,5 +58,5 @@ jobs:
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: iLand
+          name: iland-preview
           path: D:/out/
