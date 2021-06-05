@@ -2,3 +2,4 @@
 async/*
 pl/*
 lua/iland/lang/*
+init.lua

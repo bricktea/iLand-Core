@@ -8,36 +8,44 @@
 local plugin_version = '1.1.4hotfix'
 local langVer = 114
 local minLLVer = 210530
+local minAirVer = 100
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 -- local data_path = 'plugins\\LiteLuaLoader\\lua\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={}
 local MainCmd = 'land'
 local debug_mode = false
 local json = require('dkjson')
+local AIR = require('airLibs')
 
 -- check file
-if IfFile(data_path..'config.json') == false then
+if AIR.IfFile(data_path..'config.json') == false then
 	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
 end
 
--- check lllua
+-- check depends version
 if tonumber(lllVersion()) < minLLVer then
 	print('[ILand] ERR!! LLLua too old, please use latest version, here ↓')
 	print('[ILand] ERR!! https://www.minebbs.com/resources/litelualoader-lua.2390/')
 	print('[ILand] ERR!! Plugin closing...')
 	return
 end
+if AIR.VERSION < minAirVer then
+	print('[ILand] ERR!! AirLibs too old, please use latest version, here ↓')
+	print('[ILand] ERR!! https://www.minebbs.com/')
+	print('[ILand] ERR!! Plugin closing...')
+	return
+end
 
 -- load data file
-local cfg = json.decode(ReadAllText(data_path..'config.json'))
-land_data = json.decode(ReadAllText(data_path..'data.json'))
-land_owners = json.decode(ReadAllText(data_path..'owners.json'))
+local cfg = json.decode(AIR.ReadAllText(data_path..'config.json'))
+land_data = json.decode(AIR.ReadAllText(data_path..'data.json'))
+land_owners = json.decode(AIR.ReadAllText(data_path..'owners.json'))
 
 -- preload function
 function iland_save()
-	WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
-	WriteAllText(data_path..'data.json',json.encode(land_data))
-	WriteAllText(data_path..'owners.json',json.encode(land_owners,{indent=true}))
+	AIR.WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
+	AIR.WriteAllText(data_path..'data.json',json.encode(land_data))
+	AIR.WriteAllText(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
 function pos2chunk(posx,posz)
 	local p = cfg.features.chunk_side
@@ -48,8 +56,8 @@ function pos2chunk(posx,posz)
 	return a
 end
 function fmCube(sX,sY,sZ,eX,eY,eZ)
-	local A=buildVec(sX,sY,sZ)
-	local B=buildVec(eX,eY,eZ)
+	local A=AIR.buildVec(sX,sY,sZ)
+	local B=AIR.buildVec(eX,eY,eZ)
 	local tmp1
 	if A.x>B.x then A.x,B.x = B.x,A.x end
 	if A.y>B.y then A.y,B.y = B.y,A.y end
@@ -85,19 +93,19 @@ do
 		cfg.manager.i18n=nil
 		for landid,data in pairs(land_data) do
 			land_data[landid].settings={}
-			land_data[landid].settings.share=deepcopy(land_data[landid].setting.share)
+			land_data[landid].settings.share=AIR.deepcopy(land_data[landid].setting.share)
 			land_data[landid].settings.nickname=''
-			land_data[landid].permissions=deepcopy(land_data[landid].setting)
+			land_data[landid].permissions=AIR.deepcopy(land_data[landid].setting)
 			land_data[landid].setting=nil
 			land_data[landid].permissions.share=nil
 			land_data[landid].range.start_position={}
 			land_data[landid].range.end_position={}
-			land_data[landid].range.start_position[1]=deepcopy(land_data[landid].range.start_x)
-			land_data[landid].range.start_position[2]=deepcopy(land_data[landid].range.start_y)
-			land_data[landid].range.start_position[3]=deepcopy(land_data[landid].range.start_z)
-			land_data[landid].range.end_position[1]=deepcopy(land_data[landid].range.end_x)
-			land_data[landid].range.end_position[2]=deepcopy(land_data[landid].range.end_y)
-			land_data[landid].range.end_position[3]=deepcopy(land_data[landid].range.end_z)
+			land_data[landid].range.start_position[1]=AIR.deepcopy(land_data[landid].range.start_x)
+			land_data[landid].range.start_position[2]=AIR.deepcopy(land_data[landid].range.start_y)
+			land_data[landid].range.start_position[3]=AIR.deepcopy(land_data[landid].range.start_z)
+			land_data[landid].range.end_position[1]=AIR.deepcopy(land_data[landid].range.end_x)
+			land_data[landid].range.end_position[2]=AIR.deepcopy(land_data[landid].range.end_y)
+			land_data[landid].range.end_position[3]=AIR.deepcopy(land_data[landid].range.end_z)
 			land_data[landid].range.start_x=nil
 			land_data[landid].range.start_y=nil
 			land_data[landid].range.start_z=nil
@@ -111,12 +119,12 @@ do
 		cfg.version=112
 		cfg.land_buy.calculation='m-1'
 		cfg.land_buy.price={}
-		cfg.land_buy.price[1]=deepcopy(cfg.land_buy.price_ground)
-		cfg.land_buy.price[2]=deepcopy(cfg.land_buy.price_sky)
+		cfg.land_buy.price[1]=AIR.deepcopy(cfg.land_buy.price_ground)
+		cfg.land_buy.price[2]=AIR.deepcopy(cfg.land_buy.price_sky)
 		cfg.land_buy.price_ground=nil
 		cfg.land_buy.price_sky=nil
 		cfg.features.chunk_side=16
-		cfg.features.sign_frequency=deepcopy(cfg.features.frequency)
+		cfg.features.sign_frequency=AIR.deepcopy(cfg.features.frequency)
 		cfg.features.frequency=nil
 		for landId,val in pairs(land_data) do
 			land_data[landId].settings.describe=''
@@ -150,7 +158,7 @@ do
 end
 
 -- load language file
-local i18n_data = json.decode(ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+local i18n_data = json.decode(AIR.ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 if i18n_data.VERSION ~= langVer then
 	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
 	return
@@ -197,8 +205,8 @@ function buildVecMap()
 		local epos = land_data[landId].range.end_position
 		vecMap[landId]={}
 		vecMap[landId].a={};vecMap[landId].b={}
-		vecMap[landId].a = buildVec(spos[1],spos[2],spos[3]) --start
-		vecMap[landId].b = buildVec(epos[1],epos[2],epos[3]) --end
+		vecMap[landId].a = AIR.buildVec(spos[1],spos[2],spos[3]) --start
+		vecMap[landId].b = AIR.buildVec(epos[1],epos[2],epos[3]) --end
 	end
 end
 buildVecMap()
@@ -255,15 +263,15 @@ function FORM_land_gui_perm(player,raw,data)
 	-- [1]null     [2]PlaceBlock [3]DestoryBlock [4]openChest  [5]Attack 
 	-- [6]DropItem [7]PickupItem [8]UseItem      [9]openBarrel [10]null
 	-- [11]Explode
-	land_data[landid].permissions.allow_destory=toBool(raw[3])
-	land_data[landid].permissions.allow_place=toBool(raw[2])
-	land_data[landid].permissions.allow_exploding=toBool(raw[11])
-	land_data[landid].permissions.allow_attack=toBool(raw[5])
-	land_data[landid].permissions.allow_open_chest=toBool(raw[4])
-	land_data[landid].permissions.allow_pickupitem=toBool(raw[7])
-	land_data[landid].permissions.allow_dropitem=toBool(raw[6])
-	land_data[landid].permissions.allow_use_item=toBool(raw[8])
-	land_data[landid].permissions.allow_open_barrel=toBool(raw[9])
+	land_data[landid].permissions.allow_destory=AIR.toBool(raw[3])
+	land_data[landid].permissions.allow_place=AIR.toBool(raw[2])
+	land_data[landid].permissions.allow_exploding=AIR.toBool(raw[11])
+	land_data[landid].permissions.allow_attack=AIR.toBool(raw[5])
+	land_data[landid].permissions.allow_open_chest=AIR.toBool(raw[4])
+	land_data[landid].permissions.allow_pickupitem=AIR.toBool(raw[7])
+	land_data[landid].permissions.allow_dropitem=AIR.toBool(raw[6])
+	land_data[landid].permissions.allow_use_item=AIR.toBool(raw[8])
+	land_data[landid].permissions.allow_open_barrel=AIR.toBool(raw[9])
 	iland_save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
@@ -280,7 +288,7 @@ function FORM_land_gui_trust(player,raw,data)
 		if Actor:getXuid(player)==x then
 			Actor:sendText(player,_tr('title.landtrust.cantaddown'),5);return
 		end
-		if isValInList(land_data[landid].settings.share,x)~=-1 then
+		if AIR.isValInList(land_data[landid].settings.share,x)~=-1 then
 			Actor:sendText(player,_tr('title.landtrust.alreadyexists'),5);return
 		end
 		land_data[landid].settings.share[n]=x
@@ -295,7 +303,7 @@ function FORM_land_gui_trust(player,raw,data)
 	if raw[4]==1 then
 		if raw[3]==0 then return end
 		local x=land_data[landid].settings.share[raw[5]+1]
-		table.remove(land_data[landid].settings.share,isValInList(land_data[landid].settings.share,x))
+		table.remove(land_data[landid].settings.share,AIR.isValInList(land_data[landid].settings.share,x))
 		iland_save()
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
@@ -305,7 +313,7 @@ function FORM_land_gui_trust(player,raw,data)
 end
 function FORM_land_gui_name(player,raw,data)
 	local landid=TRS_Form[player].landid
-	if isTextSpecial(raw[2]) then
+	if AIR.isTextSpecial(raw[2]) then
 		Actor:sendText(player,'FAILED',5);return
 	end
 	land_data[landid].settings.nickname=raw[2]
@@ -317,7 +325,7 @@ function FORM_land_gui_name(player,raw,data)
 end
 function FORM_land_gui_describe(player,raw,data)
 	local landid=TRS_Form[player].landid
-	if isTextSpecial(gsubEx(raw[2],
+	if AIR.isTextSpecial(AIR.gsubEx(raw[2],
 							'$','Y', -- allow some spec.
 							',','Y',
 							'.','Y',
@@ -338,11 +346,11 @@ function FORM_land_gui_transfer(player,raw,data)
 	local xuid=Actor:getXuid(player)
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
 	if go==xuid then Actor:sendText(player,_tr('title.landtransfer.canttoown'),5);return end
-	table.remove(land_owners[xuid],isValInList(land_owners[xuid],landid))
+	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landid))
 	table.insert(land_owners[go],#land_owners[go]+1,landid)
 	iland_save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
-									gsubEx(_tr('title.landtransfer.complete'),
+									AIR.gsubEx(_tr('title.landtransfer.complete'),
 										'<a>',ILAPI_GetNickname(landid),
 										'<b>',Actor:xid2str(go)),
 									_tr('gui.general.back'),
@@ -371,7 +379,7 @@ function FORM_land_gui(player,raw,data)
 		local nname=ILAPI_GetNickname(landid)
 		if nname=='' then nname='<'.._tr('gui.landmgr.unnamed')..'>' end
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.landmgr.landinfo.title'),
-									gsubEx(_tr('gui.landmgr.landinfo.content'),
+									AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
 										'<a>',Actor:getName(player),
 										'<m>',landid,
 										'<n>',nname,
@@ -404,7 +412,7 @@ function FORM_land_gui(player,raw,data)
 	end
 	if raw[2]==2 then --编辑信任名单
 		TRS_Form[player].playerList = GetOnlinePlayerList(2)
-		local d=shacopy(land_data[landid].settings.share)
+		local d=AIR.shacopy(land_data[landid].settings.share)
 		for i, v in pairs(d) do
 			d[i]=Actor:xid2str(d[i])
 		end
@@ -445,7 +453,7 @@ function FORM_land_gui(player,raw,data)
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3])
 		TRS_Form[player].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
-												gsubEx(_tr('gui.delland.content'),
+												AIR.gsubEx(_tr('gui.delland.content'),
 													'<a>',TRS_Form[player].landvalue,
 													'<b>',_tr('talk.credit_name')),
 												_tr('gui.general.yes'),
@@ -459,11 +467,11 @@ function FORM_land_mgr_transfer(player,raw,data)
 	if from=='?' then return end
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
 	if go==from then return end
-	table.remove(land_owners[from],isValInList(land_owners[from],landid))
+	table.remove(land_owners[from],AIR.isValInList(land_owners[from],landid))
 	table.insert(land_owners[go],#land_owners[go]+1,landid)
 	iland_save()
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
-									gsubEx(_tr('title.landtransfer.complete'),
+									AIR.gsubEx(_tr('title.landtransfer.complete'),
 										'<a>',landid,
 										'<b>',Actor:xid2str(go)),
 									_tr('gui.general.back'),
@@ -472,8 +480,8 @@ end
 function FORM_land_mgr(player,raw,data)
 
 	cfg.land_buy.refund_rate=raw[5]/100
-	cfg.features.landSign=toBool(raw[7])
-	cfg.update_check=toBool(raw[8])
+	cfg.features.landSign=AIR.toBool(raw[7])
+	cfg.update_check=AIR.toBool(raw[8])
 	iland_save()
 	
 	if raw[3]==0 then GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'));return end
@@ -554,12 +562,12 @@ function IL_BP_CreateOrder(player)
     local vol = length * width * height
     local squ = length * width
 	--- 违规圈地判断
-	if squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
+	if squ>cfg.land.land_max_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 		Actor:sendText(player,_tr('title.createorder.toobig').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
 	end
-	if squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
+	if squ<cfg.land.land_min_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 		Actor:sendText(player,_tr('title.createorder.toosmall').._tr('title.selectrange.spointa'),5)
 		newLand[player].step=0
 		return
@@ -575,7 +583,7 @@ function IL_BP_CreateOrder(player)
 		edge[i].dim=newLand[player].dim
 		local tryLand = ILAPI_PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand).._tr('title.selectrange.spointa'),5)
+			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand).._tr('title.selectrange.spointa'),5)
 			newLand[player].step=0;return
 		end
 	end
@@ -584,7 +592,7 @@ function IL_BP_CreateOrder(player)
 			edge=cubeGetEdge(vecMap[landId].a,vecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-					Actor:sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
+					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
 					newLand[player].step=0;return
 				end
 			end
@@ -594,7 +602,7 @@ function IL_BP_CreateOrder(player)
     newLand[player].landprice = calculation_price(length,width,height)
 	GUI(player,'ModalForm','FORM_land_buy', -- %1 callback
 						_tr('gui.buyland.title'), --%2 title
-						gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[player].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)), -- %3 content
+						AIR.gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[player].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)), -- %3 content
 						_tr('gui.general.buy'), -- %4 button1
 						_tr('gui.general.close')) --%5 button2
 end
@@ -612,14 +620,14 @@ function IL_Manager_GUI(player)
 		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
 	end
 
-	local xyz=pos2vec({Actor:getPos(player)})
+	local xyz=AIR.pos2vec({Actor:getPos(player)})
 	xyz.y=xyz.y-1
 	local lid=ILAPI_PosGetLand(xyz)
 	local nname=ILAPI_GetNickname(lid)
 	if nname=='' then nname=lid end
 	local welcomeText=_tr('gui.landmgr.content')
 	if lid~=-1 then
-		welcomeText=welcomeText..gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
+		welcomeText=welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
 	end
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
@@ -666,8 +674,8 @@ function IL_CmdFunc(player,cmd)
 	if cmd == MainCmd then
 		land_count=tostring(#land_owners[xuid])
 		GUI(player,'ModalForm','FORM_BACK_LandMgr', -- %1 callback
-						gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
-						gsubEx(_tr('gui.land.content'),'<a>',land_count), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
+						AIR.gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
+						AIR.gsubEx(_tr('gui.land.content'),'<a>',land_count), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
 						_tr('talk.landmgr.open'), --%4 button1
 						_tr('gui.general.close')) --%5 button2
 	end
@@ -676,7 +684,7 @@ function IL_CmdFunc(player,cmd)
 		if newLand[player]~=nil then
 			Actor:sendText(player,_tr('title.getlicense.alreadyexists').._tr('title.selectrange.spointa'),5);return -1
 		end
-		if isValInList(cfg.manager.operator,xuid)==-1 then
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 			if #land_owners[xuid]>=cfg.land.player_max_lands then
 				Actor:sendText(player,_tr('title.getlicense.limit'),5);return -1
 			end
@@ -695,12 +703,12 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
-		if isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
 		IL_Manager_OPGUI(player)
 	end
 	-- [mgr selectool] Set land_select tool
 	if cmd == MainCmd..' mgr selectool' then
-		if isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
 		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
 		TRS_Form[player].selectool=0
 	end
@@ -718,7 +726,7 @@ end
 function ILAPI_CreateLand(xuid,startpos,endpos,dimensionid)
 	local landId
 	while true do
-		landId=getGuid()
+		landId=AIR.getGuid()
 		if land_data[landId]==nil then break end
 	end
 	land_data[landId]={}
@@ -758,7 +766,7 @@ function ILAPI_DeleteLand(landid)
 	end
 	local owner=ILAPI_GetOwner(landid)
 	if owner~='?' then
-		table.remove(land_owners[owner],isValInList(land_owners[owner],landid))
+		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landid))
 	end
 	land_data[landid]=nil
 	iland_save()
@@ -792,7 +800,7 @@ function ILAPI_GetOwner(landid)
 		return '?'
 	end
 	for i,v in pairs(land_owners) do
-		if isValInList(v,landid)~=-1 then
+		if AIR.isValInList(v,landid)~=-1 then
 			return i
 		end
 	end
@@ -858,7 +866,7 @@ function money_get(player)
 	if cfg.money.protocol=='scoreboard' then
 		local n={runCmdEx('scoreboard players list "'..playername..'"')};n=n[2]
 		local t=string.len(cfg.money.scoreboard_objname..':')
-		local j=split(n,' ')
+		local j=AIR.split(n,' ')
 		local r,f=0
 		for i,v in pairs(j) do
 			f=string.find(v,cfg.money.scoreboard_objname..':',0)
@@ -887,41 +895,41 @@ function cubeGetEdge(posA,posB)
 	local p=0
 	for i=1,math.abs(math.abs(posA.y)-math.abs(posB.y))+1 do
 		if posA.y>posB.y then
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-i,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-i,posB.z)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-i,posB.z)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-i,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-i,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-i,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-i,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-i,posA.z)
 		else
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y+i-2,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y+i-2,posB.z)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y+i-2,posB.z)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y+i-2,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y+i-2,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y+i-2,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y+i-2,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y+i-2,posA.z)
 		end
 	end
 	for i=1,math.abs(math.abs(posA.x)-math.abs(posB.x))+1 do
 		if posA.x>posB.x then
-			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posA.y-1,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posB.y-1,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posA.y-1,posB.z)
-			p=#edge+1;edge[p]=buildVec(posA.x-i+1,posB.y-1,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posA.y-1,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posB.y-1,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posA.y-1,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posB.y-1,posB.z)
 		else
-			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posA.y-1,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posB.y-1,posA.z)
-			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posA.y-1,posB.z)
-			p=#edge+1;edge[p]=buildVec(posA.x+i-1,posB.y-1,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posA.y-1,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posB.y-1,posA.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posA.y-1,posB.z)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posB.y-1,posB.z)
 		end
 	end
 	for i=1,math.abs(math.abs(posA.z)-math.abs(posB.z))+1 do
 		if posA.z>posB.z then
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=buildVec(posA.x,posB.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=buildVec(posB.x,posB.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posB.y-1,posA.z-i+1)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posB.y-1,posA.z-i+1)
 		else
-			p=#edge+1;edge[p]=buildVec(posA.x,posA.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=buildVec(posB.x,posA.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=buildVec(posA.x,posB.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=buildVec(posB.x,posB.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posB.y-1,posA.z+i-1)
+			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posB.y-1,posA.z+i-1)
 		end
 	end
 	return edge
@@ -954,124 +962,124 @@ end
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	if TRS_Form[player].selectool==0 then
-		Actor:sendText(player,gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
+		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
 		cfg.features.selection_tool=Item:getFullName(Actor:getHand(player))
 		iland_save()
 		TRS_Form[player].selectool=-1
 		return -1
 	end
 	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
-		IL_BP_SelectRange(player,buildVec(x,y,z,dim),newLand[player].step)
+		IL_BP_SelectRange(player,AIR.buildVec(x,y,z,dim),newLand[player].step)
 		return -1
 	end
 
-	local pos=buildVec(x,y,z,dim)
+	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_destory==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
-	local pos=buildVec(x,y,z,dim)
+	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_place==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 	if blockname=='minecraft:barrel' then return end -- sb mojang
-	local pos=buildVec(x,y,z,dim)
+	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_use_item==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
-	local pos=buildVec(x,y,z,dim)
+	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_open_chest==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
-	local pos=buildVec(x,y,z,dim)
+	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_open_barrel==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:teleport(player,x,y+10,z,dim)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
-	local pos=pos2vec({Actor:getPos(mobptr)})
+	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_attack==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z,dim)
-	local pos=pos2vec({x,y,z,dim})
+	local pos=AIR.pos2vec({x,y,z,dim})
 	local landid=ILAPI_PosGetLand(pos)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
 	return -1
 end
 function IL_LIS_onPlayerTakeItem(player,itemptr)
-	local pos=pos2vec({Actor:getPos(itemptr)})
+	local pos=AIR.pos2vec({Actor:getPos(itemptr)})
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_pickupitem==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerDropItem(player,itemptr)
-	local pos=pos2vec({Actor:getPos(player)})
+	local pos=AIR.pos2vec({Actor:getPos(player)})
 	pos.y=pos.y-1
 	local landid=ILAPI_PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
 	if land_data[landid].permissions.allow_dropitem==true then return end -- Perm Allow
-	if isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
+	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_TCB_LandSign()
 	local players=GetOnlinePlayerList(0)
 	for i,v in pairs(players) do
-		local xyz=pos2vec({Actor:getPos(v)})
+		local xyz=AIR.pos2vec({Actor:getPos(v)})
 		xyz.y=xyz.y-1
 		local landid=ILAPI_PosGetLand(xyz)
 		if landid==-1 then TRS_Form[v].inland='null';return end -- no land here
@@ -1082,11 +1090,11 @@ function IL_TCB_LandSign()
 		local slname=ILAPI_GetNickname(landid)
 		if slname=='' then slname='<'.._tr('gui.landmgr.unnamed')..'>' end
 		if Actor:getXuid(v)==owner then
-			sendTitle(v,gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
+			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
 		else
-			sendTitle(v,_tr('sign.listener.visitortitle'),gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+			sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
 			if land_data[landid].settings.describe~='' then
-				Actor:sendText(v,'§l§b[§a LAND §b] §r'..gsubEx(land_data[landid].settings.describe,
+				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
 																	'$visitor',Actor:getName(v),
 																	'$n','\n'
 																),0)
@@ -1130,7 +1138,7 @@ end
 -- timer -> debugger
 function DEBUG_LANDQUERY()
 	if debug_landquery == 0 then return end
-	local xyz=pos2vec({Actor:getPos(debug_landquery)})
+	local xyz=AIR.pos2vec({Actor:getPos(debug_landquery)})
 	xyz.y=xyz.y-1
 	local landid=ILAPI_PosGetLand(xyz)
 	local N = ILAPI_GetChunk(xyz)
@@ -1154,7 +1162,7 @@ if cfg.update_check then
 	if result~=nil then
 		local data=json.decode(result['body'])
 		if data.version~=plugin_version then
-			print('[ILand] '..gsubEx(_tr('console.newversion'),'<a>',data.version))
+			print('[ILand] '..AIR.gsubEx(_tr('console.newversion'),'<a>',data.version))
 			print('[ILand] '.._tr('console.update'))
 		end
 		if data.t_e then
