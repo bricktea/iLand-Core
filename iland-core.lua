@@ -237,12 +237,12 @@ function FORM_BACK_LandMgr(player,index,text)
 end
 function FORM_land_buy(player,index,text)
 	if index~=0 then 
-		Actor:sendText(player,_tr('title.buyland.ordersaved'),5);return
+		Actor:sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name),5);return
 	end
 	local xuid = Actor:getXuid(player)
 	local player_credits = money_get(player)
 	if newLand[player].landprice>player_credits then
-		Actor:sendText(player,_tr('title.buyland.moneynotenough').._tr('title.buyland.ordersaved'),5);return
+		Actor:sendText(player,_tr('title.buyland.moneynotenough')..AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name),5);return
 	else
 		money_del(player,newLand[player].landprice)
 	end
@@ -524,7 +524,7 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].posA.x=math.modf(newLand[player].posA.x) --省函数...
 		newLand[player].posA.y=math.modf(newLand[player].posA.y)
 		newLand[player].posA.z=math.modf(newLand[player].posA.z)
-		Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'.._tr('title.selectrange.spointb'),5)
+		Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name),5)
         newLand[player].step = 1
     end
     if mode==1 then -- point b
@@ -538,7 +538,7 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].posB.x=math.modf(newLand[player].posB.x)
 		newLand[player].posB.y=math.modf(newLand[player].posB.y)
 		newLand[player].posB.z=math.modf(newLand[player].posB.z)
-        Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'.._tr('title.selectrange.bebuy'),5)
+        Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player].step = 2
 
 		ArrayParticles[player]={}
@@ -562,17 +562,17 @@ function IL_BP_CreateOrder(player)
     local squ = length * width
 	--- 违规圈地判断
 	if squ>cfg.land.land_max_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toobig').._tr('title.selectrange.spointa'),5)
+		Actor:sendText(player,_tr('title.createorder.toobig')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player].step=0
 		return
 	end
 	if squ<cfg.land.land_min_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toosmall').._tr('title.selectrange.spointa'),5)
+		Actor:sendText(player,_tr('title.createorder.toosmall')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player].step=0
 		return
 	end
 	if height<2 then
-		Actor:sendText(player,_tr('title.createorder.toolow').._tr('title.selectrange.spointa'),5)
+		Actor:sendText(player,_tr('title.createorder.toolow')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player].step=0
 		return
 	end
@@ -582,7 +582,7 @@ function IL_BP_CreateOrder(player)
 		edge[i].dim=newLand[player].dim
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand).._tr('title.selectrange.spointa'),5)
+			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand)..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 			newLand[player].step=0;return
 		end
 	end
@@ -591,7 +591,7 @@ function IL_BP_CreateOrder(player)
 			edge=cubeGetEdge(vecMap[landId].a,vecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId).._tr('title.selectrange.spointa'),5)
+					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId)..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 					newLand[player].step=0;return
 				end
 			end
@@ -681,14 +681,14 @@ function IL_CmdFunc(player,cmd)
 	-- [new] Create newLand
 	if cmd == MainCmd..' new' then
 		if newLand[player]~=nil then
-			Actor:sendText(player,_tr('title.getlicense.alreadyexists').._tr('title.selectrange.spointa'),5);return -1
+			Actor:sendText(player,_tr('title.getlicense.alreadyexists')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5);return -1
 		end
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 			if #land_owners[xuid]>=cfg.land.player_max_lands then
 				Actor:sendText(player,_tr('title.getlicense.limit'),5);return -1
 			end
 		end
-		Actor:sendText(player,_tr('title.getlicense.succeed').._tr('title.selectrange.spointa'),5)
+		Actor:sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player]={}
 		newLand[player].step=0
 	end
