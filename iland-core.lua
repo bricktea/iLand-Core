@@ -34,20 +34,6 @@ land_data = json.decode(ReadAllText(data_path..'data.json'))
 land_owners = json.decode(ReadAllText(data_path..'owners.json'))
 
 -- preload function
-function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[deepcopy(orig_key)] = deepcopy(orig_value)
-        end
-        setmetatable(copy, deepcopy(getmetatable(orig)))
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 function iland_save()
 	WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
 	WriteAllText(data_path..'data.json',json.encode(land_data))
@@ -60,16 +46,6 @@ function pos2chunk(posx,posz)
 	a.x=math.floor(posx/p)
 	a.z=math.floor(posz/p)
 	return a
-end
-function buildVec(x,y,z,dim)
-	local t={}
-	t.x=x
-	t.y=y
-	t.z=z
-	if dim~=nil then
-		t.dim=dim
-	end
-	return t
 end
 function fmCube(sX,sY,sZ,eX,eY,eZ)
 	local A=buildVec(sX,sY,sZ)
@@ -857,39 +833,6 @@ end
 function _tr(a)
 	return i18n_data[a]
 end
-function getGuid() -- [NOTICE] This function is from Internet.
-    local seed={'e','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}
-    local tb={}
-	---math.randomseed(os.time)
-    for i=1,32 do
-        table.insert(tb,seed[math.random(1,16)])
-    end
-    local sid=table.concat(tb)
-    return string.format('%s-%s-%s-%s-%s',
-        string.sub(sid,1,8),
-        string.sub(sid,9,12),
-        string.sub(sid,13,16),
-        string.sub(sid,17,20),
-        string.sub(sid,21,32)
-    )
-end
-function gsubEx(y,a,a1,b,b1,c,c1,d,d1,e,e1,f,f1,g,g1,h,h1,i,i1,j,j1,k,k1,l,l1,m,m1,n,n1)
-	local z=string.gsub(y,a,a1)
-	if b~=nil then z=string.gsub(z,b,b1) else return z end
-	if c~=nil then z=string.gsub(z,c,c1) else return z end
-	if d~=nil then z=string.gsub(z,d,d1) else return z end
-	if e~=nil then z=string.gsub(z,e,e1) else return z end
-	if f~=nil then z=string.gsub(z,f,f1) else return z end
-	if g~=nil then z=string.gsub(z,g,g1) else return z end
-	if h~=nil then z=string.gsub(z,h,h1) else return z end
-	if i~=nil then z=string.gsub(z,i,i1) else return z end
-	if j~=nil then z=string.gsub(z,j,j1) else return z end
-	if k~=nil then z=string.gsub(z,k,k1) else return z end
-	if l~=nil then z=string.gsub(z,l,l1) else return z end
-	if m~=nil then z=string.gsub(z,m,m1) else return z end
-	if n~=nil then z=string.gsub(z,n,n1) else return z end
-	return z
-end
 function money_add(player,value)
 	local playername=Actor:getName(player)
 	if cfg.money.protocol=='scoreboard' then
@@ -931,14 +874,6 @@ function money_get(player)
 		return tonumber(a)
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
-end
-function pos2vec(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
-	local t={}
-	t.x=math.floor(table[1])
-	t.y=math.floor(table[2])
-	t.z=math.floor(table[3])
-	t.dim=table[4]
-	return t
 end
 function sendTitle(player,title,subtitle)
 	local playername = Actor:getName(player)
@@ -1000,44 +935,6 @@ function isPosInCube(pos,posA,posB)
 		end
 	end
 	return false
-end
-function isValInList(list, value)
-	for i, nowValue in pairs(list) do
-        if nowValue == value then
-            return i
-        end
-    end
-    return -1
-end
-function shacopy(orig)
-	local r={}
-	for i=1,#orig do
-		r[i]=orig[i]
-	end
-	return r
-end
-function isTextSpecial(text)
-	local flag='[%s%p%c%z]'
-	if string.find(text,flag)==nil then
-		return false
-	end
-	return true
-end	
-function isTextNum(text)
-	if tonumber(text)==nil then
-		return false
-	end
-	return true
-end
-function split(str,reps) -- [NOTICE] This function from: blog.csdn.net
-    local resultStrList = {}
-    string.gsub(str,'[^'..reps..']+',function (w)
-        table.insert(resultStrList,w)
-    end)
-    return resultStrList
-end
-function toBool(num)
-	if num==0 then return false else return true end
 end
 function calculation_price(length,width,height)
 	local price=0
