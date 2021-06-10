@@ -13,7 +13,8 @@ Powerful land plugin, made by lua.<br>
 [cJson](https://github.com/DaveGamble/cJSON) | [LLMoney](https://www.minebbs.com/resources/llmoney-ll.2385/)
 
 ### Donate
-[Alipay/WechatPay](https://afdian.net/@kbs007)
+[Alipay/WechatPay](https://afdian.net/@kbs007)<br>
+[Paypal](https://www.paypal.com/paypalme/zhangrab)
 
 ### Other Loader
 Since ILR has ceased maintenance, iland will no longer support ILR after 1.1.1. Please use a better version of LiteLoader-Lua.<br>

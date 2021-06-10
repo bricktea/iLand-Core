@@ -11,6 +11,8 @@
 2. 删除解压结果中 data\iland 目录中的 config.json,data.json,owners.json
 3. 重复“安装”2-4步
 
+捐赠：https://afdian.net/@kbs007
+
 English:
 
 Install:
@@ -23,3 +25,5 @@ Update:
 1. Unpack the compressed package
 2. Delete config.json, data.json, owners.json in the data\iland directory in the decompression result
 3. Repeat the "Install" step 2-4
+
+Donate: https://www.paypal.com/paypalme/zhangrab
