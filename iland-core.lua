@@ -661,16 +661,47 @@ function IL_Manager_OPGUI(player)
 		end
 	end
 	table.insert(landlst,1,'['.._tr('gui.general.plzchose')..']')
+
+	-- plugin information
+	local latestVer,iAnn
+	if iland_latestver~=nil then
+		latestVer = iland_latestver
+	else
+		latestVer = '-'
+	end
+	if iland_aeb~=nil and iland_aeb~=false then
+		iAnn = iland_ann
+	else
+		iAnn = '-'
+	end
+
 	local features={_tr('gui.oplandmgr.donothing'),_tr('gui.oplandmgr.tp'),_tr('gui.oplandmgr.transfer'),_tr('gui.oplandmgr.delland')}
+	local money_protocols={_tr('talk.scoreboard'),'LLMoney'}
 	GUI(player,'opmgr','FORM_land_mgr',_tr('gui.oplandmgr.title'),
 									_tr('gui.oplandmgr.tip'),
+									AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer),
+									AIR.gsubEx(_tr('gui.oplandmgr.plugin.ver'),'<a>',plugin_version)..'\\n'..
+									AIR.gsubEx(_tr('gui.oplandmgr.plugin.latest'),'<a>',latestVer)..'\\n'..
+									AIR.gsubEx(_tr('gui.oplandmgr.plugin.acement'),'<a>',iAnn),
 									_tr('gui.oplandmgr.landmgr'),
 									_tr('gui.oplandmgr.selectland'),json.encode(landlst),
 									_tr('gui.oplandmgr.selectoption'),json.encode(features),
-									_tr('gui.oplandmgr.refundrate'),tostring(cfg.land_buy.refund_rate*10),
-									_tr('gui.oplandmgr.pluginconfig'),
-									_tr('gui.oplandmgr.enablelandsign'),tostring(cfg.features.landSign),
-									_tr('gui.oplandmgr.checkupdate'),tostring(cfg.update_check))
+									_tr('gui.oplandmgr.landcfg'),
+									_tr('gui.oplandmgr.landcfg.maxland'),cfg.land.player_max_lands,
+									_tr('gui.oplandmgr.landcfg.maxsqu'),cfg.land.land_max_square,
+									_tr('gui.oplandmgr.landcfg.minsqu'),cfg.land.land_min_square,
+									_tr('gui.oplandmgr.landcfg.refundrate'),tostring(cfg.land_buy.refund_rate*10),
+									_tr('gui.oplandmgr.economy'),
+									_tr('gui.oplandmgr.economy.protocol'),json.encode(money_protocols),
+									_tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname,
+									_tr('gui.oplandmgr.i18n'),
+									_tr('gui.oplandmgr.i18n.default'),cfg.manager.default_language,
+									_tr('gui.oplandmgr.features'),
+									_tr('gui.oplandmgr.features.landsign'),tostring(cfg.features.landSign),
+									_tr('gui.oplandmgr.features.particles'),tostring(cfg.features.particles),
+									_tr('gui.oplandmgr.features.autochkupd'),tostring(cfg.update_check),
+									_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency,
+									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end
 function IL_CmdFunc(player,cmd)
 	if player==0 then return end
@@ -1170,12 +1201,18 @@ if cfg.update_check then
 	local result=Utils:Get('http://cdisk.amd.rocks','/tmp/ILAND/v111_version')
 	if result~=nil then
 		local data=json.decode(result['body'])
-		if data.version~=plugin_version then
-			print('[ILand] '..AIR.gsubEx(_tr('console.newversion'),'<a>',data.version))
+		
+		-- global
+		iland_latestver = data.version
+		iland_aeb = data.t_e
+		iland_ann = data.text
+		
+		if iland_latestver~=plugin_version then
+			print('[ILand] '..AIR.gsubEx(_tr('console.newversion'),'<a>',iland_latestver))
 			print('[ILand] '.._tr('console.update'))
 		end
-		if data.t_e then
-			print('[ILand] '..data.text)
+		if iland_aeb then
+			print('[ILand] '..iland_ann)
 		end
 	else
 		print('[ILand] ERR!! Get version info failed.')
