@@ -7,7 +7,7 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.4hotfix'
 local langVer = 114
-local minLLVer = 210530
+local minLLVer = 210610
 local minAirVer = 100
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
@@ -1111,7 +1111,7 @@ end
 function IL_TCB_SelectionParticles()
 	for player,posarr in pairs(ArrayParticles) do
 		for n,pos in pairs(posarr) do
-			runCmdEx('execute @a[name="'..Actor:getName(player)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1)..' '..pos.z)
+			runCmdEx('execute @a[name="'..Actor:getName(player)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1.6)..' '..pos.z)
 		end
 	end
 end
