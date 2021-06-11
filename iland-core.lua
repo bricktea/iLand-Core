@@ -966,14 +966,18 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
-	if TRS_Form[player].selectool==0 then
-		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(Actor:getHand(player))),5)
-		cfg.features.selection_tool=Item:getFullName(Actor:getHand(player))
+	
+	local HandItem = Actor:getHand(player)
+	local ItemName = Item:getName(HandItem)
+
+	if ItemName~='' and TRS_Form[player].selectool==0 then
+		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',ItemName),5)
+		cfg.features.selection_tool=Item:getFullName(HandItem)
 		ILAPI.save()
 		TRS_Form[player].selectool=-1
 		return -1
 	end
-	if newLand[player]~=nil and Item:getFullName(Actor:getHand(player))==cfg.features.selection_tool then
+	if ItemName~='' and newLand[player]~=nil and Item:getFullName(HandItem)==cfg.features.selection_tool then
 		IL_BP_SelectRange(player,AIR.buildVec(x,y,z,dim),newLand[player].step)
 		return -1
 	end
