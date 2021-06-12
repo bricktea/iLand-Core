@@ -626,7 +626,7 @@ function IL_BP_CreateOrder(player)
 		edge[i].dim=newLand[player].dim
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand)..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 			newLand[player].step=0;return
 		end
 	end
@@ -635,7 +635,7 @@ function IL_BP_CreateOrder(player)
 			edge=cubeGetEdge(vecMap[landId].a,vecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId)..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 					newLand[player].step=0;return
 				end
 			end
