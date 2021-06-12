@@ -787,7 +787,38 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end
 function IL_CmdFunc(player,cmd)
-	if player==0 then return end
+	if player == 0 then -- Control 
+		local opt = AIR.split(cmd,' ')
+		if opt[1] ~= MainCmd then return end
+		-- [op] add land operator.
+		if opt[2] == 'op' then
+			if AIR.isValInList(cfg.manager.operator,opt[3])==-1 then
+				if not(AIR.isNumber(opt[3])) then
+					print('Wrong xuid!');return -1
+				end
+				table.insert(cfg.manager.operator,#cfg.manager.operator+1,opt[3])
+				ILAPI.save()
+				print('Xuid: '..opt[3]..' has been added to the LandMgr list.')
+			else
+				print('Xuid: '..opt[3]..' is already in LandMgr list.')
+			end
+		end
+		-- [deop] add land operator.
+		if opt[2] == 'deop' then
+			local p = AIR.isValInList(cfg.manager.operator,opt[3])
+			if p~=-1 then
+				if not(AIR.isNumber(opt[3])) then
+					print('Wrong xuid!');return -1
+				end
+				table.remove(cfg.manager.operator,p)
+				ILAPI.save()
+				print('Xuid: '..opt[3]..' has been removed from LandMgr list.')
+			else
+				print('Xuid: '..opt[3]..' is not in LandMgr list.')
+			end
+		end
+		return -1
+	end
 	local xuid=Actor:getXuid(player)
 	-- [ ] Main Command
 	if cmd == MainCmd then
