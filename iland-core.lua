@@ -1041,22 +1041,25 @@ end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
-	
-	local HandItem = Actor:getHand(player)
-	local ItemName = Item:getName(HandItem)
 
-	if ItemName~='' and TRS_Form[player].selectool==0 then
-		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',ItemName),5)
+	if TRS_Form[player].selectool==0 then
+		local HandItem = Actor:getHand(player)
+		if Item:isNull(HandItem) then goto PROCESS_1 end --fix crash
+		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(HandItem)),5)
 		cfg.features.selection_tool=Item:getFullName(HandItem)
 		ILAPI.save()
 		TRS_Form[player].selectool=-1
 		return -1
 	end
-	if ItemName~='' and newLand[player]~=nil and Item:getFullName(HandItem)==cfg.features.selection_tool then
+
+	if newLand[player]~=nil then
+		local HandItem = Actor:getHand(player)
+		if Item:isNull(HandItem) or Item:getFullName(HandItem)~=cfg.features.selection_tool then goto PROCESS_1 end
 		IL_BP_SelectRange(player,AIR.buildVec(x,y,z,dim),newLand[player].step)
 		return -1
 	end
 
+	:: PROCESS_1 ::
 	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
