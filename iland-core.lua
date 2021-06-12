@@ -5,8 +5,8 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.4hotfix'
-local langVer = 114
+local plugin_version = '1.1.5'
+local langVer = 115
 local minLLVer = 210610
 local minAirVer = 100
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
@@ -84,7 +84,7 @@ do
 		cfg.manager.i18n.default_language="zh_CN"
 		cfg.manager.i18n.auto_language_byIP=false
 		cfg.manager.i18n.allow_players_select_lang=true
-		iland_save()
+		ILAPI.save()
 	end
 	if cfg.version==110 then
 		cfg.version=111
@@ -112,7 +112,7 @@ do
 			land_data[landid].range.end_y=nil
 			land_data[landid].range.end_z=nil
 		end
-		iland_save()
+		ILAPI.save()
 	end
 	if cfg.version==111 then
 		cfg.version=112
@@ -128,7 +128,7 @@ do
 		for landId,val in pairs(land_data) do
 			land_data[landId].settings.describe=''
 		end
-		iland_save()
+		ILAPI.save()
 	end
 	if cfg.version==112 or cfg.version==113 then
 		cfg.version=114
@@ -152,13 +152,18 @@ do
 		cfg.features.particles=true
 		cfg.features.selection_tool='minecraft:wooden_axe'
 		cfg.features.particle_effects='minecraft:villager_happy'
-		iland_save()
+		ILAPI.save()
 	end
 	if cfg.version==114 then
 		cfg.version=115
 		for landId,data in pairs(land_data) do
+			land_data[landId].settings.tpoint={}
+			land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
+			land_data[landId].settings.tpoint[2]=land_data[landId].range.start_position[2]
+			land_data[landId].settings.tpoint[3]=land_data[landId].range.start_position[3]
+			land_data[landId].settings.landsign=true
 		end
-		-- iland_save()
+		ILAPI.save()
 	end
 end
 
@@ -853,12 +858,18 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			return -1
+		end
 		IL_Manager_OPGUI(player)
 	end
 	-- [mgr selectool] Set land_select tool
 	if cmd == MainCmd..' mgr selectool' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			return -1
+		end
 		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
 		TRS_Form[player].selectool=0
 	end
@@ -1341,6 +1352,7 @@ makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
 makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
 makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
 makeCommand(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),5)
-print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version)
+print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
+print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
 
 return ILAPI
