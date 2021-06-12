@@ -231,15 +231,23 @@ buildChunks()
 
 -- load land VecMap
 local vecMap={}
-function buildVecMap()
-	vecMap={}
-	for landId,data in pairs(land_data) do
+function updateVecMap(landId,mode)
+	if mode=='add' then
 		local spos = land_data[landId].range.start_position
 		local epos = land_data[landId].range.end_position
 		vecMap[landId]={}
 		vecMap[landId].a={};vecMap[landId].b={}
 		vecMap[landId].a = AIR.buildVec(spos[1],spos[2],spos[3]) --start
 		vecMap[landId].b = AIR.buildVec(epos[1],epos[2],epos[3]) --end
+	end
+	if mode=='del' then
+		vecMap[landId]=nil
+	end
+end
+function buildVecMap()
+	vecMap={}
+	for landId,data in pairs(land_data) do
+		updateVecMap(landId,'add')
 	end
 end
 buildVecMap()
@@ -868,21 +876,21 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	ILAPI.save()
 	updateChunk(landId,'add')
-	buildVecMap()
+	updateVecMap(landId,'add')
 end
-function ILAPI.DeleteLand(landid)
-	if land_data[landid]==nil then
-		if debug_mode then print('[ILAPI] [DeleteLand] WARN!! Deleting nil land('..landid..').') end
+function ILAPI.DeleteLand(landId)
+	if land_data[landId]==nil then
+		if debug_mode then print('[ILAPI] [DeleteLand] WARN!! Deleting nil land('..landId..').') end
 		return
 	end
-	local owner=ILAPI.GetOwner(landid)
+	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
-		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landid))
+		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landId))
 	end
-	updateChunk(landid,'del')
-	land_data[landid]=nil
+	updateChunk(landId,'del')
+	updateVecMap(landId,'del')
+	land_data[landId]=nil
 	ILAPI.save()
-	buildVecMap()
 end
 function ILAPI.GetPlayerLands(xuid)
 	if land_owners[xuid]==nil then 
