@@ -161,7 +161,8 @@ do
 			land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
 			land_data[landId].settings.tpoint[2]=land_data[landId].range.start_position[2]
 			land_data[landId].settings.tpoint[3]=land_data[landId].range.start_position[3]
-			land_data[landId].settings.landsign=true
+			land_data[landId].settings.signtome=true
+			land_data[landId].settings.signtother=true
 		end
 		ILAPI.save()
 	end
@@ -304,6 +305,18 @@ function FORM_land_buy(player,index,text)
 								_tr('gui.general.looklook'),
 								_tr('gui.general.cancel'))
 end
+function FORM_land_gui_cfg(player,raw,data)
+
+	local landId = TRS_Form[player].landid
+	land_data[landId].settings.signtome=AIR.toBool(raw[3])
+	land_data[landId].settings.signtother=AIR.toBool(raw[4])
+	ILAPI.save()
+
+	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
+													'Complete.',
+													_tr('gui.general.back'),
+													_tr('gui.general.close'))
+end
 function FORM_land_gui_perm(player,raw,data)
 	local landid=TRS_Form[player].landid
 	-- [1]null     [2]PlaceBlock [3]DestoryBlock [4]openChest  [5]Attack 
@@ -416,8 +429,6 @@ function FORM_land_gui(player,raw,data)
 	local xuid=Actor:getXuid(player)
 	local landid=land_owners[xuid][raw[2]+1]
 
-	updateChunk(landid,'add')
-
 	TRS_Form[player].landid=landid
 	if raw[3]==0 then --查看领地信息
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1 
@@ -443,7 +454,19 @@ function FORM_land_gui(player,raw,data)
 									_tr('gui.general.iknow'),
 									_tr('gui.general.close'))
 	end
-	if raw[3]==1 then --编辑领地权限
+	if raw[3]==1 then --编辑领地选项
+		local isclosed=''
+		if not(cfg.features.landSign) then
+			isclosed=' ('.._tr('talk.features.closed')..')'
+		end
+		GUI(player,'lmgr_landcfg','FORM_land_gui_cfg',_tr('gui.landcfg.title'),
+													_tr('gui.landcfg.tip'),
+													_tr('gui.landcfg.landsign')..isclosed,
+													_tr('gui.landcfg.landsign.tome'),tostring(land_data[landid].settings.signtome),
+													_tr('gui.landcfg.landsign.tother'),tostring(land_data[landid].settings.signtother)
+												)
+	end
+	if raw[3]==2 then --编辑领地权限
 		local d=land_data[landid].permissions
 		GUI(player,'lmgr_landperm','FORM_land_gui_perm',_tr('gui.landmgr.landperm.title'),
 							_tr('gui.landmgr.landperm.options.title'),
@@ -459,7 +482,7 @@ function FORM_land_gui(player,raw,data)
 							_tr('gui.landmgr.landperm.options.exploding'),tostring(d.allow_exploding)
 						)
 	end
-	if raw[3]==2 then --编辑信任名单
+	if raw[3]==3 then --编辑信任名单
 		TRS_Form[player].playerList = GetOnlinePlayerList()
 		local d=AIR.shacopy(land_data[landid].settings.share)
 		for i, v in pairs(d) do
@@ -474,21 +497,21 @@ function FORM_land_gui(player,raw,data)
 												_tr('gui.landtrust.rmtrust'),
 												_tr('gui.landtrust.selectplayer'),json.encode(d))
 	end
-	if raw[3]==3 then --领地nickname
+	if raw[3]==4 then --领地nickname
 		local nickn=ILAPI.GetNickname(landid)
 		if nickn=='' then nickn='['.._tr('gui.landmgr.unnamed')..']' end
 		GUI(player,'lmgr_landname','FORM_land_gui_name',_tr('gui.landtag.title'),
 														_tr('gui.landtag.tip'),
 														nickn)
 	end
-	if raw[3]==4 then --领地describe
+	if raw[3]==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landid)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
 		GUI(player,'lmgr_landdescribe','FORM_land_gui_describe',_tr('gui.landdescribe.title'),
 															_tr('gui.landdescribe.tip'),
 															desc)
 	end
-	if raw[3]==5 then --领地过户
+	if raw[3]==6 then --领地过户
 		TRS_Form[player].playerList = GetOnlinePlayerList()
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
@@ -496,7 +519,7 @@ function FORM_land_gui(player,raw,data)
 									_tr('talk.land.selecttargetplayer'),
 									json.encode(TRS_Form[player].playerList))
 	end
-	if raw[3]==6 then --删除领地
+	if raw[3]==7 then --删除领地
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1
 		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
@@ -716,7 +739,7 @@ function IL_Manager_GUI(player)
 	if lid~=-1 then
 		welcomeText=welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
 	end
-	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
+	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(land_owners[xuid]) do
 		local f=ILAPI.GetNickname(v)
@@ -895,6 +918,12 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].settings.share={}
 	land_data[landId].settings.nickname=""
 	land_data[landId].settings.describe=""
+	land_data[landId].settings.tpoint={}
+	land_data[landId].settings.tpoint[1]=startpos.x
+	land_data[landId].settings.tpoint[2]=startpos.y
+	land_data[landId].settings.tpoint[3]=startpos.z
+	land_data[landId].settings.signtome=true
+	land_data[landId].settings.signtother=true
 	land_data[landId].range={}
 	land_data[landId].range.start_position={}
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
@@ -1255,15 +1284,17 @@ function IL_TCB_LandSign()
 		if owner~='?' then ownername=Actor:xid2str(owner) end
 		local slname=ILAPI.GetNickname(landid)
 		if slname=='' then slname='<'.._tr('gui.landmgr.unnamed')..'>' end
-		if Actor:getXuid(v)==owner then
+		if Actor:getXuid(v)==owner and land_data[landid].settings.signtome then
 			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
 		else
-			sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
-			if land_data[landid].settings.describe~='' then
-				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
-																	'$visitor',Actor:getName(v),
-																	'$n','\n'
-																),0)
+			if land_data[landid].settings.signtother then
+				sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+				if land_data[landid].settings.describe~='' then
+					Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
+																		'$visitor',Actor:getName(v),
+																		'$n','\n'
+																	),0)
+				end
 			end
 		end
 		TRS_Form[v].inland=landid
