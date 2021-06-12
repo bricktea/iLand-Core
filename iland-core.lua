@@ -853,12 +853,18 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			return -1
+		end
 		IL_Manager_OPGUI(player)
 	end
 	-- [mgr selectool] Set land_select tool
 	if cmd == MainCmd..' mgr selectool' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then return end
+		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			return -1
+		end
 		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
 		TRS_Form[player].selectool=0
 	end
