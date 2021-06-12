@@ -7,14 +7,14 @@
  - [x] 修复 Issue：（MineBBS）iland.6145/post-38223
  - [ ] 开桶拦截方式修改
  - [ ] 多圈地方式
- - [ ] API获取PlayerList
+ - [x] API获取PlayerList
  - [x] 修改ILAPI
  - [x] 领地冲突显示冲突坐标
  - [ ] 玩家设置landSign开关
  - [ ] 领地传送
  - [x] 修复圈地粒子特效的粒子“入地”
  - [x] 修复空手操作造成的崩服
- - [ ] 优化GetChunk，优化下界领地处理
+ - [x] 优化GetChunk
 
  > Version **1.1.6**
 

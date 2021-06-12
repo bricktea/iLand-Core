@@ -455,7 +455,7 @@ function FORM_land_gui(player,raw,data)
 						)
 	end
 	if raw[3]==2 then --编辑信任名单
-		TRS_Form[player].playerList = GetOnlinePlayerList(2)
+		TRS_Form[player].playerList = GetOnlinePlayerList()
 		local d=AIR.shacopy(land_data[landid].settings.share)
 		for i, v in pairs(d) do
 			d[i]=Actor:xid2str(d[i])
@@ -484,7 +484,7 @@ function FORM_land_gui(player,raw,data)
 															desc)
 	end
 	if raw[3]==5 then --领地过户
-		TRS_Form[player].playerList = GetOnlinePlayerList(2)
+		TRS_Form[player].playerList = GetOnlinePlayerList()
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		GUI(player,'lmgr_landtransfer','FORM_land_gui_transfer',_tr('gui.landtransfer.title'),
 									_tr('gui.landtransfer.tip'),
@@ -577,7 +577,7 @@ function FORM_land_mgr(player,raw,data)
 		Actor:teleport(player,land_data[landid].range.start_position[1],land_data[landid].range.start_position[2],land_data[landid].range.start_position[3],land_data[landid].range.dim)
 	end
 	if raw[6]==2 then -- transfer land.
-		TRS_Form[player].playerList = GetOnlinePlayerList(2)
+		TRS_Form[player].playerList = GetOnlinePlayerList()
 		TRS_Form[player].targetland=landid
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		ILAPI.save()
@@ -948,12 +948,10 @@ function ILAPI.GetVersion()
 end
 
 -- feature function
-function GetOnlinePlayerList(mode) -- [0]playerptr [1]xuid [2]playername
+function GetOnlinePlayerList() -- player namelist
 	local b={}
-	for i,v in pairs(TRS_Form) do
-		if mode==0 then b[#b+1]=i end
-		if mode==1 then b[#b+1]=Actor:getXuid(i) end
-		if mode==2 then b[#b+1]=Actor:getName(i) end
+	for i,v in pairs(oList()) do
+		b[#b+1] = Actor:getName(v)
 	end
 	return b
 end
@@ -1203,7 +1201,7 @@ function IL_LIS_onPlayerDropItem(player,itemptr)
 	return -1
 end
 function IL_TCB_LandSign()
-	local players=GetOnlinePlayerList(0)
+	local players=oList()
 	for i,v in pairs(players) do
 		local xyz=AIR.pos2vec({Actor:getPos(v)})
 		xyz.y=xyz.y-1
