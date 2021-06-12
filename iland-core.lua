@@ -171,32 +171,60 @@ end
 
 -- load chunks
 local ChunkMap={}
-function buildChunks()
-	ChunkMap={}
+function updateChunk(landId,mode)
+
+	-- get all TxTz
+
+	local TxTz={}
+	function txz(x,z)
+		if TxTz[x] == nil then TxTz[x] = {} end
+		if TxTz[x][z] == nil then TxTz[x][z] = {} end
+	end
 	function chkmap(x,z)
 		if ChunkMap[x] == nil then ChunkMap[x] = {} end
 		if ChunkMap[x][z] == nil then ChunkMap[x][z] = {} end
 	end
 	local size = cfg.features.chunk_side
-	for landId,data in pairs(land_data) do
-		local sX = data.range.start_position[1]
-		local sZ = data.range.start_position[3]
-		local eX = data.range.end_position[1]
-		local eZ = data.range.end_position[3]
-		local count = 0
-		while (sX+size*count<=eX+size) do
-			local t = pos2chunk(sX+size*count,sZ+size*count)
-			chkmap(t.x,t.z)
-			table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
-			local count2 = 0
-			while (sZ+size*count2<=eZ+size) do
-				local t = pos2chunk(sX+size*count,sZ+size*count2)
-				chkmap(t.x,t.z)
-				table.insert(ChunkMap[t.x][t.z],#ChunkMap[t.x][t.z]+1,landId)
-				count2 = count2 + 1
-			end
-			count = count +1
+	local sX = land_data[landId].range.start_position[1]
+	local sZ = land_data[landId].range.start_position[3]
+	local count = 0
+	while (sX+size*count<=land_data[landId].range.end_position[1]+size) do
+		local t = pos2chunk(sX+size*count,sZ+size*count)
+		txz(t.x,t.z)
+		local count2 = 0
+		while (sZ+size*count2<=land_data[landId].range.end_position[3]+size) do
+			local t = pos2chunk(sX+size*count,sZ+size*count2)
+			txz(t.x,t.z)
+			count2 = count2 + 1
 		end
+		count = count +1
+	end
+
+	-- add & del
+
+	for Tx,a in pairs(TxTz) do
+		for Tz,b in pairs(a) do
+			-- Tx Tz
+			if mode=='add' then
+				chkmap(Tx,Tz)
+				if AIR.isValInList(ChunkMap[Tx][Tz],landId) == -1 then
+					table.insert(ChunkMap[Tx][Tz],#ChunkMap[Tx][Tz]+1,landId)
+				end
+			end
+			if mode=='del' then
+				local p = AIR.isValInList(ChunkMap[Tx][Tz],landId)
+				if p~=-1 then
+					table.remove(ChunkMap[Tx][Tz],p)
+				end
+			end
+		end
+	end
+
+end
+function buildChunks()
+	ChunkMap={}
+	for landId,data in pairs(land_data) do
+		updateChunk(landId,'add')
 	end
 end
 buildChunks()
@@ -374,6 +402,9 @@ end
 function FORM_land_gui(player,raw,data)
 	local xuid=Actor:getXuid(player)
 	local landid=land_owners[xuid][raw[2]+1]
+
+	updateChunk(landid,'add')
+
 	TRS_Form[player].landid=landid
 	if raw[3]==0 then --查看领地信息
 		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1 
@@ -836,7 +867,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].permissions.allow_use_item=true
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	ILAPI.save()
-	buildChunks()
+	updateChunk(landId,'add')
 	buildVecMap()
 end
 function ILAPI.DeleteLand(landid)
@@ -848,9 +879,9 @@ function ILAPI.DeleteLand(landid)
 	if owner~='?' then
 		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landid))
 	end
+	updateChunk(landid,'del')
 	land_data[landid]=nil
 	ILAPI.save()
-	buildChunks()
 	buildVecMap()
 end
 function ILAPI.GetPlayerLands(xuid)
