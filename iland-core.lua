@@ -483,23 +483,61 @@ function FORM_land_mgr_transfer(player,raw,data)
 									_tr('gui.general.close'))
 end
 function FORM_land_mgr(player,raw,data)
+	
+	-- config.json
 
-	cfg.land_buy.refund_rate=raw[5]/100
-	cfg.features.landSign=AIR.toBool(raw[7])
-	cfg.update_check=AIR.toBool(raw[8])
+	if raw[8]~='' then
+		cfg.land.player_max_lands = tonumber(raw[8])
+	end
+	if raw[9]~='' then
+		cfg.land.land_max_square = tonumber(raw[9])
+	end
+	if raw[10]~='' then
+		cfg.land.land_min_square = tonumber(raw[10])
+	end
+	if raw[13]==1 then
+		if cfg.money.protocol=='scoreboard' then
+			cfg.money.protocol='llmoney'
+		else
+			cfg.money.protocol='scoreboard'
+		end
+	end
+	if raw[14]~='' then
+		cfg.money.scoreboard_objname=raw[14]
+	end
+	if raw[16]~='' then
+		cfg.manager.default_language=raw[16]
+	end
+	if raw[21]~='' then
+		cfg.features.selection_tool_name=raw[21]
+	end
+	if raw[22]~='' then
+		cfg.features.sign_frequency=tonumber(raw[22])
+	end
+	if raw[23]~='' then
+		cfg.features.chunk_side=tonumber(raw[23])
+	end
+
+	cfg.land_buy.refund_rate = raw[11]/100
+	cfg.features.landSign = AIR.toBool(raw[18])
+	cfg.features.particles = AIR.toBool(raw[19])
+	cfg.update_check = AIR.toBool(raw[20])
+
 	ILAPI.save()
 	
-	if raw[3]==0 then GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'));return end
+	-- lands manager
+
+	if raw[5]==0 then GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'));return end
 	local count=0;local landid=-1
 	for i,v in pairs(land_data) do
 		count=count+1
-		if count==raw[3] then landid=i;break end
+		if count==raw[5] then landid=i;break end
 	end
 	if landid==-1 then return end
-	if raw[4]==1 then -- tp to land.
+	if raw[6]==1 then -- tp to land.
 		Actor:teleport(player,land_data[landid].range.start_position[1],land_data[landid].range.start_position[2],land_data[landid].range.start_position[3],land_data[landid].range.dim)
 	end
-	if raw[4]==2 then -- transfer land.
+	if raw[6]==2 then -- transfer land.
 		TRS_Form[player].playerList = GetOnlinePlayerList(2)
 		TRS_Form[player].targetland=landid
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
@@ -510,7 +548,7 @@ function FORM_land_mgr(player,raw,data)
 									json.encode(TRS_Form[player].playerList))
 		return
 	end
-	if raw[4]==3 then -- delete land.
+	if raw[6]==3 then -- delete land.
 		ILAPI.DeleteLand(landid)
 	end
 
@@ -676,7 +714,12 @@ function IL_Manager_OPGUI(player)
 	end
 
 	local features={_tr('gui.oplandmgr.donothing'),_tr('gui.oplandmgr.tp'),_tr('gui.oplandmgr.transfer'),_tr('gui.oplandmgr.delland')}
-	local money_protocols={_tr('talk.scoreboard'),'LLMoney'}
+	local money_protocols
+	if cfg.money.protocol=='llmoney' then
+		money_protocols={'LLMoney',_tr('talk.scoreboard')} -- line 498
+	else
+		money_protocols={_tr('talk.scoreboard'),'LLMoney'}
+	end
 	GUI(player,'opmgr','FORM_land_mgr',_tr('gui.oplandmgr.title'),
 									_tr('gui.oplandmgr.tip'),
 									AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer),
@@ -700,6 +743,7 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features.landsign'),tostring(cfg.features.landSign),
 									_tr('gui.oplandmgr.features.particles'),tostring(cfg.features.particles),
 									_tr('gui.oplandmgr.features.autochkupd'),tostring(cfg.update_check),
+									_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name,
 									_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency,
 									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end

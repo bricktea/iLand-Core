@@ -21,3 +21,4 @@ type=toggle,text="%31",def=%32
 type=toggle,text="%33",def=%34
 type=input,text="%35",placeholder="%36"
 type=input,text="%37",placeholder="%38"
+type=input,text="%39",placeholder="%40"
