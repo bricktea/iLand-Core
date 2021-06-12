@@ -592,6 +592,23 @@ function FORM_land_mgr(player,raw,data)
 
 	ILAPI.save()
 	
+	-- do rt
+
+	if cfg.features.landSign and CLOCK_LANDSIGN==nil then
+		enableLandSign()
+	end
+	if not(cfg.features.landSign) and CLOCK_LANDSIGN~=nil then
+		cancel(CLOCK_LANDSIGN)
+		CLOCK_LANDSIGN=nil
+	end
+	if cfg.features.particles and CLOCK_PARTICLES==nil then
+		enableParticles()
+	end
+	if not(cfg.features.particles) and CLOCK_PARTICLES~=nil then
+		cancel(CLOCK_PARTICLES)
+		CLOCK_PARTICLES=nil
+	end
+	
 	-- lands manager
 
 	if raw[5]==0 then GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'));return end
@@ -1284,17 +1301,17 @@ function IL_TCB_LandSign()
 		if owner~='?' then ownername=Actor:xid2str(owner) end
 		local slname=ILAPI.GetNickname(landid)
 		if slname=='' then slname='<'.._tr('gui.landmgr.unnamed')..'>' end
-		if Actor:getXuid(v)==owner and land_data[landid].settings.signtome then
+		if Actor:getXuid(v)==owner then
+			if not(land_data[landid].settings.signtome) then return end
 			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
 		else
-			if land_data[landid].settings.signtother then
-				sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
-				if land_data[landid].settings.describe~='' then
-					Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
-																		'$visitor',Actor:getName(v),
-																		'$n','\n'
-																	),0)
-				end
+			if not(land_data[landid].settings.signtother) then return end
+			sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+			if land_data[landid].settings.describe~='' then
+				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
+																	'$visitor',Actor:getName(v),
+																	'$n','\n'
+																),0)
 			end
 		end
 		TRS_Form[v].inland=landid
@@ -1323,13 +1340,19 @@ Listen('onPlayerTakeItem',IL_LIS_onPlayerTakeItem)
 Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
 
 -- timer -> landsign
+function enableLandSign()
+	CLOCK_LANDSIGN = schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
+end
 if cfg.features.landSign then
-	schedule("IL_TCB_LandSign",cfg.features.sign_frequency*2,0)
+	enableLandSign()
 end
 
 -- timer -> particles
+function enableParticles()
+	CLOCK_PARTICLES = schedule("IL_TCB_SelectionParticles",2,0)
+end
 if cfg.features.particles then
-	schedule("IL_TCB_SelectionParticles",2,0)
+	enableParticles()
 end
 
 -- timer -> debugger
