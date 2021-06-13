@@ -901,6 +901,22 @@ function IL_CmdFunc(player,cmd)
 		newLand[player]={}
 		newLand[player].step=0
 	end
+	-- [a|b|buy] Select Range
+	if cmd == MainCmd..' a' or cmd == MainCmd..' b' or cmd == MainCmd..' buy' then
+		if newLand[player]==nil then
+			Actor:sendText(player,_tr('title.land.nolicense'),5)
+			return -1
+		end
+		local xyz=AIR.pos2vec({Actor:getPos(player)})
+		xyz.y=xyz.y-1
+		IL_BP_SelectRange(player,xyz,newLand[player].step)
+	end
+	-- [b] Select posB
+	if cmd == MainCmd..' b' then
+	end
+	-- [buy] Buy land
+	if cmd == MainCmd..' buy' then
+	end
 	-- [giveup] Give up incp land
 	if cmd == MainCmd..' giveup' then
 		IL_BP_GiveUp(player)
@@ -1459,6 +1475,9 @@ makeCommand(MainCmd,_tr('command.land'),1)
 makeCommand(MainCmd..' new',_tr('command.land_new'),1)
 makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
 makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
+makeCommand(MainCmd..' a',_tr('command.land_a'),1)
+makeCommand(MainCmd..' b',_tr('command.land_b'),1)
+makeCommand(MainCmd..' buy',_tr('command.land_buy'),1)
 makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
 makeCommand(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),5)
 if cfg.features.landtp then

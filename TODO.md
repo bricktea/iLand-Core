@@ -6,7 +6,7 @@
  - [x] 修复 Issue: （MineBBS）iland.6145/post-38217
  - [x] 修复 Issue：（MineBBS）iland.6145/post-38223
  - [ ] 开桶拦截方式修改
- - [ ] 多圈地方式
+ - [x] 多圈地方式
  - [x] API获取PlayerList
  - [x] 修改ILAPI
  - [x] 领地冲突显示冲突坐标
