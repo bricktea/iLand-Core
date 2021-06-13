@@ -1100,7 +1100,9 @@ function ILAPI.GetChunk(vec2)
 	return -1
 end
 function ILAPI.GetTpPoint(landid) --return vec3
-	return LIB.pos2vec(land_data[landid].settings.tpoint)
+	local i = AIR.deepcopy(land_data[landid].settings.tpoint)
+	i[4] = land_data[landid].range.dim
+	return LIB.pos2vec(i)
 end
 function ILAPI.GetVersion()
 	return plugin_version
