@@ -156,6 +156,7 @@ do
 	end
 	if cfg.version==114 then
 		cfg.version=115
+		cfg.features.landtp=true
 		for landId,data in pairs(land_data) do
 			land_data[landId].settings.tpoint={}
 			land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
@@ -275,6 +276,7 @@ function EV_playerLeft(e)
 end
 
 -- form -> callback
+function FORM_NULL(a,b,c) end
 function FORM_BACK_LandOPMgr(player,index,text)
 	if index==1 then return end
 	IL_Manager_OPGUI(player)
@@ -619,7 +621,7 @@ function FORM_land_mgr(player,raw,data)
 	end
 	if landid==-1 then return end
 	if raw[6]==1 then -- tp to land.
-		Actor:teleport(player,land_data[landid].range.start_position[1],land_data[landid].range.start_position[2],land_data[landid].range.start_position[3],land_data[landid].range.dim)
+		Actor:teleport(player,land_data[landid].settings.tpoint[1],land_data[landid].settings.tpoint[2],land_data[landid].settings.tpoint[3],land_data[landid].range.dim)
 	end
 	if raw[6]==2 then -- transfer land.
 		TRS_Form[player].playerList = GetOnlinePlayerList()
@@ -639,6 +641,17 @@ function FORM_land_mgr(player,raw,data)
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
 									"Complete.",
 									_tr('gui.general.back'),
+									_tr('gui.general.close'))
+end
+function FORM_landtp(player,raw,data)
+	if raw[2]==0 then return end
+	local lands = ILAPI.GetPlayerLands(Actor:getXuid(player))
+	local landId = lands[raw[2]]
+	local tp = land_data[landId].settings.tpoint
+	Actor:teleport(player,tp[1],tp[2],tp[3],land_data[landId].range.dim)
+	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+									"Complete.",
+									_tr('gui.general.yes'),
 									_tr('gui.general.close'))
 end
 function IL_BP_SelectRange(player, vec4, mode)
@@ -832,7 +845,7 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end
 function IL_CmdFunc(player,cmd)
-	if player == 0 then -- Control 
+	if player == 0 then -- Console 
 		local opt = AIR.split(cmd,' ')
 		if opt[1] ~= MainCmd then return end
 		-- [op] add land operator.
@@ -895,6 +908,45 @@ function IL_CmdFunc(player,cmd)
 	-- [gui] LandMgr GUI
 	if cmd == MainCmd..' gui' then
 		IL_Manager_GUI(player)
+	end
+	-- [point] Set land tp point
+	if cmd == MainCmd..' point' and cfg.features.landtp then
+		local xyz=AIR.pos2vec({Actor:getPos(player)})
+		local landid=ILAPI.PosGetLand(xyz)
+		if landid==-1 then
+			Actor:sendText(player,_tr('title.landtp.fail.noland'),5)
+			return -1
+		end
+		if ILAPI.GetOwner(landid)~=Actor:getXuid(player) then
+			Actor:sendText(player,_tr('title.landtp.fail.notowner'),5)
+			return -1
+		end
+		local landname = ILAPI.GetNickname(landid)
+		if landname=='' then landname='<'.._tr('gui.landmgr.unnamed')..'> '..landid end
+		land_data[landid].settings.tpoint[1]=xyz.x
+		land_data[landid].settings.tpoint[2]=xyz.y
+		land_data[landid].settings.tpoint[3]=xyz.z
+		ILAPI.save()
+		GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
+														AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(xyz),'<b>',landname),
+														_tr('gui.general.iknow'),
+														_tr('gui.general.close'))
+	end
+	-- [tp] LandTp GUI
+	if cmd == MainCmd..' tp' and cfg.features.landtp then
+		local tpland={}
+		table.insert(tpland,1,'['.._tr('gui.general.plzchose')..']')
+		for i,landId in pairs(ILAPI.GetPlayerLands(Actor:getXuid(player))) do
+			local name = ILAPI.GetNickname(landId)
+			local xpos = land_data[landId].settings.tpoint
+			if name=='' then name='<'.._tr('gui.landmgr.unnamed')..'> '..landId end
+			tpland[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
+		end
+		GUI(player,'landtp','FORM_landtp',_tr('gui.landtp.title'),
+										_tr('gui.landtp.tip'),
+										_tr('gui.landtp.tip2'),
+										json.encode(tpland)
+									)
 	end
 	-- [mgr] OP-LandMgr GUI
 	if cmd == MainCmd..' mgr' then
@@ -1030,6 +1082,9 @@ function ILAPI.GetChunk(vec2)
 		return ChunkMap[r.x][r.z]
 	end
 	return -1
+end
+function ILAPI.GetTpPoint(landid) --return vec3
+	return LIB.pos2vec(land_data[landid].settings.tpoint)
 end
 function ILAPI.GetVersion()
 	return plugin_version
@@ -1406,6 +1461,12 @@ makeCommand(MainCmd..' giveup',_tr('command.land_giveup'),1)
 makeCommand(MainCmd..' gui',_tr('command.land_gui'),1)
 makeCommand(MainCmd..' mgr',_tr('command.land_mgr'),5)
 makeCommand(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),5)
+if cfg.features.landtp then
+	makeCommand(MainCmd..' tp',_tr('command.land_tp'),1)
+	makeCommand(MainCmd..' point',_tr('command.land_point'),1)
+end
+
+-- print
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
 print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
 
