@@ -5,7 +5,7 @@
  - [x] 优化VecMap，ChunkMap重载方式
  - [x] 修复 Issue: （MineBBS）iland.6145/post-38217
  - [x] 修复 Issue：（MineBBS）iland.6145/post-38223
- - [ ] 开桶拦截方式修改
+ - [x] 开桶拦截方式修改
  - [x] 多圈地方式
  - [x] API获取PlayerList
  - [x] 修改ILAPI

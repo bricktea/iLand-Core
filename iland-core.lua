@@ -1304,7 +1304,7 @@ function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
-function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
+function IL_LIS_onBlockInteractedWith(player,x,y,z,dim)
 	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
@@ -1313,7 +1313,7 @@ function IL_LIS_onPlayerOpenBarrel(player,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
-	return -1
+	Actor:teleport(player,x,y+10,z,dim)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
@@ -1404,11 +1404,11 @@ Listen('onPlayerDestroyBlock',IL_LIS_onPlayerDestroyBlock)
 Listen('onPlayerPlaceBlock',IL_LIS_onPlayerPlaceBlock)
 Listen('onPlayerUseItem',IL_LIS_onPlayerUseItem)
 Listen('onPlayerOpenChest',IL_LIS_onPlayerOpenChest)
-Listen('onPlayerOpenBarrel',IL_LIS_onPlayerOpenBarrel)
 Listen('onPlayerAttack',IL_LIS_onPlayerAttack)
 Listen('onExplode',IL_LIS_onExplode)
 Listen('onPlayerTakeItem',IL_LIS_onPlayerTakeItem)
 Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
+Listen('onPlayerOpenBarrel',IL_LIS_onBlockInteractedWith)
 
 -- timer -> landsign
 function enableLandSign()
