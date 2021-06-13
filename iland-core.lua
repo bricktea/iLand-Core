@@ -7,7 +7,7 @@
 -- ——————————————————————————————————————————————————————————————————
 local plugin_version = '1.1.5'
 local langVer = 115
-local minLLVer = 210610
+local minLLVer = 210613
 local minAirVer = 100
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
@@ -1313,7 +1313,7 @@ function IL_LIS_onBlockInteractedWith(player,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:teleport(player,x,y+10,z,dim)
+	Actor:teleport(player,x,y+15,z,dim)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
