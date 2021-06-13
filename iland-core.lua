@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.5'
+local plugin_version = '1.1.5hotfix'
 local langVer = 115
 local minLLVer = 210613
 local minAirVer = 100
@@ -165,6 +165,10 @@ do
 			land_data[landId].settings.signtome=true
 			land_data[landId].settings.signtother=true
 		end
+		ILAPI.save()
+	end
+	if cfg.features.selection_tool_name==nil then
+		cfg.features.selection_tool_name='Wooden Axe'
 		ILAPI.save()
 	end
 end
