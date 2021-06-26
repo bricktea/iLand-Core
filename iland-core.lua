@@ -171,6 +171,45 @@ do
 		cfg.features.selection_tool_name='Wooden Axe'
 		ILAPI.save()
 	end
+	if cfg.version==115 then
+		cfg.version=116
+		for landId,data in pairs(land_data) do
+			local perm = land_data[landId].permissions
+			local TMPPM = AIR.deepcopy(perm.allow_use_item)
+			local TMPBL = AIR.deepcopy(perm.allow_open_barrel)
+			perm.use_anvil = TMPPM
+			perm.use_barrel = TMPPM
+			perm.use_beacon = TMPPM
+			perm.use_bed = TMPPM
+			perm.use_bell = TMPPM
+			perm.use_blast_furnace = TMPPM
+			perm.use_brewing_stand = TMPPM
+			perm.use_campfire = TMPPM
+			perm.use_cartography_table = TMPPM
+			perm.use_composter = TMPPM
+			perm.use_crafting_table = TMPPM
+			perm.use_daylight_detector = TMPPM
+			perm.use_dispenser = TMPPM
+			perm.use_dropper = TMPPM
+			perm.use_enchanting_table = TMPPM
+			perm.use_fence_gate = TMPPM
+			perm.use_furnace = TMPPM
+			perm.use_grindstone = TMPPM
+			perm.use_hopper = TMPPM
+			perm.use_jukebox = TMPPM
+			perm.use_loom = TMPPM
+			perm.use_noteblock = TMPPM
+			perm.use_shulker_box = TMPPM
+			perm.use_smithing_table = TMPPM
+			perm.use_smoker = TMPPM
+			perm.use_trapdoor = TMPPM
+			perm.use_lectern = TMPPM
+			perm.use_cauldron = TMPPM
+			perm.allow_use_item = nil
+			perm.allow_open_barrel = nil
+		end
+		-- ILAPI.save()
+	end
 end
 
 -- load language file
@@ -324,19 +363,48 @@ function FORM_land_gui_cfg(player,raw,data)
 													_tr('gui.general.close'))
 end
 function FORM_land_gui_perm(player,raw,data)
-	local landid=TRS_Form[player].landid
-	-- [1]null     [2]PlaceBlock [3]DestoryBlock [4]openChest  [5]Attack 
-	-- [6]DropItem [7]PickupItem [8]UseItem      [9]openBarrel [10]null
-	-- [11]Explode
-	land_data[landid].permissions.allow_destory=AIR.toBool(raw[3])
-	land_data[landid].permissions.allow_place=AIR.toBool(raw[2])
-	land_data[landid].permissions.allow_exploding=AIR.toBool(raw[11])
-	land_data[landid].permissions.allow_attack=AIR.toBool(raw[5])
-	land_data[landid].permissions.allow_open_chest=AIR.toBool(raw[4])
-	land_data[landid].permissions.allow_pickupitem=AIR.toBool(raw[7])
-	land_data[landid].permissions.allow_dropitem=AIR.toBool(raw[6])
-	land_data[landid].permissions.allow_use_item=AIR.toBool(raw[8])
-	land_data[landid].permissions.allow_open_barrel=AIR.toBool(raw[9])
+	
+	local perm = land_data[TRS_Form[player].landid].permissions
+
+	perm.allow_place = AIR.toBool(raw[3])
+	perm.allow_destroy = AIR.toBool(raw[4])
+	perm.allow_dropitem = AIR.toBool(raw[5])
+	perm.allow_pickupitem = AIR.toBool(raw[6])
+	perm.allow_attack = AIR.toBool(raw[7])
+
+	perm.use_crafting_table = AIR.toBool(raw[9])
+	perm.use_furnace = AIR.toBool(raw[10])
+	perm.use_blast_furnace = AIR.toBool(raw[11])
+	perm.use_smoker = AIR.toBool(raw[12])
+	perm.use_brewing_stand = AIR.toBool(raw[13])
+	perm.use_cauldron = AIR.toBool(raw[14])
+	perm.use_anvil = AIR.toBool(raw[15])
+	perm.use_grindstone = AIR.toBool(raw[16])
+	perm.use_enchanting_table = AIR.toBool(raw[17])
+	perm.use_cartography_table = AIR.toBool(raw[18])
+	perm.use_smithing_table = AIR.toBool(raw[19])
+	perm.use_loom = AIR.toBool(raw[20])
+	perm.use_beacon = AIR.toBool(raw[21])
+
+	perm.use_barrel = AIR.toBool(raw[23])
+	perm.use_hopper = AIR.toBool(raw[24])
+	perm.use_dropper = AIR.toBool(raw[25])
+	perm.use_dispenser = AIR.toBool(raw[26])
+	perm.use_shulker_box = AIR.toBool(raw[27])
+	perm.use_chest = AIR.toBool(raw[28])
+
+	perm.use_campfire = AIR.toBool(raw[30])
+	perm.use_trapdoor = AIR.toBool(raw[31])
+	perm.use_fence_gate = AIR.toBool(raw[32])
+	perm.use_bell = AIR.toBool(raw[33])
+	perm.use_jukebox = AIR.toBool(raw[34])
+	perm.use_noteblock = AIR.toBool(raw[35])
+	perm.use_composter = AIR.toBool(raw[36])
+	perm.use_bed = AIR.toBool(raw[37])
+	perm.use_daylight_detector = AIR.toBool(raw[38])
+
+	perm.allow_exploding = AIR.toBool(raw[40])
+
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
@@ -473,19 +541,48 @@ function FORM_land_gui(player,raw,data)
 												)
 	end
 	if raw[3]==2 then --编辑领地权限
-		local d=land_data[landid].permissions
+		local perm = land_data[landid].permissions
 		GUI(player,'lmgr_landperm','FORM_land_gui_perm',_tr('gui.landmgr.landperm.title'),
 							_tr('gui.landmgr.landperm.options.title'),
-							_tr('gui.landmgr.landperm.options.place'),tostring(d.allow_place),
-							_tr('gui.landmgr.landperm.options.destroy'),tostring(d.allow_destory),
-							_tr('gui.landmgr.landperm.options.openchest'),tostring(d.allow_open_chest),
-							_tr('gui.landmgr.landperm.options.attack'),tostring(d.allow_attack),
-							_tr('gui.landmgr.landperm.options.dropitem'),tostring(d.allow_dropitem),
-							_tr('gui.landmgr.landperm.options.pickupitem'),tostring(d.allow_pickupitem),
-							_tr('gui.landmgr.landperm.options.useitem'),tostring(d.allow_use_item),
-							_tr('gui.landmgr.landperm.options.openbarrel'),tostring(d.allow_open_barrel),
+							_tr('gui.landmgr.landperm.basic_options'),
+							_tr('gui.landmgr.landperm.basic_options.place'),tostring(perm.allow_place),
+							_tr('gui.landmgr.landperm.basic_options.destroy'),tostring(perm.allow_destroy),
+							_tr('gui.landmgr.landperm.basic_options.dropitem'),tostring(perm.allow_dropitem),
+							_tr('gui.landmgr.landperm.basic_options.pickupitem'),tostring(perm.allow_pickupitem),
+							_tr('gui.landmgr.landperm.basic_options.attack'),tostring(perm.allow_attack),
+							_tr('gui.landmgr.landperm.funcblock_options'),
+							_tr('gui.landmgr.landperm.funcblock_options.crafting_table'),tostring(perm.use_crafting_table),
+							_tr('gui.landmgr.landperm.funcblock_options.furnace'),tostring(perm.use_furnace),
+							_tr('gui.landmgr.landperm.funcblock_options.blast_furnace'),tostring(perm.use_blast_furnace),
+							_tr('gui.landmgr.landperm.funcblock_options.smoker'),tostring(perm.use_smoker),
+							_tr('gui.landmgr.landperm.funcblock_options.brewing_stand'),tostring(perm.use_brewing_stand),
+							_tr('gui.landmgr.landperm.funcblock_options.cauldron'),tostring(perm.use_cauldron),
+							_tr('gui.landmgr.landperm.funcblock_options.anvil'),tostring(perm.use_anvil),
+							_tr('gui.landmgr.landperm.funcblock_options.grindstone'),tostring(perm.use_grindstone),
+							_tr('gui.landmgr.landperm.funcblock_options.enchanting_table'),tostring(perm.use_enchanting_table),
+							_tr('gui.landmgr.landperm.funcblock_options.cartography_table'),tostring(perm.use_cartography_table),
+							_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),tostring(perm.use_smithing_table),
+							_tr('gui.landmgr.landperm.funcblock_options.loom'),tostring(perm.use_loom),
+							_tr('gui.landmgr.landperm.funcblock_options.beacon'),tostring(perm.use_beacon),
+							_tr('gui.landmgr.landperm.contblock_options'),
+							_tr('gui.landmgr.landperm.contblock_options.barrel'),tostring(perm.use_barrel),
+							_tr('gui.landmgr.landperm.contblock_options.hopper'),tostring(perm.use_hopper),
+							_tr('gui.landmgr.landperm.contblock_options.dropper'),tostring(perm.use_dropper),
+							_tr('gui.landmgr.landperm.contblock_options.dispenser'),tostring(perm.use_dispenser),
+							_tr('gui.landmgr.landperm.contblock_options.shulker_box'),tostring(perm.use_shulker_box),
+							_tr('gui.landmgr.landperm.contblock_options.chest'),tostring(perm.use_chest),
+							_tr('gui.landmgr.landperm.other_options'),
+							_tr('gui.landmgr.landperm.other_options.campfire'),tostring(perm.use_campfire),
+							_tr('gui.landmgr.landperm.other_options.trapdoor'),tostring(perm.use_trapdoor),
+							_tr('gui.landmgr.landperm.other_options.fence_gate'),tostring(perm.use_fence_gate),
+							_tr('gui.landmgr.landperm.other_options.bell'),tostring(perm.use_bell),
+							_tr('gui.landmgr.landperm.other_options.jukebox'),tostring(perm.use_jukebox),
+							_tr('gui.landmgr.landperm.other_options.noteblock'),tostring(perm.use_noteblock),
+							_tr('gui.landmgr.landperm.other_options.composter'),tostring(perm.use_composter),
+							_tr('gui.landmgr.landperm.other_options.bed'),tostring(perm.use_bed),
+							_tr('gui.landmgr.landperm.other_options.daylight_detector'),tostring(perm.use_daylight_detector),
 							_tr('gui.landmgr.landperm.editevent'),
-							_tr('gui.landmgr.landperm.options.exploding'),tostring(d.allow_exploding)
+							_tr('gui.landmgr.landperm.options.exploding'),tostring(perm.allow_exploding)
 						)
 	end
 	if raw[3]==3 then --编辑信任名单
@@ -1002,37 +1099,75 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 		landId=AIR.getGuid()
 		if land_data[landId]==nil then break end
 	end
+
+	-- Set newland cfg template
 	land_data[landId]={}
 	land_data[landId].settings={}
+	land_data[landId].range={}
 	land_data[landId].settings.share={}
+	land_data[landId].settings.tpoint={}
+	land_data[landId].range.start_position={}
+	land_data[landId].range.end_position={}
+	land_data[landId].permissions={}
+
+	local perm = land_data[landId].permissions
+
+	-- Land settings
 	land_data[landId].settings.nickname=""
 	land_data[landId].settings.describe=""
-	land_data[landId].settings.tpoint={}
 	land_data[landId].settings.tpoint[1]=startpos.x
 	land_data[landId].settings.tpoint[2]=startpos.y
 	land_data[landId].settings.tpoint[3]=startpos.z
 	land_data[landId].settings.signtome=true
 	land_data[landId].settings.signtother=true
-	land_data[landId].range={}
-	land_data[landId].range.start_position={}
+	
+	-- Land ranges
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
 	table.insert(land_data[landId].range.start_position,2,startpos.y)
 	table.insert(land_data[landId].range.start_position,3,startpos.z)
-	land_data[landId].range.end_position={}
 	table.insert(land_data[landId].range.end_position,1,endpos.x)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
 	land_data[landId].range.dim=dimensionid
-	land_data[landId].permissions={}
-	land_data[landId].permissions.allow_destory=false
-	land_data[landId].permissions.allow_place=false
-	land_data[landId].permissions.allow_exploding=false
-	land_data[landId].permissions.allow_attack=false
-	land_data[landId].permissions.allow_open_chest=false
-	land_data[landId].permissions.allow_open_barrel=false
-	land_data[landId].permissions.allow_pickupitem=false
-	land_data[landId].permissions.allow_dropitem=true
-	land_data[landId].permissions.allow_use_item=true
+
+	-- Land permission
+	perm.allow_destroy=false
+	perm.allow_place=false
+	perm.allow_exploding=false
+	perm.allow_attack=false
+	perm.allow_open_chest=false
+	perm.allow_pickupitem=false
+	perm.allow_dropitem=true
+	perm.use_anvil = true
+	perm.use_barrel = false
+	perm.use_beacon = false
+	perm.use_bed = false
+	perm.use_bell = true
+	perm.use_blast_furnace = false
+	perm.use_brewing_stand = false
+	perm.use_campfire = false
+	perm.use_cartography_table = true
+	perm.use_composter = false
+	perm.use_crafting_table = true
+	perm.use_daylight_detector = false
+	perm.use_dispenser = false
+	perm.use_dropper = false
+	perm.use_enchanting_table = true
+	perm.use_fence_gate = false
+	perm.use_furnace = false
+	perm.use_grindstone = false
+	perm.use_hopper = false
+	perm.use_jukebox = false
+	perm.use_loom = true
+	perm.use_noteblock = false
+	perm.use_shulker_box = false
+	perm.use_smithing_table = false
+	perm.use_smoker = false
+	perm.use_trapdoor = false
+	perm.use_lectern = false
+	perm.use_cauldron = false
+
+	-- Write data
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	ILAPI.save()
 	updateChunk(landId,'add')
@@ -1266,7 +1401,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	local landid=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_destory==true then return end -- Perm Allow
+	if land_data[landid].permissions.allow_destroy==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
@@ -1286,15 +1421,31 @@ function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 	return -1
 end
 function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
-	if blockname=='minecraft:barrel' then return end -- sb mojang
 	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_use_item==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	
+	local perm = land_data[landid].permissions
+	if blockname == 'minecraft:end_portal_frame' and perm.allow_destroy then return end -- 末地门（拓充）
+	if blockname == 'minecraft:lectern' and perm.allow_destroy then return end -- 讲台（拓充）
+	if blockname == 'minecraft:bed' and perm.use_bed then return end -- 床
+	if blockname == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
+	if blockname == 'minecraft:campfire' and perm.use_campfire then return end -- 营火（烧烤）
+	if blockname == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
+	if (blockname == 'minecraft:undyed_shulker_box' or blockname == 'shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
+	if blockname == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
+	if blockname == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
+	if blockname == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
+	if (blockname == 'minecraft:daylight_detector_inverted' or blockname == 'daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
+	if blockname == 'minecraft:fence_gate' and perm.use_fence_gate then return end -- 栏栅门
+	if blockname == 'minecraft:trapdoor' and perm.use_trapdoor then return end -- 活板门
+	if blockname == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
+	if blockname == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
+
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
@@ -1310,16 +1461,38 @@ function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
-function IL_LIS_onBlockInteractedWith(player,x,y,z,dim)
+function IL_LIS_onBlockInteractedWith(player,x,y,z)
+
+	local plPos = {Actor:getPos(player)}
+	local dim = plPos[4]
+	local blockname = Utils:getBlockNameByPos(x,y,z,dim)
+
 	local pos=AIR.buildVec(x,y,z,dim)
 	local landid=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
 	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_open_barrel==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:teleport(player,x,y+15,z,dim)
+
+	local perm = land_data[landid].permissions
+	if blockname == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
+	if blockname == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
+	if blockname == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
+	if blockname == 'minecraft:blast_furnace' and perm.use_blast_furnace then return end -- 高炉
+	if blockname == 'minecraft:smoker' and perm.use_smoker then return end -- 烟熏炉
+	if blockname == 'minecraft:brewing_stand' and perm.use_brewing_stand then return end -- 酿造台
+	if blockname == 'minecraft:anvil' and perm.use_anvil then return end -- 铁砧
+	if blockname == 'minecraft:grindstone' and perm.use_grindstone then return end -- 磨石
+	if blockname == 'minecraft:enchanting_table' and perm.use_enchanting_table then return end -- 附魔台
+	if blockname == 'minecraft:barrel' and perm.use_barrel then return end -- 桶
+	if blockname == 'minecraft:beacon' and perm.use_beacon then return end -- 信标
+	if blockname == 'minecraft:hopper' and perm.use_hopper then return end -- 漏斗
+	if blockname == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
+	if blockname == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
+	if blockname == 'minecraft:loom' and perm.use_loom then return end -- 织布机
+	
+	return -1
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
@@ -1414,7 +1587,7 @@ Listen('onPlayerAttack',IL_LIS_onPlayerAttack)
 Listen('onExplode',IL_LIS_onExplode)
 Listen('onPlayerTakeItem',IL_LIS_onPlayerTakeItem)
 Listen('onPlayerDropItem',IL_LIS_onPlayerDropItem)
-Listen('onPlayerOpenBarrel',IL_LIS_onBlockInteractedWith)
+Listen('onBlockInteractedWith',IL_LIS_onBlockInteractedWith)
 
 -- timer -> landsign
 function enableLandSign()
