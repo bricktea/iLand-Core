@@ -946,9 +946,17 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end
 function IL_CmdFunc(player,cmd)
-	if player == 0 then -- Console 
-		local opt = AIR.split(cmd,' ')
-		if opt[1] ~= MainCmd then return end
+	local opt = AIR.split(cmd,' ')
+	if opt[1] ~= MainCmd then return end
+	
+	-- ## Console ##
+	if player == 0 then
+		-- [ ] main cmd.
+		if opt[2] == nil then
+			print('The server is running ILand v'..plugin_version)
+			print('Github: https://github.com/McAirLand/iLand-Core')
+			return -1
+		end
 		-- [op] add land operator.
 		if opt[2] == 'op' then
 			if AIR.isValInList(cfg.manager.operator,opt[3])==-1 then
@@ -961,6 +969,7 @@ function IL_CmdFunc(player,cmd)
 			else
 				print('Xuid: '..opt[3]..' is already in LandMgr list.')
 			end
+			return -1
 		end
 		-- [deop] add land operator.
 		if opt[2] == 'deop' then
@@ -975,21 +984,27 @@ function IL_CmdFunc(player,cmd)
 			else
 				print('Xuid: '..opt[3]..' is not in LandMgr list.')
 			end
+			return -1
 		end
+		-- [X] Unknown key
+		print('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
 		return -1
 	end
+
+	-- ## GAME ##
 	local xuid=Actor:getXuid(player)
 	-- [ ] Main Command
-	if cmd == MainCmd then
+	if opt[1] == MainCmd and opt[2]==nil then
 		land_count=tostring(#land_owners[xuid])
 		GUI(player,'ModalForm','FORM_BACK_LandMgr', -- %1 callback
 						AIR.gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
 						AIR.gsubEx(_tr('gui.land.content'),'<a>',land_count), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
 						_tr('talk.landmgr.open'), --%4 button1
 						_tr('gui.general.close')) --%5 button2
+		return -1
 	end
 	-- [new] Create newLand
-	if cmd == MainCmd..' new' then
+	if opt[2] == 'new' then
 		if newLand[player]~=nil then
 			Actor:sendText(player,_tr('title.getlicense.alreadyexists')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5);return -1
 		end
@@ -1001,9 +1016,10 @@ function IL_CmdFunc(player,cmd)
 		Actor:sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
 		newLand[player]={}
 		newLand[player].step=0
+		return -1
 	end
 	-- [a|b|buy] Select Range
-	if cmd == MainCmd..' a' or cmd == MainCmd..' b' or cmd == MainCmd..' buy' then
+	if opt[2] == 'a' or opt[2] == 'b' or opt[2] == 'buy' then
 		if newLand[player]==nil then
 			Actor:sendText(player,_tr('title.land.nolicense'),5)
 			return -1
@@ -1011,23 +1027,20 @@ function IL_CmdFunc(player,cmd)
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
 		xyz.y=xyz.y-1
 		IL_BP_SelectRange(player,xyz,newLand[player].step)
-	end
-	-- [b] Select posB
-	if cmd == MainCmd..' b' then
-	end
-	-- [buy] Buy land
-	if cmd == MainCmd..' buy' then
+		return -1
 	end
 	-- [giveup] Give up incp land
-	if cmd == MainCmd..' giveup' then
+	if opt[2] == 'giveup' then
 		IL_BP_GiveUp(player)
+		return -1
 	end
 	-- [gui] LandMgr GUI
-	if cmd == MainCmd..' gui' then
+	if opt[2] == 'gui' then
 		IL_Manager_GUI(player)
+		return -1
 	end
 	-- [point] Set land tp point
-	if cmd == MainCmd..' point' and cfg.features.landtp then
+	if opt[2] == 'point' and cfg.features.landtp then
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
 		local landid=ILAPI.PosGetLand(xyz)
 		if landid==-1 then
@@ -1048,9 +1061,10 @@ function IL_CmdFunc(player,cmd)
 														AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(xyz),'<b>',landname),
 														_tr('gui.general.iknow'),
 														_tr('gui.general.close'))
+		return -1
 	end
 	-- [tp] LandTp GUI
-	if cmd == MainCmd..' tp' and cfg.features.landtp then
+	if opt[2] == 'tp' and cfg.features.landtp then
 		local tpland={}
 		table.insert(tpland,1,'['.._tr('gui.general.plzchose')..']')
 		for i,landId in pairs(ILAPI.GetPlayerLands(Actor:getXuid(player))) do
@@ -1064,32 +1078,30 @@ function IL_CmdFunc(player,cmd)
 										_tr('gui.landtp.tip2'),
 										json.encode(tpland)
 									)
+		return -1
 	end
 	-- [mgr] OP-LandMgr GUI
-	if cmd == MainCmd..' mgr' then
+	if opt[2] == 'mgr' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
 			return -1
 		end
 		IL_Manager_OPGUI(player)
+		return -1
 	end
 	-- [mgr selectool] Set land_select tool
-	if cmd == MainCmd..' mgr selectool' then
+	if opt[2] == 'mgr' and opt[3] == 'selectool' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
 			return -1
 		end
 		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
 		TRS_Form[player].selectool=0
-	end
-	-- [debug] Start to debug
-	if cmd == MainCmd..' debug' and debug_mode then
-		debug_landquery = player
-	end
-	-- [X] Disable Output
-	if string.sub(cmd,1,5)==MainCmd..' ' or string.sub(cmd,1,4)==MainCmd then
 		return -1
 	end
+	-- [X] Unknown key
+	Actor:sendText(player,'§l§b[§a LAND §b] §r'..AIR.gsubEx(_tr('command.error'),'<a>',opt[2]),0)
+	return -1
 end
 
 -- ILAPI
