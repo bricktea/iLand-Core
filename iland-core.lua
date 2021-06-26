@@ -412,21 +412,22 @@ function FORM_land_gui_perm(player,raw,data)
 													_tr('gui.general.close'))
 end
 function FORM_land_gui_trust(player,raw,data)
-	local landid=TRS_Form[player].landid
+	local landid = TRS_Form[player].landid
+	local landshare = land_data[landid].settings.share
 	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
 	if raw[2]==1 then
 		if raw[3]==0 then return end
 		local x=Actor:str2xid(TRS_Form[player].playerList[raw[3]+1])
-		local n=#land_data[landid].settings.share+1
+		local n=#landshare+1
 		if Actor:getXuid(player)==x then
 			Actor:sendText(player,_tr('title.landtrust.cantaddown'),5);return
 		end
-		if AIR.isValInList(land_data[landid].settings.share,x)~=-1 then
+		if AIR.isValInList(landshare,x)~=-1 then
 			Actor:sendText(player,_tr('title.landtrust.alreadyexists'),5);return
 		end
-		land_data[landid].settings.share[n]=x
+		landshare[n]=x
 		ILAPI.save()
-		if result[4]~=1 then 
+		if raw[4]~=1 then 
 			GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',
 													_tr('gui.general.back'),
@@ -434,9 +435,9 @@ function FORM_land_gui_trust(player,raw,data)
 		end
 	end
 	if raw[4]==1 then
-		if raw[3]==0 then return end
-		local x=land_data[landid].settings.share[raw[5]+1]
-		table.remove(land_data[landid].settings.share,AIR.isValInList(land_data[landid].settings.share,x))
+		if raw[5]==0 then return end
+		local x=Actor:str2xid(TRS_Form[player].playerList[raw[5]+1])
+		table.remove(landshare,AIR.isValInList(landshare,x))
 		ILAPI.save()
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 													'Complete.',

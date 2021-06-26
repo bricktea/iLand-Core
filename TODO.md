@@ -8,6 +8,7 @@
  - [x] UseItem分割权限
  - [x] 添加onBlockInteractedWith拦截更多容器，权限分割
  - [ ] 优化LMgr
- - [ ] 优化CmdFunc
- - [ ] 修复LMgr-Perm
+ - [x] 优化CmdFunc
+ - [x] 修复受信任玩家无法删除
  - [x] 修复方块破坏控制失效
+ - [ ] 修复空格玩家无法创建领地
