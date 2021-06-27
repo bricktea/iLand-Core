@@ -9,6 +9,7 @@ local plugin_version = '1.1.5hotfix'
 local langVer = 115
 local minLLVer = 210613
 local minAirVer = 100
+local minUtilVer = 100
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
@@ -17,7 +18,7 @@ local json = require('dkjson')
 local AIR = require('airLibs')
 
 -- check file
-if AIR.IfFile(data_path..'config.json') == false then
+if Utils:isExist(data_path..'config.json') == false then
 	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
 end
 
@@ -34,17 +35,19 @@ if AIR.VERSION < minAirVer then
 	print('[ILand] ERR!! Plugin closing...')
 	return
 end
+if tonumber(Utils:getVersion()) < minUtilVer then
+end
 
 -- load data file
-local cfg = json.decode(AIR.ReadAllText(data_path..'config.json'))
-land_data = json.decode(AIR.ReadAllText(data_path..'data.json'))
-land_owners = json.decode(AIR.ReadAllText(data_path..'owners.json'))
+local cfg = json.decode(Utils:ReadAllText(data_path..'config.json'))
+land_data = json.decode(Utils:ReadAllText(data_path..'data.json'))
+land_owners = json.decode(Utils:ReadAllText(data_path..'owners.json'))
 
 -- preload function
 function ILAPI.save()
-	AIR.WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
-	AIR.WriteAllText(data_path..'data.json',json.encode(land_data))
-	AIR.WriteAllText(data_path..'owners.json',json.encode(land_owners,{indent=true}))
+	Utils:WriteAllText(data_path..'config.json',json.encode(cfg,{indent=true}))
+	Utils:WriteAllText(data_path..'data.json',json.encode(land_data))
+	Utils:WriteAllText(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
 function pos2chunk(posx,posz)
 	local p = cfg.features.chunk_side
@@ -213,7 +216,7 @@ do
 end
 
 -- load language file
-local i18n_data = json.decode(AIR.ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+local i18n_data = json.decode(Utils:ReadAllText(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 if i18n_data.VERSION ~= langVer then
 	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
 	return
