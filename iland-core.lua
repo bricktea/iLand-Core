@@ -873,13 +873,17 @@ function IL_Manager_GUI(player)
 
 	local xyz=AIR.pos2vec({Actor:getPos(player)})
 	xyz.y=xyz.y-1
-	local lid=ILAPI.PosGetLand(xyz)
-	local nname=ILAPI.GetNickname(lid)
-	if nname=='' then nname=lid end
+
 	local welcomeText=_tr('gui.landmgr.content')
+	local lid=ILAPI.PosGetLand(xyz)
+	local nname
 	if lid~=-1 then
-		welcomeText=welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
+		nname = ILAPI.GetNickname(lid)
+		welcomeText = welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
+	else
+		nname = lid
 	end
+
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(land_owners[xuid]) do
@@ -1245,6 +1249,8 @@ function ILAPI.GetTpPoint(landid) --return vec4
 	local i = AIR.deepcopy(land_data[landid].settings.tpoint)
 	i[4] = land_data[landid].range.dim
 	return LIB.pos2vec(i)
+end
+function ILAPI.GetDistance(vec4,landId)
 end
 function ILAPI.GetVersion()
 	return plugin_version
