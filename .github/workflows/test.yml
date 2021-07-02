@@ -48,6 +48,11 @@ jobs:
           curl -L -o D:/out/lualib/dkjson.lua "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3"
           curl -L -o D:/out/lualib/airLibs.lua "https://raw.githubusercontent.com/McAirLand/AirLibs/main/airLibs.lua"
         
+      - name: Download LuaUtils
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run : |
+          curl -L -o D:/out/LuaUtilApi.dll "https://github.com/McAirLand/LuaUtils/releases/download/001/LuaUtilApi.dll"
+
       - name: Remove unuseful files
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
