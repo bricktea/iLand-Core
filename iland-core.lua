@@ -1190,10 +1190,6 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	updateVecMap(landId,'add')
 end
 function ILAPI.DeleteLand(landId)
-	if land_data[landId]==nil then
-		if debug_mode then print('[ILAPI] [DeleteLand] WARN!! Deleting nil land('..landId..').') end
-		return
-	end
 	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
 		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landId))
@@ -1204,31 +1200,15 @@ function ILAPI.DeleteLand(landId)
 	ILAPI.save()
 end
 function ILAPI.GetPlayerLands(xuid)
-	if land_owners[xuid]==nil then 
-		if debug_mode then print('[ILAPI] [GetPlayerLands] WARN!! Getting nil player('..xuid..').') end
-		return ''
-	end
 	return land_owners[xuid]
 end
 function ILAPI.GetNickname(landid)
-	if land_data[landid]==nil then 
-		if debug_mode then print('[ILAPI] [GetNickname] WARN!! Getting nil land('..landid..').') end
-		return ''
-	end
 	return land_data[landid].settings.nickname
 end
 function ILAPI.GetDescribe(landid)
-	if land_data[landid]==nil then 
-		if debug_mode then print('[ILAPI] [GetDescribe] WARN!! Getting nil land('..landid..').') end
-		return ''
-	end
 	return land_data[landid].settings.describe
 end
 function ILAPI.GetOwner(landid)
-	if land_data[landid]==nil then
-		if debug_mode then print('[ILAPI] [GetOwner] WARN!! Getting nil land('..landid..').') end
-		return '?'
-	end
 	for i,v in pairs(land_owners) do
 		if AIR.isValInList(v,landid)~=-1 then
 			return i
@@ -1247,14 +1227,14 @@ function ILAPI.PosGetLand(vec4)
 	end
 	return -1
 end
-function ILAPI.GetChunk(vec2)
+function ILAPI.GetChunk(vec2,dim)
 	local r = pos2chunk(vec2.x,vec2.z)
 	if ChunkMap[r.x]~=nil and ChunkMap[r.x][r.z]~=nil then
 		return ChunkMap[r.x][r.z]
 	end
 	return -1
 end
-function ILAPI.GetTpPoint(landid) --return vec3
+function ILAPI.GetTpPoint(landid) --return vec4
 	local i = AIR.deepcopy(land_data[landid].settings.tpoint)
 	i[4] = land_data[landid].range.dim
 	return LIB.pos2vec(i)
