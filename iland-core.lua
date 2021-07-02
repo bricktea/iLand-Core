@@ -223,19 +223,16 @@ if i18n_data.VERSION ~= langVer then
 end
 
 -- load chunks
-local ChunkMap={}
 function updateChunk(landId,mode)
-
-	-- get all TxTz
-
 	local TxTz={}
+	local dim = land_data[landId].range.dim
 	function txz(x,z)
 		if TxTz[x] == nil then TxTz[x] = {} end
 		if TxTz[x][z] == nil then TxTz[x][z] = {} end
 	end
-	function chkmap(x,z)
-		if ChunkMap[x] == nil then ChunkMap[x] = {} end
-		if ChunkMap[x][z] == nil then ChunkMap[x][z] = {} end
+	function chkmap(d,x,z)
+		if ChunkMap[dim][x] == nil then ChunkMap[dim][x] = {} end
+		if ChunkMap[dim][x][z] == nil then ChunkMap[dim][x][z] = {} end
 	end
 	local size = cfg.features.chunk_side
 	local sX = land_data[landId].range.start_position[1]
@@ -259,15 +256,15 @@ function updateChunk(landId,mode)
 		for Tz,b in pairs(a) do
 			-- Tx Tz
 			if mode=='add' then
-				chkmap(Tx,Tz)
-				if AIR.isValInList(ChunkMap[Tx][Tz],landId) == -1 then
-					table.insert(ChunkMap[Tx][Tz],#ChunkMap[Tx][Tz]+1,landId)
+				chkmap(dim,Tx,Tz)
+				if AIR.isValInList(ChunkMap[dim][Tx][Tz],landId) == -1 then
+					table.insert(ChunkMap[dim][Tx][Tz],#ChunkMap[dim][Tx][Tz]+1,landId)
 				end
 			end
 			if mode=='del' then
-				local p = AIR.isValInList(ChunkMap[Tx][Tz],landId)
+				local p = AIR.isValInList(ChunkMap[dim][Tx][Tz],landId)
 				if p~=-1 then
-					table.remove(ChunkMap[Tx][Tz],p)
+					table.remove(ChunkMap[dim][Tx][Tz],p)
 				end
 			end
 		end
@@ -276,6 +273,11 @@ function updateChunk(landId,mode)
 end
 function buildChunks()
 	ChunkMap={}
+
+	ChunkMap[0] = {} -- 主世界
+	ChunkMap[1] = {} -- 地狱
+	ChunkMap[2] = {} -- 末地
+
 	for landId,data in pairs(land_data) do
 		updateChunk(landId,'add')
 	end
@@ -1218,8 +1220,9 @@ function ILAPI.GetOwner(landid)
 end
 function ILAPI.PosGetLand(vec4)
 	local c = pos2chunk(vec4.x,vec4.z)
-	if ChunkMap[c.x]~=nil and ChunkMap[c.x][c.z]~=nil then
-		for n,landId in pairs(ChunkMap[c.x][c.z]) do
+	local dim = vec4.dim
+	if ChunkMap[dim][c.x]~=nil and ChunkMap[dim][c.x][c.z]~=nil then
+		for n,landId in pairs(ChunkMap[dim][c.x][c.z]) do
 			if vec4.dim==land_data[landId].range.dim and isPosInCube(vec4,vecMap[landId].a,vecMap[landId].b) then
 				return landId
 			end
@@ -1229,8 +1232,8 @@ function ILAPI.PosGetLand(vec4)
 end
 function ILAPI.GetChunk(vec2,dim)
 	local r = pos2chunk(vec2.x,vec2.z)
-	if ChunkMap[r.x]~=nil and ChunkMap[r.x][r.z]~=nil then
-		return ChunkMap[r.x][r.z]
+	if ChunkMap[dim][r.x]~=nil and ChunkMap[dim][r.x][r.z]~=nil then
+		return ChunkMap[dim][r.x][r.z]
 	end
 	return -1
 end
