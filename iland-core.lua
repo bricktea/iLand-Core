@@ -9,7 +9,7 @@ local plugin_version = '1.1.5hotfix'
 local langVer = 115
 local minLLVer = 210613
 local minAirVer = 100
-local minUtilVer = 100
+local minUtilVer = 101
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
@@ -1269,45 +1269,39 @@ function _tr(a)
 end
 function money_add(player,value)
 	local playername=Actor:getName(player)
-	if cfg.money.protocol=='scoreboard' then
-		runCmd('scoreboard players add "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
+	local M = cfg.money
+	if M.protocol=='scoreboard' then
+		runCmd('scoreboard players add "'..playername..'" "'..M.scoreboard_objname..'" '..value);return
 	end
-	if cfg.money.protocol=='llmoney' then
+	if M.protocol=='llmoney' then
 		runCmd('money add "'..playername..'" '..value);return
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
+	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
 function money_del(player,value)
 	local playername=Actor:getName(player)
-	if cfg.money.protocol=='scoreboard' then
-		runCmd('scoreboard players remove "'..playername..'" "'..cfg.money.scoreboard_objname..'" '..value);return
+	local M = cfg.money
+	if M.protocol=='scoreboard' then
+		runCmd('scoreboard players remove "'..playername..'" "'..M.scoreboard_objname..'" '..value);return
 	end
-	if cfg.money.protocol=='llmoney' then
+	if M.protocol=='llmoney' then
 		runCmd('money reduce "'..playername..'" '..value);return
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
+	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
 function money_get(player)
 	local playername=Actor:getName(player)
-	if cfg.money.protocol=='scoreboard' then
-		local n={runCmdEx('scoreboard players list "'..playername..'"')};n=n[2]
-		local t=string.len(cfg.money.scoreboard_objname..':')
-		local j=AIR.split(n,' ')
-		local r,f=0
-		for i,v in pairs(j) do
-			f=string.find(v,cfg.money.scoreboard_objname..':',0)
-			if f~=nil and string.len(v)==t then
-				r=j[i+1];break
-			end
-		end
-		return tonumber(r)
+	local M = cfg.money
+	if M.protocol=='scoreboard' then
+		local m,n = math.modf(Utils:getScore(player,M.scoreboard_objname))
+		return m
 	end
-	if cfg.money.protocol=='llmoney' then
+	if M.protocol=='llmoney' then
 		local n={runCmdEx('money query "'..playername..'"')};n=n[2]
 		a=n:gsub('%D+','')
 		return tonumber(a)
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..cfg.money.protocol..'\' !')
+	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
 function sendTitle(player,title,subtitle)
 	local playername = Actor:getName(player)
