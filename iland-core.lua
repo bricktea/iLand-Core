@@ -36,6 +36,10 @@ if AIR.VERSION < minAirVer then
 	return
 end
 if tonumber(Utils:getVersion()) < minUtilVer then
+	print('[ILand] ERR!! LuaUtils too old, please use latest version, here ↓')
+	print('[ILand] ERR!! https://github.com/McAirLand/LuaUtils/releases')
+	print('[ILand] ERR!! Plugin closing...')
+	return
 end
 
 -- load data file
