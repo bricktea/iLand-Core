@@ -97,27 +97,27 @@ do
 		cfg.version=111
 		cfg.manager.default_language=cfg.manager.i18n.default_language
 		cfg.manager.i18n=nil
-		for landid,data in pairs(land_data) do
-			land_data[landid].settings={}
-			land_data[landid].settings.share=AIR.deepcopy(land_data[landid].setting.share)
-			land_data[landid].settings.nickname=''
-			land_data[landid].permissions=AIR.deepcopy(land_data[landid].setting)
-			land_data[landid].setting=nil
-			land_data[landid].permissions.share=nil
-			land_data[landid].range.start_position={}
-			land_data[landid].range.end_position={}
-			land_data[landid].range.start_position[1]=AIR.deepcopy(land_data[landid].range.start_x)
-			land_data[landid].range.start_position[2]=AIR.deepcopy(land_data[landid].range.start_y)
-			land_data[landid].range.start_position[3]=AIR.deepcopy(land_data[landid].range.start_z)
-			land_data[landid].range.end_position[1]=AIR.deepcopy(land_data[landid].range.end_x)
-			land_data[landid].range.end_position[2]=AIR.deepcopy(land_data[landid].range.end_y)
-			land_data[landid].range.end_position[3]=AIR.deepcopy(land_data[landid].range.end_z)
-			land_data[landid].range.start_x=nil
-			land_data[landid].range.start_y=nil
-			land_data[landid].range.start_z=nil
-			land_data[landid].range.end_x=nil
-			land_data[landid].range.end_y=nil
-			land_data[landid].range.end_z=nil
+		for landId,data in pairs(land_data) do
+			land_data[landId].settings={}
+			land_data[landId].settings.share=AIR.deepcopy(land_data[landId].setting.share)
+			land_data[landId].settings.nickname=''
+			land_data[landId].permissions=AIR.deepcopy(land_data[landId].setting)
+			land_data[landId].setting=nil
+			land_data[landId].permissions.share=nil
+			land_data[landId].range.start_position={}
+			land_data[landId].range.end_position={}
+			land_data[landId].range.start_position[1]=AIR.deepcopy(land_data[landId].range.start_x)
+			land_data[landId].range.start_position[2]=AIR.deepcopy(land_data[landId].range.start_y)
+			land_data[landId].range.start_position[3]=AIR.deepcopy(land_data[landId].range.start_z)
+			land_data[landId].range.end_position[1]=AIR.deepcopy(land_data[landId].range.end_x)
+			land_data[landId].range.end_position[2]=AIR.deepcopy(land_data[landId].range.end_y)
+			land_data[landId].range.end_position[3]=AIR.deepcopy(land_data[landId].range.end_z)
+			land_data[landId].range.start_x=nil
+			land_data[landId].range.start_y=nil
+			land_data[landId].range.start_z=nil
+			land_data[landId].range.end_x=nil
+			land_data[landId].range.end_y=nil
+			land_data[landId].range.end_z=nil
 		end
 		ILAPI.save()
 	end
@@ -361,7 +361,7 @@ function FORM_land_buy(player,index,text)
 end
 function FORM_land_gui_cfg(player,raw,data)
 
-	local landId = TRS_Form[player].landid
+	local landId = TRS_Form[player].landId
 	land_data[landId].settings.signtome=AIR.toBool(raw[3])
 	land_data[landId].settings.signtother=AIR.toBool(raw[4])
 	ILAPI.save()
@@ -373,7 +373,7 @@ function FORM_land_gui_cfg(player,raw,data)
 end
 function FORM_land_gui_perm(player,raw,data)
 	
-	local perm = land_data[TRS_Form[player].landid].permissions
+	local perm = land_data[TRS_Form[player].landId].permissions
 
 	perm.allow_place = AIR.toBool(raw[3])
 	perm.allow_destroy = AIR.toBool(raw[4])
@@ -421,8 +421,8 @@ function FORM_land_gui_perm(player,raw,data)
 													_tr('gui.general.close'))
 end
 function FORM_land_gui_trust(player,raw,data)
-	local landid = TRS_Form[player].landid
-	local landshare = land_data[landid].settings.share
+	local landId = TRS_Form[player].landId
+	local landshare = land_data[landId].settings.share
 	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
 	if raw[2]==1 then
 		if raw[3]==0 then return end
@@ -455,11 +455,11 @@ function FORM_land_gui_trust(player,raw,data)
 	end
 end
 function FORM_land_gui_name(player,raw,data)
-	local landid=TRS_Form[player].landid
+	local landId=TRS_Form[player].landId
 	if AIR.isTextSpecial(raw[2]) then
 		Actor:sendText(player,'FAILED',5);return
 	end
-	land_data[landid].settings.nickname=raw[2]
+	land_data[landId].settings.nickname=raw[2]
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 												'Complete.',
@@ -467,7 +467,7 @@ function FORM_land_gui_name(player,raw,data)
 												_tr('gui.general.close'))
 end
 function FORM_land_gui_describe(player,raw,data)
-	local landid=TRS_Form[player].landid
+	local landId=TRS_Form[player].landId
 	if AIR.isTextSpecial(AIR.gsubEx(raw[2],
 							'$','Y', -- allow some spec.
 							',','Y',
@@ -476,7 +476,7 @@ function FORM_land_gui_describe(player,raw,data)
 						)) then
 		Actor:sendText(player,'FAILED',5);return
 	end
-	land_data[landid].settings.describe=raw[2]
+	land_data[landId].settings.describe=raw[2]
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 												'Complete.',
@@ -485,24 +485,24 @@ function FORM_land_gui_describe(player,raw,data)
 end
 function FORM_land_gui_transfer(player,raw,data)
 	if raw[2]==0 then return end
-	local landid=TRS_Form[player].landid
+	local landId=TRS_Form[player].landId
 	local xuid=Actor:getXuid(player)
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
 	if go==xuid then Actor:sendText(player,_tr('title.landtransfer.canttoown'),5);return end
-	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landid))
-	table.insert(land_owners[go],#land_owners[go]+1,landid)
+	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
+	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 									AIR.gsubEx(_tr('title.landtransfer.complete'),
-										'<a>',ILAPI.GetNickname(landid,true),
+										'<a>',ILAPI.GetNickname(landId,true),
 										'<b>',Actor:xid2str(go)),
 									_tr('gui.general.back'),
 									_tr('gui.general.close'))
 end
 function FORM_land_gui_delete(player,index,text)
 	if index==1 then return end
-	local landid=TRS_Form[player].landid
-	ILAPI.DeleteLand(landid)
+	local landId=TRS_Form[player].landId
+	ILAPI.DeleteLand(landId)
 	money_add(player,TRS_Form[player].landvalue)
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 										'Complete.',
@@ -511,27 +511,27 @@ function FORM_land_gui_delete(player,index,text)
 end
 function FORM_land_gui(player,raw,data)
 	local xuid=Actor:getXuid(player)
-	local landid=land_owners[xuid][raw[2]+1]
+	local landId=land_owners[xuid][raw[2]+1]
 
-	TRS_Form[player].landid=landid
+	TRS_Form[player].landId=landId
 	if raw[3]==0 then --查看领地信息
-		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1 
-		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
-		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
+		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1 
+		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
+		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
-		local nname=ILAPI.GetNickname(landid,false)
+		local nname=ILAPI.GetNickname(landId,false)
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.landmgr.landinfo.title'),
 									AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
 										'<a>',Actor:getName(player),
-										'<m>',landid,
+										'<m>',landId,
 										'<n>',nname,
-										'<b>',land_data[landid].range.start_position[1],
-										'<c>',land_data[landid].range.start_position[2],
-										'<d>',land_data[landid].range.start_position[3],
-										'<e>',land_data[landid].range.end_position[1],
-										'<f>',land_data[landid].range.end_position[2],
-										'<g>',land_data[landid].range.end_position[3],
+										'<b>',land_data[landId].range.start_position[1],
+										'<c>',land_data[landId].range.start_position[2],
+										'<d>',land_data[landId].range.start_position[3],
+										'<e>',land_data[landId].range.end_position[1],
+										'<f>',land_data[landId].range.end_position[2],
+										'<g>',land_data[landId].range.end_position[3],
 										'<h>',length,'<i>',width,'<j>',height,
 										'<k>',squ,'<l>',vol),
 									_tr('gui.general.iknow'),
@@ -545,12 +545,12 @@ function FORM_land_gui(player,raw,data)
 		GUI(player,'lmgr_landcfg','FORM_land_gui_cfg',_tr('gui.landcfg.title'),
 													_tr('gui.landcfg.tip'),
 													_tr('gui.landcfg.landsign')..isclosed,
-													_tr('gui.landcfg.landsign.tome'),tostring(land_data[landid].settings.signtome),
-													_tr('gui.landcfg.landsign.tother'),tostring(land_data[landid].settings.signtother)
+													_tr('gui.landcfg.landsign.tome'),tostring(land_data[landId].settings.signtome),
+													_tr('gui.landcfg.landsign.tother'),tostring(land_data[landId].settings.signtother)
 												)
 	end
 	if raw[3]==2 then --编辑领地权限
-		local perm = land_data[landid].permissions
+		local perm = land_data[landId].permissions
 		GUI(player,'lmgr_landperm','FORM_land_gui_perm',_tr('gui.landmgr.landperm.title'),
 							_tr('gui.landmgr.landperm.options.title'),
 							_tr('gui.landmgr.landperm.basic_options'),
@@ -596,7 +596,7 @@ function FORM_land_gui(player,raw,data)
 	end
 	if raw[3]==3 then --编辑信任名单
 		TRS_Form[player].playerList = GetOnlinePlayerList()
-		local d=AIR.shacopy(land_data[landid].settings.share)
+		local d=AIR.shacopy(land_data[landId].settings.share)
 		for i, v in pairs(d) do
 			d[i]=Actor:xid2str(d[i])
 		end
@@ -610,13 +610,13 @@ function FORM_land_gui(player,raw,data)
 												_tr('gui.landtrust.selectplayer'),json.encode(d))
 	end
 	if raw[3]==4 then --领地nickname
-		local nickn=ILAPI.GetNickname(landid,false)
+		local nickn=ILAPI.GetNickname(landId,false)
 		GUI(player,'lmgr_landname','FORM_land_gui_name',_tr('gui.landtag.title'),
 														_tr('gui.landtag.tip'),
 														nickn)
 	end
 	if raw[3]==5 then --领地describe
-		local desc=ILAPI.GetDescribe(landid)
+		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
 		GUI(player,'lmgr_landdescribe','FORM_land_gui_describe',_tr('gui.landdescribe.title'),
 															_tr('gui.landdescribe.tip'),
@@ -631,9 +631,9 @@ function FORM_land_gui(player,raw,data)
 									json.encode(TRS_Form[player].playerList))
 	end
 	if raw[3]==7 then --删除领地
-		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
-		local length = math.abs(land_data[landid].range.start_position[1] - land_data[landid].range.end_position[1]) + 1
-		local width = math.abs(land_data[landid].range.start_position[3] - land_data[landid].range.end_position[3]) + 1
+		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
+		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1
+		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
 		TRS_Form[player].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		GUI(player,'ModalForm','FORM_land_gui_delete',_tr('gui.delland.title'),
 												AIR.gsubEx(_tr('gui.delland.content'),
@@ -645,17 +645,17 @@ function FORM_land_gui(player,raw,data)
 end
 function FORM_land_mgr_transfer(player,raw,data)
 	if raw[2]==0 then return end
-	local landid=TRS_Form[player].targetland
-	local from=ILAPI.GetOwner(landid)
+	local landId=TRS_Form[player].targetland
+	local from=ILAPI.GetOwner(landId)
 	if from=='?' then return end
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
 	if go==from then return end
-	table.remove(land_owners[from],AIR.isValInList(land_owners[from],landid))
-	table.insert(land_owners[go],#land_owners[go]+1,landid)
+	table.remove(land_owners[from],AIR.isValInList(land_owners[from],landId))
+	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
 									AIR.gsubEx(_tr('title.landtransfer.complete'),
-										'<a>',landid,
+										'<a>',landId,
 										'<b>',Actor:xid2str(go)),
 									_tr('gui.general.back'),
 									_tr('gui.general.close'))
@@ -723,18 +723,18 @@ function FORM_land_mgr(player,raw,data)
 	-- lands manager
 
 	if raw[5]==0 then GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'));return end
-	local count=0;local landid=-1
+	local count=0;local landId=-1
 	for i,v in pairs(land_data) do
 		count=count+1
-		if count==raw[5] then landid=i;break end
+		if count==raw[5] then landId=i;break end
 	end
-	if landid==-1 then return end
+	if landId==-1 then return end
 	if raw[6]==1 then -- tp to land.
-		Actor:teleport(player,land_data[landid].settings.tpoint[1],land_data[landid].settings.tpoint[2],land_data[landid].settings.tpoint[3],land_data[landid].range.dim)
+		Actor:teleport(player,land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dim)
 	end
 	if raw[6]==2 then -- transfer land.
 		TRS_Form[player].playerList = GetOnlinePlayerList()
-		TRS_Form[player].targetland=landid
+		TRS_Form[player].targetland=landId
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		ILAPI.save()
 		GUI(player,'lmgr_landtransfer','FORM_land_mgr_transfer',_tr('gui.oplandmgr.trsland.title'),
@@ -744,7 +744,7 @@ function FORM_land_mgr(player,raw,data)
 		return
 	end
 	if raw[6]==3 then -- delete land.
-		ILAPI.DeleteLand(landid)
+		ILAPI.DeleteLand(landId)
 	end
 
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
@@ -885,7 +885,7 @@ function IL_Manager_GUI(player)
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(land_owners[xuid]) do
-		local f=ILAPI.GetNickname(v,false)
+		local f=ILAPI.GetNickname(v,true)
 		lands[i]=f
 	end
 	GUI(player,'lmgr','FORM_land_gui', -- %1 callback
@@ -1053,19 +1053,19 @@ function IL_CmdFunc(player,cmd)
 	-- [point] Set land tp point
 	if opt[2] == 'point' and cfg.features.landtp then
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
-		local landid=ILAPI.PosGetLand(xyz)
-		if landid==-1 then
+		local landId=ILAPI.PosGetLand(xyz)
+		if landId==-1 then
 			Actor:sendText(player,_tr('title.landtp.fail.noland'),5)
 			return -1
 		end
-		if ILAPI.GetOwner(landid)~=Actor:getXuid(player) then
+		if ILAPI.GetOwner(landId)~=Actor:getXuid(player) then
 			Actor:sendText(player,_tr('title.landtp.fail.notowner'),5)
 			return -1
 		end
-		local landname = ILAPI.GetNickname(landid,true)
-		land_data[landid].settings.tpoint[1]=xyz.x
-		land_data[landid].settings.tpoint[2]=xyz.y
-		land_data[landid].settings.tpoint[3]=xyz.z
+		local landname = ILAPI.GetNickname(landId,true)
+		land_data[landId].settings.tpoint[1]=xyz.x
+		land_data[landId].settings.tpoint[2]=xyz.y
+		land_data[landId].settings.tpoint[3]=xyz.z
 		ILAPI.save()
 		GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
 														AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(xyz),'<b>',landname),
@@ -1207,22 +1207,22 @@ end
 function ILAPI.GetPlayerLands(xuid)
 	return land_owners[xuid]
 end
-function ILAPI.GetNickname(landid,returnIdIfNameEmpty)
-	local n = land_data[landid].settings.nickname
+function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
+	local n = land_data[landId].settings.nickname
 	if n=='' then
 		n='<'.._tr('gui.landmgr.unnamed')..'>'
 		if returnIdIfNameEmpty then
-			n=n..' '..lanaid
+			n=n..' '..landId
 		end
 	end
 	return n
 end
-function ILAPI.GetDescribe(landid)
-	return land_data[landid].settings.describe
+function ILAPI.GetDescribe(landId)
+	return land_data[landId].settings.describe
 end
-function ILAPI.GetOwner(landid)
+function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
-		if AIR.isValInList(v,landid)~=-1 then
+		if AIR.isValInList(v,landId)~=-1 then
 			return i
 		end
 	end
@@ -1247,9 +1247,9 @@ function ILAPI.GetChunk(vec2,dim)
 	end
 	return -1
 end
-function ILAPI.GetTpPoint(landid) --return vec4
-	local i = AIR.deepcopy(land_data[landid].settings.tpoint)
-	i[4] = land_data[landid].range.dim
+function ILAPI.GetTpPoint(landId) --return vec4
+	local i = AIR.deepcopy(land_data[landId].settings.tpoint)
+	i[4] = land_data[landId].range.dim
 	return LIB.pos2vec(i)
 end
 function ILAPI.GetDistance(vec4,landId)
@@ -1403,38 +1403,38 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 
 	:: PROCESS_1 ::
 	local pos=AIR.buildVec(x,y,z,dim)
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_destroy==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_destroy==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 	local pos=AIR.buildVec(x,y,z,dim)
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_place==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_place==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 	local pos=AIR.buildVec(x,y,z,dim)
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
+	if landId==-1 then return end -- No Land
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	
-	local perm = land_data[landid].permissions
+	local perm = land_data[landId].permissions
 	if blockname == 'minecraft:end_portal_frame' and perm.allow_destroy then return end -- 末地门（拓充）
 	if blockname == 'minecraft:lectern' and perm.allow_destroy then return end -- 讲台（拓充）
 	if blockname == 'minecraft:bed' and perm.use_bed then return end -- 床
@@ -1456,13 +1456,13 @@ function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 end
 function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
 	local pos=AIR.buildVec(x,y,z,dim)
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_open_chest==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_open_chest==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
@@ -1473,14 +1473,14 @@ function IL_LIS_onBlockInteractedWith(player,x,y,z)
 	local blockname = Utils:getBlockNameByPos(x,y,z,dim)
 
 	local pos=AIR.buildVec(x,y,z,dim)
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
+	if landId==-1 then return end -- No Land
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 
-	local perm = land_data[landid].permissions
+	local perm = land_data[landId].permissions
 	if blockname == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
 	if blockname == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
 	if blockname == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
@@ -1501,45 +1501,45 @@ function IL_LIS_onBlockInteractedWith(player,x,y,z)
 end
 function IL_LIS_onPlayerAttack(player,mobptr)
 	local pos=AIR.pos2vec({Actor:getPos(mobptr)})
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_attack==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_attack==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z,dim)
 	local pos=AIR.pos2vec({x,y,z,dim})
-	local landid=ILAPI.PosGetLand(pos)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_exploding==true then return end -- Perm Allow
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_exploding==true then return end -- Perm Allow
 	return -1
 end
 function IL_LIS_onPlayerTakeItem(player,itemptr)
 	local pos=AIR.pos2vec({Actor:getPos(itemptr)})
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_pickupitem==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_pickupitem==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
 function IL_LIS_onPlayerDropItem(player,itemptr)
 	local pos=AIR.pos2vec({Actor:getPos(player)})
 	pos.y=pos.y-1
-	local landid=ILAPI.PosGetLand(pos)
+	local landId=ILAPI.PosGetLand(pos)
 	local xuid=Actor:getXuid(player)
-	if landid==-1 then return end -- No Land
-	if land_data[landid].permissions.allow_dropitem==true then return end -- Perm Allow
+	if landId==-1 then return end -- No Land
+	if land_data[landId].permissions.allow_dropitem==true then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landid)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landid].settings.share,xuid)~=-1 then return end -- Trust
+	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
+	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
 	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
 	return -1
 end
@@ -1548,27 +1548,27 @@ function IL_TCB_LandSign()
 	for i,v in pairs(players) do
 		local xyz=AIR.pos2vec({Actor:getPos(v)})
 		xyz.y=xyz.y-1
-		local landid=ILAPI.PosGetLand(xyz)
-		if landid==-1 then TRS_Form[v].inland='null';return end -- no land here
-		if landid==TRS_Form[v].inland then return end -- signed
-		local owner=ILAPI.GetOwner(landid)
+		local landId=ILAPI.PosGetLand(xyz)
+		if landId==-1 then TRS_Form[v].inland='null';return end -- no land here
+		if landId==TRS_Form[v].inland then return end -- signed
+		local owner=ILAPI.GetOwner(landId)
 		local ownername='?'
 		if owner~='?' then ownername=Actor:xid2str(owner) end
-		local slname = ILAPI.GetNickname(landid,true)
+		local slname = ILAPI.GetNickname(landId,true)
 		if Actor:getXuid(v)==owner then
-			if not(land_data[landid].settings.signtome) then return end
+			if not(land_data[landId].settings.signtome) then return end
 			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
 		else
-			if not(land_data[landid].settings.signtother) then return end
+			if not(land_data[landId].settings.signtother) then return end
 			sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
-			if land_data[landid].settings.describe~='' then
-				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landid].settings.describe,
+			if land_data[landId].settings.describe~='' then
+				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landId].settings.describe,
 																	'$visitor',Actor:getName(v),
 																	'$n','\n'
 																),0)
 			end
 		end
-		TRS_Form[v].inland=landid
+		TRS_Form[v].inland=landId
 	end
 end
 function IL_TCB_SelectionParticles()
@@ -1614,10 +1614,10 @@ function DEBUG_LANDQUERY()
 	if debug_landquery == 0 then return end
 	local xyz=AIR.pos2vec({Actor:getPos(debug_landquery)})
 	xyz.y=xyz.y-1
-	local landid=ILAPI.PosGetLand(xyz)
+	local landId=ILAPI.PosGetLand(xyz)
 	local N = ILAPI.GetChunk(xyz)
 	local F = pos2chunk(xyz.x,xyz.z)
-	print('[ILand] Debugger: [Query] '..landid)
+	print('[ILand] Debugger: [Query] '..landId)
 	if N==-1 then
 		print('[ILand] Debugger: [Chunk] not found')
 	else
