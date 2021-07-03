@@ -494,7 +494,7 @@ function FORM_land_gui_transfer(player,raw,data)
 	ILAPI.save()
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 									AIR.gsubEx(_tr('title.landtransfer.complete'),
-										'<a>',ILAPI.GetNickname(landid),
+										'<a>',ILAPI.GetNickname(landid,true),
 										'<b>',Actor:xid2str(go)),
 									_tr('gui.general.back'),
 									_tr('gui.general.close'))
@@ -520,8 +520,7 @@ function FORM_land_gui(player,raw,data)
 		local height = math.abs(land_data[landid].range.start_position[2] - land_data[landid].range.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
-		local nname=ILAPI.GetNickname(landid)
-		if nname=='' then nname='<'.._tr('gui.landmgr.unnamed')..'>' end
+		local nname=ILAPI.GetNickname(landid,false)
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.landmgr.landinfo.title'),
 									AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
 										'<a>',Actor:getName(player),
@@ -611,8 +610,7 @@ function FORM_land_gui(player,raw,data)
 												_tr('gui.landtrust.selectplayer'),json.encode(d))
 	end
 	if raw[3]==4 then --领地nickname
-		local nickn=ILAPI.GetNickname(landid)
-		if nickn=='' then nickn='['.._tr('gui.landmgr.unnamed')..']' end
+		local nickn=ILAPI.GetNickname(landid,false)
 		GUI(player,'lmgr_landname','FORM_land_gui_name',_tr('gui.landtag.title'),
 														_tr('gui.landtag.tip'),
 														nickn)
@@ -878,7 +876,7 @@ function IL_Manager_GUI(player)
 	local lid=ILAPI.PosGetLand(xyz)
 	local nname
 	if lid~=-1 then
-		nname = ILAPI.GetNickname(lid)
+		nname = ILAPI.GetNickname(lid,true)
 		welcomeText = welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
 	else
 		nname = lid
@@ -887,8 +885,7 @@ function IL_Manager_GUI(player)
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(land_owners[xuid]) do
-		local f=ILAPI.GetNickname(v)
-		if f=='' then f='['.._tr('gui.landmgr.unnamed')..'] '..v end
+		local f=ILAPI.GetNickname(v,false)
 		lands[i]=f
 	end
 	GUI(player,'lmgr','FORM_land_gui', -- %1 callback
@@ -1065,8 +1062,7 @@ function IL_CmdFunc(player,cmd)
 			Actor:sendText(player,_tr('title.landtp.fail.notowner'),5)
 			return -1
 		end
-		local landname = ILAPI.GetNickname(landid)
-		if landname=='' then landname='<'.._tr('gui.landmgr.unnamed')..'> '..landid end
+		local landname = ILAPI.GetNickname(landid,true)
 		land_data[landid].settings.tpoint[1]=xyz.x
 		land_data[landid].settings.tpoint[2]=xyz.y
 		land_data[landid].settings.tpoint[3]=xyz.z
@@ -1082,9 +1078,8 @@ function IL_CmdFunc(player,cmd)
 		local tpland={}
 		table.insert(tpland,1,'['.._tr('gui.general.plzchose')..']')
 		for i,landId in pairs(ILAPI.GetPlayerLands(Actor:getXuid(player))) do
-			local name = ILAPI.GetNickname(landId)
+			local name = ILAPI.GetNickname(landId,true)
 			local xpos = land_data[landId].settings.tpoint
-			if name=='' then name='<'.._tr('gui.landmgr.unnamed')..'> '..landId end
 			tpland[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
 		end
 		GUI(player,'landtp','FORM_landtp',_tr('gui.landtp.title'),
@@ -1212,8 +1207,15 @@ end
 function ILAPI.GetPlayerLands(xuid)
 	return land_owners[xuid]
 end
-function ILAPI.GetNickname(landid)
-	return land_data[landid].settings.nickname
+function ILAPI.GetNickname(landid,returnIdIfNameEmpty)
+	local n = land_data[landid].settings.nickname
+	if n=='' then
+		n='<'.._tr('gui.landmgr.unnamed')..'>'
+		if returnIdIfNameEmpty then
+			n=n..' '..lanaid
+		end
+	end
+	return n
 end
 function ILAPI.GetDescribe(landid)
 	return land_data[landid].settings.describe
@@ -1552,8 +1554,7 @@ function IL_TCB_LandSign()
 		local owner=ILAPI.GetOwner(landid)
 		local ownername='?'
 		if owner~='?' then ownername=Actor:xid2str(owner) end
-		local slname=ILAPI.GetNickname(landid)
-		if slname=='' then slname='<'.._tr('gui.landmgr.unnamed')..'>' end
+		local slname = ILAPI.GetNickname(landid,true)
 		if Actor:getXuid(v)==owner then
 			if not(land_data[landid].settings.signtome) then return end
 			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
