@@ -757,9 +757,15 @@ function FORM_landtp(player,raw,data)
 	local lands = ILAPI.GetPlayerLands(Actor:getXuid(player))
 	local landId = lands[raw[2]]
 	local tp = land_data[landId].settings.tpoint
-	Actor:teleport(player,tp[1],tp[2],tp[3],land_data[landId].range.dim)
+	local dim = land_data[landId].range.dim
+	local safey = GetTopAir(tp[1],tp[2],tp[3],dim)
+	Actor:teleport(player,tp[1],safey,tp[3],dim)
+	local ct = 'Complete.'
+	if safey~=tp[2] then
+		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-tp[2]))
+	end
 	GUI(player,'ModalForm','FORM_NULL',_tr('gui.general.complete'),
-									"Complete.",
+									ct,
 									_tr('gui.general.yes'),
 									_tr('gui.general.close'))
 end
@@ -1380,6 +1386,15 @@ function calculation_price(length,width,height)
 		price=length*width*t[1]
 	end
 	return math.modf(price)
+end
+function GetTopAir(x,y,z,dim)
+	if dim==0 or dim==2 then high=256 end
+	if dim==1 then high=129 end
+	for i=y,high do
+		if Utils:getBlockNameByPos(x,i,z,dim)=='minecraft:air' then
+			return i
+		end
+	end
 end
 
 -- minecraft -> events
