@@ -289,22 +289,22 @@ end
 buildChunks()
 
 -- load land VecMap
-local vecMap={}
+local VecMap={}
 function updateVecMap(landId,mode)
 	if mode=='add' then
 		local spos = land_data[landId].range.start_position
 		local epos = land_data[landId].range.end_position
-		vecMap[landId]={}
-		vecMap[landId].a={};vecMap[landId].b={}
-		vecMap[landId].a = AIR.buildVec(spos[1],spos[2],spos[3]) --start
-		vecMap[landId].b = AIR.buildVec(epos[1],epos[2],epos[3]) --end
+		VecMap[landId]={}
+		VecMap[landId].a={};VecMap[landId].b={}
+		VecMap[landId].a = AIR.buildVec(spos[1],spos[2],spos[3]) --start
+		VecMap[landId].b = AIR.buildVec(epos[1],epos[2],epos[3]) --end
 	end
 	if mode=='del' then
-		vecMap[landId]=nil
+		VecMap[landId]=nil
 	end
 end
 function buildVecMap()
-	vecMap={}
+	VecMap={}
 	for landId,data in pairs(land_data) do
 		updateVecMap(landId,'add')
 	end
@@ -838,7 +838,7 @@ function IL_BP_CreateOrder(player)
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
 		if land_data[landId].range.dim==newLand[player].dim then
-			edge=cubeGetEdge(vecMap[landId].a,vecMap[landId].b)
+			edge=cubeGetEdge(VecMap[landId].a,VecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
 					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
@@ -1233,7 +1233,7 @@ function ILAPI.PosGetLand(vec4)
 	local dim = vec4.dim
 	if ChunkMap[dim][c.x]~=nil and ChunkMap[dim][c.x][c.z]~=nil then
 		for n,landId in pairs(ChunkMap[dim][c.x][c.z]) do
-			if vec4.dim==land_data[landId].range.dim and isPosInCube(vec4,vecMap[landId].a,vecMap[landId].b) then
+			if vec4.dim==land_data[landId].range.dim and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
 				return landId
 			end
 		end
@@ -1252,7 +1252,8 @@ function ILAPI.GetTpPoint(landId) --return vec4
 	i[4] = land_data[landId].range.dim
 	return LIB.pos2vec(i)
 end
-function ILAPI.GetDistance(vec4,landId)
+function ILAPI.GetDistence(landId)
+	-- pwt..
 end
 function ILAPI.GetVersion()
 	return plugin_version
@@ -1554,7 +1555,7 @@ function IL_TCB_LandSign()
 		local owner=ILAPI.GetOwner(landId)
 		local ownername='?'
 		if owner~='?' then ownername=Actor:xid2str(owner) end
-		local slname = ILAPI.GetNickname(landId,true)
+		local slname = ILAPI.GetNickname(landId,false)
 		if Actor:getXuid(v)==owner then
 			if not(land_data[landId].settings.signtome) then return end
 			sendTitle(v,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
