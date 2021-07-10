@@ -8,7 +8,7 @@
 local plugin_version = '2.0'
 local langVer = 200
 local minLLVer = 210613
-local minAirVer = 100
+local minAirVer = 101
 local minUtilVer = 101
 local data_path = 'plugins\\LiteLuaLoader\\data\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
@@ -179,7 +179,7 @@ do
 		ILAPI.save()
 	end
 	if cfg.version==115 then
-		cfg.version=116
+		cfg.version=200
 		for landId,data in pairs(land_data) do
 			local perm = land_data[landId].permissions
 			local TMPPM = AIR.deepcopy(perm.allow_use_item)
@@ -215,6 +215,7 @@ do
 			perm.allow_use_item = nil
 			perm.allow_open_barrel = nil
 		end
+		cfg.features.force_talk = false
 		-- ILAPI.save()
 	end
 end
@@ -339,16 +340,16 @@ function FORM_BACK_LandMgr(player,index,text)
 end
 function FORM_land_buy(player,index,text)
 	if index~=0 then 
-		Actor:sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name),5);return
+		sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	end
 	local xuid = Actor:getXuid(player)
 	local player_credits = money_get(player)
 	if newLand[player].landprice>player_credits then
-		Actor:sendText(player,_tr('title.buyland.moneynotenough')..AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name),5);return
+		sendText(player,_tr('title.buyland.moneynotenough')..AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	else
 		money_del(player,newLand[player].landprice)
 	end
-	Actor:sendText(player,_tr('title.buyland.succeed'),5)
+	sendText(player,_tr('title.buyland.succeed'))
 	local A=newLand[player].posA
 	local B=newLand[player].posB
 	local result={fmCube(A.x,A.y,A.z,B.x,B.y,B.z)}
@@ -429,10 +430,10 @@ function FORM_land_gui_trust(player,raw,data)
 		local x=Actor:str2xid(TRS_Form[player].playerList[raw[3]+1])
 		local n=#landshare+1
 		if Actor:getXuid(player)==x then
-			Actor:sendText(player,_tr('title.landtrust.cantaddown'),5);return
+			sendText(player,_tr('title.landtrust.cantaddown'));return
 		end
 		if AIR.isValInList(landshare,x)~=-1 then
-			Actor:sendText(player,_tr('title.landtrust.alreadyexists'),5);return
+			sendText(player,_tr('title.landtrust.alreadyexists'));return
 		end
 		landshare[n]=x
 		ILAPI.save()
@@ -457,7 +458,7 @@ end
 function FORM_land_gui_name(player,raw,data)
 	local landId=TRS_Form[player].landId
 	if AIR.isTextSpecial(raw[2]) then
-		Actor:sendText(player,'FAILED',5);return
+		sendText(player,'FAILED');return
 	end
 	land_data[landId].settings.nickname=raw[2]
 	ILAPI.save()
@@ -474,7 +475,7 @@ function FORM_land_gui_describe(player,raw,data)
 							'.','Y',
 							'!','Y'
 						)) then
-		Actor:sendText(player,'FAILED',5);return
+		sendText(player,'FAILED');return
 	end
 	land_data[landId].settings.describe=raw[2]
 	ILAPI.save()
@@ -488,7 +489,7 @@ function FORM_land_gui_transfer(player,raw,data)
 	local landId=TRS_Form[player].landId
 	local xuid=Actor:getXuid(player)
 	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
-	if go==xuid then Actor:sendText(player,_tr('title.landtransfer.canttoown'),5);return end
+	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
@@ -773,28 +774,28 @@ function IL_BP_SelectRange(player, vec4, mode)
     if newLand[player]==nil then return end
     if mode==0 then -- point a
         if mode~=newLand[player].step then
-			Actor:sendText(player,_tr('title.selectrange.failbystep'),5);return
+			sendText(player,_tr('title.selectrange.failbystep'));return
         end
 		newLand[player].dim = vec4.dim
 		newLand[player].posA = vec4
 		newLand[player].posA.x=math.modf(newLand[player].posA.x) --省函数...
 		newLand[player].posA.y=math.modf(newLand[player].posA.y)
 		newLand[player].posA.z=math.modf(newLand[player].posA.z)
-		Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name),5)
+		sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
         newLand[player].step = 1
     end
     if mode==1 then -- point b
         if mode ~= newLand[player].step then
-			Actor:sendText(player,_tr('title.selectrange.failbystep'),5);return
+			sendText(player,_tr('title.selectrange.failbystep'));return
         end
         if vec4.dim~=newLand[player].dim then
-			Actor:sendText(player,_tr('title.selectrange.failbycdim'),5);return
+			sendText(player,_tr('title.selectrange.failbycdim'));return
         end
 		newLand[player].posB = vec4
 		newLand[player].posB.x=math.modf(newLand[player].posB.x)
 		newLand[player].posB.y=math.modf(newLand[player].posB.y)
 		newLand[player].posB.z=math.modf(newLand[player].posB.z)
-        Actor:sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name),5)
+        sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step = 2
 
 		ArrayParticles[player]={}
@@ -808,7 +809,7 @@ function IL_BP_CreateOrder(player)
 	ArrayParticles[player]=nil
 	local xuid = Actor:getXuid(player)
     if newLand[player]==nil or newLand[player].step~=2 then
-		Actor:sendText(player,_tr('title.createorder.failbystep'),5)
+		sendText(player,_tr('title.createorder.failbystep'))
         return
     end
     local length = math.abs(newLand[player].posA.x - newLand[player].posB.x) + 1
@@ -818,17 +819,17 @@ function IL_BP_CreateOrder(player)
     local squ = length * width
 	--- 违规圈地判断
 	if squ>cfg.land.land_max_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toobig')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+		sendText(player,_tr('title.createorder.toobig')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step=0
 		return
 	end
 	if squ<cfg.land.land_min_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		Actor:sendText(player,_tr('title.createorder.toosmall')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+		sendText(player,_tr('title.createorder.toosmall')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step=0
 		return
 	end
 	if height<2 then
-		Actor:sendText(player,_tr('title.createorder.toolow')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+		sendText(player,_tr('title.createorder.toolow')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step=0
 		return
 	end
@@ -838,7 +839,7 @@ function IL_BP_CreateOrder(player)
 		edge[i].dim=newLand[player].dim
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+			sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 			newLand[player].step=0;return
 		end
 	end
@@ -847,7 +848,7 @@ function IL_BP_CreateOrder(player)
 			edge=cubeGetEdge(VecMap[landId].a,VecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[player].posA,newLand[player].posB)==true then
-					Actor:sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+					sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 					newLand[player].step=0;return
 				end
 			end
@@ -863,16 +864,16 @@ function IL_BP_CreateOrder(player)
 end
 function IL_BP_GiveUp(player)
     if newLand[player]==nil then
-        Actor:sendText(player,_tr('title.giveup.failed'),5);return
+        sendText(player,_tr('title.giveup.failed'));return
     end
 	newLand[player]=nil
 	ArrayParticles[player]=nil
-	Actor:sendText(player,_tr('title.giveup.succeed'),5)
+	sendText(player,_tr('title.giveup.succeed'))
 end
 function IL_Manager_GUI(player)
 	local xuid=Actor:getXuid(player)
 	if #land_owners[xuid]==0 then
-		Actor:sendText(player,_tr('title.landmgr.failed'),5);return
+		sendText(player,_tr('title.landmgr.failed'));return
 	end
 
 	local xyz=AIR.pos2vec({Actor:getPos(player)})
@@ -1023,14 +1024,14 @@ function IL_CmdFunc(player,cmd)
 	-- [new] Create newLand
 	if opt[2] == 'new' then
 		if newLand[player]~=nil then
-			Actor:sendText(player,_tr('title.getlicense.alreadyexists')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5);return -1
+			sendText(player,_tr('title.getlicense.alreadyexists')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name));return -1
 		end
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 			if #land_owners[xuid]>=cfg.land.player_max_lands then
-				Actor:sendText(player,_tr('title.getlicense.limit'),5);return -1
+				sendText(player,_tr('title.getlicense.limit'));return -1
 			end
 		end
-		Actor:sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name),5)
+		sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		newLand[player]={}
 		newLand[player].step=0
 		return -1
@@ -1038,7 +1039,7 @@ function IL_CmdFunc(player,cmd)
 	-- [a|b|buy] Select Range
 	if opt[2] == 'a' or opt[2] == 'b' or opt[2] == 'buy' then
 		if newLand[player]==nil then
-			Actor:sendText(player,_tr('title.land.nolicense'),5)
+			sendText(player,_tr('title.land.nolicense'))
 			return -1
 		end
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
@@ -1061,11 +1062,11 @@ function IL_CmdFunc(player,cmd)
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
 		local landId=ILAPI.PosGetLand(xyz)
 		if landId==-1 then
-			Actor:sendText(player,_tr('title.landtp.fail.noland'),5)
+			sendText(player,_tr('title.landtp.fail.noland'))
 			return -1
 		end
 		if ILAPI.GetOwner(landId)~=Actor:getXuid(player) then
-			Actor:sendText(player,_tr('title.landtp.fail.notowner'),5)
+			sendText(player,_tr('title.landtp.fail.notowner'))
 			return -1
 		end
 		local landname = ILAPI.GetNickname(landId,true)
@@ -1098,7 +1099,7 @@ function IL_CmdFunc(player,cmd)
 	-- [mgr] OP-LandMgr GUI
 	if opt[2] == 'mgr' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',xuid),0)
 			return -1
 		end
 		IL_Manager_OPGUI(player)
@@ -1107,15 +1108,15 @@ function IL_CmdFunc(player,cmd)
 	-- [mgr selectool] Set land_select tool
 	if opt[2] == 'mgr' and opt[3] == 'selectool' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-			Actor:sendText(player,AIR.gsubEx('§l§b[§a LAND §b] §r'.._tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',xuid),0)
 			return -1
 		end
-		Actor:sendText(player,_tr('title.oplandmgr.setselectool'),5)
+		sendText(player,_tr('title.oplandmgr.setselectool'))
 		TRS_Form[player].selectool=0
 		return -1
 	end
 	-- [X] Unknown key
-	Actor:sendText(player,'§l§b[§a LAND §b] §r'..AIR.gsubEx(_tr('command.error'),'<a>',opt[2]),0)
+	sendText(player,AIR.gsubEx(_tr('command.error'),'<a>',opt[2]),0)
 	return -1
 end
 
@@ -1319,6 +1320,20 @@ function sendTitle(player,title,subtitle)
 	runCmdEx('title "' .. playername .. '" subtitle '..subtitle) end
 	runCmdEx('title "' .. playername .. '" title '..title)
 end
+function sendText(player,text,mode)
+	-- [mode] 0 = FORCE USE TALK
+	if mode==nil and not(cfg.features.force_talk) then 
+		Actor:sendText(player,text,5)
+		return
+	end
+	if cfg.features.force_talk then
+		Actor:sendText(player,'§l§b———————————§a LAND §b———————————\n§r'..text,0)
+	end
+	if mode==0 then
+		Actor:sendText(player,'§l§b[§a LAND §b] §r'..text,0)
+		return
+	end
+end
 function cubeGetEdge(posA,posB)
 	local edge={}
 	local p=0
@@ -1403,7 +1418,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	if TRS_Form[player].selectool==0 then
 		local HandItem = Actor:getHand(player)
 		if Item:isNull(HandItem) then goto PROCESS_1 end --fix crash
-		Actor:sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(HandItem)),5)
+		sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',Item:getName(HandItem)))
 		cfg.features.selection_tool=Item:getFullName(HandItem)
 		ILAPI.save()
 		TRS_Form[player].selectool=-1
@@ -1426,7 +1441,7 @@ function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
@@ -1438,7 +1453,7 @@ function IL_LIS_onPlayerPlaceBlock(player,block,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
@@ -1467,7 +1482,7 @@ function IL_LIS_onPlayerUseItem(player,item,blockname,x,y,z,dim)
 	if blockname == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
 	if blockname == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
@@ -1479,7 +1494,7 @@ function IL_LIS_onPlayerOpenChest(player,x,y,z,dim)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onBlockInteractedWith(player,x,y,z)
@@ -1524,7 +1539,7 @@ function IL_LIS_onPlayerAttack(player,mobptr)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onExplode(ptr,x,y,z,dim)
@@ -1543,7 +1558,7 @@ function IL_LIS_onPlayerTakeItem(player,itemptr)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_LIS_onPlayerDropItem(player,itemptr)
@@ -1556,7 +1571,7 @@ function IL_LIS_onPlayerDropItem(player,itemptr)
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
 	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
-	Actor:sendText(player,_tr('title.landlimit.noperm'),5)
+	sendText(player,_tr('title.landlimit.noperm'))
 	return -1
 end
 function IL_TCB_LandSign()
@@ -1578,10 +1593,10 @@ function IL_TCB_LandSign()
 			if not(land_data[landId].settings.signtother) then return end
 			sendTitle(v,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
 			if land_data[landId].settings.describe~='' then
-				Actor:sendText(v,'§l§b[§a LAND §b] §r'..AIR.gsubEx(land_data[landId].settings.describe,
-																	'$visitor',Actor:getName(v),
-																	'$n','\n'
-																),0)
+				sendText(v,AIR.gsubEx(land_data[landId].settings.describe,
+													'$visitor',Actor:getName(v),
+													'$n','\n'
+												),0)
 			end
 		end
 		TRS_Form[v].inland=landId
