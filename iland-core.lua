@@ -222,7 +222,7 @@ do
 		end
 		cfg.features.force_talk = false
 		cfg.features.player_max_ple = 600
-		-- ILAPI.save()
+		ILAPI.save()
 	end
 end
 
