@@ -831,7 +831,7 @@ function IL_BP_SelectRange(player, vec4, mode)
 									'<c>',newLand[player].posB.x,
 									'<d>',newLand[player].posB.y,
 									'<e>',newLand[player].posB.z)
-									..'\n'..string.gsub(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
+									..'\n'..string.gsub(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step = 2
 
 		local edges = cubeGetEdge(newLand[player].posA,newLand[player].posB)
