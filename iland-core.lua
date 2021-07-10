@@ -337,6 +337,10 @@ function FORM_BACK_LandOPMgr(player,index,text)
 end
 function FORM_BACK_LandMgr(player,index,text)
 	if index==1 then return end
+	if TRS_Form[player].backpo==1 then
+		IL_FastMgr_GUI(player)
+		return
+	end
 	IL_Manager_GUI(player)
 end
 function FORM_land_buy(player,index,text)
@@ -511,9 +515,15 @@ function FORM_land_gui_delete(player,index,text)
 										_tr('gui.general.back'),
 										_tr('gui.general.close'))
 end
-function FORM_land_gui(player,raw,data)
+function FORM_land_gui(player,raw,data,lid)
 	local xuid=Actor:getXuid(player)
-	local landId=land_owners[xuid][raw[2]+1]
+
+	local landId
+	if lid==nil or lid=='' then
+		landId = land_owners[xuid][raw[2]+1]
+	else
+		landId = lid
+	end
 
 	TRS_Form[player].landId=landId
 	if raw[3]==0 then --查看领地信息
@@ -771,6 +781,22 @@ function FORM_landtp(player,raw,data)
 									_tr('gui.general.yes'),
 									_tr('gui.general.close'))
 end
+function FORM_land_fast(player,index,text)
+	TRS_Form[player].backpo = 1
+	fakeraw = {}
+	fakeraw[3] = index
+	if index~=8 then
+		FORM_land_gui(player,fakeraw,'',TRS_Form[player].landId)
+	end
+end
+function FORM_land_gde(player,index,text)
+	if index==0 then
+		IL_CmdFunc(player,'land new')
+	end
+	if index==1 then
+		IL_CmdFunc(player,'land gui')
+	end
+end
 function IL_BP_SelectRange(player, vec4, mode)
     if newLand[player]==nil then return end
     if mode==0 then -- point a
@@ -911,6 +937,7 @@ function IL_Manager_GUI(player)
 		local f=ILAPI.GetNickname(v,true)
 		lands[i]=f
 	end
+
 	GUI(player,'lmgr','FORM_land_gui', -- %1 callback
 								_tr('gui.landmgr.title'), -- %2 title
 								welcomeText, -- %3 label
@@ -979,6 +1006,21 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency,
 									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
 end
+function IL_FastMgr_GUI(player)
+	local landId = TRS_Form[player].landId
+	GUI(player,'lmgr_fast','FORM_land_fast',_tr('gui.fastlmgr.title'),
+									AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)),
+									_tr('gui.landmgr.options.landinfo'),
+									_tr('gui.landmgr.options.landcfg'),
+									_tr('gui.landmgr.options.landperm'),
+									_tr('gui.landmgr.options.landtrust'),
+									_tr('gui.landmgr.options.landtag'),
+									_tr('gui.landmgr.options.landdescribe'),
+									_tr('gui.landmgr.options.landtransfer'),
+									_tr('gui.landmgr.options.delland'),
+									_tr('gui.general.close')
+	)
+end
 function IL_CmdFunc(player,cmd)
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
@@ -1029,12 +1071,20 @@ function IL_CmdFunc(player,cmd)
 	local xuid=Actor:getXuid(player)
 	-- [ ] Main Command
 	if opt[1] == MainCmd and opt[2]==nil then
-		land_count=tostring(#land_owners[xuid])
-		GUI(player,'ModalForm','FORM_BACK_LandMgr', -- %1 callback
-						AIR.gsubEx(_tr('gui.land.title'),'<a>',plugin_version), -- %2 title
-						AIR.gsubEx(_tr('gui.land.content'),'<a>',land_count), _tr('talk.landmgr.open'), _tr('gui.general.close'), -- %3 content
-						_tr('talk.landmgr.open'), --%4 button1
-						_tr('gui.general.close')) --%5 button2
+		local ppos = AIR.pos2vec({Actor:getPos(player)})
+		local lid = ILAPI.PosGetLand(ppos)
+		if lid~=-1 then
+			TRS_Form[player].landId=lid
+			IL_FastMgr_GUI(player)
+		else
+			local land_count = tostring(#land_owners[xuid])
+			GUI(player,'lmgr_land_gde','FORM_land_gde',_tr('gui.fastgde.title'),
+									AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count),
+									_tr('gui.fastgde.create'),
+									_tr('gui.fastgde.manage'),
+									_tr('gui.general.close')
+								)
+		end
 		return -1
 	end
 	-- [new] Create newLand
@@ -1074,6 +1124,7 @@ function IL_CmdFunc(player,cmd)
 	end
 	-- [gui] LandMgr GUI
 	if opt[2] == 'gui' then
+		TRS_Form[player].backpo = 0
 		IL_Manager_GUI(player)
 		return -1
 	end

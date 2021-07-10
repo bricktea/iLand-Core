@@ -1,0 +1,10 @@
+type=simple,cb=%1,title=%2,content=%3
+text=%4
+text=%5
+text=%6
+text=%7
+text=%8
+text=%9
+text=%10
+text=%11
+text=%12,img=textures/ui/icon_import

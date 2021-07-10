@@ -1,0 +1,4 @@
+type=simple,cb=%1,title=%2,content=%3
+text=%4,img=textures/ui/icon_iron_pickaxe
+text=%5,img=textures/ui/confirm
+text=%6,img=textures/ui/icon_import
