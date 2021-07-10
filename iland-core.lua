@@ -5,8 +5,8 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '1.1.5hotfix'
-local langVer = 115
+local plugin_version = '2.0'
+local langVer = 200
 local minLLVer = 210613
 local minAirVer = 100
 local minUtilVer = 101
