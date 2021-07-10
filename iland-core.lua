@@ -785,9 +785,6 @@ function IL_BP_SelectRange(player, vec4, mode)
         newLand[player].step = 1
     end
     if mode==1 then -- point b
-        if mode ~= newLand[player].step then
-			sendText(player,_tr('title.selectrange.failbystep'));return
-        end
         if vec4.dim~=newLand[player].dim then
 			sendText(player,_tr('title.selectrange.failbycdim'));return
         end
@@ -1040,6 +1037,10 @@ function IL_CmdFunc(player,cmd)
 	if opt[2] == 'a' or opt[2] == 'b' or opt[2] == 'buy' then
 		if newLand[player]==nil then
 			sendText(player,_tr('title.land.nolicense'))
+			return -1
+		end
+		if (opt[2]=='a' and newLand[player].step~=0) or (opt[2]=='b' and newLand[player].step~=1) or (opt[2]=='buy' and newLand[player].step~=2) then
+			sendText(player,_tr('title.selectrange.failbystep'))
 			return -1
 		end
 		local xyz=AIR.pos2vec({Actor:getPos(player)})
@@ -1326,7 +1327,7 @@ function sendText(player,text,mode)
 		Actor:sendText(player,text,5)
 		return
 	end
-	if cfg.features.force_talk then
+	if cfg.features.force_talk and mode~=0 then
 		Actor:sendText(player,'§l§b———————————§a LAND §b———————————\n§r'..text,0)
 	end
 	if mode==0 then
