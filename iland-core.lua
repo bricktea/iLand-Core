@@ -216,6 +216,7 @@ do
 			perm.allow_open_barrel = nil
 		end
 		cfg.features.force_talk = false
+		cfg.features.player_max_ple = 600
 		-- ILAPI.save()
 	end
 end
@@ -781,8 +782,14 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].posA.x=math.modf(newLand[player].posA.x) --省函数...
 		newLand[player].posA.y=math.modf(newLand[player].posA.y)
 		newLand[player].posA.z=math.modf(newLand[player].posA.z)
-		sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posA.x .. '\nY=' .. newLand[player].posA.y .. '\nZ=' .. newLand[player].posA.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
-        newLand[player].step = 1
+        sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
+									'<a>','a',
+									'<b>',did2dim(vec4.dim),
+									'<c>',newLand[player].posA.x,
+									'<d>',newLand[player].posA.y,
+									'<e>',newLand[player].posA.z)
+									..'\n'..string.gsub(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
+		newLand[player].step = 1
     end
     if mode==1 then -- point b
         if vec4.dim~=newLand[player].dim then
@@ -792,11 +799,23 @@ function IL_BP_SelectRange(player, vec4, mode)
 		newLand[player].posB.x=math.modf(newLand[player].posB.x)
 		newLand[player].posB.y=math.modf(newLand[player].posB.y)
 		newLand[player].posB.z=math.modf(newLand[player].posB.z)
-        sendText(player,'DIM='..newLand[player].dim..'\nX=' .. newLand[player].posB.x .. '\nY=' .. newLand[player].posB.y .. '\nZ=' .. newLand[player].posB.z ..'\n'..AIR.gsubEx(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name))
+        sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
+									'<a>','b',
+									'<b>',did2dim(vec4.dim),
+									'<c>',newLand[player].posB.x,
+									'<d>',newLand[player].posB.y,
+									'<e>',newLand[player].posB.z)
+									..'\n'..string.gsub(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
 		newLand[player].step = 2
 
-		ArrayParticles[player]={}
-		ArrayParticles[player]=cubeGetEdge(newLand[player].posA,newLand[player].posB)
+		local edges = cubeGetEdge(newLand[player].posA,newLand[player].posB)
+		-- print(#edges)
+		if #edges>cfg.features.player_max_ple then
+			sendText(player,_tr('title.selectrange.nople'),0)
+		else
+			ArrayParticles[player]={}
+			ArrayParticles[player]=edges
+		end
     end
 	if mode==2 then
 		IL_BP_CreateOrder(player)
@@ -1411,6 +1430,11 @@ function GetTopAir(x,y,z,dim)
 			return i
 		end
 	end
+end
+function did2dim(id)
+	if id==0 then return _tr('talk.dim.zero') end
+	if id==1 then return _tr('talk.dim.one') end
+	if id==2 then return _tr('talk.dim.two') end
 end
 
 -- minecraft -> events

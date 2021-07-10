@@ -31,6 +31,7 @@
         "sign_frequency": 2,
         "selection_tool": "minecraft:wooden_axe",
         "selection_tool_name": "Wooden Axe",
-        "particle_effects": "minecraft:villager_happy"
+        "particle_effects": "minecraft:villager_happy",
+        "player_max_ple": 600
     }
 }
