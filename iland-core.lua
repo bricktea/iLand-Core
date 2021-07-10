@@ -685,6 +685,7 @@ function FORM_land_mgr(player,raw,data)
 	if raw[10]~='' then
 		cfg.land.land_min_square = tonumber(raw[10])
 	end
+	cfg.land_buy.refund_rate = raw[11]/100
 	if raw[13]==1 then
 		if cfg.money.protocol=='scoreboard' then
 			cfg.money.protocol='llmoney'
@@ -698,20 +699,22 @@ function FORM_land_mgr(player,raw,data)
 	if raw[16]~='' then
 		cfg.manager.default_language=raw[16]
 	end
-	if raw[21]~='' then
-		cfg.features.selection_tool_name=raw[21]
-	end
-	if raw[22]~='' then
-		cfg.features.sign_frequency=tonumber(raw[22])
-	end
-	if raw[23]~='' then
-		cfg.features.chunk_side=tonumber(raw[23])
-	end
-
-	cfg.land_buy.refund_rate = raw[11]/100
 	cfg.features.landSign = AIR.toBool(raw[18])
 	cfg.features.particles = AIR.toBool(raw[19])
-	cfg.update_check = AIR.toBool(raw[20])
+	cfg.features.force_talk = AIR.toBool(raw[20])
+	cfg.update_check = AIR.toBool(raw[21])
+	if raw[22]~='' then
+		cfg.features.selection_tool_name=raw[22]
+	end
+	if raw[23]~='' then
+		cfg.features.sign_frequency=tonumber(raw[23])
+	end
+	if raw[24]~='' then
+		cfg.features.chunk_side=tonumber(raw[24])
+	end
+	if raw[25]~='' then
+		cfg.features.player_max_ple=tonumber(raw[25])
+	end
 
 	ILAPI.save()
 	
@@ -948,6 +951,7 @@ function IL_Manager_GUI(player)
 end
 function IL_Manager_OPGUI(player)
 	local landlst={}
+	local lid=ILAPI.PosGetLand(AIR.pos2vec({Actor:getPos(player)}))
 	for i,v in pairs(land_data) do
 		local thisOwner=ILAPI.GetOwner(i)
 		if thisOwner~='?' then thisOwner=Actor:xid2str(thisOwner) else thisOwner='?' end
@@ -955,6 +959,9 @@ function IL_Manager_OPGUI(player)
 			landlst[#landlst+1]='['.._tr('gui.landmgr.unnamed')..'] ('..thisOwner..') ['..i..']'
 		else
 			landlst[#landlst+1]=land_data[i].settings.nickname..' ('..thisOwner..') ['..i..']'
+		end
+		if i==lid then
+			landlst[#landlst] = _tr('gui.oplandmgr.there')..landlst[#landlst]
 		end
 	end
 	table.insert(landlst,1,'['.._tr('gui.general.plzchose')..']')
@@ -1001,10 +1008,12 @@ function IL_Manager_OPGUI(player)
 									_tr('gui.oplandmgr.features'),
 									_tr('gui.oplandmgr.features.landsign'),tostring(cfg.features.landSign),
 									_tr('gui.oplandmgr.features.particles'),tostring(cfg.features.particles),
+									_tr('gui.oplandmgr.features.forcetalk'),tostring(cfg.features.force_talk),
 									_tr('gui.oplandmgr.features.autochkupd'),tostring(cfg.update_check),
 									_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name,
 									_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency,
-									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
+									_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side,
+									_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple)
 end
 function IL_FastMgr_GUI(player)
 	local landId = TRS_Form[player].landId

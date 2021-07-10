@@ -1,6 +1,6 @@
  > Version **2.0**
 
- - [ ] OPLMgr显示脚下领地
+ - [x] OPLMgr显示脚下领地
  - [x] 圈地过大关闭粒子特效
  - [x] UseItem分割权限
  - [x] 添加onBlockInteractedWith拦截更多容器，权限分割
