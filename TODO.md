@@ -13,7 +13,7 @@
  - [x] LandTp防卡墙
  - [x] Title显示设定
  - [x] land命令GUI重设计
- - [ ] 自实现XUIDDB
+ - [x] 自实现XUIDDB
  - [x] 更新版本号格式
  - [x] 修复购买领地命令中的几处问题
 

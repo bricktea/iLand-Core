@@ -21,6 +21,10 @@ local AIR = require('airLibs')
 if Utils:isExist(data_path..'config.json') == false then
 	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
 end
+if Utils:isExist(data_path..'xidreg.json') == false then
+	print('[ILand] Creating xidreg.json...')
+	Utils:WriteAllText(data_path..'xidreg.json','[]')
+end
 
 -- check depends version
 if tonumber(lllVersion()) < minLLVer then
@@ -46,6 +50,7 @@ end
 local cfg = json.decode(Utils:ReadAllText(data_path..'config.json'))
 land_data = json.decode(Utils:ReadAllText(data_path..'data.json'))
 land_owners = json.decode(Utils:ReadAllText(data_path..'owners.json'))
+XuidDB = json.decode(Utils:ReadAllText(data_path..'xidreg.json'))
 
 -- preload function
 function ILAPI.save()
@@ -319,9 +324,14 @@ function EV_playerJoin(e)
 	TRS_Form[e]={}
 	TRS_Form[e].inland='null'
 	local xuid=Actor:getXuid(e)
+	local name=Actor:getName(e)
 	if land_owners[xuid] == nil then
 		land_owners[xuid]={}
 		ILAPI.save()
+	end
+	if XuidDB[name]==nil then
+		XuidDB[name]=xuid
+		Utils:WriteAllText(data_path..'xidreg.json',json.encode(XuidDB))
 	end
 end
 function EV_playerLeft(e)
@@ -432,7 +442,7 @@ function FORM_land_gui_trust(player,raw,data)
 	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
 	if raw[2]==1 then
 		if raw[3]==0 then return end
-		local x=Actor:str2xid(TRS_Form[player].playerList[raw[3]+1])
+		local x=GetXuidFromId(TRS_Form[player].playerList[raw[3]+1])
 		local n=#landshare+1
 		if Actor:getXuid(player)==x then
 			sendText(player,_tr('title.landtrust.cantaddown'));return
@@ -451,7 +461,7 @@ function FORM_land_gui_trust(player,raw,data)
 	end
 	if raw[4]==1 then
 		if raw[5]==0 then return end
-		local x=Actor:str2xid(TRS_Form[player].playerList[raw[5]+1])
+		local x=GetXuidFromId(TRS_Form[player].playerList[raw[5]+1])
 		table.remove(landshare,AIR.isValInList(landshare,x))
 		ILAPI.save()
 		GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
@@ -493,7 +503,7 @@ function FORM_land_gui_transfer(player,raw,data)
 	if raw[2]==0 then return end
 	local landId=TRS_Form[player].landId
 	local xuid=Actor:getXuid(player)
-	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
+	local go=GetXuidFromId(TRS_Form[player].playerList[raw[2]+1])
 	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -501,7 +511,7 @@ function FORM_land_gui_transfer(player,raw,data)
 	GUI(player,'ModalForm','FORM_BACK_LandMgr',_tr('gui.general.complete'),
 									AIR.gsubEx(_tr('title.landtransfer.complete'),
 										'<a>',ILAPI.GetNickname(landId,true),
-										'<b>',Actor:xid2str(go)),
+										'<b>',GetIdFromXuid(go)),
 									_tr('gui.general.back'),
 									_tr('gui.general.close'))
 end
@@ -610,7 +620,7 @@ function FORM_land_gui(player,raw,data,lid)
 		TRS_Form[player].playerList = GetOnlinePlayerList()
 		local d=AIR.shacopy(land_data[landId].settings.share)
 		for i, v in pairs(d) do
-			d[i]=Actor:xid2str(d[i])
+			d[i]=GetIdFromXuid(d[i])
 		end
 		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
 		table.insert(TRS_Form[player].playerList,1,'['.._tr('gui.general.plzchose')..']')
@@ -660,7 +670,7 @@ function FORM_land_mgr_transfer(player,raw,data)
 	local landId=TRS_Form[player].targetland
 	local from=ILAPI.GetOwner(landId)
 	if from=='?' then return end
-	local go=Actor:str2xid(TRS_Form[player].playerList[raw[2]+1])
+	local go=GetXuidFromId(TRS_Form[player].playerList[raw[2]+1])
 	if go==from then return end
 	table.remove(land_owners[from],AIR.isValInList(land_owners[from],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -668,12 +678,12 @@ function FORM_land_mgr_transfer(player,raw,data)
 	GUI(player,'ModalForm','FORM_BACK_LandOPMgr',_tr('gui.general.complete'),
 									AIR.gsubEx(_tr('title.landtransfer.complete'),
 										'<a>',landId,
-										'<b>',Actor:xid2str(go)),
+										'<b>',GetIdFromXuid(go)),
 									_tr('gui.general.back'),
 									_tr('gui.general.close'))
 end
 function FORM_land_mgr(player,raw,data)
-	
+
 	-- config.json
 
 	if raw[8]~='' then
@@ -954,7 +964,7 @@ function IL_Manager_OPGUI(player)
 	local lid=ILAPI.PosGetLand(AIR.pos2vec({Actor:getPos(player)}))
 	for i,v in pairs(land_data) do
 		local thisOwner=ILAPI.GetOwner(i)
-		if thisOwner~='?' then thisOwner=Actor:xid2str(thisOwner) else thisOwner='?' end
+		if thisOwner~='?' then thisOwner=GetIdFromXuid(thisOwner) else thisOwner='?' end
 		if land_data[i].settings.nickname=='' then
 			landlst[#landlst+1]='['.._tr('gui.landmgr.unnamed')..'] ('..thisOwner..') ['..i..']'
 		else
@@ -1496,6 +1506,18 @@ function did2dim(id)
 	if id==1 then return _tr('talk.dim.one') end
 	if id==2 then return _tr('talk.dim.two') end
 end
+function GetIdFromXuid(xuid)
+	for id,xid in pairs(XuidDB) do
+		if xid==xuid then return id end
+	end
+	return xuid
+end
+function GetXuidFromId(playerid)
+	if XuidDB[playerid]==nil then
+		return playerid
+	end
+	return XuidDB[playerid]
+end
 
 -- minecraft -> events
 function IL_LIS_onPlayerDestroyBlock(player,block,x,y,z,dim)
@@ -1669,7 +1691,7 @@ function IL_TCB_LandSign()
 		if landId==TRS_Form[v].inland then return end -- signed
 		local owner=ILAPI.GetOwner(landId)
 		local ownername='?'
-		if owner~='?' then ownername=Actor:xid2str(owner) end
+		if owner~='?' then ownername=GetIdFromXuid(owner) end
 		local slname = ILAPI.GetNickname(landId,false)
 		if Actor:getXuid(v)==owner then
 			if not(land_data[landId].settings.signtome) then return end
