@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '2.0'
+local plugin_version = '2.01'
 local langVer = 200
 local minLLVer = 210613
 local minAirVer = 101
@@ -1092,7 +1092,7 @@ function IL_CmdFunc(player,cmd)
 	if opt[1] == MainCmd and opt[2]==nil then
 		local ppos = AIR.pos2vec({Actor:getPos(player)})
 		local lid = ILAPI.PosGetLand(ppos)
-		if lid~=-1 then
+		if lid~=-1 and (ILAPI.GetOwner(lid)==xuid) then
 			TRS_Form[player].landId=lid
 			IL_FastMgr_GUI(player)
 		else
