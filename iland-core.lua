@@ -1809,5 +1809,3 @@ end
 -- print
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
 print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
-
-return ILAPI
