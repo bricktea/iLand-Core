@@ -8,13 +8,13 @@
 local plugin_version = '2.10'
 local langVer = 210
 local minAirVer = 200
-local minLXLVer = 100
+local minLXLVer = 1
 local data_path = 'plugins\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
 local debug_mode = false
-local json = require('dkjson')
-local AIR = require('airLibs')
+local json = lxl.require('dkjson.lua')
+local AIR = lxl.require('airLibs.lua')
 
 -- check file
 if file.exists(data_path..'config.json') == false then
@@ -35,7 +35,7 @@ function chklxlver()
 		return -1
 	end
 end
-if chklxlver=-1 then
+if chklxlver==-1 then
 	print('[ILand] ERR!! LiteXLoader too old, please use latest version, here ↓')
 	print('[ILand] ERR!! https://www.minebbs.com/')
 	print('[ILand] ERR!! Plugin closing...')
@@ -460,7 +460,7 @@ function FORM_land_gui(player,data,lid)
 		player.sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
 			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
-					'<a>',Actor:getName(player),
+					'<a>',player.realName,
 					'<m>',landId,
 					'<n>',nname,
 					'<b>',land_data[landId].range.start_position[1],
@@ -629,9 +629,9 @@ function FORM_land_mgr(player,data)
 	end
 	cfg.land_buy.refund_rate = data[11]/100
 	if data[13]==1 then
-		cfg.money.protocol=='scoreboard'
+		cfg.money.protocol='scoreboard'
 	else
-		cfg.money.protocol=='llmoney'
+		cfg.money.protocol='llmoney'
 	end
 	if data[14]~='' then
 		cfg.money.scoreboard_objname=data[14]
@@ -964,7 +964,7 @@ function GUI_OPLMgr(player)
 	Form.addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
 	Form.addInput(_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency)
 	Form.addInput(_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
-	Form.addInput(_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple))
+	Form.addInput(_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple)
 
 	player.sendForm(Form,FORM_land_mgr)						
 end
@@ -1304,7 +1304,7 @@ end
 -- Minecraft -> Eventing
 function Eventing_onJoin(player)
 	local xuid = player.xuid
-	debug_landquery==player 
+	debug_landquery=player 
 	TRS_From[xuid] = {}
 	TRS_From[xuid].inland = 'null'
 	if land_owners[xuid]==nil then
@@ -1429,7 +1429,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [tp] LandTp GUI
 	if opt[2] == 'tp' and cfg.features.landtp then
 		local tplands = { '['.._tr('gui.general.plzchose')..']' }
-		for i,landId in pairs(ILAPI.GetPlayerLands(xuid) do
+		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
 			local name = ILAPI.GetNickname(landId,true)
 			local xpos = land_data[landId].settings.tpoint
 			tplands[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
@@ -1786,18 +1786,18 @@ if cfg.update_check then
 end
 
 -- register cmd.
-mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args){})
-mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args){})
+mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
+mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
 if cfg.features.landtp then
-	mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args){})
-	mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args){})
+	mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
 end
 
 -- print

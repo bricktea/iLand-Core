@@ -5,6 +5,7 @@ iland/lang/*
 CrashLogger/*
 LiteLoader/*
 LiteXLoader/*
+lib/*
 LLMoney
 *.cmd
 *.dll
