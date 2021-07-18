@@ -13,131 +13,9 @@ local data_path = 'plugins\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
 local debug_mode = false
-local json = lxl.require('dkjson.lua')
-local AIR = lxl.require('airLibs.lua')
+lxl.require('airLibs.lua')
 
--- check file
-if file.exists(data_path..'config.json') == false then
-	print('[ILand] ERR!! Configure file not found, plugin is closing...');return
-end
-
--- check depends version
-if AIR.VERSION < minAirVer then
-	print('[ILand] ERR!! AirLibs too old, please use latest version, here ↓')
-	print('[ILand] ERR!! https://www.minebbs.com/')
-	print('[ILand] ERR!! Plugin closing...')
-	return
-end
-function chklxlver()
-	local b = lxl.version
-	local nV = b.major*100+b.minor*10+b.build
-	if nV<minLXLVer then
-		return -1
-	end
-end
-if chklxlver==-1 then
-	print('[ILand] ERR!! LiteXLoader too old, please use latest version, here ↓')
-	print('[ILand] ERR!! https://www.minebbs.com/')
-	print('[ILand] ERR!! Plugin closing...')
-	return
-end
-
--- load data file
-local cfg = json.decode(file.readFrom(data_path..'config.json'))
-land_data = json.decode(file.readFrom(data_path..'data.json'))
-land_owners = json.decode(file.readFrom(data_path..'owners.json'))
-
--- preload function
-function ILAPI.save()
-	file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
-	file.writeTo(data_path..'data.json',json.encode(land_data))
-	file.writeTo(data_path..'owners.json',json.encode(land_owners,{indent=true}))
-end
-function pos2chunk(pos)
-	local p = cfg.features.chunk_side
-	return math.floor(pos.x/p),math.floor(pos.z/p)
-end
-function fmCube(posA,posB)
-	if posA.x>posB.x then posA.x,posB.x = posB.x,posA.x end
-	if posA.y>posB.y then posA.y,posB.y = posB.y,posA.y end
-	if posA.z>posB.z then posA.z,posB.z = posB.z,posA.z end
-	return A,B
-end
-
--- cfg -> updater
-do
-	if cfg.version==nil or cfg.version<114 then
-		print('[ILand] Configure file too old, you must rebuild it.')
-		return
-	end
-	if cfg.version==114 then
-		cfg.version=115
-		cfg.features.landtp=true
-		for landId,data in pairs(land_data) do
-			land_data[landId].settings.tpoint={}
-			land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
-			land_data[landId].settings.tpoint[2]=land_data[landId].range.start_position[2]
-			land_data[landId].settings.tpoint[3]=land_data[landId].range.start_position[3]
-			land_data[landId].settings.signtome=true
-			land_data[landId].settings.signtother=true
-		end
-		ILAPI.save()
-	end
-	if cfg.features.selection_tool_name==nil then
-		cfg.features.selection_tool_name='Wooden Axe'
-		ILAPI.save()
-	end
-	if cfg.version==115 then
-		cfg.version=200
-		for landId,data in pairs(land_data) do
-			local perm = land_data[landId].permissions
-			local TMPPM = AIR.deepcopy(perm.allow_use_item)
-			local TMPBL = AIR.deepcopy(perm.allow_open_barrel)
-			perm.use_anvil = TMPPM
-			perm.use_barrel = TMPPM
-			perm.use_beacon = TMPPM
-			perm.use_bed = TMPPM
-			perm.use_bell = TMPPM
-			perm.use_blast_furnace = TMPPM
-			perm.use_brewing_stand = TMPPM
-			perm.use_campfire = TMPPM
-			perm.use_cartography_table = TMPPM
-			perm.use_composter = TMPPM
-			perm.use_crafting_table = TMPPM
-			perm.use_daylight_detector = TMPPM
-			perm.use_dispenser = TMPPM
-			perm.use_dropper = TMPPM
-			perm.use_enchanting_table = TMPPM
-			perm.use_fence_gate = TMPPM
-			perm.use_furnace = TMPPM
-			perm.use_grindstone = TMPPM
-			perm.use_hopper = TMPPM
-			perm.use_jukebox = TMPPM
-			perm.use_loom = TMPPM
-			perm.use_noteblock = TMPPM
-			perm.use_shulker_box = TMPPM
-			perm.use_smithing_table = TMPPM
-			perm.use_smoker = TMPPM
-			perm.use_trapdoor = TMPPM
-			perm.use_lectern = TMPPM
-			perm.use_cauldron = TMPPM
-			perm.allow_use_item = nil
-			perm.allow_open_barrel = nil
-		end
-		cfg.features.force_talk = false
-		cfg.features.player_max_ple = 600
-		ILAPI.save()
-	end
-end
-
--- load language file
-local i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-if i18n_data.VERSION ~= langVer then
-	print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
-	return
-end
-
--- load chunks
+local VecMap={}
 function updateChunk(landId,mode)
 	local TxTz={}
 	local dim = land_data[landId].range.dim
@@ -192,21 +70,6 @@ function updateChunk(landId,mode)
 	end
 
 end
-function buildChunks()
-	ChunkMap={}
-
-	ChunkMap[0] = {} -- 主世界
-	ChunkMap[1] = {} -- 地狱
-	ChunkMap[2] = {} -- 末地
-
-	for landId,data in pairs(land_data) do
-		updateChunk(landId,'add')
-	end
-end
-buildChunks()
-
--- load land VecMap
-local VecMap={}
 function updateVecMap(landId,mode)
 	if mode=='add' then
 		local spos = land_data[landId].range.start_position
@@ -220,13 +83,23 @@ function updateVecMap(landId,mode)
 		VecMap[landId]=nil
 	end
 end
+function buildChunks()
+	ChunkMap={}
+
+	ChunkMap[0] = {} -- 主世界
+	ChunkMap[1] = {} -- 地狱
+	ChunkMap[2] = {} -- 末地
+
+	for landId,data in pairs(land_data) do
+		updateChunk(landId,'add')
+	end
+end
 function buildVecMap()
 	VecMap={}
 	for landId,data in pairs(land_data) do
 		updateVecMap(landId,'add')
 	end
 end
-buildVecMap()
 
 -- form -> callback
 function FORM_NULL(a,b) end
@@ -1137,6 +1010,11 @@ end
 function ILAPI.GetVersion()
 	return plugin_version
 end
+function ILAPI.save()
+	file.writeTo(data_path..'config.json',data.toJson(cfg,4))
+	file.writeTo(data_path..'data.json',data.toJson(land_data))
+	file.writeTo(data_path..'owners.json',data.toJson(land_owners,4))
+end
 
 -- feature function
 function GetOnlinePlayerList() -- player namelist
@@ -1299,6 +1177,16 @@ function GetXuidFromId(playerid)
 	else
 		return playerid
 	end
+end
+function pos2chunk(pos)
+	local p = cfg.features.chunk_side
+	return math.floor(pos.x/p),math.floor(pos.z/p)
+end
+function fmCube(posA,posB)
+	if posA.x>posB.x then posA.x,posB.x = posB.x,posA.x end
+	if posA.y>posB.y then posA.y,posB.y = posB.y,posA.y end
+	if posA.z>posB.z then posA.z,posB.z = posB.z,posA.z end
+	return A,B
 end
 
 -- Minecraft -> Eventing
@@ -1722,25 +1610,15 @@ mc.listen('onAttack',Eventing_onAttack)
 mc.listen('onExplode',Eventing_onExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
 mc.listen('onDropItem',Eventing_onDropItem)
-mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
+-- mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
 
--- timer -> landsign
+-- timer -> landsign|particles|debugger
 function enableLandSign()
 	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
 end
-if cfg.features.landSign then
-	enableLandSign()
-end
-
--- timer -> particles
 function enableParticles()
 	CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
 end
-if cfg.features.particles then
-	enableParticles()
-end
-
--- timer -> debugger
 function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
 	local pos = debug_landquery.pos
@@ -1756,14 +1634,11 @@ function DEBUG_LANDQUERY()
 		end
 	end
 end
-if debug_mode then
-	setInterval(DEBUG_LANDQUERY,3*1000)
-end
 
 -- check update
 function Ncb_online(code,result)
 	if code==200 then
-		local data=json.decode(result)
+		local data=data.parseJson(result)
 		
 		-- global
 		iland_latestver = data.version
@@ -1781,24 +1656,154 @@ function Ncb_online(code,result)
 		print('[ILand] ERR!! Get version info failed.')
 	end
 end
-if cfg.update_check then
-	network.httpGet('http://cdisk.amd.rocks/tmp/ILAND/v111_version',Ncb_online)
-end
 
--- register cmd.
-mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
-mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
-if cfg.features.landtp then
-	mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
-end
+mc.listen('onServerStarted',function()
+	function throwErr(x)
+		if x==-1 then
+			print('[ILand] ERR!! Configure file not found, plugin is closing...')
+		end
+		if x==-2 then
+			print('[ILand] ERR!! LiteXLoader too old, please use latest version, here ↓')
+		end
+		if x==-3 then
+			print('[ILand] ERR!! AirLibs too old, please use latest version, here ↓')
+		end
+		if x==-2 or x==-3 then
+			print('[ILand] ERR!! https://www.minebbs.com/')
+			print('[ILand] ERR!! Plugin closing...')
+		end
+		if x==-4 then
+			print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
+		end
+		mc.runcmd('stop')
+	end
+
+	-- Check file
+	if file.exists(data_path..'config.json') == false then
+		throwErr(-1)
+	end
+	
+	-- Check depends version
+	local b = lxl.version()
+	local nV = b.major*100+b.minor*10+b.build
+	if nV<minLXLVer then
+		throwErr(-2)
+	end
+	if AIR.VERSION < minAirVer then
+		throwErr(-3)
+	end
+
+	-- Load data file
+	cfg = data.parseJson(file.readFrom(data_path..'config.json'))
+	land_data = data.parseJson(file.readFrom(data_path..'data.json'))
+	land_owners = data.parseJson(file.readFrom(data_path..'owners.json'))
+
+	-- Configure Updater
+	do
+		if cfg.version==nil or cfg.version<114 then
+			print('[ILand] Configure file too old, you must rebuild it.')
+			return
+		end
+		if cfg.version==114 then
+			cfg.version=115
+			cfg.features.landtp=true
+			for landId,data in pairs(land_data) do
+				land_data[landId].settings.tpoint={}
+				land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
+				land_data[landId].settings.tpoint[2]=land_data[landId].range.start_position[2]
+				land_data[landId].settings.tpoint[3]=land_data[landId].range.start_position[3]
+				land_data[landId].settings.signtome=true
+				land_data[landId].settings.signtother=true
+			end
+			ILAPI.save()
+		end
+		if cfg.features.selection_tool_name==nil then
+			cfg.features.selection_tool_name='Wooden Axe'
+			ILAPI.save()
+		end
+		if cfg.version==115 then
+			cfg.version=200
+			for landId,data in pairs(land_data) do
+				local perm = land_data[landId].permissions
+				local TMPPM = AIR.deepcopy(perm.allow_use_item)
+				local TMPBL = AIR.deepcopy(perm.allow_open_barrel)
+				perm.use_anvil = TMPPM
+				perm.use_barrel = TMPPM
+				perm.use_beacon = TMPPM
+				perm.use_bed = TMPPM
+				perm.use_bell = TMPPM
+				perm.use_blast_furnace = TMPPM
+				perm.use_brewing_stand = TMPPM
+				perm.use_campfire = TMPPM
+				perm.use_cartography_table = TMPPM
+				perm.use_composter = TMPPM
+				perm.use_crafting_table = TMPPM
+				perm.use_daylight_detector = TMPPM
+				perm.use_dispenser = TMPPM
+				perm.use_dropper = TMPPM
+				perm.use_enchanting_table = TMPPM
+				perm.use_fence_gate = TMPPM
+				perm.use_furnace = TMPPM
+				perm.use_grindstone = TMPPM
+				perm.use_hopper = TMPPM
+				perm.use_jukebox = TMPPM
+				perm.use_loom = TMPPM
+				perm.use_noteblock = TMPPM
+				perm.use_shulker_box = TMPPM
+				perm.use_smithing_table = TMPPM
+				perm.use_smoker = TMPPM
+				perm.use_trapdoor = TMPPM
+				perm.use_lectern = TMPPM
+				perm.use_cauldron = TMPPM
+				perm.allow_use_item = nil
+				perm.allow_open_barrel = nil
+			end
+			cfg.features.force_talk = false
+			cfg.features.player_max_ple = 600
+			ILAPI.save()
+		end
+	end
+	
+	-- Load&Check i18n file
+	i18n_data = data.parseJson(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+	if i18n_data.VERSION ~= langVer then
+		throwErr(-4)
+	end
+	-- Build maps
+	buildChunks()
+	buildVecMap()
+
+	-- Make timer
+	if cfg.features.landSign then
+		enableLandSign()
+	end
+	if cfg.features.particles then
+		enableParticles()
+	end
+	if debug_mode then
+		setInterval(DEBUG_LANDQUERY,3*1000)
+	end
+
+	-- Check Update
+	if cfg.update_check then
+		network.httpGet('http://cdisk.amd.rocks/tmp/ILAND/v111_version',Ncb_online)
+	end
+
+	-- register cmd.
+	mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
+	mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
+	if cfg.features.landtp then
+		mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
+	end
+end)
 
 -- print
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
