@@ -19,6 +19,7 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           mkdir D:/out
+          mkdir D:/out/lib
           mkdir D:/out/iland
           mkdir D:/out/iland/lang
         
