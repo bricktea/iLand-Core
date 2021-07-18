@@ -1,5 +1,0 @@
-type=full,cb=%1,title="%2"
-type=label,text="%3"
-type=label,text="%4"
-type=toggle,text=%5,def=%6
-type=toggle,text=%7,def=%8

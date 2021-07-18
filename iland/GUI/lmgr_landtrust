@@ -1,6 +1,0 @@
-type=full,cb=%1,title="%2"
-type=label,text="%3"
-type=toggle,text="%4",def=false
-type=dropdown,text="%5",args=%6
-type=toggle,text="%7",def=false
-type=dropdown,text="%8",args=%9

@@ -1,4 +1,0 @@
-type=full,cb=%1,title="%2"
-type=label,text="%3"
-type=dropdown,text="%4",args=%5
-type=dropdown,text="%6",args=%7
