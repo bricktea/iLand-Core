@@ -13,8 +13,8 @@ Powerful land plugin, made by lua.<br>
 [cJson](https://github.com/DaveGamble/cJSON) | [LLMoney](https://www.minebbs.com/resources/llmoney-ll.2385/)
 
 ### Other Loader
-Loader | Version | Status
+Loader | (End) Version | Status
 -|-|-
-LiteXLoader | +now | Adapting...
-LiteLoader-Lua | 2.01 | Stop support [End Version](https://github.com/McAirLand/iLand-Core/tree/LiteLoader-Lua)
-IronLuaRunner | 1.1.0 | Stop Support [End Version](https://github.com/McAirLand/iLand-Core/tree/IronLuaRunner)
+**LiteXLoader** | **+now** | **Adapting...**
+LiteLoader-Lua | [2.01](https://github.com/McAirLand/iLand-Core/tree/LiteLoader-Lua) | Stop support
+IronLuaRunner | [1.1.0](https://github.com/McAirLand/iLand-Core/tree/IronLuaRunner) | Stop Support
