@@ -1,7 +1,16 @@
-# ILL
-async/*
-pl/*
-lua/iland/lang/*
-init.lua
-sync.cmd
+# Language Pack
+iland/lang/*
+
+# Other Plugins
+CrashLogger/*
+LiteLoader/*
+LiteXLoader/*
+LLMoney
+*.cmd
+*.dll
+
+# Others
 givecookie.lua
+test.lua
+BaseLib.*
+preload.conf
