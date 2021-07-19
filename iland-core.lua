@@ -132,7 +132,7 @@ function FORM_land_buy(player,id)
 	local result={fmCube(A,B)}
 	ILAPI.CreateLand(xuid,result[1],result[2],newLand[xuid].dim)
 	newLand[xuid]=nil
-	player.sendModalForm(
+	player:sendModalForm(
 		'Complete.',
 		_tr('gui.buyland.succeed'),
 		_tr('gui.general.looklook'),
@@ -147,7 +147,7 @@ function FORM_land_gui_cfg(player,data)
 	land_data[landId].settings.signtother=AIR.toBool(raw[4])
 	ILAPI.save()
 
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
 		_tr('gui.general.back'),
@@ -199,7 +199,7 @@ function FORM_land_gui_perm(player,data)
 	perm.allow_exploding = AIR.toBool(data[40])
 
 	ILAPI.save()
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
 		_tr('gui.general.back'),
@@ -224,7 +224,7 @@ function FORM_land_gui_trust(player,data)
 		landshare[n]=x
 		ILAPI.save()
 		if data[4]~=1 then 
-			player.sendModalForm(
+			player:sendModalForm(
 				_tr('gui.general.complete'),
 				'Complete.',
 				_tr('gui.general.back'),
@@ -238,7 +238,7 @@ function FORM_land_gui_trust(player,data)
 		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[5]+1])
 		table.remove(landshare,AIR.isValInList(landshare,x))
 		ILAPI.save()
-		player.sendModalForm(
+		player:sendModalForm(
 			_tr('gui.general.complete'),
 			'Complete.',
 			_tr('gui.general.back'),
@@ -254,7 +254,7 @@ function FORM_land_gui_name(player,data)
 	end
 	land_data[landId].settings.nickname=data[2]
 	ILAPI.save()
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
 		_tr('gui.general.back'),
@@ -274,7 +274,7 @@ function FORM_land_gui_describe(player,data)
 	end
 	land_data[landId].settings.describe=data[2]
 	ILAPI.save()
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
 		_tr('gui.general.back'),
@@ -291,7 +291,7 @@ function FORM_land_gui_transfer(player,data)
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',GetIdFromXuid(go)),
 		_tr('gui.general.back'),
@@ -304,7 +304,7 @@ function FORM_land_gui_delete(player,id)
 	local landId=TRS_Form[xuid].landId
 	ILAPI.DeleteLand(landId)
 	money_add(player,TRS_Form[xuid].landvalue)
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
 		_tr('gui.general.back'),
@@ -339,7 +339,7 @@ function FORM_land_gui(player,data,lid)
 		local vol = length * width * height
 		local squ = length * width
 		local nname=ILAPI.GetNickname(landId,false)
-		player.sendModalForm(
+		player:sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
 			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
 					'<a>',player.realName,
@@ -364,59 +364,59 @@ function FORM_land_gui(player,data,lid)
 			isclosed=' ('.._tr('talk.features.closed')..')'
 		end
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landcfg.title'))
-		Form.addLabel(_tr('gui.landcfg.tip'))
-		Form.addLabel(_tr('gui.landcfg.landsign')..isclosed)
-		Form.addSwitch(_tr('gui.landcfg.landsign.tome'),land_data[landId].settings.signtome)
-		Form.addSwitch(_tr('gui.landcfg.landsign.tother'),land_data[landId].settings.signtother)
-		player.sendForm(Form,FORM_land_gui_cfg)
+		Form:setTitle(_tr('gui.landcfg.title'))
+		Form:addLabel(_tr('gui.landcfg.tip'))
+		Form:addLabel(_tr('gui.landcfg.landsign')..isclosed)
+		Form:addSwitch(_tr('gui.landcfg.landsign.tome'),land_data[landId].settings.signtome)
+		Form:addSwitch(_tr('gui.landcfg.landsign.tother'),land_data[landId].settings.signtother)
+		player:sendForm(Form,FORM_land_gui_cfg)
 		return
 	end
 	if raw[3]==2 then --编辑领地权限
 		local perm = land_data[landId].permissions
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landmgr.landperm.title'))
-		Form.addLabel(_tr('gui.landmgr.landperm.options.title'))
-		Form.addLabel(_tr('gui.landmgr.landperm.basic_options'))
-		Form.addSwitch(_tr('gui.landmgr.landperm.basic_options.place'),perm.allow_place)
-		Form.addSwitch(_tr('gui.landmgr.landperm.basic_options.destroy'),perm.allow_destroy)
-		Form.addSwitch(_tr('gui.landmgr.landperm.basic_options.dropitem'),perm.allow_dropitem)
-		Form.addSwitch(_tr('gui.landmgr.landperm.basic_options.pickupitem'),perm.allow_pickupitem)
-		Form.addSwitch(_tr('gui.landmgr.landperm.basic_options.attack'),perm.allow_attack)
-		Form.addLabel(_tr('gui.landmgr.landperm.funcblock_options'))
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.crafting_table'),perm.use_crafting_table)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.furnace'),perm.use_furnace)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.blast_furnace'),perm.use_blast_furnace)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smoker'),perm.use_smoker)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.brewing_stand'),perm.use_brewing_stand)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cauldron'),perm.use_cauldron)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.anvil'),perm.use_anvil)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.grindstone'),perm.use_grindstone)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.enchanting_table'),perm.use_enchanting_table)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cartography_table'),perm.use_cartography_table)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),perm.use_smithing_table)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.loom'),perm.use_loom)
-		Form.addSwitch(_tr('gui.landmgr.landperm.funcblock_options.beacon'),perm.use_beacon)
-		Form.addLabel(_tr('gui.landmgr.landperm.contblock_options'))
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.barrel'),perm.use_barrel)
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.hopper'),perm.use_hopper)
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.dropper'),perm.use_dropper)
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.dispenser'),perm.use_dispenser)
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.shulker_box'),perm.use_shulker_box)
-		Form.addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.use_chest)
-		Form.addLabel(_tr('gui.landmgr.landperm.other_options'))
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.campfire'),perm.use_campfire)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.trapdoor'),perm.use_trapdoor)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.fence_gate'),perm.use_fence_gate)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.bell'),perm.use_bell)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.jukebox'),perm.use_jukebox)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.noteblock'),perm.use_noteblock)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.composter'),perm.use_composter)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.bed'),perm.use_bed)
-		Form.addSwitch(_tr('gui.landmgr.landperm.other_options.daylight_detector'),perm.use_daylight_detector)
-		Form.addLabel(_tr('gui.landmgr.landperm.editevent'))
-		Form.addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
-		player.sendForm(Form,FORM_land_gui_perm)
+		Form:setTitle(_tr('gui.landmgr.landperm.title'))
+		Form:addLabel(_tr('gui.landmgr.landperm.options.title'))
+		Form:addLabel(_tr('gui.landmgr.landperm.basic_options'))
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.place'),perm.allow_place)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.destroy'),perm.allow_destroy)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.dropitem'),perm.allow_dropitem)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.pickupitem'),perm.allow_pickupitem)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack'),perm.allow_attack)
+		Form:addLabel(_tr('gui.landmgr.landperm.funcblock_options'))
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.crafting_table'),perm.use_crafting_table)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.furnace'),perm.use_furnace)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.blast_furnace'),perm.use_blast_furnace)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smoker'),perm.use_smoker)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.brewing_stand'),perm.use_brewing_stand)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cauldron'),perm.use_cauldron)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.anvil'),perm.use_anvil)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.grindstone'),perm.use_grindstone)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.enchanting_table'),perm.use_enchanting_table)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cartography_table'),perm.use_cartography_table)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),perm.use_smithing_table)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.loom'),perm.use_loom)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.beacon'),perm.use_beacon)
+		Form:addLabel(_tr('gui.landmgr.landperm.contblock_options'))
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.barrel'),perm.use_barrel)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.hopper'),perm.use_hopper)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.dropper'),perm.use_dropper)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.dispenser'),perm.use_dispenser)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.shulker_box'),perm.use_shulker_box)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.use_chest)
+		Form:addLabel(_tr('gui.landmgr.landperm.other_options'))
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.campfire'),perm.use_campfire)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.trapdoor'),perm.use_trapdoor)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fence_gate'),perm.use_fence_gate)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bell'),perm.use_bell)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.jukebox'),perm.use_jukebox)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.noteblock'),perm.use_noteblock)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.composter'),perm.use_composter)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bed'),perm.use_bed)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.daylight_detector'),perm.use_daylight_detector)
+		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
+		Form:addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
+		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if raw[3]==3 then --编辑信任名单
 		TRS_Form[xuid].playerList = GetOnlinePlayerList()
@@ -427,42 +427,42 @@ function FORM_land_gui(player,data,lid)
 		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landtrust.title'))
-		Form.addLabel(_tr('gui.landtrust.tip'))
-		Form.addSwitch(_tr('gui.landtrust.addtrust'),false)
-		Form.addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
-		Form.addSwitch(_tr('gui.landtrust.rmtrust'),false)
+		Form:setTitle(_tr('gui.landtrust.title'))
+		Form:addLabel(_tr('gui.landtrust.tip'))
+		Form:addSwitch(_tr('gui.landtrust.addtrust'),false)
+		Form:addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
+		Form:addSwitch(_tr('gui.landtrust.rmtrust'),false)
 		From.addDropdown(_tr('gui.landtrust.selectplayer'),d)
-		player.sendForm(Form,FORM_land_gui_trust)
+		player:sendForm(Form,FORM_land_gui_trust)
 		return
 	end
 	if raw[3]==4 then --领地nickname
 		local nickn=ILAPI.GetNickname(landId,false)
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landtag.title'))
-		Form.addLabel(_tr('gui.landtag.tip'))
-		Form.addInput("",nickn)
-		player.sendForm(Form,FORM_land_gui_name)
+		Form:setTitle(_tr('gui.landtag.title'))
+		Form:addLabel(_tr('gui.landtag.tip'))
+		Form:addInput("",nickn)
+		player:sendForm(Form,FORM_land_gui_name)
 		return
 	end
 	if raw[3]==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landdescribe.title'))
-		Form.addLabel(_tr('gui.landdescribe.tip'))
-		Form.addInput("",desc)
-		player.sendForm(Form,FORM_land_gui_describe)
+		Form:setTitle(_tr('gui.landdescribe.title'))
+		Form:addLabel(_tr('gui.landdescribe.tip'))
+		Form:addInput("",desc)
+		player:sendForm(Form,FORM_land_gui_describe)
 		return
 	end
 	if raw[3]==6 then --领地过户
 		TRS_Form[xuid].playerList = GetOnlinePlayerList()
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landtransfer.title'))
-		Form.addLabel(_tr('gui.landtransfer.tip'))
-		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
-		player.sendForm(Form,FORM_land_gui_transfer)
+		Form:setTitle(_tr('gui.landtransfer.title'))
+		Form:addLabel(_tr('gui.landtransfer.tip'))
+		Form:addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
+		player:sendForm(Form,FORM_land_gui_transfer)
 		return
 	end
 	if raw[3]==7 then --删除领地
@@ -470,7 +470,7 @@ function FORM_land_gui(player,data,lid)
 		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1
 		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
 		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
-		player.sendModalForm(
+		player:sendModalForm(
 			_tr('gui.delland.title'),
 			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',_tr('talk.credit_name')),
 			_tr('gui.general.yes'),
@@ -490,7 +490,7 @@ function FORM_land_mgr_transfer(player,data)
 	table.remove(land_owners[afrom],AIR.isValInList(land_owners[afrom],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',landId,'<b>',GetIdFromXuid(go)),
 		_tr('gui.general.back'),
@@ -559,7 +559,7 @@ function FORM_land_mgr(player,data)
 	
 	-- lands manager
 
-	if data[5]==0 then player.sendModalForm(_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'),FORM_BACK_LandOPMgr);return end
+	if data[5]==0 then player:sendModalForm(_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'),FORM_BACK_LandOPMgr);return end
 	local count=0;local landId=-1
 	for i,v in pairs(land_data) do
 		count=count+1
@@ -567,7 +567,7 @@ function FORM_land_mgr(player,data)
 	end
 	if landId==-1 then return end
 	if data[6]==1 then -- tp to land.
-		player.teleport(AIR.buildVec(land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dim))
+		player:teleport(AIR.buildVec(land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dim))
 	end
 	if data[6]==2 then -- transfer land.
 		local xuid = player.xuid
@@ -576,17 +576,17 @@ function FORM_land_mgr(player,data)
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		ILAPI.save()
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.oplandmgr.trsland.title'))
-		Form.addLabel(_tr('gui.oplandmgr.trsland.content'))
-		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
-		player.sendForm(Form,FORM_land_mgr_transfer)
+		Form:setTitle(_tr('gui.oplandmgr.trsland.title'))
+		Form:addLabel(_tr('gui.oplandmgr.trsland.content'))
+		Form:addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
+		player:sendForm(Form,FORM_land_mgr_transfer)
 		return
 	end
 	if data[6]==3 then -- delete land.
 		ILAPI.DeleteLand(landId)
 	end
 
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		"Complete.",
 		_tr('gui.general.back'),
@@ -601,12 +601,12 @@ function FORM_landtp(player,data)
 	local tp = land_data[landId].settings.tpoint
 	local dim = land_data[landId].range.dim
 	local safey = GetTopAir(tp[1],tp[2],tp[3],dim)
-	player.teleport(AIR.buildVec(tp[1],safey,tp[3],dim))
+	player:teleport(AIR.buildVec(tp[1],safey,tp[3],dim))
 	local ct = 'Complete.'
 	if safey~=tp[2] then
 		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-tp[2]))
 	end
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.general.complete'),
 		ct,
 		_tr('gui.general.yes'),
@@ -734,7 +734,7 @@ function BoughtProg_CreateOrder(player)
 	--- 购买
     newLand[xuid].landprice = calculation_price(length,width,height)
 
-	player.sendModalForm(
+	player:sendModalForm(
 		_tr('gui.buyland.title'),
 		AIR.gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[xuid].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)),
 		_tr('gui.general.buy'),
@@ -776,12 +776,12 @@ function GUI_LMgr(player)
 	end
 
 	local Form = mc.newCustomForm()
-	Form.setTitle(_tr('gui.landmgr.title'))
-	Form.addLabel(welcomeText)
-	Form.addDropdown(_tr('gui.landmgr.select'),lands)
-	Form.addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
+	Form:setTitle(_tr('gui.landmgr.title'))
+	Form:addLabel(welcomeText)
+	Form:addDropdown(_tr('gui.landmgr.select'),lands)
+	Form:addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
 
-	player.sendForm(Form,FORM_land_gui)
+	player:sendForm(Form,FORM_land_gui)
 end
 function GUI_OPLMgr(player)
 	local landlst={}
@@ -817,54 +817,54 @@ function GUI_OPLMgr(player)
 	local money_protocols = {'LLMoney',_tr('talk.scoreboard')}
 
 	local Form = mc.newCustomForm()
-	Form.setTitle(_tr('gui.oplandmgr.title'))
-	Form.addLabel(_tr('gui.oplandmgr.tip'))
-	Form.addLabel(AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer))
-	Form.addLabel(
+	Form:setTitle(_tr('gui.oplandmgr.title'))
+	Form:addLabel(_tr('gui.oplandmgr.tip'))
+	Form:addLabel(AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer))
+	Form:addLabel(
 		AIR.gsubEx(_tr('gui.oplandmgr.plugin.ver'),'<a>',plugin_version)..'\\n'..
 		AIR.gsubEx(_tr('gui.oplandmgr.plugin.latest'),'<a>',latestVer)..'\\n'..
 		AIR.gsubEx(_tr('gui.oplandmgr.plugin.acement'),'<a>',iAnn)
 	)
-	Form.addLabel(_tr('gui.oplandmgr.landmgr'))
-	Form.addDropdown(_tr('gui.oplandmgr.selectland'),landlst)
-	Form.addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
-	Form.addLabel(_tr('gui.oplandmgr.landcfg'))
-	Form.addInput(_tr('gui.oplandmgr.landcfg.maxland'),cfg.land.player_max_lands)
-	Form.addInput(_tr('gui.oplandmgr.landcfg.maxsqu'),cfg.land.land_max_square)
-	Form.addInput(_tr('gui.oplandmgr.landcfg.minsqu'),cfg.land.land_min_square)
-	Form.addSlider(_tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,tostring(cfg.land_buy.refund_rate*10))
-	Form.addLabel(_tr('gui.oplandmgr.economy'))
-	Form.addDropdown(_tr('gui.oplandmgr.economy.protocol'),money_protocols)
-	Form.addInput(_tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
-	Form.addLabel(_tr('gui.oplandmgr.i18n'))
-	Form.addInput(_tr('gui.oplandmgr.i18n.default'),cfg.manager.default_language)
-	Form.addLabel(_tr('gui.oplandmgr.features'))
-	Form.addSwitch(_tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
-	Form.addSwitch(_tr('gui.oplandmgr.features.particles'),cfg.features.particles)
-	Form.addSwitch(_tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
-	Form.addSwitch(_tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
-	Form.addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
-	Form.addInput(_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency)
-	Form.addInput(_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
-	Form.addInput(_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple)
+	Form:addLabel(_tr('gui.oplandmgr.landmgr'))
+	Form:addDropdown(_tr('gui.oplandmgr.selectland'),landlst)
+	Form:addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
+	Form:addLabel(_tr('gui.oplandmgr.landcfg'))
+	Form:addInput(_tr('gui.oplandmgr.landcfg.maxland'),cfg.land.player_max_lands)
+	Form:addInput(_tr('gui.oplandmgr.landcfg.maxsqu'),cfg.land.land_max_square)
+	Form:addInput(_tr('gui.oplandmgr.landcfg.minsqu'),cfg.land.land_min_square)
+	Form:addSlider(_tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,tostring(cfg.land_buy.refund_rate*10))
+	Form:addLabel(_tr('gui.oplandmgr.economy'))
+	Form:addDropdown(_tr('gui.oplandmgr.economy.protocol'),money_protocols)
+	Form:addInput(_tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
+	Form:addLabel(_tr('gui.oplandmgr.i18n'))
+	Form:addInput(_tr('gui.oplandmgr.i18n.default'),cfg.manager.default_language)
+	Form:addLabel(_tr('gui.oplandmgr.features'))
+	Form:addSwitch(_tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
+	Form:addSwitch(_tr('gui.oplandmgr.features.particles'),cfg.features.particles)
+	Form:addSwitch(_tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
+	Form:addSwitch(_tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
+	Form:addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
+	Form:addInput(_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency)
+	Form:addInput(_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
+	Form:addInput(_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple)
 
-	player.sendForm(Form,FORM_land_mgr)						
+	player:sendForm(Form,FORM_land_mgr)						
 end
 function GUI_FastMgr(player)
 	local landId = TRS_Form[player.xuid].landId
 	local Form = mc.newSimpleForm()
-	Form.setTitle(_tr('gui.fastlmgr.title'))
-	Form.setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
-	Form.addButton(_tr('gui.landmgr.options.landinfo'))
-	Form.addButton(_tr('gui.landmgr.options.landcfg'))
-	Form.addButton(_tr('gui.landmgr.options.landperm'))
-	Form.addButton(_tr('gui.landmgr.options.landtrust'))
-	Form.addButton(_tr('gui.landmgr.options.landtag'))
-	Form.addButton(_tr('gui.landmgr.options.landdescribe'))
-	Form.addButton(_tr('gui.landmgr.options.landtransfer'))
-	Form.addButton(_tr('gui.landmgr.options.delland'))
-	Form.addButton(_tr('gui.general.close'),'textures/ui/icon_import')
-	player.sendSimpleForm(Form,FORM_land_fast)
+	Form:setTitle(_tr('gui.fastlmgr.title'))
+	Form:setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
+	Form:addButton(_tr('gui.landmgr.options.landinfo'))
+	Form:addButton(_tr('gui.landmgr.options.landcfg'))
+	Form:addButton(_tr('gui.landmgr.options.landperm'))
+	Form:addButton(_tr('gui.landmgr.options.landtrust'))
+	Form:addButton(_tr('gui.landmgr.options.landtag'))
+	Form:addButton(_tr('gui.landmgr.options.landdescribe'))
+	Form:addButton(_tr('gui.landmgr.options.landtransfer'))
+	Form:addButton(_tr('gui.landmgr.options.delland'))
+	Form:addButton(_tr('gui.general.close'),'textures/ui/icon_import')
+	player:sendSimpleForm(Form,FORM_land_fast)
 end
 
 -- ILAPI
@@ -1032,7 +1032,7 @@ end
 function money_add(player,value)
 	local M = cfg.money
 	if M.protocol=='scoreboard' then
-		player.addScore(M.scoreboard_objname,value);return
+		player:addScore(M.scoreboard_objname,value);return
 	end
 	if M.protocol=='llmoney' then
 		money.add(player.xuid,value);return
@@ -1042,7 +1042,7 @@ end
 function money_del(player,value)
 	local M = cfg.money
 	if M.protocol=='scoreboard' then
-		player.setScore(M.scoreboard_objname,player.getScore(M.scoreboard_objname)-value)
+		player:setScore(M.scoreboard_objname,player:getScore(M.scoreboard_objname)-value)
 	end
 	if M.protocol=='llmoney' then
 		money.reduce(player.xuid,value);return
@@ -1052,7 +1052,7 @@ end
 function money_get(player)
 	local M = cfg.money
 	if M.protocol=='scoreboard' then
-		return player.getScore(M.scoreboard_objname)
+		return player:getScore(M.scoreboard_objname)
 	end
 	if M.protocol=='llmoney' then
 		return money.get(player.xuid)
@@ -1069,14 +1069,14 @@ end
 function sendText(player,text,mode)
 	-- [mode] 0 = FORCE USE TALK
 	if mode==nil and not(cfg.features.force_talk) then 
-		player.sendText(text,5)
+		player:sendText(text,5)
 		return
 	end
 	if cfg.features.force_talk and mode~=0 then
-		player.sendText('§l§b———————————§a LAND §b———————————\n§r'..text,0)
+		player:sendText('§l§b———————————§a LAND §b———————————\n§r'..text,0)
 	end
 	if mode==0 then
-		player.sendText('§l§b[§a LAND §b] §r'..text,0)
+		player:sendText('§l§b[§a LAND §b] §r'..text,0)
 		return
 	end
 end
@@ -1214,12 +1214,7 @@ function Eventing_onLeft(player)
 	TRS_Form[xuid]=nil
 	ArrayParticles[xuid]=nil
 end
-function nmsl(player)
-	local xuid = player.xuid
-	print(xuid)
-end
 function Eventing_onPlayerCmd(player,cmd)
-	nmsl(player)
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
@@ -1235,12 +1230,12 @@ function Eventing_onPlayerCmd(player,cmd)
 		else
 			local land_count = tostring(#land_owners[xuid])
 			local Form = mc.newSimpleForm()
-			Form.setTitle(_tr('gui.fastgde.title'))
-			Form.setContent(AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
-			Form.addButton(_tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
-			Form.addButton(_tr('gui.fastgde.manage'),'textures/ui/confirm')
-			Form.addButton(_tr('gui.general.close'),'textures/ui/icon_import')
-			player.sendForm(Form,FORM_land_gde)
+			Form:setTitle(_tr('gui.fastgde.title'))
+			Form:setContent(AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
+			Form:addButton(_tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
+			Form:addButton(_tr('gui.fastgde.manage'),'textures/ui/confirm')
+			Form:addButton(_tr('gui.general.close'),'textures/ui/icon_import')
+			player:sendForm(Form,FORM_land_gde)
 		end
 		return false
 	end
@@ -1308,7 +1303,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			pos.z
 		}
 		ILAPI.save()
-		player.sendModalForm(
+		player:sendModalForm(
 			_tr('gui.general.complete'),
 			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(xyz),'<b>',landname),
 			_tr('gui.general.iknow'),
@@ -1327,10 +1322,10 @@ function Eventing_onPlayerCmd(player,cmd)
 			tplands[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
 		end
 		local Form = mc.newCustomForm()
-		Form.setTitle(_tr('gui.landtp.title'))
-		Form.addLabel(_tr('gui.landtp.tip'))
-		Form.addDropdown(_tr('gui.landtp.tip2'),tplands)
-		player.sendForm(Form,FORM_landtp)
+		Form:setTitle(_tr('gui.landtp.title'))
+		Form:addLabel(_tr('gui.landtp.tip'))
+		Form:addDropdown(_tr('gui.landtp.tip2'),tplands)
+		player:sendForm(Form,FORM_landtp)
 		return false
 	end
 
@@ -1412,7 +1407,7 @@ function Eventing_onDestroyBlock(player,block)
 	local xuid=player.xuid
 
 	if TRS_Form[xuid].selectool==0 then
-		local HandItem = player.getHand()
+		local HandItem = player:getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
 		sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',HandItem.name))
 		cfg.features.selection_tool=HandItem.type
@@ -1422,7 +1417,7 @@ function Eventing_onDestroyBlock(player,block)
 	end
 
 	if newLand[xuid]~=nil then
-		local HandItem = player.getHand()
+		local HandItem = player:getHand()
 		if HandItem.isNull() or HandItem.type~=cfg.features.selection_tool then goto PROCESS_1 end
 		BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
 		return -1
@@ -1778,9 +1773,9 @@ mc.listen('onServerStarted',function()
 	buildChunks()
 	buildVecMap()
 
-	--[[ Make timer
+	-- Make timer
 	if cfg.features.landSign then
-		enableLandSign()
+		-- enableLandSign()
 	end
 	if cfg.features.particles then
 		enableParticles()
@@ -1788,7 +1783,6 @@ mc.listen('onServerStarted',function()
 	if debug_mode then
 		setInterval(DEBUG_LANDQUERY,3*1000)
 	end
-	]]
 
 	-- Check Update
 	if cfg.update_check then
@@ -1811,6 +1805,5 @@ mc.listen('onServerStarted',function()
 	end
 end)
 
--- print
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
 print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
