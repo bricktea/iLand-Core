@@ -637,14 +637,14 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			sendText(player,_tr('title.selectrange.failbystep'));return
         end
 		local newland = newLand[xuid]
-		newland.dim = vec4.dim
+		newland.dim = vec4.dimid
 		newland.posA = vec4
 		newland.posA.x=math.modf(newland.posA.x) --省函数...
 		newland.posA.y=math.modf(newland.posA.y)
 		newland.posA.z=math.modf(newland.posA.z)
         sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
 									'<a>','a',
-									'<b>',did2dim(vec4.dim),
+									'<b>',did2dim(vec4.dimid),
 									'<c>',newland.posA.x,
 									'<d>',newland.posA.y,
 									'<e>',newland.posA.z)
@@ -652,7 +652,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		newland.step = 1
     end
     if mode==1 then -- point b
-        if vec4.dim~=newLand[xuid].dim then
+        if vec4.dimid~=newLand[xuid].dim then
 			sendText(player,_tr('title.selectrange.failbycdim'));return
         end
 		local newland = newLand[xuid]
@@ -662,7 +662,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		newland.posB.z=math.modf(newland.posB.z)
         sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
 									'<a>','b',
-									'<b>',did2dim(vec4.dim),
+									'<b>',did2dim(vec4.dimid),
 									'<c>',newland.posB.x,
 									'<d>',newland.posB.y,
 									'<e>',newland.posB.z)
@@ -991,10 +991,10 @@ function ILAPI.GetOwner(landId)
 end
 function ILAPI.PosGetLand(vec4)
 	local Cx,Cz = pos2chunk(vec4)
-	local dim = vec4.dim
+	local dim = vec4.dimid
 	if ChunkMap[dim][Cx]~=nil and ChunkMap[dim][Cx][Cz]~=nil then
 		for n,landId in pairs(ChunkMap[dim][Cx][Cz]) do
-			if vec4.dim==land_data[landId].range.dim and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
+			if dim==land_data[landId].range.dim and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
 				return landId
 			end
 		end
@@ -1421,6 +1421,8 @@ function Eventing_onConsoleCmd(cmd)
 end
 function Eventing_onDestroyBlock(player,block)
 
+	local xuid=player.xuid
+
 	if TRS_Form[xuid].selectool==0 then
 		local HandItem = player.getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
@@ -1442,7 +1444,6 @@ function Eventing_onDestroyBlock(player,block)
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
-	local xuid=player.xuid
 	if land_data[landId].permissions.allow_destroy then return end -- Perm Allow
 	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
 	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
