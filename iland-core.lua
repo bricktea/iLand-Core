@@ -18,7 +18,7 @@ lxl.require('airLibs.lua')
 local VecMap={}
 function updateChunk(landId,mode)
 	local TxTz={}
-	local dim = land_data[landId].range.dim
+	local dim = land_data[landId].range.dimid
 	function txz(x,z)
 		if TxTz[x] == nil then TxTz[x] = {} end
 		if TxTz[x][z] == nil then TxTz[x][z] = {} end
@@ -130,7 +130,7 @@ function FORM_land_buy(player,id)
 	local A=newLand[xuid].posA
 	local B=newLand[xuid].posB
 	local result={fmCube(A,B)}
-	ILAPI.CreateLand(xuid,result[1],result[2],newLand[xuid].dim)
+	ILAPI.CreateLand(xuid,result[1],result[2],newLand[xuid].dimid)
 	newLand[xuid]=nil
 	player:sendModalForm(
 		'Complete.',
@@ -567,7 +567,7 @@ function FORM_land_mgr(player,data)
 	end
 	if landId==-1 then return end
 	if data[6]==1 then -- tp to land.
-		player:teleport(AIR.buildVec(land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dim))
+		player:teleport(AIR.buildVec(land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dimid))
 	end
 	if data[6]==2 then -- transfer land.
 		local xuid = player.xuid
@@ -599,7 +599,7 @@ function FORM_landtp(player,data)
 	local lands = ILAPI.GetPlayerLands(player.xuid)
 	local landId = lands[data[2]]
 	local tp = land_data[landId].settings.tpoint
-	local dim = land_data[landId].range.dim
+	local dim = land_data[landId].range.dimid
 	local safey = GetTopAir(tp[1],tp[2],tp[3],dim)
 	player:teleport(AIR.buildVec(tp[1],safey,tp[3],dim))
 	local ct = 'Complete.'
@@ -631,59 +631,65 @@ function FORM_land_gde(player,id)
 	end
 end
 function BoughtProg_SelectRange(player,vec4,mode)
+	local xuid = player.xuid
     if newLand[xuid]==nil then return end
-    if mode==0 then -- point a
+    if mode==0 then -- point A
         if mode~=newLand[xuid].step then
 			sendText(player,_tr('title.selectrange.failbystep'));return
         end
-		local newland = newLand[xuid]
-		newland.dim = vec4.dimid
-		newland.posA = vec4
-		newland.posA.x=math.modf(newland.posA.x) --省函数...
-		newland.posA.y=math.modf(newland.posA.y)
-		newland.posA.z=math.modf(newland.posA.z)
+		newLand[xuid].dimid = vec4.dimid
+		newLand[xuid].posA.x=math.modf(vec4.x) --省函数...
+		newLand[xuid].posA.y=math.modf(vec4.y)
+		newLand[xuid].posA.z=math.modf(vec4.z)
         sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
 									'<a>','a',
-									'<b>',did2dim(vec4.dimid),
-									'<c>',newland.posA.x,
-									'<d>',newland.posA.y,
-									'<e>',newland.posA.z)
+									'<b>',vec4.dimid,
+									'<c>',newLand[xuid].posA.x,
+									'<d>',newLand[xuid].posA.y,
+									'<e>',newLand[xuid].posA.z)
 									..'\n'..string.gsub(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
-		newland.step = 1
+		newLand[xuid].step = 1
     end
-    if mode==1 then -- point b
-        if vec4.dimid~=newLand[xuid].dim then
+    if mode==1 then -- point B
+        if vec4.dimid~=newLand[xuid].dimid then
 			sendText(player,_tr('title.selectrange.failbycdim'));return
         end
-		local newland = newLand[xuid]
-		newland.posB = vec4
-		newland.posB.x=math.modf(newland.posB.x)
-		newland.posB.y=math.modf(newland.posB.y)
-		newland.posB.z=math.modf(newland.posB.z)
-        sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
-									'<a>','b',
-									'<b>',did2dim(vec4.dimid),
-									'<c>',newland.posB.x,
-									'<d>',newland.posB.y,
-									'<e>',newland.posB.z)
-									..'\n'..string.gsub(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name))
-		newland.step = 2
+		newLand[xuid].posB.x=math.modf(vec4.x)
+		newLand[xuid].posB.y=math.modf(vec4.y)
+		newLand[xuid].posB.z=math.modf(vec4.z)
+        sendText(
+			player,
+			AIR.gsubEx(
+				_tr('title.selectrange.seled'),
+				'<a>','b',
+				'<b>',vec4.dimid,
+				'<c>',newLand[xuid].posB.x,
+				'<d>',newLand[xuid].posB.y,
+				'<e>',newLand[xuid].posB.z)
+				..'\n'..
+				AIR.gsubEx(
+					_tr('title.selectrange.bebuy'),
+					'<a>',cfg.features.selection_tool_name
+				)
+		)
+		newLand[xuid].step = 2
 
-		local edges = cubeGetEdge(newland.posA,newland.posB)
+		local edges = cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
 		-- print(#edges)
 		if #edges>cfg.features.player_max_ple then
 			sendText(player,_tr('title.selectrange.nople'),0)
 		else
-			ArrayParticles[player]={}
-			ArrayParticles[player]=edges
+			ArrayParticles[xuid]={}
+			ArrayParticles[xuid]=edges
 		end
     end
-	if mode==2 then
+	if mode==2 then -- buy Land
 		BoughtProg_CreateOrder(player)
 	end
 end
 function BoughtProg_CreateOrder(player)
-	ArrayParticles[player]=nil
+	local xuid=player.xuid
+	ArrayParticles[xuid]=nil
 	local xuid = player.xuid
     if newLand[xuid]==nil or newLand[xuid].step~=2 then
 		sendText(player,_tr('title.createorder.failbystep'))
@@ -713,7 +719,7 @@ function BoughtProg_CreateOrder(player)
 	--- 领地冲突判断
 	local edge=cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
 	for i=1,#edge do
-		edge[i].dim=newLand[xuid].dim
+		edge[i].dimid=newLand[xuid].dimid
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
 			sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
@@ -721,7 +727,7 @@ function BoughtProg_CreateOrder(player)
 		end
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
-		if land_data[landId].range.dim==newLand[xuid].dim then
+		if land_data[landId].range.dimid==newLand[xuid].dimid then
 			edge=cubeGetEdge(VecMap[landId].a,VecMap[landId].b)
 			for i=1,#edge do
 				if isPosInCube(edge[i],newLand[xuid].posA,newLand[xuid].posB)==true then
@@ -733,10 +739,18 @@ function BoughtProg_CreateOrder(player)
 	end
 	--- 购买
     newLand[xuid].landprice = calculation_price(length,width,height)
-
 	player:sendModalForm(
 		_tr('gui.buyland.title'),
-		AIR.gsubEx(_tr('gui.buyland.content'),'<a>',length,'<b>',width,'<c>',height,'<d>',vol,'<e>',newLand[xuid].landprice,'<f>',_tr('talk.credit_name'),'<g>',money_get(player)),
+		AIR.gsubEx(
+			_tr('gui.buyland.content'),
+			'<a>',length,
+			'<b>',width,
+			'<c>',height,
+			'<d>',vol,
+			'<e>',newLand[xuid].landprice,
+			'<f>',_tr('talk.credit_name'),
+			'<g>',money_get(player)
+		),
 		_tr('gui.general.buy'),
 		_tr('gui.general.close'),
 		FORM_land_buy
@@ -749,7 +763,7 @@ function BoughtProg_GiveUp(player)
         sendText(player,_tr('title.giveup.failed'));return
     end
 	newLand[xuid]=nil
-	ArrayParticles[player]=nil
+	ArrayParticles[xuid]=nil
 	sendText(player,_tr('title.giveup.succeed'))
 end
 function GUI_LMgr(player)
@@ -903,7 +917,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	table.insert(land_data[landId].range.end_position,1,endpos.x)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
-	land_data[landId].range.dim=dimensionid
+	land_data[landId].range.dimid=dimensionid
 
 	-- Land permission
 	perm.allow_destroy=false
@@ -987,7 +1001,7 @@ function ILAPI.PosGetLand(vec4)
 	local dim = vec4.dimid
 	if ChunkMap[dim][Cx]~=nil and ChunkMap[dim][Cx][Cz]~=nil then
 		for n,landId in pairs(ChunkMap[dim][Cx][Cz]) do
-			if dim==land_data[landId].range.dim and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
+			if dim==land_data[landId].range.dimid and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
 				return landId
 			end
 		end
@@ -1003,7 +1017,7 @@ function ILAPI.GetChunk(vec2,dim)
 end
 function ILAPI.GetTpPoint(landId) --return vec4
 	local i = AIR.deepcopy(land_data[landId].settings.tpoint)
-	i[4] = land_data[landId].range.dim
+	i[4] = land_data[landId].range.dimid
 	return AIR.pos2vec(i)
 end
 function ILAPI.GetDistence(landId)
@@ -1035,7 +1049,7 @@ function money_add(player,value)
 		player:addScore(M.scoreboard_objname,value);return
 	end
 	if M.protocol=='llmoney' then
-		money.add(player.xuid,value);return
+		money:add(player.xuid,value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1045,7 +1059,7 @@ function money_del(player,value)
 		player:setScore(M.scoreboard_objname,player:getScore(M.scoreboard_objname)-value)
 	end
 	if M.protocol=='llmoney' then
-		money.reduce(player.xuid,value);return
+		money:reduce(player.xuid,value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1055,7 +1069,7 @@ function money_get(player)
 		return player:getScore(M.scoreboard_objname)
 	end
 	if M.protocol=='llmoney' then
-		return money.get(player.xuid)
+		return money:get(player.xuid)
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1073,10 +1087,10 @@ function sendText(player,text,mode)
 		return
 	end
 	if cfg.features.force_talk and mode~=0 then
-		player:sendText('§l§b———————————§a LAND §b———————————\n§r'..text,0)
+		player:sendText('§l§b———————————§a LAND §b———————————\n§r'..text)
 	end
 	if mode==0 then
-		player:sendText('§l§b[§a LAND §b] §r'..text,0)
+		player:sendText('§l§b[§a LAND §b] §r'..text)
 		return
 	end
 end
@@ -1254,6 +1268,8 @@ function Eventing_onPlayerCmd(player,cmd)
 		end
 		sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		newLand[xuid]={}
+		newLand[xuid].posA={}
+		newLand[xuid].posB={}
 		newLand[xuid].step=0
 		return false
 	end
@@ -1413,14 +1429,14 @@ function Eventing_onDestroyBlock(player,block)
 		cfg.features.selection_tool=HandItem.type
 		ILAPI.save()
 		TRS_Form[xuid].selectool=-1
-		return -1
+		return false
 	end
 
 	if newLand[xuid]~=nil then
 		local HandItem = player:getHand()
-		if HandItem.isNull() or HandItem.type~=cfg.features.selection_tool then goto PROCESS_1 end
+		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then goto PROCESS_1 end
 		BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
-		return -1
+		return false
 	end
 
 	:: PROCESS_1 ::
@@ -1775,10 +1791,10 @@ mc.listen('onServerStarted',function()
 
 	-- Make timer
 	if cfg.features.landSign then
-		-- enableLandSign()
+		--enableLandSign()
 	end
 	if cfg.features.particles then
-		enableParticles()
+		--enableParticles()
 	end
 	if debug_mode then
 		setInterval(DEBUG_LANDQUERY,3*1000)
