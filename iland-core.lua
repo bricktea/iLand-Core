@@ -363,7 +363,7 @@ function FORM_land_gui(player,data,lid)
 		if not(cfg.features.landSign) then
 			isclosed=' ('.._tr('talk.features.closed')..')'
 		end
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landcfg.title'))
 		Form.addLabel(_tr('gui.landcfg.tip'))
 		Form.addLabel(_tr('gui.landcfg.landsign')..isclosed)
@@ -374,7 +374,7 @@ function FORM_land_gui(player,data,lid)
 	end
 	if raw[3]==2 then --编辑领地权限
 		local perm = land_data[landId].permissions
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landmgr.landperm.title'))
 		Form.addLabel(_tr('gui.landmgr.landperm.options.title'))
 		Form.addLabel(_tr('gui.landmgr.landperm.basic_options'))
@@ -426,7 +426,7 @@ function FORM_land_gui(player,data,lid)
 		end
 		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landtrust.title'))
 		Form.addLabel(_tr('gui.landtrust.tip'))
 		Form.addSwitch(_tr('gui.landtrust.addtrust'),false)
@@ -438,7 +438,7 @@ function FORM_land_gui(player,data,lid)
 	end
 	if raw[3]==4 then --领地nickname
 		local nickn=ILAPI.GetNickname(landId,false)
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landtag.title'))
 		Form.addLabel(_tr('gui.landtag.tip'))
 		Form.addInput("",nickn)
@@ -448,7 +448,7 @@ function FORM_land_gui(player,data,lid)
 	if raw[3]==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landdescribe.title'))
 		Form.addLabel(_tr('gui.landdescribe.tip'))
 		Form.addInput("",desc)
@@ -458,7 +458,7 @@ function FORM_land_gui(player,data,lid)
 	if raw[3]==6 then --领地过户
 		TRS_Form[xuid].playerList = GetOnlinePlayerList()
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landtransfer.title'))
 		Form.addLabel(_tr('gui.landtransfer.tip'))
 		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
@@ -575,7 +575,7 @@ function FORM_land_mgr(player,data)
 		TRS_Form[xuid].targetland=landId
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		ILAPI.save()
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.oplandmgr.trsland.title'))
 		Form.addLabel(_tr('gui.oplandmgr.trsland.content'))
 		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
@@ -775,13 +775,13 @@ function GUI_LMgr(player)
 		lands[i]=f
 	end
 
-	local Form = mc.newForm()
+	local Form = mc.newCustomForm()
 	Form.setTitle(_tr('gui.landmgr.title'))
 	Form.addLabel(welcomeText)
 	Form.addDropdown(_tr('gui.landmgr.select'),lands)
 	Form.addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
 
-	player.sendSimpleForm(Form,FORM_land_gui)
+	player.sendForm(Form,FORM_land_gui)
 end
 function GUI_OPLMgr(player)
 	local landlst={}
@@ -816,7 +816,7 @@ function GUI_OPLMgr(player)
 	local features={_tr('gui.oplandmgr.donothing'),_tr('gui.oplandmgr.tp'),_tr('gui.oplandmgr.transfer'),_tr('gui.oplandmgr.delland')}
 	local money_protocols = {'LLMoney',_tr('talk.scoreboard')}
 
-	local Form = mc.newForm()
+	local Form = mc.newCustomForm()
 	Form.setTitle(_tr('gui.oplandmgr.title'))
 	Form.addLabel(_tr('gui.oplandmgr.tip'))
 	Form.addLabel(AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer))
@@ -852,26 +852,19 @@ function GUI_OPLMgr(player)
 end
 function GUI_FastMgr(player)
 	local landId = TRS_Form[player.xuid].landId
-	local buttons={
-		_tr('gui.landmgr.options.landinfo'),
-		_tr('gui.landmgr.options.landcfg'),
-		_tr('gui.landmgr.options.landperm'),
-		_tr('gui.landmgr.options.landtrust'),
-		_tr('gui.landmgr.options.landtag'),
-		_tr('gui.landmgr.options.landdescribe'),
-		_tr('gui.landmgr.options.landtransfer'),
-		_tr('gui.landmgr.options.delland'),
-		_tr('gui.general.close')
-	}
-	local images={}
-	images[9] = 'textures/ui/icon_import'
-	player.sendSimpleForm(
-		_tr('gui.fastlmgr.title'),
-		AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)),
-		buttons,
-		images,
-		FORM_land_fast
-	)
+	local Form = mc.newSimpleForm()
+	Form.setTitle(_tr('gui.fastlmgr.title'))
+	Form.setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
+	Form.addButton(_tr('gui.landmgr.options.landinfo'))
+	Form.addButton(_tr('gui.landmgr.options.landcfg'))
+	Form.addButton(_tr('gui.landmgr.options.landperm'))
+	Form.addButton(_tr('gui.landmgr.options.landtrust'))
+	Form.addButton(_tr('gui.landmgr.options.landtag'))
+	Form.addButton(_tr('gui.landmgr.options.landdescribe'))
+	Form.addButton(_tr('gui.landmgr.options.landtransfer'))
+	Form.addButton(_tr('gui.landmgr.options.delland'))
+	Form.addButton(_tr('gui.general.close'),'textures/ui/icon_import')
+	player.sendSimpleForm(Form,FORM_land_fast)
 end
 
 -- ILAPI
@@ -1221,7 +1214,12 @@ function Eventing_onLeft(player)
 	TRS_Form[xuid]=nil
 	ArrayParticles[xuid]=nil
 end
+function nmsl(player)
+	local xuid = player.xuid
+	print(xuid)
+end
 function Eventing_onPlayerCmd(player,cmd)
+	nmsl(player)
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
@@ -1236,23 +1234,13 @@ function Eventing_onPlayerCmd(player,cmd)
 			GUI_FastMgr(player)
 		else
 			local land_count = tostring(#land_owners[xuid])
-			local buttons = {
-				_tr('gui.fastgde.create'),
-				_tr('gui.fastgde.manage'),
-				_tr('gui.general.close')
-			}
-			local images = {
-				'textures/ui/icon_iron_pickaxe',
-				'textures/ui/confirm',
-				'textures/ui/icon_import'
-			}
-			player.sendSimpleForm(
-				_tr('gui.fastgde.title'),
-				AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count),
-				buttons,
-				images,
-				FORM_land_gde
-			)
+			local Form = mc.newSimpleForm()
+			Form.setTitle(_tr('gui.fastgde.title'))
+			Form.setContent(AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
+			Form.addButton(_tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
+			Form.addButton(_tr('gui.fastgde.manage'),'textures/ui/confirm')
+			Form.addButton(_tr('gui.general.close'),'textures/ui/icon_import')
+			player.sendForm(Form,FORM_land_gde)
 		end
 		return false
 	end
@@ -1338,7 +1326,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			local xpos = land_data[landId].settings.tpoint
 			tplands[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
 		end
-		local Form = mc.newForm()
+		local Form = mc.newCustomForm()
 		Form.setTitle(_tr('gui.landtp.title'))
 		Form.addLabel(_tr('gui.landtp.tip'))
 		Form.addDropdown(_tr('gui.landtp.tip2'),tplands)
