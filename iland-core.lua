@@ -102,14 +102,14 @@ function buildVecMap()
 end
 
 -- form -> callback
-function FORM_NULL(a,b) end
+function FORM_NULL(player,id) end
 function FORM_BACK_LandOPMgr(player,id)
 	if index==1 then return end
 	GUI_OPLMgr(player)
 end
 function FORM_BACK_LandMgr(player,id)
 	if index==1 then return end
-	if TRS_From[xuid].backpo==1 then
+	if TRS_Form[xuid].backpo==1 then
 		GUI_FastMgr(player)
 		return
 	end
@@ -142,7 +142,7 @@ function FORM_land_buy(player,id)
 end
 function FORM_land_gui_cfg(player,data)
 
-	local landId = TRS_From[xuid].landId
+	local landId = TRS_Form[xuid].landId
 	land_data[landId].settings.signtome=AIR.toBool(raw[3])
 	land_data[landId].settings.signtother=AIR.toBool(raw[4])
 	ILAPI.save()
@@ -157,7 +157,7 @@ function FORM_land_gui_cfg(player,data)
 end
 function FORM_land_gui_perm(player,data)
 	
-	local perm = land_data[TRS_From[xuid].landId].permissions
+	local perm = land_data[TRS_Form[xuid].landId].permissions
 
 	perm.allow_place = AIR.toBool(data[3])
 	perm.allow_destroy = AIR.toBool(data[4])
@@ -208,12 +208,12 @@ function FORM_land_gui_perm(player,data)
 	)
 end
 function FORM_land_gui_trust(player,data)
-	local landId = TRS_From[xuid].landId
+	local landId = TRS_Form[xuid].landId
 	local landshare = land_data[landId].settings.share
 	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
 	if data[2]==1 then
 		if data[3]==0 then return end
-		local x=GetXuidFromId(TRS_From[xuid].playerList[data[3]+1])
+		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[3]+1])
 		local n=#landshare+1
 		if player.xuid==x then
 			sendText(player,_tr('title.landtrust.cantaddown'));return
@@ -235,7 +235,7 @@ function FORM_land_gui_trust(player,data)
 	end
 	if data[4]==1 then
 		if data[5]==0 then return end
-		local x=GetXuidFromId(TRS_From[xuid].playerList[data[5]+1])
+		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[5]+1])
 		table.remove(landshare,AIR.isValInList(landshare,x))
 		ILAPI.save()
 		player.sendModalForm(
@@ -248,7 +248,7 @@ function FORM_land_gui_trust(player,data)
 	end
 end
 function FORM_land_gui_name(player,data)
-	local landId=TRS_From[xuid].landId
+	local landId=TRS_Form[xuid].landId
 	if AIR.isTextSpecial(data[2]) then
 		sendText(player,'FAILED');return
 	end
@@ -263,7 +263,7 @@ function FORM_land_gui_name(player,data)
 	)
 end
 function FORM_land_gui_describe(player,data)
-	local landId=TRS_From[xuid].landId
+	local landId=TRS_Form[xuid].landId
 	if AIR.isTextSpecial(AIR.gsubEx(data[2],
 							'$','Y', -- allow some spec.
 							',','Y',
@@ -285,8 +285,8 @@ end
 function FORM_land_gui_transfer(player,data)
 	if data[2]==0 then return end
 	local xuid=player.xuid
-	local landId=TRS_From[xuid].landId
-	local go=GetXuidFromId(TRS_From[xuid].playerList[raw[2]+1])
+	local landId=TRS_Form[xuid].landId
+	local go=GetXuidFromId(TRS_Form[xuid].playerList[raw[2]+1])
 	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -301,9 +301,9 @@ function FORM_land_gui_transfer(player,data)
 end
 function FORM_land_gui_delete(player,id)
 	if id==1 then return end
-	local landId=TRS_From[xuid].landId
+	local landId=TRS_Form[xuid].landId
 	ILAPI.DeleteLand(landId)
-	money_add(player,TRS_From[xuid].landvalue)
+	money_add(player,TRS_Form[xuid].landvalue)
 	player.sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
@@ -315,6 +315,15 @@ end
 function FORM_land_gui(player,data,lid)
 	local xuid=player.xuid
 
+	print('-----Data-----')
+	for i,v in pairs(data) do
+		print(i,v)
+	end
+
+	if 1==1 then
+		return
+	end
+
 	local landId
 	if lid==nil or lid=='' then
 		landId = land_owners[xuid][raw[2]+1]
@@ -322,7 +331,7 @@ function FORM_land_gui(player,data,lid)
 		landId = lid
 	end
 
-	TRS_From[xuid].landId=landId
+	TRS_Form[xuid].landId=landId
 	if raw[3]==0 then --查看领地信息
 		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1 
 		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
@@ -410,18 +419,18 @@ function FORM_land_gui(player,data,lid)
 		player.sendForm(Form,FORM_land_gui_perm)
 	end
 	if raw[3]==3 then --编辑信任名单
-		TRS_From[xuid].playerList = GetOnlinePlayerList()
+		TRS_Form[xuid].playerList = GetOnlinePlayerList()
 		local d=AIR.shacopy(land_data[landId].settings.share)
 		for i, v in pairs(d) do
 			d[i]=GetIdFromXuid(d[i])
 		end
 		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
-		table.insert(TRS_From[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
+		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newForm()
 		Form.setTitle(_tr('gui.landtrust.title'))
 		Form.addLabel(_tr('gui.landtrust.tip'))
 		Form.addSwitch(_tr('gui.landtrust.addtrust'),false)
-		Form.addDropdown(_tr('gui.landtrust.selectplayer'),TRS_From[xuid].playerList)
+		Form.addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
 		Form.addSwitch(_tr('gui.landtrust.rmtrust'),false)
 		From.addDropdown(_tr('gui.landtrust.selectplayer'),d)
 		player.sendForm(Form,FORM_land_gui_trust)
@@ -447,12 +456,12 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if raw[3]==6 then --领地过户
-		TRS_From[xuid].playerList = GetOnlinePlayerList()
-		table.insert(TRS_From[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
+		TRS_Form[xuid].playerList = GetOnlinePlayerList()
+		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newForm()
 		Form.setTitle(_tr('gui.landtransfer.title'))
 		Form.addLabel(_tr('gui.landtransfer.tip'))
-		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_From[xuid].playerList)
+		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
 		player.sendForm(Form,FORM_land_gui_transfer)
 		return
 	end
@@ -460,10 +469,10 @@ function FORM_land_gui(player,data,lid)
 		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
 		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1
 		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
-		TRS_From[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
+		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		player.sendModalForm(
 			_tr('gui.delland.title'),
-			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_From[xuid].landvalue,'<b>',_tr('talk.credit_name')),
+			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',_tr('talk.credit_name')),
 			_tr('gui.general.yes'),
 			_tr('gui.general.cancel'),
 			FORM_land_gui_delete
@@ -473,10 +482,10 @@ end
 function FORM_land_mgr_transfer(player,data)
 	local xuid = player.xuid
 	if raw[2]==0 then return end
-	local landId=TRS_From[xuid].targetland
+	local landId=TRS_Form[xuid].targetland
 	local afrom=ILAPI.GetOwner(landId)
 	if afrom=='?' then return end
-	local go=GetXuidFromId(TRS_From[xuid].playerList[raw[2]+1])
+	local go=GetXuidFromId(TRS_Form[xuid].playerList[raw[2]+1])
 	if go==afrom then return end
 	table.remove(land_owners[afrom],AIR.isValInList(land_owners[afrom],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -562,14 +571,14 @@ function FORM_land_mgr(player,data)
 	end
 	if data[6]==2 then -- transfer land.
 		local xuid = player.xuid
-		TRS_From[xuid].playerList = GetOnlinePlayerList()
-		TRS_From[xuid].targetland=landId
-		table.insert(TRS_From[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
+		TRS_Form[xuid].playerList = GetOnlinePlayerList()
+		TRS_Form[xuid].targetland=landId
+		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		ILAPI.save()
 		local Form = mc.newForm()
 		Form.setTitle(_tr('gui.oplandmgr.trsland.title'))
 		Form.addLabel(_tr('gui.oplandmgr.trsland.content'))
-		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_From[xuid].playerList)
+		Form.addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
 		player.sendForm(Form,FORM_land_mgr_transfer)
 		return
 	end
@@ -606,11 +615,11 @@ function FORM_landtp(player,data)
 	)
 end
 function FORM_land_fast(player,id)
-	TRS_From[xuid].backpo = 1
+	TRS_Form[xuid].backpo = 1
 	fakeraw = {}
 	fakeraw[3] = index
 	if index~=8 then
-		FORM_land_gui(player,fakeraw,TRS_From[xuid].landId)
+		FORM_land_gui(player,fakeraw,TRS_Form[xuid].landId)
 	end
 end
 function FORM_land_gde(player,id)
@@ -842,7 +851,7 @@ function GUI_OPLMgr(player)
 	player.sendForm(Form,FORM_land_mgr)						
 end
 function GUI_FastMgr(player)
-	local landId = TRS_From[player.xuid].landId
+	local landId = TRS_Form[player.xuid].landId
 	local buttons={
 		_tr('gui.landmgr.options.landinfo'),
 		_tr('gui.landmgr.options.landcfg'),
@@ -1190,14 +1199,21 @@ function fmCube(posA,posB)
 end
 
 -- Minecraft -> Eventing
-function Eventing_onJoin(player)
+function Eventing_onRespawn(player)
 	local xuid = player.xuid
-	debug_landquery=player 
-	TRS_From[xuid] = {}
-	TRS_From[xuid].inland = 'null'
+	if TRS_Form[xuid]==nil then -- 会多次Respawn.
+		TRS_Form[xuid] = {}
+	else
+		return
+	end
+
+	TRS_Form[xuid].inland = 'null'
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
 		ILAPI.save()
+	end
+	if debug_mode then
+		debug_landquery=player
 	end
 end
 function Eventing_onLeft(player)
@@ -1281,7 +1297,7 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [gui] LandMgr GUI
 	if opt[2] == 'gui' then
-		TRS_From[xuid].backpo = 0
+		TRS_Form[xuid].backpo = 0
 		GUI_LMgr(player)
 		return false
 	end
@@ -1347,7 +1363,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			return false
 		end
 		sendText(player,_tr('title.oplandmgr.setselectool'))
-		TRS_From[xuid].selectool=0
+		TRS_Form[xuid].selectool=0
 		return false
 	end
 
@@ -1405,13 +1421,13 @@ function Eventing_onConsoleCmd(cmd)
 end
 function Eventing_onDestroyBlock(player,block)
 
-	if TRS_From[xuid].selectool==0 then
+	if TRS_Form[xuid].selectool==0 then
 		local HandItem = player.getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
 		sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',HandItem.name))
 		cfg.features.selection_tool=HandItem.type
 		ILAPI.save()
-		TRS_From[xuid].selectool=-1
+		TRS_Form[xuid].selectool=-1
 		return -1
 	end
 
@@ -1600,7 +1616,7 @@ end
 -- listen events,
 mc.listen('onPlayerCmd',Eventing_onPlayerCmd)
 mc.listen('onConsoleCmd',Eventing_onConsoleCmd)
-mc.listen('onJoin',Eventing_onJoin)
+mc.listen('onRespawn',Eventing_onRespawn)
 mc.listen('onLeft',Eventing_onLeft)
 mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
 mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
@@ -1610,7 +1626,7 @@ mc.listen('onAttack',Eventing_onAttack)
 mc.listen('onExplode',Eventing_onExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
 mc.listen('onDropItem',Eventing_onDropItem)
--- mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
+mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()
@@ -1773,7 +1789,7 @@ mc.listen('onServerStarted',function()
 	buildChunks()
 	buildVecMap()
 
-	-- Make timer
+	--[[ Make timer
 	if cfg.features.landSign then
 		enableLandSign()
 	end
@@ -1783,6 +1799,7 @@ mc.listen('onServerStarted',function()
 	if debug_mode then
 		setInterval(DEBUG_LANDQUERY,3*1000)
 	end
+	]]
 
 	-- Check Update
 	if cfg.update_check then
