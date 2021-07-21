@@ -143,10 +143,11 @@ function FORM_land_buy(player,id)
 	)
 end
 function FORM_land_gui_cfg(player,data)
-
-	local landId = TRS_Form[xuid].landId
-	land_data[landId].settings.signtome=AIR.toBool(raw[3])
-	land_data[landId].settings.signtother=AIR.toBool(raw[4])
+	if data==nil then return end
+	
+	local landId = TRS_Form[player.xuid].landId
+	land_data[landId].settings.signtome=data[1]
+	land_data[landId].settings.signtother=data[2]
 	ILAPI.save()
 
 	player:sendModalForm(
@@ -158,47 +159,48 @@ function FORM_land_gui_cfg(player,data)
 	)
 end
 function FORM_land_gui_perm(player,data)
+	if data==nil then return end
 	
-	local perm = land_data[TRS_Form[xuid].landId].permissions
+	local perm = land_data[TRS_Form[player.xuid].landId].permissions
 
-	perm.allow_place = AIR.toBool(data[3])
-	perm.allow_destroy = AIR.toBool(data[4])
-	perm.allow_dropitem = AIR.toBool(data[5])
-	perm.allow_pickupitem = AIR.toBool(data[6])
-	perm.allow_attack = AIR.toBool(data[7])
-
-	perm.use_crafting_table = AIR.toBool(data[9])
-	perm.use_furnace = AIR.toBool(data[10])
-	perm.use_blast_furnace = AIR.toBool(data[11])
-	perm.use_smoker = AIR.toBool(data[12])
-	perm.use_brewing_stand = AIR.toBool(data[13])
-	perm.use_cauldron = AIR.toBool(data[14])
-	perm.use_anvil = AIR.toBool(data[15])
-	perm.use_grindstone = AIR.toBool(data[16])
-	perm.use_enchanting_table = AIR.toBool(data[17])
-	perm.use_cartography_table = AIR.toBool(data[18])
-	perm.use_smithing_table = AIR.toBool(data[19])
-	perm.use_loom = AIR.toBool(data[20])
-	perm.use_beacon = AIR.toBool(data[21])
-
-	perm.use_barrel = AIR.toBool(data[23])
-	perm.use_hopper = AIR.toBool(data[24])
-	perm.use_dropper = AIR.toBool(data[25])
-	perm.use_dispenser = AIR.toBool(data[26])
-	perm.use_shulker_box = AIR.toBool(data[27])
-	perm.use_chest = AIR.toBool(data[28])
-
-	perm.use_campfire = AIR.toBool(data[30])
-	perm.use_trapdoor = AIR.toBool(data[31])
-	perm.use_fence_gate = AIR.toBool(data[32])
-	perm.use_bell = AIR.toBool(data[33])
-	perm.use_jukebox = AIR.toBool(data[34])
-	perm.use_noteblock = AIR.toBool(data[35])
-	perm.use_composter = AIR.toBool(data[36])
-	perm.use_bed = AIR.toBool(data[37])
-	perm.use_daylight_detector = AIR.toBool(data[38])
-
-	perm.allow_exploding = AIR.toBool(data[40])
+	perm.allow_place = data[1]
+	perm.allow_destroy = data[2]
+	perm.allow_dropitem = data[3]
+	perm.allow_pickupitem = data[4]
+	perm.allow_attack = data[5]
+	
+	perm.use_crafting_table = data[6]
+	perm.use_furnace = data[7]
+	perm.use_blast_furnace = data[8]
+	perm.use_smoker = data[9]
+	perm.use_brewing_stand = data[10]
+	perm.use_cauldron = data[11]
+	perm.use_anvil = data[12]
+	perm.use_grindstone = data[13]
+	perm.use_enchanting_table = data[14]
+	perm.use_cartography_table = data[15]
+	perm.use_smithing_table = data[16]
+	perm.use_loom = data[17]
+	perm.use_beacon = data[18]
+	
+	perm.use_barrel = data[19]
+	perm.use_hopper = data[20]
+	perm.use_dropper = data[21]
+	perm.use_dispenser = data[22]
+	perm.use_shulker_box = data[23]
+	perm.allow_open_chest = data[24]
+	
+	perm.use_campfire = data[25]
+	perm.use_trapdoor = data[26]
+	perm.use_fence_gate = data[27]
+	perm.use_bell = data[28]
+	perm.use_jukebox = data[29]
+	perm.use_noteblock = data[30]
+	perm.use_composter = data[31]
+	perm.use_bed = data[32]
+	perm.use_daylight_detector = data[33]
+	
+	perm.allow_exploding = data[34]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -210,14 +212,17 @@ function FORM_land_gui_perm(player,data)
 	)
 end
 function FORM_land_gui_trust(player,data)
+	if data==nil then return end
+	
+	local xuid=player.xuid
 	local landId = TRS_Form[xuid].landId
 	local landshare = land_data[landId].settings.share
-	-- [1]null [2]1(true) [3]0 [4]0(false) [5]0
-	if data[2]==1 then
-		if data[3]==0 then return end
-		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[3]+1])
+
+	if data[1] then
+		if data[2]==0 then return end
+		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[2]+1])
 		local n=#landshare+1
-		if player.xuid==x then
+		if xuid==x then
 			sendText(player,_tr('title.landtrust.cantaddown'));return
 		end
 		if AIR.isValInList(landshare,x)~=-1 then
@@ -225,7 +230,7 @@ function FORM_land_gui_trust(player,data)
 		end
 		landshare[n]=x
 		ILAPI.save()
-		if data[4]~=1 then 
+		if not(data[3]) then 
 			player:sendModalForm(
 				_tr('gui.general.complete'),
 				'Complete.',
@@ -235,9 +240,9 @@ function FORM_land_gui_trust(player,data)
 			)
 		end
 	end
-	if data[4]==1 then
-		if data[5]==0 then return end
-		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[5]+1])
+	if data[3] then
+		if data[4]==0 then return end
+		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[4]+1])
 		table.remove(landshare,AIR.isValInList(landshare,x))
 		ILAPI.save()
 		player:sendModalForm(
@@ -250,11 +255,13 @@ function FORM_land_gui_trust(player,data)
 	end
 end
 function FORM_land_gui_name(player,data)
-	local landId=TRS_Form[xuid].landId
-	if AIR.isTextSpecial(data[2]) then
+	if data==nil then return end
+	
+	local landId=TRS_Form[player.xuid].landId
+	if AIR.isTextSpecial(data[1]) then
 		sendText(player,'FAILED');return
 	end
-	land_data[landId].settings.nickname=data[2]
+	land_data[landId].settings.nickname=data[1]
 	ILAPI.save()
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -265,16 +272,20 @@ function FORM_land_gui_name(player,data)
 	)
 end
 function FORM_land_gui_describe(player,data)
-	local landId=TRS_Form[xuid].landId
-	if AIR.isTextSpecial(AIR.gsubEx(data[2],
-							'$','Y', -- allow some spec.
-							',','Y',
-							'.','Y',
-							'!','Y'
-						)) then
+	if data==nil then return end
+	
+	local landId=TRS_Form[player.xuid].landId
+	if AIR.isTextSpecial(AIR.gsubEx(
+		data[1],
+		'$','Y',
+		',','Y',
+		'.','Y',
+		'!','Y'
+	))
+	then
 		sendText(player,'FAILED');return
 	end
-	land_data[landId].settings.describe=data[2]
+	land_data[landId].settings.describe=data[1]
 	ILAPI.save()
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -285,10 +296,12 @@ function FORM_land_gui_describe(player,data)
 	)
 end
 function FORM_land_gui_transfer(player,data)
-	if data[2]==0 then return end
+	if data==nil then return end
+	
+	if data[1]==0 then return end
 	local xuid=player.xuid
 	local landId=TRS_Form[xuid].landId
-	local go=GetXuidFromId(TRS_Form[xuid].playerList[raw[2]+1])
+	local go=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
 	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -303,6 +316,7 @@ function FORM_land_gui_transfer(player,data)
 end
 function FORM_land_gui_delete(player,id)
 	if not(id) then return end
+	local xuid=player.xuid
 	local landId=TRS_Form[xuid].landId
 	ILAPI.DeleteLand(landId)
 	money_add(player,TRS_Form[xuid].landvalue)
@@ -315,29 +329,23 @@ function FORM_land_gui_delete(player,id)
 	)
 end
 function FORM_land_gui(player,data,lid)
+	if data==nil then return end
+	
 	local xuid=player.xuid
-
-	print('-----Data-----')
-	for i,v in pairs(data) do
-		print(i,v)
-	end
-
-	if 1==1 then
-		return
-	end
 
 	local landId
 	if lid==nil or lid=='' then
-		landId = land_owners[xuid][raw[2]+1]
+		landId = land_owners[xuid][data[1]+1]
 	else
 		landId = lid
 	end
 
 	TRS_Form[xuid].landId=landId
-	if raw[3]==0 then --查看领地信息
-		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1 
-		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
-		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
+	if data[2]==0 then --查看领地信息
+		local dpos = land_data[landId].range
+		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1 
+		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
+		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
 		local nname=ILAPI.GetNickname(landId,false)
@@ -347,12 +355,12 @@ function FORM_land_gui(player,data,lid)
 					'<a>',player.realName,
 					'<m>',landId,
 					'<n>',nname,
-					'<b>',land_data[landId].range.start_position[1],
-					'<c>',land_data[landId].range.start_position[2],
-					'<d>',land_data[landId].range.start_position[3],
-					'<e>',land_data[landId].range.end_position[1],
-					'<f>',land_data[landId].range.end_position[2],
-					'<g>',land_data[landId].range.end_position[3],
+					'<b>',dpos.start_position[1],
+					'<c>',dpos.start_position[2],
+					'<d>',dpos.start_position[3],
+					'<e>',dpos.end_position[1],
+					'<f>',dpos.end_position[2],
+					'<g>',dpos.end_position[3],
 					'<h>',length,'<i>',width,'<j>',height,
 					'<k>',squ,'<l>',vol),
 			_tr('gui.general.iknow'),
@@ -360,7 +368,7 @@ function FORM_land_gui(player,data,lid)
 			FORM_BACK_LandMgr
 		)
 	end
-	if raw[3]==1 then --编辑领地选项
+	if data[2]==1 then --编辑领地选项
 		local isclosed=''
 		if not(cfg.features.landSign) then
 			isclosed=' ('.._tr('talk.features.closed')..')'
@@ -374,7 +382,7 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_cfg)
 		return
 	end
-	if raw[3]==2 then --编辑领地权限
+	if data[2]==2 then --编辑领地权限
 		local perm = land_data[landId].permissions
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landmgr.landperm.title'))
@@ -405,7 +413,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.dropper'),perm.use_dropper)
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.dispenser'),perm.use_dispenser)
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.shulker_box'),perm.use_shulker_box)
-		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.use_chest)
+		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.allow_open_chest)
 		Form:addLabel(_tr('gui.landmgr.landperm.other_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.campfire'),perm.use_campfire)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.trapdoor'),perm.use_trapdoor)
@@ -420,7 +428,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
-	if raw[3]==3 then --编辑信任名单
+	if data[2]==3 then --编辑信任名单
 		TRS_Form[xuid].playerList = GetOnlinePlayerList()
 		local d=AIR.shacopy(land_data[landId].settings.share)
 		for i, v in pairs(d) do
@@ -434,11 +442,11 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landtrust.addtrust'),false)
 		Form:addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
 		Form:addSwitch(_tr('gui.landtrust.rmtrust'),false)
-		From.addDropdown(_tr('gui.landtrust.selectplayer'),d)
+		Form:addDropdown(_tr('gui.landtrust.selectplayer'),d)
 		player:sendForm(Form,FORM_land_gui_trust)
 		return
 	end
-	if raw[3]==4 then --领地nickname
+	if data[2]==4 then --领地nickname
 		local nickn=ILAPI.GetNickname(landId,false)
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtag.title'))
@@ -447,7 +455,7 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_name)
 		return
 	end
-	if raw[3]==5 then --领地describe
+	if data[2]==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._tr('gui.landmgr.unmodified')..']' end
 		local Form = mc.newCustomForm()
@@ -457,7 +465,7 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_describe)
 		return
 	end
-	if raw[3]==6 then --领地过户
+	if data[2]==6 then --领地过户
 		TRS_Form[xuid].playerList = GetOnlinePlayerList()
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
@@ -467,7 +475,7 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_transfer)
 		return
 	end
-	if raw[3]==7 then --删除领地
+	if data[2]==7 then --删除领地
 		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
 		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1
 		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
@@ -482,12 +490,14 @@ function FORM_land_gui(player,data,lid)
 	end
 end
 function FORM_land_mgr_transfer(player,data)
+	if data==nil then return end
+	
 	local xuid = player.xuid
-	if raw[2]==0 then return end
+	if data[2]==0 then return end
 	local landId=TRS_Form[xuid].targetland
 	local afrom=ILAPI.GetOwner(landId)
 	if afrom=='?' then return end
-	local go=GetXuidFromId(TRS_Form[xuid].playerList[raw[2]+1])
+	local go=GetXuidFromId(TRS_Form[xuid].playerList[data[2]+1])
 	if go==afrom then return end
 	table.remove(land_owners[afrom],AIR.isValInList(land_owners[afrom],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
@@ -501,7 +511,8 @@ function FORM_land_mgr_transfer(player,data)
 	)
 end
 function FORM_land_mgr(player,data)
-
+	if data==nil then return end
+	
 	if data[8]~='' then
 		cfg.land.player_max_lands = tonumber(data[8])
 	end
@@ -597,6 +608,8 @@ function FORM_land_mgr(player,data)
 	)
 end
 function FORM_landtp(player,data)
+	if data==nil then return end
+	
 	if data[2]==0 then return end
 	local lands = ILAPI.GetPlayerLands(player.xuid)
 	local landId = lands[data[2]]
@@ -617,14 +630,17 @@ function FORM_landtp(player,data)
 	)
 end
 function FORM_land_fast(player,id)
+	if id==nil then return end
+	local xuid=player.xuid
 	TRS_Form[xuid].backpo = 1
-	fakeraw = {}
-	fakeraw[3] = id
+	FakeData = {}
+	FakeData[2] = id
 	if id~=8 then
-		FORM_land_gui(player,fakeraw,TRS_Form[xuid].landId)
+		FORM_land_gui(player,FakeData,TRS_Form[xuid].landId)
 	end
 end
 function FORM_land_gde(player,id)
+	if id==nil then return end
 	if id==0 then
 		Eventing_onPlayerCmd(player,'land new')
 	end
@@ -888,7 +904,7 @@ function GUI_FastMgr(player)
 	Form:addButton(_tr('gui.landmgr.options.landtransfer'))
 	Form:addButton(_tr('gui.landmgr.options.delland'))
 	Form:addButton(_tr('gui.general.close'),'textures/ui/icon_import')
-	player:sendSimpleForm(Form,FORM_land_fast)
+	player:sendForm(Form,FORM_land_fast)
 end
 
 -- ILAPI
@@ -899,7 +915,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 		if land_data[landId]==nil then break end
 	end
 
-	-- Set newland cfg template
+	-- Set newLand cfg template
 	land_data[landId]={}
 	land_data[landId].settings={}
 	land_data[landId].range={}
@@ -1247,6 +1263,9 @@ function Eventing_onLeft(player)
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
 	ArrayParticles[xuid]=nil
+	if newLand[xuid]~=nil then
+		newLand[xuid]=nil
+	end
 end
 function Eventing_onPlayerCmd(player,cmd)
 	local opt = AIR.split(cmd,' ')
