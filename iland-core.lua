@@ -14,6 +14,7 @@ local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
 local debug_mode = false
 lxl.require('airLibs.lua')
+local json = require('dkjson')
 
 local VecMap={}
 function updateChunk(landId,mode)
@@ -104,11 +105,12 @@ end
 -- form -> callback
 function FORM_NULL(player,id) end
 function FORM_BACK_LandOPMgr(player,id)
-	if index==1 then return end
+	if not(id) then return end
 	GUI_OPLMgr(player)
 end
 function FORM_BACK_LandMgr(player,id)
-	if index==1 then return end
+	if not(id) then return end
+	local xuid=player.xuid
 	if TRS_Form[xuid].backpo==1 then
 		GUI_FastMgr(player)
 		return
@@ -116,7 +118,7 @@ function FORM_BACK_LandMgr(player,id)
 	GUI_LMgr(player)
 end
 function FORM_land_buy(player,id)
-	if index~=0 then 
+	if not(id) then 
 		sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	end
 	local xuid = player.xuid
@@ -300,7 +302,7 @@ function FORM_land_gui_transfer(player,data)
 	)
 end
 function FORM_land_gui_delete(player,id)
-	if id==1 then return end
+	if not(id) then return end
 	local landId=TRS_Form[xuid].landId
 	ILAPI.DeleteLand(landId)
 	money_add(player,TRS_Form[xuid].landvalue)
@@ -617,8 +619,8 @@ end
 function FORM_land_fast(player,id)
 	TRS_Form[xuid].backpo = 1
 	fakeraw = {}
-	fakeraw[3] = index
-	if index~=8 then
+	fakeraw[3] = id
+	if id~=8 then
 		FORM_land_gui(player,fakeraw,TRS_Form[xuid].landId)
 	end
 end
@@ -641,13 +643,21 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		newLand[xuid].posA.x=math.modf(vec4.x) --省函数...
 		newLand[xuid].posA.y=math.modf(vec4.y)
 		newLand[xuid].posA.z=math.modf(vec4.z)
-        sendText(player,AIR.gsubEx(_tr('title.selectrange.seled'),
-									'<a>','a',
-									'<b>',vec4.dimid,
-									'<c>',newLand[xuid].posA.x,
-									'<d>',newLand[xuid].posA.y,
-									'<e>',newLand[xuid].posA.z)
-									..'\n'..string.gsub(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name))
+        sendText(
+			player,
+			AIR.gsubEx(
+				_tr('title.selectrange.seled'),
+				'<a>','a',
+				'<b>',vec4.dim,
+				'<c>',newLand[xuid].posA.x,
+				'<d>',newLand[xuid].posA.y,
+				'<e>',newLand[xuid].posA.z)
+				..'\n'..
+				AIR.gsubEx(
+					_tr('title.selectrange.spointb'),
+					'<a>',cfg.features.selection_tool_name
+				)
+			)
 		newLand[xuid].step = 1
     end
     if mode==1 then -- point B
@@ -662,7 +672,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
-				'<b>',vec4.dimid,
+				'<b>',vec4.dim,
 				'<c>',newLand[xuid].posB.x,
 				'<d>',newLand[xuid].posB.y,
 				'<e>',newLand[xuid].posB.z)
@@ -671,7 +681,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 					_tr('title.selectrange.bebuy'),
 					'<a>',cfg.features.selection_tool_name
 				)
-		)
+			)
 		newLand[xuid].step = 2
 
 		local edges = cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
@@ -885,7 +895,7 @@ end
 function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	local landId
 	while true do
-		landId=system.randomGuid()
+		landId=formatGuid(system.randomGuid())
 		if land_data[landId]==nil then break end
 	end
 
@@ -898,9 +908,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].range.start_position={}
 	land_data[landId].range.end_position={}
 	land_data[landId].permissions={}
-
-	local perm = land_data[landId].permissions
-
+	
 	-- Land settings
 	land_data[landId].settings.nickname=""
 	land_data[landId].settings.describe=""
@@ -909,7 +917,6 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	land_data[landId].settings.tpoint[3]=startpos.z
 	land_data[landId].settings.signtome=true
 	land_data[landId].settings.signtother=true
-	
 	-- Land ranges
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
 	table.insert(land_data[landId].range.start_position,2,startpos.y)
@@ -918,6 +925,8 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
 	land_data[landId].range.dimid=dimensionid
+
+	local perm = land_data[landId].permissions
 
 	-- Land permission
 	perm.allow_destroy=false
@@ -1027,9 +1036,9 @@ function ILAPI.GetVersion()
 	return plugin_version
 end
 function ILAPI.save()
-	file.writeTo(data_path..'config.json',data.toJson(cfg,4))
-	file.writeTo(data_path..'data.json',data.toJson(land_data))
-	file.writeTo(data_path..'owners.json',data.toJson(land_owners,4))
+	file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
+	file.writeTo(data_path..'data.json',json.encode(land_data))
+	file.writeTo(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
 
 -- feature function
@@ -1049,7 +1058,7 @@ function money_add(player,value)
 		player:addScore(M.scoreboard_objname,value);return
 	end
 	if M.protocol=='llmoney' then
-		money:add(player.xuid,value);return
+		money.add(player.xuid,value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1059,7 +1068,7 @@ function money_del(player,value)
 		player:setScore(M.scoreboard_objname,player:getScore(M.scoreboard_objname)-value)
 	end
 	if M.protocol=='llmoney' then
-		money:reduce(player.xuid,value);return
+		money.reduce(player.xuid,value);return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1069,7 +1078,7 @@ function money_get(player)
 		return player:getScore(M.scoreboard_objname)
 	end
 	if M.protocol=='llmoney' then
-		return money:get(player.xuid)
+		return money.get(player.xuid)
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
@@ -1199,10 +1208,21 @@ function pos2chunk(pos)
 	return math.floor(pos.x/p),math.floor(pos.z/p)
 end
 function fmCube(posA,posB)
-	if posA.x>posB.x then posA.x,posB.x = posB.x,posA.x end
-	if posA.y>posB.y then posA.y,posB.y = posB.y,posA.y end
-	if posA.z>posB.z then posA.z,posB.z = posB.z,posA.z end
+	local A = posA
+	local B = posB
+	if A.x>B.x then A.x,B.x = A.x,B.x end
+	if A.y>B.y then A.y,B.y = A.y,B.y end
+	if A.z>B.z then A.z,B.z = A.z,B.z end
 	return A,B
+end
+function formatGuid(guid)
+    return string.format('%s-%s-%s-%s-%s',
+        string.sub(guid,1,8),
+        string.sub(guid,9,12),
+        string.sub(guid,13,16),
+        string.sub(guid,17,20),
+        string.sub(guid,21,32)
+    )
 end
 
 -- Minecraft -> Eventing
@@ -1463,8 +1483,9 @@ function Eventing_onPlaceBlock(player,block)
 
 	return false
 end
-function Eventing_onUseItem(player,item,block)
-	local landId=ILAPI.PosGetLand(block.pos)
+function Eventing_onUseItem(player,item)
+	-- ### Bug: need ItemPos ###
+	local landId=ILAPI.PosGetLand(player.pos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1523,8 +1544,8 @@ function Eventing_onExplode(entity,pos)
 	if land_data[landId].permissions.allow_exploding then return end -- Perm Allow
 	return false
 end
-function Eventing_onTakeItem(player,item)
-	local landId=ILAPI.PosGetLand(player.pos)
+function Eventing_onTakeItem(player,entity)
+	local landId=ILAPI.PosGetLand(entity.pos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1654,7 +1675,7 @@ end
 -- check update
 function Ncb_online(code,result)
 	if code==200 then
-		local data=data.parseJson(result)
+		local data=json.decode(result)
 		
 		-- global
 		iland_latestver = data.version
@@ -1710,9 +1731,9 @@ mc.listen('onServerStarted',function()
 	end
 
 	-- Load data file
-	cfg = data.parseJson(file.readFrom(data_path..'config.json'))
-	land_data = data.parseJson(file.readFrom(data_path..'data.json'))
-	land_owners = data.parseJson(file.readFrom(data_path..'owners.json'))
+	cfg = json.decode(file.readFrom(data_path..'config.json'))
+	land_data = json.decode(file.readFrom(data_path..'data.json'))
+	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
 
 	-- Configure Updater
 	do
@@ -1781,7 +1802,7 @@ mc.listen('onServerStarted',function()
 	end
 	
 	-- Load&Check i18n file
-	i18n_data = data.parseJson(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 	if i18n_data.VERSION ~= langVer then
 		throwErr(-4)
 	end
