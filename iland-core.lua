@@ -6,7 +6,7 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 plugin_version = '2.10'
-debug_mode = true
+debug_mode = false
 
 langVer = 210
 minAirVer = 200
@@ -608,18 +608,31 @@ function FORM_land_mgr(player,data)
 	)
 end
 function FORM_landtp(player,data)
-	if data==nil then return end
-	
-	if data[2]==0 then return end
+	if data==nil or data[1]==0 then return end
+
 	local lands = ILAPI.GetPlayerLands(player.xuid)
-	local landId = lands[data[2]]
-	local tp = land_data[landId].settings.tpoint
+	local landId = lands[data[1]]
+
+	local pos = land_data[landId].settings.tpoint
 	local dimid = land_data[landId].range.dimid
-	local safey = GetTopAir(tp[1],tp[2],tp[3],dimid)
-	player:teleport(AIR.buildVec(tp[1],safey,tp[3],dimid))
+
+	if dimid==0 or dimid==2 then
+		high=255+1
+	else
+		high=128+1
+	end
+	local safey=0
+	for i=pos[2],high do
+		local bl = mc.getBlock(mc.newIntPos(pos[1],i,pos[3],dimid))
+		if bl.type=='minecraft:air' then
+			safey=i
+			break
+		end
+	end
+	player:teleport(mc.newFloatPos(pos[1],safey,pos[3],dimid))
 	local ct = 'Complete.'
-	if safey~=tp[2] then
-		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-tp[2]))
+	if pos[2]~=safey then
+		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-pos[2]))
 	end
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -1187,19 +1200,6 @@ function calculation_price(length,width,height)
 	end
 	return math.modf(price)
 end
-function GetTopAir(vec4)
-	if dimid==0 or dimid==2 then high=255+1 end
-	if dimid==1 then high=128+1 end
-	local bl
-	local t=vec4
-	for i=y,high do
-		t.y = i
-		bl = mc.getBlock(t)
-		if bl.type=='minecraft:air' then
-			return i
-		end
-	end
-end
 function GetIdFromXuid(xuid)
 	if data.xuid2name(xuid)~=nil then
 		return data.xuid2name(xuid)
@@ -1365,7 +1365,7 @@ function Eventing_onPlayerCmd(player,cmd)
 		ILAPI.save()
 		player:sendModalForm(
 			_tr('gui.general.complete'),
-			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(xyz),'<b>',landname),
+			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(pos),'<b>',landname),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
 			FORM_NULL
