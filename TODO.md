@@ -19,3 +19,4 @@
  - [ ] 热重载
  - [ ] 性能测试
  - [ ] dim->dimid
+ - [ ] share->string

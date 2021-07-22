@@ -1248,6 +1248,9 @@ end
 
 -- Minecraft -> Eventing
 function Eventing_onRespawn(player)
+
+	-- print('[ILand] call event -> onRespawn ')
+
 	local xuid = player.xuid
 	if TRS_Form[xuid]==nil then -- 会多次Respawn.
 		TRS_Form[xuid] = {}
@@ -1265,6 +1268,9 @@ function Eventing_onRespawn(player)
 	end
 end
 function Eventing_onLeft(player)
+
+	-- print('[ILand] call event -> onLeft ')
+
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
 	ArrayParticles[xuid]=nil
@@ -1273,6 +1279,9 @@ function Eventing_onLeft(player)
 	end
 end
 function Eventing_onPlayerCmd(player,cmd)
+
+	-- print('[ILand] call event -> onPlayerCmd ')
+
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
@@ -1416,6 +1425,9 @@ function Eventing_onPlayerCmd(player,cmd)
 
 end
 function Eventing_onConsoleCmd(cmd)
+
+	-- print('[ILand] call event -> onConsoleCmd')
+
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
@@ -1464,6 +1476,8 @@ function Eventing_onConsoleCmd(cmd)
 end
 function Eventing_onDestroyBlock(player,block)
 
+	-- print('[ILand] call event -> onDestroyBlock')
+
 	local xuid=player.xuid
 
 	if TRS_Form[xuid].selectool==0 then
@@ -1495,6 +1509,9 @@ function Eventing_onDestroyBlock(player,block)
 	return false
 end
 function Eventing_onPlaceBlock(player,block)
+
+	-- print('[ILand] call event -> onPlaceBlock')
+
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1508,6 +1525,9 @@ function Eventing_onPlaceBlock(player,block)
 	return false
 end
 function Eventing_onUseItemOn(player,item,block)
+
+	-- print('[ILand] call event -> onUseItemOn')
+
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1538,6 +1558,9 @@ function Eventing_onUseItemOn(player,item,block)
 	return false
 end
 function Eventing_onOpenContainer(player,block)
+
+	-- print('[ILand] call event -> onOpenContainer')
+
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1550,6 +1573,9 @@ function Eventing_onOpenContainer(player,block)
 	return false
 end
 function Eventing_onAttack(player,entity)
+	
+	-- print('[ILand] call event -> onAttack')
+
 	local landId=ILAPI.PosGetLand(entity.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1562,12 +1588,20 @@ function Eventing_onAttack(player,entity)
 	return false
 end
 function Eventing_onExplode(entity,pos)
-	local landId=ILAPI.PosGetLand(pos)
+
+	-- print('[ILand] call event -> onExplode ')
+	
+	-- ### LXL Bug: Dimension Err ###
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(pos))
 	if landId==-1 then return end -- No Land
 	if land_data[landId].permissions.allow_exploding then return end -- Perm Allow
 	return false
 end
 function Eventing_onTakeItem(player,entity)
+
+	-- print('[ILand] call event -> onTakeItem ')
+
 	local landId=ILAPI.PosGetLand(entity.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1580,6 +1614,9 @@ function Eventing_onTakeItem(player,entity)
 	return false
 end
 function Eventing_onDropItem(player,item)
+
+	-- print('[ILand] call event -> onDropItem ')
+
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
 
@@ -1592,6 +1629,8 @@ function Eventing_onDropItem(player,item)
 	return false
 end
 function Eventing_onBlockInteracted(player,block)
+
+	-- print('[ILand] call event -> onBlockIteracted ')
 
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
