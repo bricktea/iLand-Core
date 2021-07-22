@@ -1502,9 +1502,8 @@ function Eventing_onPlaceBlock(player,block)
 
 	return false
 end
-function Eventing_onUseItem(player,item)
-	-- ### Bug: need ItemPos ###
-	local landId=ILAPI.PosGetLand(player.pos)
+function Eventing_onUseItemOn(player,item,block)
+	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1620,7 +1619,8 @@ end
 
 -- Lua -> Timer Callback
 function Tcb_LandSign()
-	for num,player in pairs(mc.getOnlinePlayers()) do
+	for num,playerid in pairs(GetOnlinePlayerList()) do
+		local player = mc.getPlayer(playerid)
 		local xuid = player.xuid
 		local landId=ILAPI.PosGetLand(player.pos)
 		if landId==-1 then TRS_Form[xuid].inland='null';return end -- no land here
@@ -1660,7 +1660,7 @@ mc.listen('onRespawn',Eventing_onRespawn)
 mc.listen('onLeft',Eventing_onLeft)
 mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
 mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
-mc.listen('onUseItem',Eventing_onUseItem)
+mc.listen('onUseItemOn',Eventing_onUseItemOn)
 mc.listen('onOpenContainer',Eventing_onOpenContainer)
 mc.listen('onAttack',Eventing_onAttack)
 mc.listen('onExplode',Eventing_onExplode)
@@ -1673,7 +1673,7 @@ function enableLandSign()
 	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
 end
 function enableParticles()
-	CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
+	-- CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
 end
 function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
@@ -1831,10 +1831,10 @@ mc.listen('onServerStarted',function()
 
 	-- Make timer
 	if cfg.features.landSign then
-		--enableLandSign()
+		enableLandSign()
 	end
 	if cfg.features.particles then
-		--enableParticles()
+		enableParticles()
 	end
 	if debug_mode then
 		setInterval(DEBUG_LANDQUERY,3*1000)
