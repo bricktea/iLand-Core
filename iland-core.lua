@@ -22,14 +22,14 @@ data_path = 'plugins\\iland\\'
 VecMap={}
 function updateChunk(landId,mode)
 	local TxTz={}
-	local dim = land_data[landId].range.dimid
+	local dimid = land_data[landId].range.dimid
 	function txz(x,z)
 		if TxTz[x] == nil then TxTz[x] = {} end
 		if TxTz[x][z] == nil then TxTz[x][z] = {} end
 	end
 	function chkmap(d,x,z)
-		if ChunkMap[dim][x] == nil then ChunkMap[dim][x] = {} end
-		if ChunkMap[dim][x][z] == nil then ChunkMap[dim][x][z] = {} end
+		if ChunkMap[dimid][x] == nil then ChunkMap[dimid][x] = {} end
+		if ChunkMap[dimid][x][z] == nil then ChunkMap[dimid][x][z] = {} end
 	end
 	function buildVec2(x,z)
 		local f = {}
@@ -59,15 +59,15 @@ function updateChunk(landId,mode)
 		for Tz,b in pairs(a) do
 			-- Tx Tz
 			if mode=='add' then
-				chkmap(dim,Tx,Tz)
-				if AIR.isValInList(ChunkMap[dim][Tx][Tz],landId) == -1 then
-					table.insert(ChunkMap[dim][Tx][Tz],#ChunkMap[dim][Tx][Tz]+1,landId)
+				chkmap(dimid,Tx,Tz)
+				if AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
+					table.insert(ChunkMap[dimid][Tx][Tz],#ChunkMap[dimid][Tx][Tz]+1,landId)
 				end
 			end
 			if mode=='del' then
-				local p = AIR.isValInList(ChunkMap[dim][Tx][Tz],landId)
+				local p = AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId)
 				if p~=-1 then
-					table.remove(ChunkMap[dim][Tx][Tz],p)
+					table.remove(ChunkMap[dimid][Tx][Tz],p)
 				end
 			end
 		end
@@ -357,7 +357,7 @@ function FORM_land_gui(player,data,lid)
 					'<a>',player.realName,
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
-					'<d>',dpos.dimid
+					'<d>',dpos.dimid,
 					'<e>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
 					'<f>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
 					'<g>',length,'<h>',width,'<i>',height,
@@ -614,9 +614,9 @@ function FORM_landtp(player,data)
 	local lands = ILAPI.GetPlayerLands(player.xuid)
 	local landId = lands[data[2]]
 	local tp = land_data[landId].settings.tpoint
-	local dim = land_data[landId].range.dimid
-	local safey = GetTopAir(tp[1],tp[2],tp[3],dim)
-	player:teleport(AIR.buildVec(tp[1],safey,tp[3],dim))
+	local dimid = land_data[landId].range.dimid
+	local safey = GetTopAir(tp[1],tp[2],tp[3],dimid)
+	player:teleport(AIR.buildVec(tp[1],safey,tp[3],dimid))
 	local ct = 'Complete.'
 	if safey~=tp[2] then
 		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-tp[2]))
@@ -678,7 +678,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
     end
     if mode==1 then -- point B
         if vec4.dimid~=newLand[xuid].dimid then
-			sendText(player,_tr('title.selectrange.failbycdim'));return
+			sendText(player,_tr('title.selectrange.failbycdimid'));return
         end
 		newLand[xuid].posB.x=math.modf(vec4.x)
 		newLand[xuid].posB.y=math.modf(vec4.y)
@@ -908,7 +908,7 @@ function GUI_FastMgr(player)
 end
 
 -- ILAPI
-function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
+function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	local landId
 	while true do
 		landId=formatGuid(system.randomGuid())
@@ -940,7 +940,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimensionid)
 	table.insert(land_data[landId].range.end_position,1,endpos.x)
 	table.insert(land_data[landId].range.end_position,2,endpos.y)
 	table.insert(land_data[landId].range.end_position,3,endpos.z)
-	land_data[landId].range.dimid=dimensionid
+	land_data[landId].range.dimid=dimid
 
 	local perm = land_data[landId].permissions
 
@@ -1023,20 +1023,20 @@ function ILAPI.GetOwner(landId)
 end
 function ILAPI.PosGetLand(vec4)
 	local Cx,Cz = pos2chunk(vec4)
-	local dim = vec4.dimid
-	if ChunkMap[dim][Cx]~=nil and ChunkMap[dim][Cx][Cz]~=nil then
-		for n,landId in pairs(ChunkMap[dim][Cx][Cz]) do
-			if dim==land_data[landId].range.dimid and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
+	local dimid = vec4.dimid
+	if ChunkMap[dimid][Cx]~=nil and ChunkMap[dimid][Cx][Cz]~=nil then
+		for n,landId in pairs(ChunkMap[dimid][Cx][Cz]) do
+			if dimid==land_data[landId].range.dimid and isPosInCube(vec4,VecMap[landId].a,VecMap[landId].b) then
 				return landId
 			end
 		end
 	end
 	return -1
 end
-function ILAPI.GetChunk(vec2,dim)
+function ILAPI.GetChunk(vec2,dimid)
 	local Cx,Cz = pos2chunk(vec2)
-	if ChunkMap[dim][Cx]~=nil and ChunkMap[dim][Cx][Cz]~=nil then
-		return ChunkMap[dim][Cx][Cz]
+	if ChunkMap[dimid][Cx]~=nil and ChunkMap[dimid][Cx][Cz]~=nil then
+		return ChunkMap[dimid][Cx][Cz]
 	end
 	return -1
 end
@@ -1188,8 +1188,8 @@ function calculation_price(length,width,height)
 	return math.modf(price)
 end
 function GetTopAir(vec4)
-	if dim==0 or dim==2 then high=255+1 end
-	if dim==1 then high=128+1 end
+	if dimid==0 or dimid==2 then high=255+1 end
+	if dimid==1 then high=128+1 end
 	local bl
 	local t=vec4
 	for i=y,high do
