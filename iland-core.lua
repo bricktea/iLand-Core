@@ -5,18 +5,21 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-local plugin_version = '2.10'
-local langVer = 210
-local minAirVer = 200
-local minLXLVer = 1
-local data_path = 'plugins\\iland\\'
-local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
-local MainCmd = 'land'
-local debug_mode = false
-local AIR = require('airLibs.lua')
-local json = require('dkjson')
+plugin_version = '2.10'
 
-local VecMap={}
+langVer = 210
+minAirVer = 200
+minLXLVer = 1
+
+AIR = require('airLibs')
+json = require('dkjson')
+ArrayParticles={};ILAPI={}
+newLand={};TRS_Form={}
+
+MainCmd = 'land'
+data_path = 'plugins\\iland\\'
+
+VecMap={}
 function updateChunk(landId,mode)
 	local TxTz={}
 	local dim = land_data[landId].range.dimid
@@ -1057,8 +1060,8 @@ end
 -- feature function
 function GetOnlinePlayerList() -- player namelist
 	local b={}
-	for num,player in pairs(mc.getOnlinePlayers()) do
-		b[#b+1] = player.realName
+	for xuid,data in pairs(TRS_Form) do
+		b[#b+1] = mc.getPlayer(xuid).realName
 	end
 	return b
 end
@@ -1097,10 +1100,10 @@ function money_get(player)
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
-	mc.runCmdEx('title "' .. name .. '" times 20 25 20')
+	mc.runcmdEx('title "' .. name .. '" times 20 25 20')
 	if subtitle~=nil then
-	mc.runCmdEx('title "' .. name .. '" subtitle '..subtitle) end
-	mc.runCmdEx('title "' .. name .. '" title '..title)
+	mc.runcmdEx('title "' .. name .. '" subtitle '..subtitle) end
+	mc.runcmdEx('title "' .. name .. '" title '..title)
 end
 function sendText(player,text,mode)
 	-- [mode] 0 = FORCE USE TALK
@@ -1622,25 +1625,43 @@ function Tcb_LandSign()
 		if owner~='?' then ownername=GetIdFromXuid(owner) end
 		local slname = ILAPI.GetNickname(landId,false)
 		if xuid==owner then
-			if not(land_data[landId].settings.signtome) then return end
-			sendTitle(player,AIR.gsubEx(_tr('sign.listener.ownertitle'),'<a>',slname),_tr('sign.listener.ownersubtitle'))
+			if land_data[landId].settings.signtome then
+				sendTitle(
+					player,
+					AIR.gsubEx(
+						_tr('sign.listener.ownertitle'),
+						'<a>',slname
+					),
+					_tr('sign.listener.ownersubtitle')
+				)
+			else
+				return
+			end
 		else
-			if not(land_data[landId].settings.signtother) then return end
-			sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
-			if land_data[landId].settings.describe~='' then
-				sendText(player,AIR.gsubEx(land_data[landId].settings.describe,
-													'$visitor',player.realName,
-													'$n','\n'
-												),0)
+			if land_data[landId].settings.signtother then
+				sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
+				if land_data[landId].settings.describe~='' then
+					sendText(
+						player,
+						AIR.gsubEx(
+							land_data[landId].settings.describe,
+							'$visitor',player.realName,
+							'$n','\n'
+						),
+						0
+					)
+				end
+			else
+				return
 			end
 		end
-		TRS_Form[v].inland=landId
+		TRS_Form[xuid].inland=landId
 	end
 end
 function Tcb_SelectionParticles()
 	for xuid,posarr in pairs(ArrayParticles) do
 		for n,pos in pairs(posarr) do
-			mc.runCmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1.6)..' '..pos.z)
+			mc.runcmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1.6)..' '..pos.z)
 		end
 	end
 end
