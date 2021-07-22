@@ -1200,11 +1200,6 @@ function GetTopAir(vec4)
 		end
 	end
 end
-function did2dim(id)
-	if id==0 then return _tr('talk.dim.zero') end
-	if id==1 then return _tr('talk.dim.one') end
-	if id==2 then return _tr('talk.dim.two') end
-end
 function GetIdFromXuid(xuid)
 	if data.xuid2name(xuid)~=nil then
 		return data.xuid2name(xuid)
