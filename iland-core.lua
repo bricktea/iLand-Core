@@ -1686,7 +1686,7 @@ function enableLandSign()
 	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
 end
 function enableParticles()
-	-- CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
+	CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
 end
 function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
