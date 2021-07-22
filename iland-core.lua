@@ -13,7 +13,7 @@ local data_path = 'plugins\\iland\\'
 local newLand={};local TRS_Form={};local ArrayParticles={};ILAPI={}
 local MainCmd = 'land'
 local debug_mode = false
-lxl.require('airLibs.lua')
+local AIR = require('airLibs.lua')
 local json = require('dkjson')
 
 local VecMap={}
@@ -110,8 +110,7 @@ function FORM_BACK_LandOPMgr(player,id)
 end
 function FORM_BACK_LandMgr(player,id)
 	if not(id) then return end
-	local xuid=player.xuid
-	if TRS_Form[xuid].backpo==1 then
+	if TRS_Form[player.xuid].backpo==1 then
 		GUI_FastMgr(player)
 		return
 	end
@@ -121,6 +120,7 @@ function FORM_land_buy(player,id)
 	if not(id) then 
 		sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	end
+
 	local xuid = player.xuid
 	local player_credits = money_get(player)
 	if newLand[xuid].landprice>player_credits then
@@ -348,21 +348,17 @@ function FORM_land_gui(player,data,lid)
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
-		local nname=ILAPI.GetNickname(landId,false)
 		player:sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
 			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
 					'<a>',player.realName,
-					'<m>',landId,
-					'<n>',nname,
-					'<b>',dpos.start_position[1],
-					'<c>',dpos.start_position[2],
-					'<d>',dpos.start_position[3],
-					'<e>',dpos.end_position[1],
-					'<f>',dpos.end_position[2],
-					'<g>',dpos.end_position[3],
-					'<h>',length,'<i>',width,'<j>',height,
-					'<k>',squ,'<l>',vol),
+					'<b>',landId,
+					'<c>',ILAPI.GetNickname(landId,false),
+					'<d>',dpos.dimid
+					'<e>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
+					'<f>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
+					'<g>',length,'<h>',width,'<i>',height,
+					'<j>',squ,'<k>',vol),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
 			FORM_BACK_LandMgr
@@ -476,9 +472,10 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if data[2]==7 then --删除领地
-		local height = math.abs(land_data[landId].range.start_position[2] - land_data[landId].range.end_position[2]) + 1
-		local length = math.abs(land_data[landId].range.start_position[1] - land_data[landId].range.end_position[1]) + 1
-		local width = math.abs(land_data[landId].range.start_position[3] - land_data[landId].range.end_position[3]) + 1
+		local dpos = land_data[landId].range
+		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
+		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
+		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
 		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_tr('gui.delland.title'),
