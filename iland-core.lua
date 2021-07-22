@@ -6,6 +6,7 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 plugin_version = '2.10'
+debug_mode = false
 
 langVer = 210
 minAirVer = 200
@@ -72,7 +73,6 @@ function updateChunk(landId,mode)
 			end
 		end
 	end
-
 end
 function updateVecMap(landId,mode)
 	if mode=='add' then
@@ -1221,9 +1221,9 @@ end
 function fmCube(posA,posB)
 	local A = posA
 	local B = posB
-	if A.x>B.x then A.x,B.x = A.x,B.x end
-	if A.y>B.y then A.y,B.y = A.y,B.y end
-	if A.z>B.z then A.z,B.z = A.z,B.z end
+	if A.x>B.x then A.x,B.x = B.x,A.x end
+	if A.y>B.y then A.y,B.y = B.y,A.y end
+	if A.z>B.z then A.z,B.z = B.z,A.z end
 	return A,B
 end
 function formatGuid(guid)
@@ -1692,7 +1692,7 @@ function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
 	local pos = debug_landquery.pos
 	local landId=ILAPI.PosGetLand(pos)
-	local N = ILAPI.GetChunk(pos)
+	local N = ILAPI.GetChunk(pos,pos.dimid)
 	local Cx,Cz = pos2chunk(pos)
 	print('[ILand] Debugger: [Query] '..landId)
 	if N==-1 then
