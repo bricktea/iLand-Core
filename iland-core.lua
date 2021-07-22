@@ -6,7 +6,7 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 plugin_version = '2.10'
-debug_mode = false
+debug_mode = true
 
 langVer = 210
 minAirVer = 200
@@ -799,7 +799,7 @@ function GUI_LMgr(player)
 	end
 
 	local welcomeText=_tr('gui.landmgr.content')
-	local lid=ILAPI.PosGetLand(player.pos)
+	local lid=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	local nname
 	if lid~=-1 then
 		nname = ILAPI.GetNickname(lid,true)
@@ -825,7 +825,7 @@ function GUI_LMgr(player)
 end
 function GUI_OPLMgr(player)
 	local landlst={}
-	local lid=ILAPI.PosGetLand(player.pos)
+	local lid=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	for i,v in pairs(land_data) do
 		local thisOwner=ILAPI.GetOwner(i)
 		if thisOwner~='?' then thisOwner=GetIdFromXuid(thisOwner) else thisOwner='?' end
@@ -1235,6 +1235,16 @@ function formatGuid(guid)
         string.sub(guid,21,32)
     )
 end
+function formatPlayerPos(pos)
+	local p={}
+	p.x=math.floor(pos.x)
+	p.y=math.floor(pos.y)-1
+	p.z=math.floor(pos.z)
+	if pos.dimid~=nil then
+		p.dimid=pos.dimid
+	end
+	return p
+end
 
 -- Minecraft -> Eventing
 function Eventing_onRespawn(player)
@@ -1267,7 +1277,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	if opt[1] ~= MainCmd then return end
 
 	local xuid = player.xuid
-	local pos = player.pos
+	local pos = formatPlayerPos(player.pos)
 
 	-- [ ] Main Command
 	if opt[1] == MainCmd and opt[2]==nil then
@@ -1570,7 +1580,7 @@ function Eventing_onTakeItem(player,entity)
 	return false
 end
 function Eventing_onDropItem(player,item)
-	local landId=ILAPI.PosGetLand(player.pos)
+	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1617,7 +1627,7 @@ function Tcb_LandSign()
 	for num,playerid in pairs(GetOnlinePlayerList()) do
 		local player = mc.getPlayer(playerid)
 		local xuid = player.xuid
-		local landId=ILAPI.PosGetLand(player.pos)
+		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		if landId==-1 then TRS_Form[xuid].inland='null';return end -- no land here
 		if landId==TRS_Form[xuid].inland then return end -- signed
 		local owner=ILAPI.GetOwner(landId)
@@ -1690,10 +1700,11 @@ function enableParticles()
 end
 function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
-	local pos = debug_landquery.pos
+	local pos = formatPlayerPos(debug_landquery.pos)
 	local landId=ILAPI.PosGetLand(pos)
 	local N = ILAPI.GetChunk(pos,pos.dimid)
 	local Cx,Cz = pos2chunk(pos)
+	print('[ILand] Debugger: [plPos] x='..pos.x..' y='..pos.y..' z='..pos.z)
 	print('[ILand] Debugger: [Query] '..landId)
 	if N==-1 then
 		print('[ILand] Debugger: [Chunk] not found')
