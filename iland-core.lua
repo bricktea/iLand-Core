@@ -1908,6 +1908,20 @@ mc.listen('onServerStarted',function()
 		network.httpGet('http://cdisk.amd.rocks/tmp/ILAND/v111_version',Ncb_online)
 	end
 
+	-- export ILAPI
+	lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
+	lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
+	lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
+	lxl.export(ILAPI.GetNickname,'ILAPI_GetNickname')
+	lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
+	lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
+	lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
+	lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
+	lxl.export(ILAPI.GetTpPoint,'ILAPI_GetTpPoint')
+	lxl.export(ILAPI.GetDistence,'ILAPI_GetDistence')
+	lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
+	lxl.export(ILAPI.save,'ILAPI_save')
+
 	-- register cmd.
 	mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
 	mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
