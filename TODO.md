@@ -9,13 +9,13 @@
  - [x] 针对领地数量较多的服务器的性能优化
  - [ ] 地价优惠功能
  - [x] 适配LXL
- - [ ] 货币名称移向配置文件
+ - [x] 货币名称移向配置文件
  - [x] 删除大量Vec和坐标的转换，提升性能
  - [x] 配置文件自动升级支持到1.1.4
  - [ ] 性能测试
  - [x] dim->dimid
  - [x] share->string
- - [ ] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator
+ - [x] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator
 
  > 3-rd Plugins 计划
   - [ ] 附近领地传感器

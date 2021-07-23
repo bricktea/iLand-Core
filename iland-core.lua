@@ -511,7 +511,7 @@ function FORM_land_gui(player,data,lid)
 		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_tr('gui.delland.title'),
-			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',_tr('talk.credit_name')),
+			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',cfg.money.credit_name),
 			_tr('gui.general.yes'),
 			_tr('gui.general.cancel'),
 			FORM_land_gui_delete
@@ -817,7 +817,7 @@ function BoughtProg_CreateOrder(player)
 			'<c>',height,
 			'<d>',vol,
 			'<e>',newLand[xuid].landprice,
-			'<f>',_tr('talk.credit_name'),
+			'<f>',cfg.money.credit_name,
 			'<g>',money_get(player)
 		),
 		_tr('gui.general.buy'),
@@ -1938,6 +1938,7 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==200 then
 			cfg.version=210
+			cfg.money.credit_name='Gold-Coins'
 			for landId,data in pairs(land_data) do
 				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
 				land_data[landId].range.dim=nil

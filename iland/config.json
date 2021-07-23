@@ -10,6 +10,7 @@
     },
     "money": {
         "scoreboard_objname": "money",
+        "credit_name": "Gold-Coins",
         "protocol": "scoreboard"
     }, 
     "land": {
