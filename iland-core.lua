@@ -1881,8 +1881,22 @@ mc.listen('onServerStarted',function()
 			cfg.features.player_max_ple = 600
 			ILAPI.save()
 		end
+		if cfg.version==200 then
+			cfg.version=210
+			for landId,data in pairs(land_data) do
+				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
+				land_data[landId].range.dim=nil
+				for n,xuid in pairs(land_data[landId].settings.share) do
+					if type(xuid)~='string' then
+						land_data[landId].settings.share[n]=tostring(land_data[landId].settings.share[n])
+					end
+				end
+			end
+			-- ILAPI.save()
+		end
 	end
 	
+	print(type('abaaba'))
 	-- Load&Check i18n file
 	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 	if i18n_data.VERSION ~= langVer then
