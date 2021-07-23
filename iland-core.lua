@@ -14,13 +14,13 @@ minLXLVer = 1
 
 AIR = require('airLibs')
 json = require('dkjson')
+
 ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
 data_path = 'plugins\\iland\\'
 
-VecMap={}
 function updateChunk(landId,mode)
 	local TxTz={}
 	local dimid = land_data[landId].range.dimid
@@ -87,6 +87,21 @@ function updateVecMap(landId,mode)
 		VecMap[landId]=nil
 	end
 end
+function updateLandTrustMap(landId)
+	LandTrustedMap[landId]={}
+	for n,xuid in pairs(land_data[landId].settings.share) do
+		LandTrustedMap[landId][xuid]={}
+	end
+end
+function updateLandOwnersMap(landId)
+	LandOwnersMap[landId]={}
+	LandOwnersMap[landId]=ILAPI.GetOwner(landId)
+end
+function updateLandOperatorsMap()
+	for n,xuid in pairs(cfg.manager.operator) do
+		LandOperatorsMap[xuid]={}
+	end
+end
 function buildChunks()
 	ChunkMap={}
 
@@ -103,6 +118,17 @@ function buildVecMap()
 	for landId,data in pairs(land_data) do
 		updateVecMap(landId,'add')
 	end
+end
+function buildLTOPMap()
+	-- LTOP = Land Trust|Owners|Operator
+	LandTrustedMap={}
+	LandOwnersMap={}
+	LandOperatorsMap={}
+	for landId,data in pairs(land_data) do
+		updateLandTrustMap(landId)
+		updateLandOwnersMap(landId)
+	end
+	updateLandOperatorsMap()
 end
 
 -- form -> callback
@@ -232,6 +258,7 @@ function FORM_land_gui_trust(player,data)
 			sendText(player,_tr('title.landtrust.alreadyexists'));return
 		end
 		landshare[n]=x
+		updateLandTrustMap(landId)
 		ILAPI.save()
 		if not(data[3]) then 
 			player:sendModalForm(
@@ -247,6 +274,7 @@ function FORM_land_gui_trust(player,data)
 		if data[4]==0 then return end
 		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[4]+1])
 		table.remove(landshare,AIR.isValInList(landshare,x))
+		updateLandTrustMap(landId)
 		ILAPI.save()
 		player:sendModalForm(
 			_tr('gui.general.complete'),
@@ -308,6 +336,7 @@ function FORM_land_gui_transfer(player,data)
 	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
+	updateLandOwnersMap(landId)
 	ILAPI.save()
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -502,6 +531,7 @@ function FORM_land_mgr_transfer(player,data)
 	table.remove(land_owners[afrom],AIR.isValInList(land_owners[afrom],landId))
 	table.insert(land_owners[go],#land_owners[go]+1,landId)
 	ILAPI.save()
+	updateLandOwnersMap(landId)
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',landId,'<b>',GetIdFromXuid(go)),
@@ -999,6 +1029,8 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	ILAPI.save()
 	updateChunk(landId,'add')
 	updateVecMap(landId,'add')
+	updateLandOwnersMap(landId)
+	updateLandTrustMap(landId)
 end
 function ILAPI.DeleteLand(landId)
 	local owner=ILAPI.GetOwner(landId)
@@ -1060,6 +1092,27 @@ function ILAPI.GetTpPoint(landId) --return vec4
 end
 function ILAPI.GetDistence(landId)
 	-- pwt..
+end
+function ILAPI.IsPlayerTrusted(landId,xuid)
+	if LandTrustedMap[landId][xuid]==nil then
+		return false
+	else
+		return true
+	end
+end
+function ILAPI.IsLandOwner(landId,xuid)
+	if LandOwnersMap[landId]==xuid then
+		return true
+	else
+		return false
+	end
+end
+function ILAPI.IsLandOperator(xuid)
+	if LandOperatorsMap[xuid]==nil then
+		return false
+	else
+		return true
+	end
 end
 function ILAPI.GetVersion()
 	return plugin_version
@@ -1445,6 +1498,7 @@ function Eventing_onConsoleCmd(cmd)
 				print('Wrong xuid!');return false
 			end
 			table.insert(cfg.manager.operator,#cfg.manager.operator+1,opt[3])
+			updateLandOperatorsMap()
 			ILAPI.save()
 			print('Xuid: '..opt[3]..' has been added to the LandMgr list.')
 		else
@@ -1461,6 +1515,7 @@ function Eventing_onConsoleCmd(cmd)
 				print('Wrong xuid!');return false
 			end
 			table.remove(cfg.manager.operator,p)
+			updateLandOperatorsMap()
 			ILAPI.save()
 			print('Xuid: '..opt[3]..' has been removed from LandMgr list.')
 		else
@@ -1502,9 +1557,9 @@ function Eventing_onDestroyBlock(player,block)
 	if landId==-1 then return end -- No Land
 
 	if land_data[landId].permissions.allow_destroy then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1517,9 +1572,9 @@ function Eventing_onPlaceBlock(player,block)
 
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_place then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 
 	return false
@@ -1532,9 +1587,9 @@ function Eventing_onUseItemOn(player,item,block)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	
 	local perm = land_data[landId].permissions
 	local bn = block.type
@@ -1566,9 +1621,9 @@ function Eventing_onOpenContainer(player,block)
 
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_open_chest then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1581,9 +1636,9 @@ function Eventing_onAttack(player,entity)
 
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_attack then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1607,9 +1662,9 @@ function Eventing_onTakeItem(player,entity)
 
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_pickupitem then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1622,9 +1677,9 @@ function Eventing_onDropItem(player,item)
 
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_dropitem then return end -- Perm Allow
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1636,9 +1691,9 @@ function Eventing_onBlockInteracted(player,block)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if AIR.isValInList(cfg.manager.operator,xuid)~=-1 then return end -- Manager
-	if AIR.isValInList(land_owners[xuid],landId)~=-1 then return end -- Owner
-	if AIR.isValInList(land_data[landId].settings.share,xuid)~=-1 then return end -- Trust
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 
 	local perm = land_data[landId].permissions
 	local bn = block.type
@@ -1905,6 +1960,7 @@ mc.listen('onServerStarted',function()
 	-- Build maps
 	buildChunks()
 	buildVecMap()
+	buildLTOPMap()
 
 	-- Make timer
 	if cfg.features.landSign then
