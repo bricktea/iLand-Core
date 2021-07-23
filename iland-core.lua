@@ -808,8 +808,12 @@ function BoughtProg_CreateOrder(player)
 	end
 	--- 购买
     newLand[xuid].landprice = calculation_price(length,width,height)
+	local dis_info = ''
+	if cfg.money.discount<100 then
+		dis_info=AIR.gsubEx(_tr('gui.buyland.discount'),'<a>',tostring(100-cfg.money.discount))
+	end
 	player:sendModalForm(
-		_tr('gui.buyland.title'),
+		_tr('gui.buyland.title')..dis_info,
 		AIR.gsubEx(
 			_tr('gui.buyland.content'),
 			'<a>',length,
@@ -1251,7 +1255,7 @@ function calculation_price(length,width,height)
 	if cfg.land_buy.calculation == 'm-3' then
 		price=length*width*t[1]
 	end
-	return math.modf(price)
+	return math.modf(price*(cfg.money.discount/100))
 end
 function GetIdFromXuid(xuid)
 	if data.xuid2name(xuid)~=nil then
@@ -1939,6 +1943,7 @@ mc.listen('onServerStarted',function()
 		if cfg.version==200 then
 			cfg.version=210
 			cfg.money.credit_name='Gold-Coins'
+			cfg.money.discount=100
 			for landId,data in pairs(land_data) do
 				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
 				land_data[landId].range.dim=nil

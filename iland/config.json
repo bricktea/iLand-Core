@@ -11,6 +11,7 @@
     "money": {
         "scoreboard_objname": "money",
         "credit_name": "Gold-Coins",
+        "discount": 100,
         "protocol": "scoreboard"
     }, 
     "land": {
