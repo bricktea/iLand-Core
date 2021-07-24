@@ -1162,6 +1162,15 @@ function ILAPI.IsLandOperator(xuid)
 		return true
 	end
 end
+function ILAPI.GetAllTrustedLand(xuid)
+	local trusted = {}
+	for landId,data in pairs(land_data) do
+		if ILAPI.IsPlayerTrusted(landId,xuid) then
+			trusted[#trusted+1]=landId
+		end
+	end
+	return trusted
+end
 function ILAPI.GetVersion()
 	return plugin_version
 end
@@ -2052,6 +2061,7 @@ mc.listen('onServerStarted',function()
 	lxl.export(ILAPI.IsPlayerTrusted,'ILAPI_IsPlayerTrusted')
 	lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
 	lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
+	lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
 	lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 	lxl.export(ILAPI.save,'ILAPI_save')
 
