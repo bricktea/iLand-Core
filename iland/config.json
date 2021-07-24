@@ -3,10 +3,7 @@
     "update_check": true,
     "manager": {
         "default_language": "zh_CN",
-        "operator": [
-            "put xuid here,",
-            "1145141919810233"
-        ]
+        "operator": []
     },
     "money": {
         "scoreboard_objname": "money",
@@ -20,15 +17,20 @@
         "land_min_square": 4
     },
     "land_buy": {
-        "calculation": "m-1",
-        "price": [20,4],
+        "calculation_3D":"m-1",
+        "calculation_2D":"d-1",
+        "price_3D":[20,4],
+        "price_2D":[35],
         "refund_rate": 0.9
     },
     "features": {
+        "auto_update":true,
         "landSign": true,
         "particles": true,
         "landtp": true,
         "force_talk": false,
+        "land_3D":true,
+        "land_2D":true,
         "chunk_side": 16,
         "sign_frequency": 2,
         "selection_tool": "minecraft:wooden_axe",

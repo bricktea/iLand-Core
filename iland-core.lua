@@ -330,8 +330,8 @@ function FORM_land_gui_transfer(player,data)
 	if data==nil then return end
 	
 	if data[1]==0 then return end
-	local xuid=player.xuid
 	local landId=TRS_Form[xuid].landId
+	local xuid=ILAPI.GetOwner(landId)
 	local go=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
 	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
@@ -518,67 +518,72 @@ function FORM_land_gui(player,data,lid)
 		);return
 	end
 end
-function FORM_land_mgr_transfer(player,data)
-	if data==nil then return end
-	
-	local xuid = player.xuid
-	if data[2]==0 then return end
-	local landId=TRS_Form[xuid].targetland
-	local afrom=ILAPI.GetOwner(landId)
-	if afrom=='?' then return end
-	local go=GetXuidFromId(TRS_Form[xuid].playerList[data[2]+1])
-	if go==afrom then return end
-	table.remove(land_owners[afrom],AIR.isValInList(land_owners[afrom],landId))
-	table.insert(land_owners[go],#land_owners[go]+1,landId)
-	ILAPI.save()
-	updateLandOwnersMap(landId)
-	player:sendModalForm(
-		_tr('gui.general.complete'),
-		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',landId,'<b>',GetIdFromXuid(go)),
-		_tr('gui.general.back'),
-		_tr('gui.general.close'),
-		FORM_BACK_LandOPMgr
-	)
-end
 function FORM_land_mgr(player,data)
 	if data==nil then return end
-	
-	if data[8]~='' then
-		cfg.land.player_max_lands = tonumber(data[8])
+	local xuid=player.xuid
+	if data[2]~='' then
+		cfg.land.player_max_lands = tonumber(data[2])
 	end
-	if data[9]~='' then
-		cfg.land.land_max_square = tonumber(data[9])
+	if data[3]~='' then
+		cfg.land.land_max_square = tonumber(data[3])
 	end
-	if data[10]~='' then
-		cfg.land.land_min_square = tonumber(data[10])
+	if data[4]~='' then
+		cfg.land.land_min_square = tonumber(data[4])
 	end
-	cfg.land_buy.refund_rate = data[11]/100
-	if data[13]==1 then
-		cfg.money.protocol='scoreboard'
-	else
+	cfg.land_buy.refund_rate = data[5]/100
+	if data[6]==0 then
 		cfg.money.protocol='llmoney'
 	end
+	if data[6]==1 then
+		cfg.money.protocol='scoreboard'
+	end
+	if data[7]~='' then
+		cfg.money.scoreboard_objname=data[7]
+	end
+	if data[8]~='' then
+		cfg.money.credit_name=data[8]
+	end
+	cfg.money.discount=data[9]
+	if data[10]==0 then
+		cfg.land_buy.calculation_3D='m-1'
+	end
+	if data[10]==1 then
+		cfg.land_buy.calculation_3D='m-2'
+	end
+	if data[10]==2 then
+		cfg.land_buy.calculation_3D='m-3'
+	end
+	if data[11]~='' then
+		cfg.land_buy.price_3D[1]=tonumber(data[11])
+	end
+	if data[12]~='' then
+		cfg.land_buy.price_3D[2]=tonumber(data[12])
+	end
+	if data[13]==0 then
+		cfg.land_buy.calculation_2D='d-1'
+	end
 	if data[14]~='' then
-		cfg.money.scoreboard_objname=data[14]
+		cfg.land_buy.price_2D[1]=tonumber(data[14])
 	end
-	if data[16]~='' then
-		cfg.manager.default_language=data[16]
-	end
-	cfg.features.landSign = data[18]
-	cfg.features.particles = data[19]
-	cfg.features.force_talk = data[20]
-	cfg.update_check = data[21]
-	if data[22]~='' then
-		cfg.features.selection_tool_name=data[22]
-	end
+	cfg.manager.default_language=TRS_Form[xuid].langlist[data[15]+1]
+	cfg.features.landSign = data[16]
+	cfg.features.particles = data[17]
+	cfg.features.force_talk = data[18]
+	cfg.update_check = data[19]
+	cfg.features.auto_update = data[20]
+	cfg.features.land_2D = data[21]
+	cfg.features.land_3D = data[22]
 	if data[23]~='' then
-		cfg.features.sign_frequency=tonumber(data[23])
+		cfg.features.selection_tool_name=data[23]
 	end
 	if data[24]~='' then
-		cfg.features.chunk_side=tonumber(data[24])
+		cfg.features.sign_frequency=tonumber(data[24])
 	end
 	if data[25]~='' then
-		cfg.features.player_max_ple=tonumber(data[25])
+		cfg.features.chunk_side=tonumber(data[25])
+	end
+	if data[26]~='' then
+		cfg.features.player_max_ple=tonumber(data[26])
 	end
 
 	ILAPI.save()
@@ -599,43 +604,26 @@ function FORM_land_mgr(player,data)
 		clearInterval(CLOCK_PARTICLES)
 		CLOCK_PARTICLES=nil
 	end
-	
-	-- lands manager
 
-	if data[5]==0 then player:sendModalForm(_tr('gui.general.complete'),"Complete.",_tr('gui.general.back'),_tr('gui.general.close'),FORM_BACK_LandOPMgr);return end
-	local count=0;local landId=-1
-	for i,v in pairs(land_data) do
-		count=count+1
-		if count==data[5] then landId=i;break end
-	end
-	if landId==-1 then return end
-	if data[6]==1 then -- tp to land.
-		player:teleport(AIR.buildVec(land_data[landId].settings.tpoint[1],land_data[landId].settings.tpoint[2],land_data[landId].settings.tpoint[3],land_data[landId].range.dimid))
-	end
-	if data[6]==2 then -- transfer land.
-		local xuid = player.xuid
-		TRS_Form[xuid].playerList = GetOnlinePlayerList()
-		TRS_Form[xuid].targetland=landId
-		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
-		ILAPI.save()
-		local Form = mc.newCustomForm()
-		Form:setTitle(_tr('gui.oplandmgr.trsland.title'))
-		Form:addLabel(_tr('gui.oplandmgr.trsland.content'))
-		Form:addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
-		player:sendForm(Form,FORM_land_mgr_transfer)
+	-- lands manager
+	
+	if data[1]==0 then
+		player:sendModalForm(
+			_tr('gui.general.complete'),
+			"Complete.",
+			_tr('gui.general.back'),
+			_tr('gui.general.close'),
+			FORM_BACK_LandOPMgr
+		)
 		return
 	end
-	if data[6]==3 then -- delete land.
-		ILAPI.DeleteLand(landId)
-	end
 
-	player:sendModalForm(
-		_tr('gui.general.complete'),
-		"Complete.",
-		_tr('gui.general.back'),
-		_tr('gui.general.close'),
-		FORM_BACK_LandOPMgr
-	)
+	local IdLst={}
+	for landId,data in pairs(land_data) do
+		IdLst[#IdLst+1]=landId
+	end
+	TRS_Form[xuid].landId = IdLst[data[1]]
+	GUI_FastMgr(player,true)
 end
 function FORM_landtp(player,data)
 	if data==nil or data[1]==0 then return end
@@ -871,7 +859,11 @@ function GUI_LMgr(player)
 	player:sendForm(Form,FORM_land_gui)
 end
 function GUI_OPLMgr(player)
+
+	local xuid=player.xuid
+	-- build land_list
 	local landlst={}
+	local land_default=0
 	local lid=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	for i,v in pairs(land_data) do
 		local thisOwner=ILAPI.GetOwner(i)
@@ -883,6 +875,7 @@ function GUI_OPLMgr(player)
 		end
 		if i==lid then
 			landlst[#landlst] = _tr('gui.oplandmgr.there')..landlst[#landlst]
+			land_default = #landlst-1
 		end
 	end
 	table.insert(landlst,1,'['.._tr('gui.general.plzchose')..']')
@@ -899,49 +892,100 @@ function GUI_OPLMgr(player)
 	else
 		iAnn = '-'
 	end
-
-	local features={_tr('gui.oplandmgr.donothing'),_tr('gui.oplandmgr.tp'),_tr('gui.oplandmgr.transfer'),_tr('gui.oplandmgr.delland')}
+	
+	-- money protocol
 	local money_protocols = {'LLMoney',_tr('talk.scoreboard')}
+	local money_default
+	if cfg.money.protocol=='scoreboard' then
+		money_default=1
+	else
+		money_default=0
+	end
+	local calculation_3D = {'m-1','m-2','m-3'}
+	local c3d_default=0
+	if cfg.land_buy.calculation_3D=='m-1' then
+		c3d_default=0
+	end
+	if cfg.land_buy.calculation_3D=='m-2' then
+		c3d_default=1
+	end
+	if cfg.land_buy.calculation_3D=='m-3' then
+		c3d_default=2
+	end
+	local calculation_2D = {'d-1'}
+	local aprice = AIR.deepcopy(cfg.land_buy.price_3D)
+	if aprice[2]==nil then
+		aprice[2]=''
+	end
+	local bprice = AIR.deepcopy(cfg.land_buy.price_2D)
 
+	-- language
+	local langLst = {}
+	local default_lang = 0
+	for n,file in pairs(file.getFilesList(data_path..'lang\\')) do
+		local tmp = AIR.split(file,'.')
+		if tmp[2]=='json' then
+			langLst[#langLst+1]=tmp[1]
+		end
+		if tmp[1]==cfg.manager.default_language then
+			default_lang=#langLst-1
+		end
+	end
+	TRS_Form[xuid].langlist = langLst
+
+	-- build form
 	local Form = mc.newCustomForm()
 	Form:setTitle(_tr('gui.oplandmgr.title'))
 	Form:addLabel(_tr('gui.oplandmgr.tip'))
 	Form:addLabel(AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer))
 	Form:addLabel(
-		AIR.gsubEx(_tr('gui.oplandmgr.plugin.ver'),'<a>',plugin_version)..'\\n'..
-		AIR.gsubEx(_tr('gui.oplandmgr.plugin.latest'),'<a>',latestVer)..'\\n'..
+		AIR.gsubEx(_tr('gui.oplandmgr.plugin.ver'),'<a>',plugin_version)..'\n'..
+		AIR.gsubEx(_tr('gui.oplandmgr.plugin.latest'),'<a>',latestVer)..'\n'..
 		AIR.gsubEx(_tr('gui.oplandmgr.plugin.acement'),'<a>',iAnn)
 	)
 	Form:addLabel(_tr('gui.oplandmgr.landmgr'))
-	Form:addDropdown(_tr('gui.oplandmgr.selectland'),landlst)
-	Form:addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
+	Form:addDropdown(_tr('gui.oplandmgr.selectland'),landlst,land_default)
 	Form:addLabel(_tr('gui.oplandmgr.landcfg'))
-	Form:addInput(_tr('gui.oplandmgr.landcfg.maxland'),cfg.land.player_max_lands)
-	Form:addInput(_tr('gui.oplandmgr.landcfg.maxsqu'),cfg.land.land_max_square)
-	Form:addInput(_tr('gui.oplandmgr.landcfg.minsqu'),cfg.land.land_min_square)
-	Form:addSlider(_tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,tostring(cfg.land_buy.refund_rate*10))
+	Form:addInput(_tr('gui.oplandmgr.landcfg.maxland'),tostring(cfg.land.player_max_lands))
+	Form:addInput(_tr('gui.oplandmgr.landcfg.maxsqu'),tostring(cfg.land.land_max_square))
+	Form:addInput(_tr('gui.oplandmgr.landcfg.minsqu'),tostring(cfg.land.land_min_square))
+	Form:addSlider(_tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,cfg.land_buy.refund_rate*100)
 	Form:addLabel(_tr('gui.oplandmgr.economy'))
-	Form:addDropdown(_tr('gui.oplandmgr.economy.protocol'),money_protocols)
+	Form:addDropdown(_tr('gui.oplandmgr.economy.protocol'),money_protocols,money_default)
 	Form:addInput(_tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
+	Form:addInput(_tr('gui.oplandmgr.economy.credit_name'),cfg.money.credit_name)
+	Form:addSlider(_tr('gui.oplandmgr.economy.discount'),0,100,1,cfg.money.discount)
+	Form:addDropdown(_tr('gui.oplandmgr.economy.calculation_3D'),calculation_3D,c3d_default)
+	Form:addInput(_tr('gui.oplandmgr.economy.price')..'[1]',tostring(aprice[1]))
+	Form:addInput(_tr('gui.oplandmgr.economy.price')..'[2]',tostring(aprice[2]))
+	Form:addDropdown(_tr('gui.oplandmgr.economy.calculation_2D'),calculation_2D)
+	Form:addInput(_tr('gui.oplandmgr.economy.price')..'[1]',tostring(bprice[1]))
 	Form:addLabel(_tr('gui.oplandmgr.i18n'))
-	Form:addInput(_tr('gui.oplandmgr.i18n.default'),cfg.manager.default_language)
+	Form:addDropdown(_tr('gui.oplandmgr.i18n.default'),langLst,default_lang)
 	Form:addLabel(_tr('gui.oplandmgr.features'))
 	Form:addSwitch(_tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
 	Form:addSwitch(_tr('gui.oplandmgr.features.particles'),cfg.features.particles)
 	Form:addSwitch(_tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
 	Form:addSwitch(_tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
+	Form:addSwitch(_tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
+	Form:addSwitch(_tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
+	Form:addSwitch(_tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
 	Form:addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
-	Form:addInput(_tr('gui.oplandmgr.features.frequency'),cfg.features.sign_frequency)
-	Form:addInput(_tr('gui.oplandmgr.features.chunksize'),cfg.features.chunk_side)
-	Form:addInput(_tr('gui.oplandmgr.features.maxple'),cfg.features.player_max_ple)
+	Form:addInput(_tr('gui.oplandmgr.features.frequency'),tostring(cfg.features.sign_frequency))
+	Form:addInput(_tr('gui.oplandmgr.features.chunksize'),tostring(cfg.features.chunk_side))
+	Form:addInput(_tr('gui.oplandmgr.features.maxple'),tostring(cfg.features.player_max_ple))
 
 	player:sendForm(Form,FORM_land_mgr)						
 end
-function GUI_FastMgr(player)
+function GUI_FastMgr(player,isOP)
 	local landId = TRS_Form[player.xuid].landId
 	local Form = mc.newSimpleForm()
 	Form:setTitle(_tr('gui.fastlmgr.title'))
-	Form:setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
+	if isOP==nil then
+		Form:setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
+	else
+		Form:setContent(_tr('gui.fastlmgr.operator'))
+	end
 	Form:addButton(_tr('gui.landmgr.options.landinfo'))
 	Form:addButton(_tr('gui.landmgr.options.landcfg'))
 	Form:addButton(_tr('gui.landmgr.options.landperm'))
@@ -1243,17 +1287,25 @@ function isPosInCube(pos,posA,posB)
 	end
 	return false
 end
-function calculation_price(length,width,height)
+function calculation_price(length,width,height,dimension)
 	local price=0
-	local t=cfg.land_buy.price
-	if cfg.land_buy.calculation == 'm-1' then
-		price=length*width*t[1]+height*t[2]
+	if dimension=='3D' then
+		local t=cfg.land_buy.price_3D
+		if cfg.land_buy.calculation_3D == 'm-1' then
+			price=length*width*t[1]+height*t[2]
+		end
+		if cfg.land_buy.calculation_3D == 'm-2' then
+			price=length*width*height*t[1]
+		end
+		if cfg.land_buy.calculation_3D == 'm-3' then
+			price=length*width*t[1]
+		end
 	end
-	if cfg.land_buy.calculation == 'm-2' then
-		price=length*width*height*t[1]
-	end
-	if cfg.land_buy.calculation == 'm-3' then
-		price=length*width*t[1]
+	if dimension=='2D' then
+		local t=cfg.land_buy.price_2D
+		if cfg.land_buy.calculation_2D == 'd-1' then
+			price=length*width*t[1]
+		end
 	end
 	return math.modf(price*(cfg.money.discount/100))
 end
@@ -1944,8 +1996,11 @@ mc.listen('onServerStarted',function()
 			cfg.version=210
 			cfg.money.credit_name='Gold-Coins'
 			cfg.money.discount=100
+			cfg.features.land_2D=true
+			cfg.features.land_3D=true
+			cfg.features.auto_update=true
 			for landId,data in pairs(land_data) do
-				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
+				--land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
 				land_data[landId].range.dim=nil
 				for n,xuid in pairs(land_data[landId].settings.share) do
 					if type(xuid)~='string' then
@@ -1957,7 +2012,6 @@ mc.listen('onServerStarted',function()
 		end
 	end
 	
-	print(type('abaaba'))
 	-- Load&Check i18n file
 	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 	if i18n_data.VERSION ~= langVer then
