@@ -1636,6 +1636,27 @@ function Eventing_onConsoleCmd(cmd)
 		end
 		return false
 	end
+	-- [test] Performance Testing
+	if opt[2] == 'test' then
+		print("Starting performance test, please wait...")
+		local testTimes = 1000000
+		local vec4 = {x=11451,y=419,z=19810,dimid=0}
+		local startTime = os.time()
+		for i=1,testTimes do
+			ILAPI.PosGetLand(vec4[i])
+		end
+		local endTime = os.time()
+		local costTime = endTime-startTime
+		print('==================================')
+		print('Server Lands: '..#land_data)
+		print('Start time: '..startTime)
+		print('End time: '..endTime)
+		print('Query times: '..testTimes)
+		print('Time cost: '..tostring(costTime))
+		print('Average time used per time: '..tostring((costTime)/testTimes))
+		print('==================================')
+		return false
+	end
 
 	-- [X] Unknown key
 	print('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')

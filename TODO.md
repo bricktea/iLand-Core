@@ -3,7 +3,7 @@
  - [x] 二维领地支持
  - [x] 去除依赖：LuaUtils
  - [ ] 自动升级（onlinefile_v2）
- - [ ] 修复破坏方块选点Bug
+ - [x] 修复破坏方块选点Bug
  - [x] 受信任者也可使用/land tp
  - [x] 针对领地数量较多的服务器的性能优化
  - [x] 地价优惠功能
@@ -11,7 +11,7 @@
  - [x] 货币名称移向配置文件
  - [x] 删除大量Vec和坐标的转换，提升性能
  - [x] 配置文件自动升级支持到1.1.4
- - [ ] 性能测试
+ - [x] 性能测试
  - [x] dim->dimid
  - [x] share->string
  - [x] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator，ILAPI.GetAllTrustedLand
