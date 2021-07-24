@@ -2076,7 +2076,7 @@ mc.listen('onServerStarted',function()
 			cfg.features.land_3D=true
 			cfg.features.auto_update=true
 			for landId,data in pairs(land_data) do
-				--land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
+				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
 				land_data[landId].range.dim=nil
 				for n,xuid in pairs(land_data[landId].settings.share) do
 					if type(xuid)~='string' then
@@ -2084,7 +2084,7 @@ mc.listen('onServerStarted',function()
 					end
 				end
 			end
-			-- ILAPI.save()
+			ILAPI.save()
 		end
 	end
 	
