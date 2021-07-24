@@ -1,11 +1,10 @@
  > Version **2.1**
 
- - [ ] 领地边缘保护
- - [ ] 无高度限制领地
+ - [ ] 二维领地支持
  - [x] 去除依赖：LuaUtils
  - [ ] 自动升级（onlinefile_v2）
  - [ ] 修复破坏方块选点Bug
- - [ ] 受信任者也可使用/land tp
+ - [x] 受信任者也可使用/land tp
  - [x] 针对领地数量较多的服务器的性能优化
  - [x] 地价优惠功能
  - [x] 适配LXL
@@ -15,7 +14,8 @@
  - [ ] 性能测试
  - [x] dim->dimid
  - [x] share->string
- - [x] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator
+ - [x] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator，ILAPI.GetAllTrustedLand
+ - [x] 现在OP领地管理器将支持所有领地操作（模拟主人）
 
  > 3-rd Plugins 计划
   - [ ] 附近领地传感器

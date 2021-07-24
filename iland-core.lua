@@ -383,7 +383,7 @@ function FORM_land_gui(player,data,lid)
 		player:sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
 			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
-					'<a>',player.realName,
+					'<a>',GetIdFromXuid(ILAPI.GetOwner(landId)),
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
 					'<d>',dpos.dimid,
@@ -628,7 +628,11 @@ end
 function FORM_landtp(player,data)
 	if data==nil or data[1]==0 then return end
 
-	local lands = ILAPI.GetPlayerLands(player.xuid)
+	local xuid=player.xuid
+	local lands = ILAPI.GetPlayerLands(xuid)
+	for n,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+		lands[#lands+1]=landId
+	end
 	local landId = lands[data[1]]
 
 	local pos = land_data[landId].settings.tpoint
@@ -829,7 +833,8 @@ function BoughtProg_GiveUp(player)
 end
 function GUI_LMgr(player)
 	local xuid=player.xuid
-	if #land_owners[xuid]==0 then
+	local thelands=ILAPI.GetPlayerLands(xuid)
+	if #thelands==0 then
 		sendText(player,_tr('title.landmgr.failed'));return
 	end
 
@@ -845,7 +850,7 @@ function GUI_LMgr(player)
 
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
-	for i,v in pairs(land_owners[xuid]) do
+	for i,v in pairs(thelands) do
 		local f=ILAPI.GetNickname(v,true)
 		lands[i]=f
 	end
@@ -1091,7 +1096,7 @@ function ILAPI.DeleteLand(landId)
 	ILAPI.save()
 end
 function ILAPI.GetPlayerLands(xuid)
-	return land_owners[xuid]
+	return AIR.deepcopy(land_owners[xuid])
 end
 function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 	local n = land_data[landId].settings.nickname
@@ -1104,7 +1109,7 @@ function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 	return n
 end
 function ILAPI.GetDescribe(landId)
-	return land_data[landId].settings.describe
+	return AIR.deepcopy(land_data[landId].settings.describe)
 end
 function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
@@ -1129,7 +1134,7 @@ end
 function ILAPI.GetChunk(vec2,dimid)
 	local Cx,Cz = pos2chunk(vec2)
 	if ChunkMap[dimid][Cx]~=nil and ChunkMap[dimid][Cx][Cz]~=nil then
-		return ChunkMap[dimid][Cx][Cz]
+		return AIR.deepcopy(ChunkMap[dimid][Cx][Cz])
 	end
 	return -1
 end
@@ -1507,6 +1512,11 @@ function Eventing_onPlayerCmd(player,cmd)
 			local name = ILAPI.GetNickname(landId,true)
 			local xpos = land_data[landId].settings.tpoint
 			tplands[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
+		end
+		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+			local name = ILAPI.GetNickname(landId,true)
+			local xpos = land_data[landId].settings.tpoint
+			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..' §r('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
 		end
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtp.title'))
