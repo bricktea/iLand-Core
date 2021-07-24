@@ -1,6 +1,6 @@
  > Version **2.1**
 
- - [ ] 二维领地支持
+ - [x] 二维领地支持
  - [x] 去除依赖：LuaUtils
  - [ ] 自动升级（onlinefile_v2）
  - [ ] 修复破坏方块选点Bug

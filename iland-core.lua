@@ -625,6 +625,28 @@ function FORM_land_mgr(player,data)
 	TRS_Form[xuid].landId = IdLst[data[1]]
 	GUI_FastMgr(player,true)
 end
+function FORM_land_choseDim(player,id)
+	if id==true and not(cfg.features.land_3D) then
+		sendText(player,AIR.gsubEx(_tr('gui.buyland.unsupport'),'<a>','3D'))
+		return
+	end
+	if id==false and not(cfg.features.land_2D) then
+		sendText(player,AIR.gsubEx(_tr('gui.buyland.unsupport'),'<a>','2D'))
+		return
+	end
+
+	sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+	local xuid=player.xuid
+	newLand[xuid]={}
+	if id then
+		newLand[xuid].dimension='3D'
+	else
+		newLand[xuid].dimension='2D'
+	end
+	newLand[xuid].posA={}
+	newLand[xuid].posB={}
+	newLand[xuid].step=0
+end
 function FORM_landtp(player,data)
 	if data==nil or data[1]==0 then return end
 
@@ -692,7 +714,11 @@ function BoughtProg_SelectRange(player,vec4,mode)
         end
 		newLand[xuid].dimid = vec4.dimid
 		newLand[xuid].posA.x=math.modf(vec4.x) --省函数...
-		newLand[xuid].posA.y=math.modf(vec4.y)
+		if newLand[xuid].dimension=='3D' then
+			newLand[xuid].posA.y=math.modf(vec4.y)
+		else
+			newLand[xuid].posA.y=0
+		end
 		newLand[xuid].posA.z=math.modf(vec4.z)
         sendText(
 			player,
@@ -716,7 +742,11 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			sendText(player,_tr('title.selectrange.failbycdimid'));return
         end
 		newLand[xuid].posB.x=math.modf(vec4.x)
-		newLand[xuid].posB.y=math.modf(vec4.y)
+		if newLand[xuid].dimension=='3D' then
+			newLand[xuid].posB.y=math.modf(vec4.y)
+		else
+			newLand[xuid].posB.y=255
+		end
 		newLand[xuid].posB.z=math.modf(vec4.z)
         sendText(
 			player,
@@ -799,13 +829,19 @@ function BoughtProg_CreateOrder(player)
 		end
 	end
 	--- 购买
-    newLand[xuid].landprice = calculation_price(length,width,height)
+    newLand[xuid].landprice = calculation_price(length,width,height,newLand[xuid].dimension)
 	local dis_info = ''
+	local dim_info = ''
 	if cfg.money.discount<100 then
 		dis_info=AIR.gsubEx(_tr('gui.buyland.discount'),'<a>',tostring(100-cfg.money.discount))
 	end
+	if newLand[xuid].dimension=='3D' then
+		dim_info = '§l3D-Land §r'
+	else
+		dim_info = '§l2D-Land §r'
+	end
 	player:sendModalForm(
-		_tr('gui.buyland.title')..dis_info,
+		dim_info.._tr('gui.buyland.title')..dis_info,
 		AIR.gsubEx(
 			_tr('gui.buyland.content'),
 			'<a>',length,
@@ -1442,11 +1478,13 @@ function Eventing_onPlayerCmd(player,cmd)
 				return false
 			end
 		end
-		sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		newLand[xuid]={}
-		newLand[xuid].posA={}
-		newLand[xuid].posB={}
-		newLand[xuid].step=0
+		player:sendModalForm(
+			'DimChosen',
+			_tr('gui.buyland.chosedim'),
+			_tr('gui.buyland.3d'),
+			_tr('gui.buyland.2d'),
+			FORM_land_choseDim
+		)
 		return false
 	end
 
