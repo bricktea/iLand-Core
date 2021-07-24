@@ -1758,10 +1758,8 @@ end
 function Eventing_onExplode(entity,pos)
 
 	-- print('[ILand] call event -> onExplode ')
-	
-	-- ### LXL Bug: Dimension Err ###
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(pos))
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 	if land_data[landId].permissions.allow_exploding then return end -- Perm Allow
 	return false
