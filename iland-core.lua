@@ -753,7 +753,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
-				'<b>','Dim'..vec4.dimid,
+				'<b>','Dim='..vec4.dimid,
 				'<c>',newLand[xuid].posB.x,
 				'<d>',newLand[xuid].posB.y,
 				'<e>',newLand[xuid].posB.z)
