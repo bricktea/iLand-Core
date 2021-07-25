@@ -1,17 +1,2 @@
 # Language Pack
 iland/lang/*
-
-# Other Plugins
-CrashLogger/*
-LiteLoader/*
-LiteXLoader/*
-lib/*
-LLMoney
-*.cmd
-*.dll
-
-# Others
-givecookie.lua
-test.lua
-BaseLib.*
-preload.conf

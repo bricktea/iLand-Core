@@ -19,7 +19,8 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
-data_path = 'plugins\\iland\\'
+-- (Dev) data_path = 'plugins\\iland\\'
+data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 
 function updateChunk(landId,mode)
 	local TxTz={}
@@ -2124,26 +2125,6 @@ mc.listen('onServerStarted',function()
 		network.httpGet('http://cdisk.amd.rocks/tmp/ILAND/v111_version',Ncb_online)
 	end
 
-	-- export ILAPI
-	lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
-	lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
-	lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
-	lxl.export(ILAPI.GetNickname,'ILAPI_GetNickname')
-	lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
-	lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
-	lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
-	lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
-	lxl.export(ILAPI.GetTpPoint,'ILAPI_GetTpPoint')
-	lxl.export(ILAPI.GetDistence,'ILAPI_GetDistence')
-	lxl.export(ILAPI.IsPlayerTrusted,'ILAPI_IsPlayerTrusted')
-	lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
-	lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
-	lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
-	lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
-	lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
-	lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
-	lxl.export(ILAPI.save,'ILAPI_save')
-
 	-- register cmd.
 	mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
 	mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
@@ -2158,7 +2139,31 @@ mc.listen('onServerStarted',function()
 		mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
 		mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
 	end
+	mc.regConsoleCmd(MainCmd,'Land system main command',function(args)end)
+	mc.regConsoleCmd(MainCmd..' op','Add land op',function(args)end)
+	mc.regConsoleCmd(MainCmd..' deop','Delete land op',function(args)end)
+	mc.regConsoleCmd(MainCmd..' test','Test pm',function(args)end)
 end)
+
+-- export function
+lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
+lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
+lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
+lxl.export(ILAPI.GetNickname,'ILAPI_GetNickname')
+lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
+lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
+lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
+lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
+lxl.export(ILAPI.GetTpPoint,'ILAPI_GetTpPoint')
+lxl.export(ILAPI.GetDistence,'ILAPI_GetDistence')
+lxl.export(ILAPI.IsPlayerTrusted,'ILAPI_IsPlayerTrusted')
+lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
+lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
+lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
+lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
+lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
+lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
+lxl.export(ILAPI.save,'ILAPI_save')
 
 print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
 print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
