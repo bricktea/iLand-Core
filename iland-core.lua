@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.10'
+plugin_version = '2.11'
 debug_mode = false
 
 langVer = 210
@@ -725,7 +725,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','a',
-				'<b>',vec4.dim,
+				'<b>','Dim='..vec4.dimid,
 				'<c>',newLand[xuid].posA.x,
 				'<d>',newLand[xuid].posA.y,
 				'<e>',newLand[xuid].posA.z)
@@ -753,7 +753,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
-				'<b>',vec4.dim,
+				'<b>','Dim'..vec4.dimid,
 				'<c>',newLand[xuid].posB.x,
 				'<d>',newLand[xuid].posB.y,
 				'<e>',newLand[xuid].posB.z)
@@ -2076,14 +2076,24 @@ mc.listen('onServerStarted',function()
 			cfg.features.land_3D=true
 			cfg.features.auto_update=true
 			for landId,data in pairs(land_data) do
-				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
-				land_data[landId].range.dim=nil
+				land_data[landId].range.dimid = land_data[landId].range.dim
+				-- land_data[landId].range.dim=nil
 				for n,xuid in pairs(land_data[landId].settings.share) do
 					if type(xuid)~='string' then
 						land_data[landId].settings.share[n]=tostring(land_data[landId].settings.share[n])
 					end
 				end
 			end
+			ILAPI.save()
+		end
+		if cfg.version==210 then
+			cfg.version=211
+			cfg.land_buy.calculation_3D='m-1'
+			cfg.land_buy.calculation_2D='d-1'
+			cfg.land_buy.price_3D={20,4}
+			cfg.land_buy.price_2D={35}
+			cfg.land_buy.price=nil
+			cfg.land_buy.calculation=nil
 			ILAPI.save()
 		end
 	end
@@ -2130,6 +2140,8 @@ mc.listen('onServerStarted',function()
 	lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
 	lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
 	lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
+	lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
+	lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
 	lxl.export(ILAPI.save,'ILAPI_save')
 
 	-- register cmd.
