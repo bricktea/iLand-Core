@@ -1,20 +1,13 @@
- > Version **2.1**
+ > Version **2.2**
 
- - [x] 二维领地支持
- - [x] 去除依赖：LuaUtils
- - [x] 修复破坏方块选点Bug
- - [x] 受信任者也可使用/land tp
- - [x] 针对领地数量较多的服务器的性能优化
- - [x] 地价优惠功能
- - [x] 适配LXL
- - [x] 货币名称移向配置文件
- - [x] 删除大量Vec和坐标的转换，提升性能
- - [x] 配置文件自动升级支持到1.1.4
- - [x] 性能测试
- - [x] dim->dimid
- - [x] share->string
- - [x] 增加 ILAPI.IsPlayerTrusted，ILAPI.IsLandOwner，ILAPI.IsLandOperator，ILAPI.GetAllTrustedLand
- - [x] 现在OP领地管理器将支持所有领地操作（模拟主人）
+ - [ ] 添加ILAPI.GetDistence
+ - [ ] 添加凋零破坏阻止
+ - [ ] 添加控制项：漏斗矿车吸取&输出物品
+ - [ ] 添加控制项：活塞推动（附近）
+ - [ ] 添加控制项：耕地退化（他人）
+ - [ ] 添加控制项：火焰蔓延（附近）
+ - [ ] 添加控制项：使用重生锚
+ - [ ] 检查更新重写，支持自动更新与统计
 
  > 3-rd Plugins 计划
-  - [ ] 附近领地传感器
+ - [ ] 附近领地传感器
