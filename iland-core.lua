@@ -387,11 +387,12 @@ function FORM_land_gui(player,data,lid)
 					'<a>',GetIdFromXuid(ILAPI.GetOwner(landId)),
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
-					'<d>',dpos.dimid,
-					'<e>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
-					'<f>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
-					'<g>',length,'<h>',width,'<i>',height,
-					'<j>',squ,'<k>',vol),
+					'<d>',did2dim(dpos.dimid),
+					'<e>',ILAPI.GetLandDimension(landId),
+					'<f>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
+					'<g>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
+					'<h>',length,'<i>',width,'<j>',height,
+					'<k>',squ,'<l>',vol),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
 			FORM_BACK_LandMgr
@@ -509,7 +510,7 @@ function FORM_land_gui(player,data,lid)
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
 		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
-		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height)*cfg.land_buy.refund_rate)
+		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height,ILAPI.GetLandDimension(landId))*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_tr('gui.delland.title'),
 			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',cfg.money.credit_name),
@@ -726,7 +727,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','a',
-				'<b>','Dim='..vec4.dimid,
+				'<b>',did2dim(vec4.dimid),
 				'<c>',newLand[xuid].posA.x,
 				'<d>',newLand[xuid].posA.y,
 				'<e>',newLand[xuid].posA.z)
@@ -754,7 +755,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
-				'<b>','Dim='..vec4.dimid,
+				'<b>',did2dim(vec4.dimid),
 				'<c>',newLand[xuid].posB.x,
 				'<d>',newLand[xuid].posB.y,
 				'<e>',newLand[xuid].posB.z)
@@ -888,7 +889,7 @@ function GUI_LMgr(player)
 	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
 	local lands={}
 	for i,v in pairs(thelands) do
-		local f=ILAPI.GetNickname(v,true)
+		local f='§l'..ILAPI.GetLandDimension(v)..'§r '..ILAPI.GetNickname(v,true)
 		lands[i]=f
 	end
 
@@ -1020,7 +1021,13 @@ function GUI_OPLMgr(player)
 	player:sendForm(Form,FORM_land_mgr)						
 end
 function GUI_FastMgr(player,isOP)
-	local landId = TRS_Form[player.xuid].landId
+	local xuid=player.xuid
+	local thelands=ILAPI.GetPlayerLands(xuid)
+	if #thelands==0 then
+		sendText(player,_tr('title.landmgr.failed'));return
+	end
+
+	local landId = TRS_Form[xuid].landId
 	local Form = mc.newSimpleForm()
 	Form:setTitle(_tr('gui.fastlmgr.title'))
 	if isOP==nil then
@@ -1254,9 +1261,11 @@ function money_del(player,value)
 	local M = cfg.money
 	if M.protocol=='scoreboard' then
 		player:setScore(M.scoreboard_objname,player:getScore(M.scoreboard_objname)-value)
+		return
 	end
 	if M.protocol=='llmoney' then
-		money.reduce(player.xuid,value);return
+		money.reduce(player.xuid,value)
+		return
 	end
 	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
 end
