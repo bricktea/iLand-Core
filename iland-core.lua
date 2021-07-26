@@ -1204,6 +1204,13 @@ function ILAPI.IsLandOperator(xuid)
 		return true
 	end
 end
+function ILAPI.GetLandDimension(landId)
+	if land_data[landId].range.start_position[2]==0 and land_data[landId].range.end_position[2]==255 then
+		return '2D'
+	else
+		return '3D'
+	end
+end
 function ILAPI.GetAllTrustedLand(xuid)
 	local trusted = {}
 	for landId,data in pairs(land_data) do
@@ -1404,6 +1411,12 @@ function formatPlayerPos(pos)
 		p.dimid=pos.dimid
 	end
 	return p
+end
+function did2dim(a)
+	if a==0 then return _tr('talk.dim.zero') end
+	if a==1 then return _tr('talk.dim.one') end
+	if a==2 then return _tr('talk.dim.two') end
+	return _tr('talk.dim.other')
 end
 
 -- Minecraft -> Eventing
@@ -2161,6 +2174,7 @@ lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
 lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
 lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
 lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
+lxl.export(ILAPI.GetLandDimension,'ILAPI_GetLandDimension')
 lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
 lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
 lxl.export(ILAPI.save,'ILAPI_save')
