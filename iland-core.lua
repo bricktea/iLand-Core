@@ -5,10 +5,10 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.11'
+plugin_version = '2.12'
 debug_mode = false
 
-langVer = 210
+langVer = 212
 minAirVer = 200
 minLXLVer = 1
 
@@ -334,7 +334,6 @@ function FORM_land_gui_transfer(player,data)
 	local landId=TRS_Form[xuid].landId
 	local ownerXuid=ILAPI.GetOwner(landId)
 	local targetXuid=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
-	print(data[1]+1)
 	if targetXuid==ownerXuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
 	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
 	table.insert(land_owners[targetXuid],#land_owners[targetXuid]+1,landId)
@@ -1874,7 +1873,8 @@ end
 
 -- Lua -> Timer Callback
 function Tcb_LandSign()
-	for num,player in pairs(mc.getOnlinePlayers()) do
+	for xuid,data in pairs(TRS_Form) do
+		local player=mc.getPlayer(xuid)
 		local xuid = player.xuid
 		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		if landId==-1 then TRS_Form[xuid].inland='null';return end -- no land here
