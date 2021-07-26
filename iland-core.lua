@@ -19,8 +19,8 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
--- (Dev) data_path = 'plugins\\iland\\'
-data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+data_path = 'plugins\\iland\\'
+-- (Dev) data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 
 function updateChunk(landId,mode)
 	local TxTz={}
