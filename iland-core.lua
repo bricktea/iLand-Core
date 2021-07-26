@@ -328,20 +328,21 @@ function FORM_land_gui_describe(player,data)
 	)
 end
 function FORM_land_gui_transfer(player,data)
-	if data==nil then return end
+	if data==nil or data[1]==0 then return end
 	
-	if data[1]==0 then return end
+	local xuid=player.xuid
 	local landId=TRS_Form[xuid].landId
-	local xuid=ILAPI.GetOwner(landId)
-	local go=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
-	if go==xuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
-	table.remove(land_owners[xuid],AIR.isValInList(land_owners[xuid],landId))
-	table.insert(land_owners[go],#land_owners[go]+1,landId)
+	local ownerXuid=ILAPI.GetOwner(landId)
+	local targetXuid=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
+	print(data[1]+1)
+	if targetXuid==ownerXuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
+	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
+	table.insert(land_owners[targetXuid],#land_owners[targetXuid]+1,landId)
 	updateLandOwnersMap(landId)
 	ILAPI.save()
 	player:sendModalForm(
 		_tr('gui.general.complete'),
-		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',GetIdFromXuid(go)),
+		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',GetIdFromXuid(targetXuid)),
 		_tr('gui.general.back'),
 		_tr('gui.general.close'),
 		FORM_BACK_LandMgr
@@ -496,7 +497,7 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if data[2]==6 then --领地过户
-		TRS_Form[xuid].playerList = GetOnlinePlayerList()
+		TRS_Form[xuid].playerList = GetAllPlayerList()
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtransfer.title'))
@@ -1237,13 +1238,6 @@ function ILAPI.save()
 end
 
 -- feature function
-function GetOnlinePlayerList() -- player namelist
-	local b={}
-	for xuid,data in pairs(TRS_Form) do
-		b[#b+1] = mc.getPlayer(xuid).realName
-	end
-	return b
-end
 function GetAllPlayerList() -- all player namelist
 	local r = {}
 	for xuid,lds in pairs(land_owners) do
@@ -1880,8 +1874,7 @@ end
 
 -- Lua -> Timer Callback
 function Tcb_LandSign()
-	for num,playerid in pairs(GetOnlinePlayerList()) do
-		local player = mc.getPlayer(playerid)
+	for num,player in pairs(mc.getOnlinePlayers()) do
 		local xuid = player.xuid
 		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		if landId==-1 then TRS_Form[xuid].inland='null';return end -- no land here
