@@ -246,19 +246,19 @@ function FORM_land_gui_trust(player,data)
 	
 	local xuid=player.xuid
 	local landId = TRS_Form[xuid].landId
-	local landshare = land_data[landId].settings.share
+	local shareList = land_data[landId].settings.share
+	local playerList = TRS_Form[xuid].playerList
 
 	if data[1] then
 		if data[2]==0 then return end
-		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[2]+1])
-		local n=#landshare+1
-		if xuid==x then
+		local targetXuid=GetXuidFromId(playerList[data[2]+1])
+		if xuid==targetXuid then
 			sendText(player,_tr('title.landtrust.cantaddown'));return
 		end
-		if AIR.isValInList(landshare,x)~=-1 then
+		if AIR.isValInList(shareList,targetXuid)~=-1 then
 			sendText(player,_tr('title.landtrust.alreadyexists'));return
 		end
-		landshare[n]=x
+		shareList[#shareList+1]=targetXuid
 		updateLandTrustMap(landId)
 		ILAPI.save()
 		if not(data[3]) then 
@@ -273,8 +273,8 @@ function FORM_land_gui_trust(player,data)
 	end
 	if data[3] then
 		if data[4]==0 then return end
-		local x=GetXuidFromId(TRS_Form[xuid].playerList[data[4]+1])
-		table.remove(landshare,AIR.isValInList(landshare,x))
+		local targetXuid=shareList[data[4]]
+		table.remove(shareList,AIR.isValInList(shareList,targetXuid))
 		updateLandTrustMap(landId)
 		ILAPI.save()
 		player:sendModalForm(
@@ -459,20 +459,20 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
-		TRS_Form[xuid].playerList = GetOnlinePlayerList()
-		local d=AIR.shacopy(land_data[landId].settings.share)
-		for i, v in pairs(d) do
-			d[i]=GetIdFromXuid(d[i])
+		TRS_Form[xuid].playerList = GetAllPlayerList()
+		local shareList={}
+		for num,xuid in pairs(land_data[landId].settings.share) do
+			shareList[#shareList+1]=GetIdFromXuid(xuid)
 		end
-		table.insert(d,1,'['.._tr('gui.general.plzchose')..']')
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
+		table.insert(shareList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtrust.title'))
 		Form:addLabel(_tr('gui.landtrust.tip'))
 		Form:addSwitch(_tr('gui.landtrust.addtrust'),false)
 		Form:addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
 		Form:addSwitch(_tr('gui.landtrust.rmtrust'),false)
-		Form:addDropdown(_tr('gui.landtrust.selectplayer'),d)
+		Form:addDropdown(_tr('gui.landtrust.selectplayer'),shareList)
 		player:sendForm(Form,FORM_land_gui_trust)
 		return
 	end
@@ -1023,7 +1023,7 @@ end
 function GUI_FastMgr(player,isOP)
 	local xuid=player.xuid
 	local thelands=ILAPI.GetPlayerLands(xuid)
-	if #thelands==0 then
+	if #thelands==0 and isOP==nil then
 		sendText(player,_tr('title.landmgr.failed'));return
 	end
 
@@ -1243,6 +1243,13 @@ function GetOnlinePlayerList() -- player namelist
 		b[#b+1] = mc.getPlayer(xuid).realName
 	end
 	return b
+end
+function GetAllPlayerList() -- all player namelist
+	local r = {}
+	for xuid,lds in pairs(land_owners) do
+		r[#r+1]=GetIdFromXuid(xuid)
+	end
+	return r
 end
 function _tr(a)
 	return i18n_data[a]
