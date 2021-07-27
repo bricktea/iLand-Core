@@ -19,8 +19,8 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
-data_path = 'plugins\\iland\\'
--- (Dev) data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+-- (Dev) data_path = 'plugins\\iland\\'
+data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 
 function updateChunk(landId,mode)
 	local TxTz={}
@@ -1728,6 +1728,7 @@ function Eventing_onPlaceBlock(player,block)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
+	if player.realName==nil then return end -- Fuck mojang
 	if land_data[landId].permissions.allow_place then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
