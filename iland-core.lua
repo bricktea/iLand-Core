@@ -1427,6 +1427,10 @@ function did2dim(a)
 	if a==2 then return _tr('talk.dim.two') end
 	return _tr('talk.dim.other')
 end
+function refreshBlock(player,pos)
+	local s = pos.x..' '..pos.y..' '..pos.z
+	mc.runcmdEx('execute "'..player.realName..'" ~ ~ ~ clone '..s..' '..s..' '..s)
+end
 
 -- Minecraft -> Eventing
 function Eventing_onRespawn(player)
