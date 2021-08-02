@@ -10,7 +10,7 @@ debug_mode = false
 
 langVer = 220
 minAirVer = 200
-minLXLVer = {3,0,1}
+minLXLVer = {0,3,1}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -1330,47 +1330,26 @@ function sendText(player,text,mode)
 		return
 	end
 end
-function cubeGetEdge(posA,posB)
+function cubeGetEdge(spos,epos)
 	local edge={}
-	local p=0
+	local posB,posA = fmCube(spos,epos)
 	for i=1,math.abs(math.abs(posA.y)-math.abs(posB.y))+1 do
-		if posA.y>posB.y then
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-i,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-i,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-i,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-i,posA.z)
-		else
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y+i-2,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y+i-2,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y+i-2,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y+i-2,posA.z)
-		end
+		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posA.z)
+		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posB.z)
+		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posB.z)
+		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posA.z)
 	end
 	for i=1,math.abs(math.abs(posA.x)-math.abs(posB.x))+1 do
-		if posA.x>posB.x then
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posA.y-1,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posB.y-1,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posA.y-1,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x-i+1,posB.y-1,posB.z)
-		else
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posA.y-1,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posB.y-1,posA.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posA.y-1,posB.z)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x+i-1,posB.y-1,posB.z)
-		end
+		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posA.z)
+		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posA.z)
+		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posB.z)
+		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posB.z)
 	end
 	for i=1,math.abs(math.abs(posA.z)-math.abs(posB.z))+1 do
-		if posA.z>posB.z then
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posB.y-1,posA.z-i+1)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posB.y-1,posA.z-i+1)
-		else
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posA.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posA.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=AIR.buildVec(posA.x,posB.y-1,posA.z+i-1)
-			p=#edge+1;edge[p]=AIR.buildVec(posB.x,posB.y-1,posA.z+i-1)
-		end
+		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-1,posA.z-i+1)
+		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-1,posA.z-i+1)
+		edge[#edge+1]=AIR.buildVec(posA.x,posB.y-1,posA.z-i+1)
+		edge[#edge+1]=AIR.buildVec(posB.x,posB.y-1,posA.z-i+1)
 	end
 	return edge
 end
@@ -1462,7 +1441,16 @@ function refreshBlock(player,pos)
 	mc.runcmdEx('execute "'..player.realName..'" ~ ~ ~ clone '..s..' '..s..' '..s)
 end
 function TraverseAABB(AAbb,aaBB)
-
+	local posA,posB = fmCube(AAbb,aaBB)
+	local result = {}
+	for ix=posA.x,posB.x do
+		for iy=posA.y,posB.y do
+			for iz=posA.z,posB.z do
+				result[#result+1] = {x=ix,y=iy,z=iz}
+			end
+		end
+	end
+	return result
 end
 
 -- Minecraft -> Eventing
@@ -2058,7 +2046,8 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	
 	-- print('[ILand] call event -> onWitherBossDestroy ')
 
-	for n,pos in pairs(TraverseAABB(AAbb,aaBB)) do
+	if AAbb==nil then return end
+	for n,pos in pairs(traverseAABB(AAbb,aaBB)) do
 		landId=ILAPI.PosGetLand(pos)
 		if landId~=-1 then 
 			if land_data[landId].permissions.allow_destroy then return end
@@ -2218,7 +2207,7 @@ mc.listen('onServerStarted',function()
 	end
 	
 	-- Check depends version
-	if lxl.checkVersion(minLXLVer[1],minLXLVer[2],minLXLVer[3]) then
+	if not(lxl.checkVersion(minLXLVer[1],minLXLVer[2],minLXLVer[3])) then
 		throwErr(-2)
 	end
 	if AIR.VERSION < minAirVer then
