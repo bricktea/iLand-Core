@@ -81,8 +81,8 @@ function updateVecMap(landId,mode)
 		local epos = land_data[landId].range.end_position
 		VecMap[landId]={}
 		VecMap[landId].a={};VecMap[landId].b={}
-		VecMap[landId].a = AIR.buildVec(spos[1],spos[2],spos[3]) --start
-		VecMap[landId].b = AIR.buildVec(epos[1],epos[2],epos[3]) --end
+		VecMap[landId].a = { x=spos[1], y=spos[2], z=spos[3] } --start
+		VecMap[landId].b = { x=epos[1], y=epos[2], z=epos[3] } --end
 	end
 	if mode=='del' then
 		VecMap[landId]=nil
@@ -1348,22 +1348,22 @@ function cubeGetEdge(spos,epos)
 	local edge={}
 	local posB,posA = fmCube(spos,epos)
 	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posA.z)
-		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posA.z)
-		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posB.z)
-		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posB.z)
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
 	end
 	for i=1,math.abs(posA.y-posB.y)+1 do
-		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posA.z)
-		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posB.z)
-		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posB.z)
-		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posA.z)
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posA.z }
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posA.z }
 	end
 	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-1,posA.z-i+1)
-		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-1,posA.z-i+1)
-		edge[#edge+1]=AIR.buildVec(posA.x,posB.y-1,posA.z-i+1)
-		edge[#edge+1]=AIR.buildVec(posB.x,posB.y-1,posA.z-i+1)
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
 	end
 	return edge
 end
