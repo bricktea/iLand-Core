@@ -10,7 +10,7 @@ debug_mode = false
 
 langVer = 220
 minAirVer = 200
-minLXLVer = 30
+minLXLVer = {3,0,1}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -2208,9 +2208,7 @@ mc.listen('onServerStarted',function()
 	end
 	
 	-- Check depends version
-	local b = lxl.version()
-	local nV = b.major*100+b.minor*10+b.build
-	if nV<minLXLVer then
+	if lxl.checkVersion(minLXLVer[1],minLXLVer[2],minLXLVer[3]) then
 		throwErr(-2)
 	end
 	if AIR.VERSION < minAirVer then
