@@ -10,7 +10,7 @@ debug_mode = false
 
 langVer = 220
 minAirVer = 200
-minLXLVer = 1
+minLXLVer = 30
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -1436,7 +1436,7 @@ end
 function formatPlayerPos(pos)
 	local p={}
 	p.x=math.floor(pos.x)
-	p.y=math.floor(pos.y)-1
+	p.y=math.floor(pos.y)
 	p.z=math.floor(pos.z)
 	if pos.dimid~=nil then
 		p.dimid=pos.dimid
