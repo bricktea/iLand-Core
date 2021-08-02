@@ -897,16 +897,26 @@ function GUI_LMgr(player)
 	end
 
 	local welcomeText=_tr('gui.landmgr.content')
-	local lid=ILAPI.PosGetLand(formatPlayerPos(player.pos))
-	local nname
-	if lid~=-1 then
-		nname = ILAPI.GetNickname(lid,true)
-		welcomeText = welcomeText..AIR.gsubEx(_tr('gui.landmgr.ctplus'),'<a>',nname)
-	else
-		nname = lid
+	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+
+	if landId~=-1 then
+		welcomeText = welcomeText..AIR.gsubEx(
+			_tr('gui.landmgr.ctplus'),
+			'<a>',ILAPI.GetNickname(landId,true)
+		)
 	end
 
-	local features={_tr('gui.landmgr.options.landinfo'),_tr('gui.landmgr.options.landcfg'),_tr('gui.landmgr.options.landperm'),_tr('gui.landmgr.options.landtrust'),_tr('gui.landmgr.options.landtag'),_tr('gui.landmgr.options.landdescribe'),_tr('gui.landmgr.options.landtransfer'),_tr('gui.landmgr.options.delland')}
+	local features = {
+		_tr('gui.landmgr.options.landinfo'),
+		_tr('gui.landmgr.options.landcfg'),
+		_tr('gui.landmgr.options.landperm'),
+		_tr('gui.landmgr.options.landtrust'),
+		_tr('gui.landmgr.options.landtag'),
+		_tr('gui.landmgr.options.landdescribe'),
+		_tr('gui.landmgr.options.landtransfer'),
+		_tr('gui.landmgr.options.delland')
+	}
+	
 	local lands={}
 	for i,v in pairs(thelands) do
 		local f='§l'..ILAPI.GetLandDimension(v)..'§r '..ILAPI.GetNickname(v,true)
@@ -1048,6 +1058,10 @@ function GUI_FastMgr(player,isOP)
 	end
 
 	local landId = TRS_Form[xuid].landId
+	if land_data[landId]==nil then
+		return
+	end
+
 	local Form = mc.newSimpleForm()
 	Form:setTitle(_tr('gui.fastlmgr.title'))
 	if isOP==nil then
