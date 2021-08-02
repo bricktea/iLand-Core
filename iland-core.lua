@@ -422,6 +422,9 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.destroy'),perm.allow_destroy)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.dropitem'),perm.allow_dropitem)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.pickupitem'),perm.allow_pickupitem)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.ride_entity'),perm.allow_ride_entity)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.ride_trans'),perm.allow_ride_trans)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.shoot'),perm.allow_shoot)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack'),perm.allow_attack)
 		Form:addLabel(_tr('gui.landmgr.landperm.funcblock_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.crafting_table'),perm.use_crafting_table)
@@ -453,21 +456,16 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.noteblock'),perm.use_noteblock)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.composter'),perm.use_composter)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bed'),perm.use_bed)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.item_frame'),perm.use_item_frame)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.daylight_detector'),perm.use_daylight_detector)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.lever'),perm.use_lever)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.button'),perm.use_button)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.pressure_plate'),perm.use_pressure_plate)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.throw_potion'),perm.allow_throw_potion)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
 		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
-		--[[
-				perm.use_lever=false
-				perm.use_button=false
-				perm.use_respawnAnchor=false
-				perm.use_itemFrame=false
-				perm.use_fishingHook=false
-				perm.use_pressurePlate=false
-				perm.allow_throwPotion=false
-				perm.allow_ride_entity=false
-				perm.allow_ride_trans=false
-				perm.allow_shoot=false
-		]]
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
@@ -1134,11 +1132,11 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_cauldron = false
 	perm.use_lever=false
 	perm.use_button=false
-	perm.use_respawnAnchor=false
-	perm.use_itemFrame=false
-	perm.use_fishingHook=false
-	perm.use_pressurePlate=false
-	perm.allow_throwPotion=false
+	perm.use_respawn_anchor=false
+	perm.use_item_frame=false
+	perm.use_fishing_hook=false
+	perm.use_pressure_plate=false
+	perm.allow_throw_potion=false
 	perm.allow_ride_entity=false
 	perm.allow_ride_trans=false
 	perm.allow_shoot=false
@@ -1452,6 +1450,9 @@ end
 function refreshBlock(player,pos)
 	local s = pos.x..' '..pos.y..' '..pos.z
 	mc.runcmdEx('execute "'..player.realName..'" ~ ~ ~ clone '..s..' '..s..' '..s)
+end
+function TraverseAABB(AAbb,aaBB)
+
 end
 
 -- Minecraft -> Eventing
@@ -1907,7 +1908,7 @@ function Eventing_onUseRespawnAnchor(player,pos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if land_data[landId].permissions.use_respawnAnchor then return end -- Perm Allow
+	if land_data[landId].permissions.use_respawn_anchor then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -1922,7 +1923,7 @@ function Eventing_onUseFrameBlock(player,block)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if land_data[landId].permissions.use_itemFrame then return end -- Perm Allow
+	if land_data[landId].permissions.use_item_frame then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -1937,7 +1938,7 @@ function Eventing_onFishingHookRetrieve(player,fishingHook)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if land_data[landId].permissions.use_fishingHook then return end -- Perm Allow
+	if land_data[landId].permissions.use_fishing_hook then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -1954,7 +1955,7 @@ function Eventing_onSplashPotionHitEffect(entity,splasher)
 
 	local player=splasher:toPlayer()
 	local xuid=player.xuid
-	if land_data[landId].permissions.allow_throwPotion then return end -- Perm Allow
+	if land_data[landId].permissions.allow_throw_potion then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -2008,7 +2009,7 @@ function Eventing_onStepOnPressurePlate(entity,block)
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 	
-	if land_data[landId].permissions.use_pressurePlate then return end -- Perm Allow
+	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
 	if ispl then
 		local xuid=player.xuid
 		if ILAPI.IsLandOperator(xuid) then return end
@@ -2041,6 +2042,18 @@ function Eventing_onRide(rider,entity)
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
+	
+	-- print('[ILand] call event -> onWitherBossDestroy ')
+
+	for n,pos in pairs(TraverseAABB(AAbb,aaBB)) do
+		landId=ILAPI.PosGetLand(pos)
+		if landId~=-1 then 
+			if land_data[landId].permissions.allow_destroy then return end
+		end
+	end
 	return false
 end
 
@@ -2120,6 +2133,7 @@ mc.listen('onFireworkShootWithCrossbow',Eventing_onFireworkShootWithCrossbow)
 mc.listen('onProjectileShoot',Eventing_onProjectileShoot)
 mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
 mc.listen('onRide',Eventing_onRide)
+mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()
@@ -2306,11 +2320,11 @@ mc.listen('onServerStarted',function()
 				local perm=land_data[landId].permissions
 				perm.use_lever=false
 				perm.use_button=false
-				perm.use_respawnAnchor=false
-				perm.use_itemFrame=false
-				perm.use_fishingHook=false
-				perm.use_pressurePlate=false
-				perm.allow_throwPotion=false
+				perm.use_respawn_anchor=false
+				perm.use_item_frame=false
+				perm.use_fishing_hook=false
+				perm.use_pressure_plate=false
+				perm.allow_throw_potion=false
 				perm.allow_ride_entity=false
 				perm.allow_ride_trans=false
 				perm.allow_shoot=false
