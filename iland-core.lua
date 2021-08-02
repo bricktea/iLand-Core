@@ -5,10 +5,10 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.12'
+plugin_version = '2.20'
 debug_mode = false
 
-langVer = 212
+langVer = 220
 minAirVer = 200
 minLXLVer = 1
 
@@ -456,6 +456,18 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.daylight_detector'),perm.use_daylight_detector)
 		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
+		--[[
+				perm.use_lever=false
+				perm.use_button=false
+				perm.use_respawnAnchor=false
+				perm.use_itemFrame=false
+				perm.use_fishingHook=false
+				perm.use_pressurePlate=false
+				perm.allow_throwPotion=false
+				perm.allow_ride_entity=false
+				perm.allow_ride_trans=false
+				perm.allow_shoot=false
+		]]
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
@@ -1120,6 +1132,16 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_trapdoor = false
 	perm.use_lectern = false
 	perm.use_cauldron = false
+	perm.use_lever=false
+	perm.use_button=false
+	perm.use_respawnAnchor=false
+	perm.use_itemFrame=false
+	perm.use_fishingHook=false
+	perm.use_pressurePlate=false
+	perm.allow_throwPotion=false
+	perm.allow_ride_entity=false
+	perm.allow_ride_trans=false
+	perm.allow_shoot=false
 
 	-- Write data
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
@@ -1743,8 +1765,7 @@ function Eventing_onPlaceBlock(player,block)
 end
 function Eventing_onUseItemOn(player,item,block)
 
-	-- print('[ILand] call event -> onUseItemOn')
-
+	-- print('[ILand] call event -> onUseItemOn -> item: '..item.type..' block: '..block.type)
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1755,8 +1776,10 @@ function Eventing_onUseItemOn(player,item,block)
 	
 	local perm = land_data[landId].permissions
 	local bn = block.type
-	if bn == 'minecraft:end_portal_frame' and perm.allow_destroy then return end -- 末地门（拓充）
-	if bn == 'minecraft:lectern' and perm.allow_destroy then return end -- 讲台（拓充）
+	local it = item.type
+	if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
+	if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
+	if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
 	if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
 	if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
 	if bn == 'minecraft:campfire' and perm.use_campfire then return end -- 营火（烧烤）
@@ -1770,6 +1793,7 @@ function Eventing_onUseItemOn(player,item,block)
 	if bn == 'minecraft:trapdoor' and perm.use_trapdoor then return end -- 活板门
 	if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
 	if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
+	if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
 
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
@@ -1793,7 +1817,7 @@ function Eventing_onAttack(player,entity)
 	
 	-- print('[ILand] call event -> onAttack')
 
-	local landId=ILAPI.PosGetLand(entity.pos)
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1817,7 +1841,7 @@ function Eventing_onTakeItem(player,entity)
 
 	-- print('[ILand] call event -> onTakeItem ')
 
-	local landId=ILAPI.PosGetLand(entity.pos)
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -1866,13 +1890,157 @@ function Eventing_onBlockInteracted(player,block)
 	if bn == 'minecraft:anvil' and perm.use_anvil then return end -- 铁砧
 	if bn == 'minecraft:grindstone' and perm.use_grindstone then return end -- 磨石
 	if bn == 'minecraft:enchanting_table' and perm.use_enchanting_table then return end -- 附魔台
-	-- if blockname == 'minecraft:barrel' and perm.use_barrel then return end -- 桶
+	if bn == 'minecraft:barrel' and perm.use_barrel then return end -- 桶
 	if bn == 'minecraft:beacon' and perm.use_beacon then return end -- 信标
 	if bn == 'minecraft:hopper' and perm.use_hopper then return end -- 漏斗
 	if bn == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
 	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
 	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
 	
+	return false
+end
+function Eventing_onUseRespawnAnchor(player,pos)
+	
+	-- print('[ILand] call event -> onUseRespawnAnchor ')
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.use_respawnAnchor then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onUseFrameBlock(player,block)
+		
+	-- print('[ILand] call event -> onUseFrameBlock ')
+
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.use_itemFrame then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onFishingHookRetrieve(player,fishingHook)
+		
+	-- print('[ILand] call event -> onFishingHookRetrieve')
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(fishingHook.pos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.use_fishingHook then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onSplashPotionHitEffect(entity,splasher)
+			
+	-- print('[ILand] call event -> onSplashPotionHitEffect')
+
+	if splasher:toPlayer()==nil then return end
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	if landId==-1 then return end -- No Land
+
+	local player=splasher:toPlayer()
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_throwPotion then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onFireworkShootWithCrossbow(player)
+			
+	-- print('[ILand] call event -> onFireworkShootWithCrossbow')
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onProjectileShoot(shooter,projectiler)
+				
+	-- print('[ILand] call event -> onProjectileShoot')
+
+	if string.sub(projectiler.type,-6,-1) == 'potion' then return end -- 各种药水（Ignore）
+	if shooter:toPlayer()==nil then return end
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(shooter.pos))
+	if landId==-1 then return end -- No Land
+
+	local player=shooter:toPlayer()
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
+	return false
+end
+function Eventing_onStepOnPressurePlate(entity,block)
+				
+	-- print('[ILand] call event -> onStepOnPressurePlate')
+
+	local ispl=false
+	if entity:toPlayer()~=nil then
+		ispl=true
+		local player=entity:toPlayer()
+	end
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	if landId==-1 then return end -- No Land
+	
+	if land_data[landId].permissions.use_pressurePlate then return end -- Perm Allow
+	if ispl then
+		local xuid=player.xuid
+		if ILAPI.IsLandOperator(xuid) then return end
+		if ILAPI.IsLandOwner(landId,xuid) then return end
+		if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+		sendText(player,_tr('title.landlimit.noperm'))
+	end
+	return false
+end
+function Eventing_onRide(rider,entity)
+				
+	-- print('[ILand] call event -> onRide -> '..entity.type)
+
+	if rider:toPlayer()==nil then return end
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(rider.pos))
+	if landId==-1 then return end -- No Land 
+
+	local player=rider:toPlayer()
+	local xuid=player.xuid
+	local en=entity.type
+	if en=='minecraft:minecart' or en=='minecraft:boat' then
+		if land_data[landId].permissions.allow_ride_trans then return end
+	else
+		if land_data[landId].permissions.allow_ride_entity then return end
+	end
+
+	 -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
 
@@ -1944,6 +2112,14 @@ mc.listen('onExplode',Eventing_onExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
 mc.listen('onDropItem',Eventing_onDropItem)
 mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
+mc.listen('onUseRespawnAnchor',Eventing_onUseRespawnAnchor)
+mc.listen('onUseFrameBlock',Eventing_onUseFrameBlock)
+mc.listen('onFishingHookRetrieve',Eventing_onFishingHookRetrieve)
+mc.listen('onSplashPotionHitEffect',Eventing_onSplashPotionHitEffect)
+mc.listen('onFireworkShootWithCrossbow',Eventing_onFireworkShootWithCrossbow)
+mc.listen('onProjectileShoot',Eventing_onProjectileShoot)
+mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
+mc.listen('onRide',Eventing_onRide)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()
@@ -2116,13 +2292,29 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==210 then
 			cfg.version=211
-			cfg.land_buy.calculation_3D='m-1'
-			cfg.land_buy.calculation_2D='d-1'
-			cfg.land_buy.price_3D={20,4}
-			cfg.land_buy.price_2D={35}
-			cfg.land_buy.price=nil
-			cfg.land_buy.calculation=nil
+			local landbuy=cfg.land_buy
+			landbuy.calculation_3D='m-1'
+			landbuy.calculation_2D='d-1'
+			landbuy.price_3D={20,4}
+			landbuy.price_2D={35}
+			landbuy.price=nil
+			landbuy.calculation=nil
 			ILAPI.save()
+		end
+		if cfg.version==211 then
+			for landId,data in pairs(land_data) do
+				local perm=land_data[landId].permissions
+				perm.use_lever=false
+				perm.use_button=false
+				perm.use_respawnAnchor=false
+				perm.use_itemFrame=false
+				perm.use_fishingHook=false
+				perm.use_pressurePlate=false
+				perm.allow_throwPotion=false
+				perm.allow_ride_entity=false
+				perm.allow_ride_trans=false
+				perm.allow_shoot=false
+			end
 		end
 	end
 	

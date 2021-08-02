@@ -1,5 +1,5 @@
 {
-    "VERSION": 212,
+    "VERSION": 220,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -51,6 +51,9 @@
     "gui.landmgr.landperm.basic_options.dropitem": "允许丢物品",
     "gui.landmgr.landperm.basic_options.attack": "允许攻击生物",
     "gui.landmgr.landperm.basic_options.pickupitem": "允许捡起物品",
+    "gui.landmgr.landperm.basic_options.rideA": "允许骑乘生物",
+    "gui.landmgr.landperm.basic_options.rideB": "允许乘坐矿车/船",
+    "gui.landmgr.landperm.basic_options.shoot": "允许发射弹射物",
     "gui.landmgr.landperm.funcblock_options.crafting_table": "使用工作台",
     "gui.landmgr.landperm.funcblock_options.furnace": "允许使用熔炉",
     "gui.landmgr.landperm.funcblock_options.blast_furnace": "允许使用高炉",
@@ -78,7 +81,14 @@
     "gui.landmgr.landperm.other_options.noteblock": "允许修改音符盒",
     "gui.landmgr.landperm.other_options.composter": "允许操作堆肥桶",
     "gui.landmgr.landperm.other_options.bed": "允许睡觉",
+    "gui.landmgr.landperm.other_options.item_frame": "允许操作物品展示框",
     "gui.landmgr.landperm.other_options.daylight_detector": "修改阳光传感器模式",
+    "gui.landmgr.landperm.other_options.lever": "允许拉动拉杆",
+    "gui.landmgr.landperm.other_options.button": "允许按下按钮",
+    "gui.landmgr.landperm.other_options.pressure_plate": "允许踩压力板",
+    "gui.landmgr.landperm.other_options.throw_potion": "允许丢药水",
+    "gui.landmgr.landperm.other_options.respawn_anchor": "使用重生锚",
+    "gui.landmgr.landperm.other_options.fishing": "使用钓竿",
     "gui.landmgr.landperm.editevent": "编辑领地内可以发生的事件",
     "gui.landmgr.landperm.options.exploding": "允许爆炸",
     
