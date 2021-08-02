@@ -916,7 +916,7 @@ function GUI_LMgr(player)
 		_tr('gui.landmgr.options.landtransfer'),
 		_tr('gui.landmgr.options.delland')
 	}
-	
+
 	local lands={}
 	for i,v in pairs(thelands) do
 		local f='§l'..ILAPI.GetLandDimension(v)..'§r '..ILAPI.GetNickname(v,true)
@@ -1347,19 +1347,19 @@ end
 function cubeGetEdge(spos,epos)
 	local edge={}
 	local posB,posA = fmCube(spos,epos)
-	for i=1,math.abs(math.abs(posA.y)-math.abs(posB.y))+1 do
-		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posA.z)
-		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posB.z)
-		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posB.z)
-		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posA.z)
-	end
-	for i=1,math.abs(math.abs(posA.x)-math.abs(posB.x))+1 do
+	for i=1,math.abs(posA.x-posB.x)+1 do
 		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posA.z)
 		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posA.z)
 		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posA.y-1,posB.z)
 		edge[#edge+1]=AIR.buildVec(posA.x-i+1,posB.y-1,posB.z)
 	end
-	for i=1,math.abs(math.abs(posA.z)-math.abs(posB.z))+1 do
+	for i=1,math.abs(posA.y-posB.y)+1 do
+		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posA.z)
+		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-i,posB.z)
+		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posB.z)
+		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-i,posA.z)
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
 		edge[#edge+1]=AIR.buildVec(posA.x,posA.y-1,posA.z-i+1)
 		edge[#edge+1]=AIR.buildVec(posB.x,posA.y-1,posA.z-i+1)
 		edge[#edge+1]=AIR.buildVec(posA.x,posB.y-1,posA.z-i+1)
