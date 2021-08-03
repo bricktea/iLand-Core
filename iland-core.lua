@@ -2360,8 +2360,14 @@ mc.listen('onServerStarted',function()
 	end
 
 	-- Check file
-	if file.exists(data_path..'config.json') == false then
+	if not(file.exists(data_path..'config.json')) then
 		throwErr(-1)
+	end
+	if not(file.exists(data_path..'data.json')) then
+		file.writeTo(data_path..'data.json','{}')
+	end
+	if not(file.exists(data_path..'owners.json')) then
+		file.writeTo(data_path..'data.json','{}')
 	end
 	
 	-- Check depends version
