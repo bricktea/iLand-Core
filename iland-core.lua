@@ -104,12 +104,11 @@ function updateLandOperatorsMap()
 	end
 end
 function buildUIBITable()
-	local CanCtlMap = {}
+	CanCtlMap = {}
 	CanCtlMap[0] = {} -- UseItem
 	CanCtlMap[1] = {} -- onBlockInteracted
+	CanCtlMap[2] = {} -- ItemWhiteList
 	local useItemTmp = {
-		'minecraft:end_crystal',
-		'minecraft:ender_eye',
 		'minecraft:bed',
 		'minecraft:chest',
 		'minecraft:trapped_chest',
@@ -123,20 +122,12 @@ function buildUIBITable()
 		'minecraft:bell',
 		'minecraft:daylight_detector_inverted',
 		'daylight_detector',
-		'minecraft:fence_gate',
-		'minecraft:trapdoor',
 		'minecraft:lectern',
 		'minecraft:cauldron',
 		'minecraft:lever',
-		'minecraft:stone_button',
-		'minecraft:wooden_button',
-		'minecraft:spruce_button',
-		'minecraft:birch_button',
-		'minecraft:jungle_button',
-		'minecraft:acacia_button',
-		'minecraft:dark_oak_button',
-		'minecraft:crimson_button',
-		'minecraft:warped_button',
+		'minecraft:stone_button','minecraft:wooden_button','minecraft:spruce_button',
+		'minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
+		'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
 		'minecraft:polished_blackstone_button'
 	}
 	local blockInterTmp = {
@@ -154,13 +145,30 @@ function buildUIBITable()
 		'minecraft:hopper',
 		'minecraft:dropper',
 		'minecraft:dispenser',
-		'minecraft:loom'
+		'minecraft:loom',
+		'minecraft:trapdoor','minecraft:spruce_trapdoor','minecraft:birch_trapdoor',
+		'minecraft:jungle_trapdoor','minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor',
+		'minecraft:crimson_trapdoor','minecraft:warped_trapdoor',
+		'minecraft:fence_gate','minecraft:spruce_fence_gate','minecraft:birch_fence_gate',
+		'minecraft:jungle_fence_gate','minecraft:acacia_fence_gate','minecraft:dark_oak_fence_gate',
+		'minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
+		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door',
+		'minecraft:jungle_door','minecraft:acacia_door','minecraft:dark_oak_door',
+		'minecraft:crimson_door','minecraft:warped_door'
+	}
+	local itemWlistTmp = {
+		'minecraft:glow_ink_sac',
+		'minecraft:end_crystal',
+		'minecraft:ender_eye'
 	}
 	for n,uitem in pairs(useItemTmp) do
 		CanCtlMap[0][uitem] = { 'E' }
 	end
 	for n,bint in pairs(blockInterTmp) do
 		CanCtlMap[1][bint] = { 'E' }
+	end
+	for n,iwl in pairs(itemWlistTmp) do
+		CanCtlMap[2][iwl] = { 'E' }
 	end
 end
 function buildChunks()
@@ -237,8 +245,14 @@ function FORM_land_gui_cfg(player,data)
 	if data==nil then return end
 	
 	local landId = TRS_Form[player.xuid].landId
-	land_data[landId].settings.signtome=data[1]
-	land_data[landId].settings.signtother=data[2]
+	local settings = land_data[landId].settings
+	settings.signtome=data[1]
+	settings.signtother=data[2]
+	settings.signbuttom=data[3]
+	settings.ev_explode=data[4]
+	settings.ev_farmland_decay=data[5]
+	settings.ev_piston_push=data[6]
+	settings.ev_fire_spread=data[7]
 	ILAPI.save()
 
 	player:sendModalForm(
@@ -285,23 +299,22 @@ function FORM_land_gui_perm(player,data)
 	perm.allow_open_chest = data[27]
 	
 	perm.use_campfire = data[28]
-	perm.use_trapdoor = data[29]
-	perm.use_fence_gate = data[30]
-	perm.use_bell = data[31]
-	perm.use_jukebox = data[32]
-	perm.use_noteblock = data[33]
-	perm.use_composter = data[34]
-	perm.use_bed = data[35]
-	perm.use_item_frame = data[36]
-	perm.use_daylight_detector = data[37]
-	perm.use_lever = data[38]
-	perm.use_button = data[39]
-	perm.use_pressure_plate = data[40]
-	perm.allow_throw_potion = data[41]
-	perm.use_respawn_anchor = data[42]
-	perm.use_fishing_hook = data[43]
-
-	perm.allow_exploding = data[44]
+	perm.use_door = data[29]
+	perm.use_trapdoor = data[30]
+	perm.use_fence_gate = data[31]
+	perm.use_bell = data[32]
+	perm.use_jukebox = data[33]
+	perm.use_noteblock = data[34]
+	perm.use_composter = data[35]
+	perm.use_bed = data[36]
+	perm.use_item_frame = data[37]
+	perm.use_daylight_detector = data[38]
+	perm.use_lever = data[39]
+	perm.use_button = data[40]
+	perm.use_pressure_plate = data[41]
+	perm.allow_throw_potion = data[42]
+	perm.use_respawn_anchor = data[43]
+	perm.use_fishing_hook = data[44]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -470,16 +483,24 @@ function FORM_land_gui(player,data,lid)
 		)
 	end
 	if data[2]==1 then --编辑领地选项
-		local isclosed=''
+		local IsSignDisabled = ''
 		if not(cfg.features.landSign) then
-			isclosed=' ('.._tr('talk.features.closed')..')'
+			IsSignDisabled=' ('.._tr('talk.features.closed')..')'
 		end
 		local Form = mc.newCustomForm()
+		local settings=land_data[landId].settings
 		Form:setTitle(_tr('gui.landcfg.title'))
 		Form:addLabel(_tr('gui.landcfg.tip'))
-		Form:addLabel(_tr('gui.landcfg.landsign')..isclosed)
-		Form:addSwitch(_tr('gui.landcfg.landsign.tome'),land_data[landId].settings.signtome)
-		Form:addSwitch(_tr('gui.landcfg.landsign.tother'),land_data[landId].settings.signtother)
+		Form:addLabel(_tr('gui.landcfg.landsign')..IsSignDisabled)
+		Form:addSwitch(_tr('gui.landcfg.landsign.tome'),settings.signtome)
+		Form:addSwitch(_tr('gui.landcfg.landsign.tother'),settings.signtother)
+		Form:addSwitch(_tr('gui.landcfg.landsign.bottom'),settings.signbuttom)
+		Form:addLabel(_tr('gui.landcfg.inside'))
+		Form:addSwitch(_tr('gui.landcfg.inside.explode'),settings.ev_explode) 
+		Form:addSwitch(_tr('gui.landcfg.inside.farmland_decay'),settings.ev_farmland_decay)
+		Form:addLabel(_tr('gui.landcfg.nearby'))
+		Form:addSwitch(_tr('gui.landcfg.nearby.piston_push'),settings.ev_piston_push)
+		Form:addSwitch(_tr('gui.landcfg.nearby.fire_spread'),settings.ev_fire_spread)
 		player:sendForm(Form,FORM_land_gui_cfg)
 		return
 	end
@@ -520,6 +541,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.allow_open_chest)
 		Form:addLabel(_tr('gui.landmgr.landperm.other_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.campfire'),perm.use_campfire)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.door'),perm.use_door)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.trapdoor'),perm.use_trapdoor)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fence_gate'),perm.use_fence_gate)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bell'),perm.use_bell)
@@ -536,7 +558,6 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
 		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
-		Form:addSwitch(_tr('gui.landmgr.landperm.options.exploding'),perm.allow_exploding)
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
@@ -1161,13 +1182,20 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	land_data[landId].permissions={}
 	
 	-- Land settings
-	land_data[landId].settings.nickname=""
-	land_data[landId].settings.describe=""
-	land_data[landId].settings.tpoint[1]=startpos.x
-	land_data[landId].settings.tpoint[2]=startpos.y
-	land_data[landId].settings.tpoint[3]=startpos.z
-	land_data[landId].settings.signtome=true
-	land_data[landId].settings.signtother=true
+	local settings=land_data[landId].settings
+	settings.nickname=""
+	settings.describe=""
+	settings.tpoint[1]=startpos.x
+	settings.tpoint[2]=startpos.y+1
+	settings.tpoint[3]=startpos.z
+	settings.signtome=true
+	settings.signtother=true
+	settings.signbuttom=true
+	settings.ev_explode=false
+	settings.ev_farmland_decay=false
+	settings.ev_piston_push=false
+	settings.ev_fire_spread=false
+
 	-- Land ranges
 	table.insert(land_data[landId].range.start_position,1,startpos.x)
 	table.insert(land_data[landId].range.start_position,2,startpos.y)
@@ -1182,7 +1210,6 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	-- Land permission
 	perm.allow_destroy=false
 	perm.allow_place=false
-	perm.allow_exploding=false
 	perm.allow_attack=false
 	perm.allow_open_chest=false
 	perm.allow_pickupitem=false
@@ -1202,6 +1229,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_dispenser = false
 	perm.use_dropper = false
 	perm.use_enchanting_table = false
+	perm.use_door=false
 	perm.use_fence_gate = false
 	perm.use_furnace = false
 	perm.use_grindstone = false
@@ -1343,6 +1371,13 @@ end
 function ILAPI.CanControl(mode,block)
 	-- mode [0]UseItem [1]onBlockInteracted
 	if CanCtlMap[mode][block]==nil then
+		return false
+	else
+		return true
+	end
+end
+function ILAPI.CanControlItem(itemtype)
+	if CanCtlMap[2][itemtype]==nil then
 		return false
 	else
 		return true
@@ -1848,8 +1883,17 @@ end
 function Eventing_onUseItemOn(player,item,block)
 
 	-- print('[ILand] call event -> onUseItemOn ')
+
+	if true then
+		return false
+	end
 	
-	if not(ILAPI.CanControl(0,block.type)) then return end
+	if not(ILAPI.CanControl(0,block.type)) then 
+		if not(ILAPI.CanControlItem(item.type)) then
+			return
+		end
+	end
+
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1860,10 +1904,7 @@ function Eventing_onUseItemOn(player,item,block)
 	
 	local perm = land_data[landId].permissions
 	local bn = block.type
-	local it = item.type
 	if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
-	if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
-	if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
 	if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
 	if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
 	if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
@@ -1874,11 +1915,14 @@ function Eventing_onUseItemOn(player,item,block)
 	if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
 	if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
 	if (bn == 'minecraft:daylight_detector_inverted' or bn == 'daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
-	if bn == 'minecraft:fence_gate' and perm.use_fence_gate then return end -- 栏栅门
-	if bn == 'minecraft:trapdoor' and perm.use_trapdoor then return end -- 活板门
 	if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
 	if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 	if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
+	
+	local it = item.type
+	if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色
+	if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
+	if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
 
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
@@ -1904,7 +1948,7 @@ function Eventing_onExplode(entity,pos)
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
-	if land_data[landId].permissions.allow_exploding then return end -- Perm Allow
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end
 function Eventing_onTakeItem(player,entity)
@@ -1952,6 +1996,9 @@ function Eventing_onBlockInteracted(player,block)
 
 	local perm = land_data[landId].permissions
 	local bn = block.type
+	if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+	if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
+	if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
 	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
 	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
 	if bn == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
@@ -2127,6 +2174,9 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	end
 	return false
 end
+function Eventing_onFarmLandDecay(pos,entity)
+
+end
 
 -- Lua -> Timer Callback
 function Tcb_LandSign()
@@ -2204,6 +2254,7 @@ mc.listen('onProjectileShoot',Eventing_onProjectileShoot)
 mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
 mc.listen('onRide',Eventing_onRide)
 mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
+mc.listen('onFarmLandDecay',Eventing_onFarmLandDecay)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()
@@ -2384,6 +2435,7 @@ mc.listen('onServerStarted',function()
 			ILAPI.save()
 		end
 		if cfg.version==211 then
+			cfg.version=220
 			for landId,data in pairs(land_data) do
 				local perm=land_data[landId].permissions
 				perm.use_lever=false
@@ -2396,7 +2448,16 @@ mc.listen('onServerStarted',function()
 				perm.allow_ride_entity=false
 				perm.allow_ride_trans=false
 				perm.allow_shoot=false
+				local settings=land_data[landId].settings
+				-- settings.ev_explode=AIR.deepcopy(perm.allow_exploding)
+				settings.ev_farmland_decay=false
+				settings.ev_piston_push=false
+				settings.ev_fire_spread=false
+				settings.signbuttom=true
+				perm.use_door=false
+				perm.allow_exploding=nil
 			end
+			ILAPI.save(  )
 		end
 	end
 	
