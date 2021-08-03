@@ -103,6 +103,66 @@ function updateLandOperatorsMap()
 		LandOperatorsMap[xuid]={}
 	end
 end
+function buildUIBITable()
+	local CanCtlMap = {}
+	CanCtlMap[0] = {} -- UseItem
+	CanCtlMap[1] = {} -- onBlockInteracted
+	local useItemTmp = {
+		'minecraft:end_crystal',
+		'minecraft:ender_eye',
+		'minecraft:bed',
+		'minecraft:chest',
+		'minecraft:trapped_chest',
+		'minecraft:crafting_table',
+		'minecraft:campfire',
+		'minecraft:composter',
+		'minecraft:undyed_shulker_box',
+		'shulker_box',
+		'minecraft:noteblock',
+		'minecraft:jukebox',
+		'minecraft:bell',
+		'minecraft:daylight_detector_inverted',
+		'daylight_detector',
+		'minecraft:fence_gate',
+		'minecraft:trapdoor',
+		'minecraft:lectern',
+		'minecraft:cauldron',
+		'minecraft:lever',
+		'minecraft:stone_button',
+		'minecraft:wooden_button',
+		'minecraft:spruce_button',
+		'minecraft:birch_button',
+		'minecraft:jungle_button',
+		'minecraft:acacia_button',
+		'minecraft:dark_oak_button',
+		'minecraft:crimson_button',
+		'minecraft:warped_button',
+		'minecraft:polished_blackstone_button'
+	}
+	local blockInterTmp = {
+		'minecraft:cartography_table',
+		'minecraft:smithing_table',
+		'minecraft:furnace',
+		'minecraft:blast_furnace',
+		'minecraft:smoker',
+		'minecraft:brewing_stand',
+		'minecraft:anvil',
+		'minecraft:grindstone',
+		'minecraft:enchanting_table',
+		'minecraft:barrel',
+		'minecraft:beacon',
+		'minecraft:hopper',
+		'minecraft:dropper',
+		'minecraft:dispenser',
+		'minecraft:loom'
+	}
+	for n,uitem in pairs(useItemTmp) do
+		CanCtlMap[0][uitem] = { 'E' }
+	end
+	for n,bint in pairs(blockInterTmp) do
+		CanCtlMap[1][bint] = { 'E' }
+	end
+end
 function buildChunks()
 	ChunkMap={}
 
@@ -130,6 +190,7 @@ function buildLTOPMap()
 		updateLandOwnersMap(landId)
 	end
 	updateLandOperatorsMap()
+	buildUIBITable()
 end
 
 -- form -> callback
@@ -1279,6 +1340,14 @@ function ILAPI.save()
 	file.writeTo(data_path..'data.json',json.encode(land_data))
 	file.writeTo(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
+function ILAPI.CanControl(mode,block)
+	-- mode [0]UseItem [1]onBlockInteracted
+	if CanCtlMap[mode][block]==nil then
+		return false
+	else
+		return true
+	end
+end
 
 -- feature function
 function GetAllPlayerList() -- all player namelist
@@ -1780,6 +1849,7 @@ function Eventing_onUseItemOn(player,item,block)
 
 	-- print('[ILand] call event -> onUseItemOn ')
 	
+	if not(ILAPI.CanControl(0,block.type)) then return end
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1871,6 +1941,7 @@ function Eventing_onBlockInteracted(player,block)
 
 	-- print('[ILand] call event -> onBlockIteracted ')
 
+	if not(ILAPI.CanControl(1,block.type)) then return end
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
