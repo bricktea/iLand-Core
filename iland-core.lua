@@ -2486,7 +2486,7 @@ mc.listen('onServerStarted',function()
 				perm.allow_ride_trans=false
 				perm.allow_shoot=false
 				local settings=land_data[landId].settings
-				-- settings.ev_explode=AIR.deepcopy(perm.allow_exploding)
+				settings.ev_explode=AIR.deepcopy(perm.allow_exploding)
 				settings.ev_farmland_decay=false
 				settings.ev_piston_push=false
 				settings.ev_fire_spread=false
