@@ -2083,7 +2083,7 @@ function Eventing_onSplashPotionHitEffect(entity,splasher)
 	-- print('[ILand] call event -> onSplashPotionHitEffect')
 
 	if splasher:toPlayer()==nil then return end
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(formatPlayerPos(splasher.pos))
 	if landId==-1 then return end -- No Land
 
 	local player=splasher:toPlayer()
