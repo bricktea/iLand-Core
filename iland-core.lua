@@ -2495,7 +2495,7 @@ mc.listen('onServerStarted',function()
 				perm.use_stonecutter=false
 				perm.allow_exploding=nil
 			end
-			ILAPI.save(  )
+			ILAPI.save()
 		end
 	end
 	
