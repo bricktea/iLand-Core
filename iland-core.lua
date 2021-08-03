@@ -9,7 +9,7 @@ plugin_version = '2.20'
 debug_mode = false
 
 langVer = 220
-minAirVer = 200
+minAirVer = 220
 minLXLVer = {0,3,1}
 
 AIR = require('airLibs')
@@ -1778,7 +1778,8 @@ function Eventing_onPlaceBlock(player,block)
 end
 function Eventing_onUseItemOn(player,item,block)
 
-	-- print('[ILand] call event -> onUseItemOn -> item: '..item.type..' block: '..block.type)
+	-- print('[ILand] call event -> onUseItemOn ')
+	
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
@@ -1794,6 +1795,7 @@ function Eventing_onUseItemOn(player,item,block)
 	if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
 	if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
 	if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
+	if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
 	if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
 	if bn == 'minecraft:campfire' and perm.use_campfire then return end -- 营火（烧烤）
 	if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
@@ -1808,21 +1810,6 @@ function Eventing_onUseItemOn(player,item,block)
 	if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 	if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
 
-	sendText(player,_tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onOpenContainer(player,block)
-
-	-- print('[ILand] call event -> onOpenContainer')
-
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_open_chest then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1909,7 +1896,7 @@ function Eventing_onBlockInteracted(player,block)
 	if bn == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
 	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
 	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
-	
+
 	return false
 end
 function Eventing_onUseRespawnAnchor(player,pos)
@@ -2132,7 +2119,6 @@ mc.listen('onLeft',Eventing_onLeft)
 mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
 mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
 mc.listen('onUseItemOn',Eventing_onUseItemOn)
-mc.listen('onOpenContainer',Eventing_onOpenContainer)
 mc.listen('onAttack',Eventing_onAttack)
 mc.listen('onExplode',Eventing_onExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
