@@ -565,7 +565,11 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
-		TRS_Form[xuid].playerList = GetAllPlayerList()
+		if cfg.features.offlinePlayerInList then
+			TRS_Form[xuid].playerList = GetAllPlayerList()
+		else
+			TRS_Form[xuid].playerList = GetOnlinePlayerList()
+		end
 		local shareList={}
 		for num,xuid in pairs(land_data[landId].settings.share) do
 			shareList[#shareList+1]=GetIdFromXuid(xuid)
@@ -602,7 +606,11 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if data[2]==6 then --领地过户
-		TRS_Form[xuid].playerList = GetAllPlayerList()
+		if cfg.features.offlinePlayerInList then
+			TRS_Form[xuid].playerList = GetAllPlayerList()
+		else
+			TRS_Form[xuid].playerList = GetOnlinePlayerList()
+		end
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtransfer.title'))
@@ -1397,6 +1405,13 @@ function GetAllPlayerList() -- all player namelist
 	end
 	return r
 end
+function GetOnlinePlayerList()
+	local r = {}
+	for xuid,lds in pairs(TRS_Form) do
+		r[#r+1]=GetIdFromXuid(xuid)
+	end
+	return r
+end
 function _tr(a)
 	return i18n_data[a]
 end
@@ -2172,7 +2187,7 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	-- print('[ILand] call event -> onWitherBossDestroy ')
 
 	if AAbb==nil then return end
-	for n,pos in pairs(traverseAABB(AAbb,aaBB)) do
+	for n,pos in pairs(TraverseAABB(AAbb,aaBB)) do
 		landId=ILAPI.PosGetLand(pos)
 		if landId~=-1 then 
 			if land_data[landId].permissions.allow_destroy then return end
@@ -2190,7 +2205,13 @@ function Eventing_onExplode(entity,pos)
 	return false
 end
 function Eventing_onFarmLandDecay(pos,entity)
+	
+	-- print('[ILand] call event -> onExplode ')
 
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
+	return false
 end
 
 -- Lua -> Timer Callback
@@ -2451,6 +2472,7 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==211 then
 			cfg.version=220
+			cfg.features.offlinePlayerInList=true
 			for landId,data in pairs(land_data) do
 				local perm=land_data[landId].permissions
 				perm.use_lever=false

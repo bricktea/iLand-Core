@@ -26,6 +26,7 @@
     "features": {
         "auto_update":true,
         "landSign": true,
+        "offlinePlayerInList":true,
         "particles": true,
         "landtp": true,
         "force_talk": false,
