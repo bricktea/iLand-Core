@@ -99,6 +99,7 @@ function updateLandOwnersMap(landId)
 	LandOwnersMap[landId]=ILAPI.GetOwner(landId)
 end
 function updateLandOperatorsMap()
+	LandOperatorsMap = {}
 	for n,xuid in pairs(cfg.manager.operator) do
 		LandOperatorsMap[xuid]={}
 	end
@@ -154,7 +155,8 @@ function buildUIBITable()
 		'minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
 		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door',
 		'minecraft:jungle_door','minecraft:acacia_door','minecraft:dark_oak_door',
-		'minecraft:crimson_door','minecraft:warped_door'
+		'minecraft:crimson_door','minecraft:warped_door',
+		'minecraft:stonecutter_block'
 	}
 	local itemWlistTmp = {
 		'minecraft:glow_ink_sac',
@@ -289,32 +291,33 @@ function FORM_land_gui_perm(player,data)
 	perm.use_cartography_table = data[18]
 	perm.use_smithing_table = data[19]
 	perm.use_loom = data[20]
-	perm.use_beacon = data[21]
+	perm.use_stonecutter = data[21]
+	perm.use_beacon = data[22]
 	
-	perm.use_barrel = data[22]
-	perm.use_hopper = data[23]
-	perm.use_dropper = data[24]
-	perm.use_dispenser = data[25]
-	perm.use_shulker_box = data[26]
-	perm.allow_open_chest = data[27]
+	perm.use_barrel = data[23]
+	perm.use_hopper = data[24]
+	perm.use_dropper = data[25]
+	perm.use_dispenser = data[26]
+	perm.use_shulker_box = data[27]
+	perm.allow_open_chest = data[28]
 	
-	perm.use_campfire = data[28]
-	perm.use_door = data[29]
-	perm.use_trapdoor = data[30]
-	perm.use_fence_gate = data[31]
-	perm.use_bell = data[32]
-	perm.use_jukebox = data[33]
-	perm.use_noteblock = data[34]
-	perm.use_composter = data[35]
-	perm.use_bed = data[36]
-	perm.use_item_frame = data[37]
-	perm.use_daylight_detector = data[38]
-	perm.use_lever = data[39]
-	perm.use_button = data[40]
-	perm.use_pressure_plate = data[41]
-	perm.allow_throw_potion = data[42]
-	perm.use_respawn_anchor = data[43]
-	perm.use_fishing_hook = data[44]
+	perm.use_campfire = data[29]
+	perm.use_door = data[30]
+	perm.use_trapdoor = data[31]
+	perm.use_fence_gate = data[32]
+	perm.use_bell = data[33]
+	perm.use_jukebox = data[34]
+	perm.use_noteblock = data[35]
+	perm.use_composter = data[36]
+	perm.use_bed = data[37]
+	perm.use_item_frame = data[38]
+	perm.use_daylight_detector = data[39]
+	perm.use_lever = data[40]
+	perm.use_button = data[41]
+	perm.use_pressure_plate = data[42]
+	perm.allow_throw_potion = data[43]
+	perm.use_respawn_anchor = data[44]
+	perm.use_fishing_hook = data[45]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -531,6 +534,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cartography_table'),perm.use_cartography_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),perm.use_smithing_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.loom'),perm.use_loom)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock.options.stonecutter'),perm.use_stonecutter)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.beacon'),perm.use_beacon)
 		Form:addLabel(_tr('gui.landmgr.landperm.contblock_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.barrel'),perm.use_barrel)
@@ -1236,6 +1240,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_hopper = false
 	perm.use_jukebox = false
 	perm.use_loom = false
+	perm.use_stonecutter = false
 	perm.use_noteblock = false
 	perm.use_shulker_box = false
 	perm.use_smithing_table = false
@@ -1860,6 +1865,7 @@ function Eventing_onDestroyBlock(player,block)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1876,17 +1882,13 @@ function Eventing_onPlaceBlock(player,block)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	sendText(player,_tr('title.landlimit.noperm'))
 
+	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
 function Eventing_onUseItemOn(player,item,block)
 
 	-- print('[ILand] call event -> onUseItemOn ')
-
-	if true then
-		return false
-	end
 	
 	if not(ILAPI.CanControl(0,block.type)) then 
 		if not(ILAPI.CanControlItem(item.type)) then
@@ -1939,16 +1941,8 @@ function Eventing_onAttack(player,entity)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
 	sendText(player,_tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onExplode(entity,pos)
-
-	-- print('[ILand] call event -> onExplode ')
-
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end
 function Eventing_onTakeItem(player,entity)
@@ -1963,6 +1957,7 @@ function Eventing_onTakeItem(player,entity)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -1978,6 +1973,7 @@ function Eventing_onDropItem(player,item)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2014,7 +2010,9 @@ function Eventing_onBlockInteracted(player,block)
 	if bn == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
 	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
 	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
-
+	if bn == 'minecraft:stonecutter_block' and perm.use_stonecutter then return end -- 切石机
+	
+	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
 function Eventing_onUseRespawnAnchor(player,pos)
@@ -2029,6 +2027,7 @@ function Eventing_onUseRespawnAnchor(player,pos)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2044,6 +2043,7 @@ function Eventing_onUseFrameBlock(player,block)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2059,6 +2059,7 @@ function Eventing_onFishingHookRetrieve(player,fishingHook)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2076,6 +2077,7 @@ function Eventing_onSplashPotionHitEffect(entity,splasher)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2091,6 +2093,7 @@ function Eventing_onFireworkShootWithCrossbow(player)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2110,6 +2113,7 @@ function Eventing_onProjectileShoot(shooter,projectiler)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2118,9 +2122,10 @@ function Eventing_onStepOnPressurePlate(entity,block)
 	-- print('[ILand] call event -> onStepOnPressurePlate')
 
 	local ispl=false
+	local player
 	if entity:toPlayer()~=nil then
 		ispl=true
-		local player=entity:toPlayer()
+		player=entity:toPlayer()
 	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
@@ -2158,6 +2163,7 @@ function Eventing_onRide(rider,entity)
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
@@ -2172,6 +2178,15 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 			if land_data[landId].permissions.allow_destroy then return end
 		end
 	end
+	return false
+end
+function Eventing_onExplode(entity,pos)
+
+	-- print('[ILand] call event -> onExplode ')
+
+	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end
 function Eventing_onFarmLandDecay(pos,entity)
@@ -2455,6 +2470,7 @@ mc.listen('onServerStarted',function()
 				settings.ev_fire_spread=false
 				settings.signbuttom=true
 				perm.use_door=false
+				perm.use_stonecutter=false
 				perm.allow_exploding=nil
 			end
 			ILAPI.save(  )
