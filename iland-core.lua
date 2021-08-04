@@ -534,7 +534,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.cartography_table'),perm.use_cartography_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),perm.use_smithing_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.loom'),perm.use_loom)
-		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock.options.stonecutter'),perm.use_stonecutter)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.stonecutter'),perm.use_stonecutter)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.beacon'),perm.use_beacon)
 		Form:addLabel(_tr('gui.landmgr.landperm.contblock_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.barrel'),perm.use_barrel)
@@ -1412,6 +1412,7 @@ function GetOnlinePlayerList()
 	return r
 end
 function _tr(a)
+	if debug_mode and i18n_data[a]==nil then print(a) end
 	return i18n_data[a]
 end
 function money_add(player,value)

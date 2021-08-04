@@ -9,6 +9,7 @@
  - [ ] 完善oplmgr选项
  - [x] 自动写owners,data +bak
  - [x] 底部landsign
+ - [x] 修复允许使用切石机没有语言配置导致的错误
 
  > 3-rd Plugins 计划
  - [ ] 附近领地传感器

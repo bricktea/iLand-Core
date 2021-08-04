@@ -67,6 +67,7 @@
     "gui.landmgr.landperm.funcblock_options.smithing_table": "允许使用锻造台",
     "gui.landmgr.landperm.funcblock_options.loom": "允许使用织布机",
     "gui.landmgr.landperm.funcblock_options.beacon": "允许操作信标",
+    "gui.landmgr.landperm.funcblock_options.stonecutter": "允许使用切石机",
     "gui.landmgr.landperm.contblock_options.barrel": "允许开桶",
     "gui.landmgr.landperm.contblock_options.hopper": "允许打开漏斗",
     "gui.landmgr.landperm.contblock_options.dropper": "允许打开投掷器",
