@@ -823,65 +823,67 @@ function FORM_land_gde(player,id)
 end
 function BoughtProg_SelectRange(player,vec4,mode)
 	local xuid = player.xuid
-    if newLand[xuid]==nil then return end
+    local NewData = newLand[xuid]
+    
+    if NewData==nil then return end
     if mode==0 then -- point A
-        if mode~=newLand[xuid].step then
+        if mode~=NewData.step then
 			sendText(player,_tr('title.selectrange.failbystep'));return
         end
-		newLand[xuid].dimid = vec4.dimid
-		newLand[xuid].posA.x=math.modf(vec4.x) --省函数...
-		if newLand[xuid].dimension=='3D' then
-			newLand[xuid].posA.y=math.modf(vec4.y)
+		NewData.dimid = vec4.dimid
+		NewData.posA.x=math.modf(vec4.x) --省函数...
+		if NewData.dimension=='3D' then
+			NewData.posA.y=math.modf(vec4.y)
 		else
-			newLand[xuid].posA.y=0
+			NewData.posA.y=0
 		end
-		newLand[xuid].posA.z=math.modf(vec4.z)
+		NewData.posA.z=math.modf(vec4.z)
         sendText(
 			player,
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','a',
 				'<b>',did2dim(vec4.dimid),
-				'<c>',newLand[xuid].posA.x,
-				'<d>',newLand[xuid].posA.y,
-				'<e>',newLand[xuid].posA.z)
+				'<c>',NewData.posA.x,
+				'<d>',NewData.posA.y,
+				'<e>',NewData.posA.z)
 				..'\n'..
 				AIR.gsubEx(
 					_tr('title.selectrange.spointb'),
 					'<a>',cfg.features.selection_tool_name
 				)
 			)
-		newLand[xuid].step = 1
+		NewData.step = 1
     end
     if mode==1 then -- point B
-        if vec4.dimid~=newLand[xuid].dimid then
+        if vec4.dimid~=NewData.dimid then
 			sendText(player,_tr('title.selectrange.failbycdimid'));return
         end
-		newLand[xuid].posB.x=math.modf(vec4.x)
-		if newLand[xuid].dimension=='3D' then
-			newLand[xuid].posB.y=math.modf(vec4.y)
+		NewData.posB.x=math.modf(vec4.x)
+		if NewData.dimension=='3D' then
+			NewData.posB.y=math.modf(vec4.y)
 		else
-			newLand[xuid].posB.y=255
+			NewData.posB.y=255
 		end
-		newLand[xuid].posB.z=math.modf(vec4.z)
+		NewData.posB.z=math.modf(vec4.z)
         sendText(
 			player,
 			AIR.gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
 				'<b>',did2dim(vec4.dimid),
-				'<c>',newLand[xuid].posB.x,
-				'<d>',newLand[xuid].posB.y,
-				'<e>',newLand[xuid].posB.z)
+				'<c>',NewData.posB.x,
+				'<d>',NewData.posB.y,
+				'<e>',NewData.posB.z)
 				..'\n'..
 				AIR.gsubEx(
 					_tr('title.selectrange.bebuy'),
 					'<a>',cfg.features.selection_tool_name
 				)
 			)
-		newLand[xuid].step = 2
+		NewData.step = 2
 
-		local edges = cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
+		local edges = cubeGetEdge(NewData.posA,NewData.posB)
 		if #edges>cfg.features.player_max_ple then
 			sendText(player,_tr('title.selectrange.nople'),0)
 		else
@@ -895,62 +897,67 @@ function BoughtProg_SelectRange(player,vec4,mode)
 end
 function BoughtProg_CreateOrder(player)
 	local xuid=player.xuid
-	ArrayParticles[xuid]=nil
-	local xuid = player.xuid
-    if newLand[xuid]==nil or newLand[xuid].step~=2 then
+    local NewData = newLand[xuid]
+	ArrayParticles[xuid]=nil 
+
+    if NewData==nil or NewData.step~=2 then
 		sendText(player,_tr('title.createorder.failbystep'))
         return
     end
-    local length = math.abs(newLand[xuid].posA.x - newLand[xuid].posB.x) + 1
-    local width = math.abs(newLand[xuid].posA.z - newLand[xuid].posB.z) + 1
-    local height = math.abs(newLand[xuid].posA.y - newLand[xuid].posB.y) + 1
+
+    local length = math.abs(NewData.posA.x - NewData.posB.x) + 1
+    local width = math.abs(NewData.posA.z - NewData.posB.z) + 1
+    local height = math.abs(NewData.posA.y - NewData.posB.y) + 1
     local vol = length * width * height
     local squ = length * width
+
 	--- 违规圈地判断
 	if squ>cfg.land.land_max_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 		sendText(player,_tr('title.createorder.toobig')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		newLand[xuid].step=0
+		NewData.step=0
 		return
 	end
 	if squ<cfg.land.land_min_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
 		sendText(player,_tr('title.createorder.toosmall')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		newLand[xuid].step=0
+		NewData.step=0
 		return
 	end
 	if height<2 then
 		sendText(player,_tr('title.createorder.toolow')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		newLand[xuid].step=0
+		NewData.step=0
 		return
 	end
+
 	--- 领地冲突判断
-	local edge=cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
+	local edge=cubeGetEdge(NewData.posA,NewData.posB)
 	for i=1,#edge do
-		edge[i].dimid=newLand[xuid].dimid
+		edge[i].dimid=NewData.dimid
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
 			sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-			newLand[xuid].step=0;return
+			NewData.step=0;return
 		end
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
-		if land_data[landId].range.dimid==newLand[xuid].dimid then
+		if land_data[landId].range.dimid==NewData.dimid then
 			edge=cubeGetEdge(VecMap[landId].a,VecMap[landId].b)
 			for i=1,#edge do
-				if isPosInCube(edge[i],newLand[xuid].posA,newLand[xuid].posB)==true then
+				if isPosInCube(edge[i],NewData.posA,NewData.posB)==true then
 					sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-					newLand[xuid].step=0;return
+					NewData.step=0;return
 				end
 			end
 		end
 	end
+
 	--- 购买
-    newLand[xuid].landprice = calculation_price(length,width,height,newLand[xuid].dimension)
+    NewData.landprice = calculation_price(length,width,height,NewData.dimension)
 	local dis_info = ''
 	local dim_info = ''
 	if cfg.money.discount<100 then
 		dis_info=AIR.gsubEx(_tr('gui.buyland.discount'),'<a>',tostring(100-cfg.money.discount))
 	end
-	if newLand[xuid].dimension=='3D' then
+	if NewData.dimension=='3D' then
 		dim_info = '§l3D-Land §r'
 	else
 		dim_info = '§l2D-Land §r'
@@ -963,7 +970,7 @@ function BoughtProg_CreateOrder(player)
 			'<b>',width,
 			'<c>',height,
 			'<d>',vol,
-			'<e>',newLand[xuid].landprice,
+			'<e>',NewData.landprice,
 			'<f>',cfg.money.credit_name,
 			'<g>',money_get(player)
 		),
