@@ -139,7 +139,7 @@
     "gui.oplandmgr.features.maxple": "单玩家最大粒子数",
     "gui.oplandmgr.features.2dland": "二维圈地开关",
     "gui.oplandmgr.features.3dland": "三维圈地开关",
-    "gui.oplandmgr.features.autoupdate": "自动升级到最新版（暂时不可用）",
+    "gui.oplandmgr.features.autoupdate": "自动升级到最新版",
     "gui.oplandmgr.selectland": "选择目标领地",
     "gui.oplandmgr.there": "§l[正在此领地] §r",
     
@@ -240,11 +240,26 @@
     "command.land_mgr.noperm": "§e此命令为领地管理员专有，请在控制台使用 §l/land op <a>§r§e 将自己添加为领地管理员。",
     "command.error": "§c未知的参数 \"<a>\" 请检查您的输入。",
 
+    "command.console.land": "关于iLand",
+    "command.console.land_op": "添加领地管理员",
+    "command.console.land_deop": "删除领地管理员",
+    "command.console.land_test": "运行领地性能测试",
+    "command.console.land_update": "升级iLand",
+
     "console.update.preview": "正在使用未公开版本 <a> 。",
     "console.update.newversion": "获取到到新版本 <a> ,可以使用 /land update 自动更新！",
     "console.update.newcontent": "更新内容：",
-    "console.update.force": "抱歉，由于云端设定，已强制更新您的iLand到 <a>，强制更新大多在旧版本存在严重问题时才会启用。",
+    "console.update.force": "抱歉，由于云端设定，您的iLand必须更新倒 <a> 才可使用，强制更新大多在旧版本存在严重问题时才会启用。",
+    "console.update.auto": "由于您开启了自动更新，正在开始更新您的iLand到新版本...",
     "console.update.restart": "更新完毕需要重启服务器以生效。",
+    
+    "console.autoupdate.start": "正在开始自动更新...",
+    "console.autoupdate.alreadylatest": "更新停止，因为已经是最新版本（<a>）。",
+    "console.autoupdate.download": "正在下载... ",
+    "console.autoupdate.errorbydown": "下载文件 <a> 失败，错误代码：<b>。请检查您的网络或反馈问题，更新已中断。",
+    "console.autoupdate.recoverbackup": "正在恢复备份...",
+    "console.autoupdate.errorbysha1": "文件 <a> 的SHA1校验失败，请检查您的网络或反馈问题，更新已中断。",
+    "console.autoupdate.success": "自动更新已完成，重启服务器即可生效。",
 
     "console.getonline.failbycode": "获取联网信息失败，错误代码：<a>。",
     "console.getonline.failbyver": "无法解析的在线信息文件版本（<a>），您的iLand可能已过时。",

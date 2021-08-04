@@ -1048,13 +1048,13 @@ function GUI_OPLMgr(player)
 
 	-- plugin information
 	local latestVer,iAnn
-	if iland_latestver~=nil then
-		latestVer = iland_latestver
+	if Global_LatestVersion~=nil then
+		latestVer = Global_LatestVersion
 	else
 		latestVer = '-'
 	end
-	if iland_aeb~=nil and iland_aeb~=false then
-		iAnn = iland_ann
+	if Global_IsAnnouncementEnabled~=nil and Global_IsAnnouncementEnabled~=false then
+		iAnn = Global_Announcement
 	else
 		iAnn = '-'
 	end
@@ -1588,6 +1588,80 @@ function TraverseAABB(AAbb,aaBB)
 		end
 	end
 	return result
+end
+function Upgrade(updata)
+	-- useless function
+	function HttpGet(a,b) -- a=url
+		if b==nil then
+			network.httpGet(a,HttpGet)
+		else
+			return {a,b} -- a=code,b=result
+		end
+	end
+	function recoverBackup()
+		INFO('AutoUpdate',_tr('console.autoupdate.recoverbackup'))
+		for n,backupfilename in pairs(BackupEd) do
+			file.rename(backupfilename..'.bak',backupfilename)
+		end
+	end
+
+	-- start update
+	INFO('AutoUpdate',_tr('console.autoupdate.start'))
+	if updata.NumVer<=langVer then
+		ERROR(AIR.gsubEx(_tr('console.autoupdate.alreadylatest'),'<a>',updata.NumVer..'<='..langVer))
+		return
+	end
+	
+	local RawPath = {}
+	local BackupEd = {}
+	local source = 'https://cdn.jsdelivr.net/gh/McAirLand/updates/files/'..updata.NumVer..'/'
+	INFO('AutoUpdate',plugin_version..' => '..updata.Version)
+	RawPath['$plugin_path'] = 'plugins\\'
+	RawPath['$data_path'] = data_path
+	
+
+	for n,file in pairs(updata.FileChanged) do
+		local raw = AIR.split(file,'::')
+		local path = RawPath[raw[1]]..raw[2]
+		INFO('Network',_tr('console.autoupdate.download')..raw[2])
+		
+		if file.exists(path) then -- create backup
+			file.rename(path,path..'.bak')
+			BackupEd[#BackupEd+1]=path
+		end
+
+		local tmp = HttpGet(source..raw[2])
+		if tmp[1]~=200 then -- download check
+			ERROR(
+				AIR.gsubEx(
+					_tr('console.autoupdate.errorbydown'),
+					'<a>',file,
+					'<b>',tmp[1]
+				)
+			)
+			if n~=1 then -- recover backup
+				recoverBackup()
+			end
+			return
+		end
+		
+		if data.toMD5(tmp[2])~=updata.SHA1[n] then -- SHA1 check
+			ERROR(
+				AIR.gsubEx(
+					_tr('console.autoupdate.errorbysha1'),
+					'<a>',file
+				)
+			)
+			if n~=1 then
+				recoverBackup()
+			end
+			return
+		end
+
+		file.writeTo(path,tmp[2])
+	end
+
+	INFO('AutoUpdate',_tr('console.autoupdate.success'))
 end
 
 -- log system
@@ -2332,33 +2406,25 @@ function Ncb_online(code,result)
 	if code==200 then
 		local data=json.decode(result)
 
-		if data.FILE_Version~=101 then
+		-- Check File Version
+		if data.FILE_Version~=102 then
 			INFO('Network',AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
 			return
 		end
 
-		if langVer<data.Updates[1].NumVer then
-			INFO('Network',AIR.gsubEx(_tr('console.update.newversion'),'<a>',data.Updates[1].Version))
-			INFO('Update',_tr('console.update.newcontent'))
-			for n,text in pairs(data.Updates[1].Description) do
-				INFO('Update',n..'. '..text)
-			end
-		end
-		if langVer>data.Updates[1].NumVer then
-			INFO('Network',AIR.gsubEx(_tr('console.update.preview'),'<a>',plugin_version))
-		end
+		-- Read Announcement
+		Global_LatestVersion = data.Updates[1].Version
+		Global_IsAnnouncementEnabled = data.Announcement.enabled
+		Global_Announcement = ''
 
-		iland_latestver = data.Updates[1].Version
-		iland_aeb = data.Announcement.enabled
-		iland_ann = ''
-
-		if iland_aeb then
+		if data.Announcement.enabled then
 			for n,text in pairs(data.Announcement.content) do
-				iland_ann = iland_ann..text..' | '
+				Global_Announcement = Global_Announcement..text..' | '
 				INFO('Announcement',text)
 			end
 		end
 
+		-- Do Analysis
 		if data.Analysis.enabled then
 			local analink = AIR.gsubEx(
 				data.Analysis.link,
@@ -2366,6 +2432,26 @@ function Ncb_online(code,result)
 				'{players}',#land_owners
 			)
 			network.httpGet(analink,function(stat,con)end)
+		end
+
+		-- Check Update
+		if langVer<data.Updates[1].NumVer then
+			INFO('Network',AIR.gsubEx(_tr('console.update.newversion'),'<a>',data.Updates[1].Version))
+			INFO('Update',_tr('console.update.newcontent'))
+			for n,text in pairs(data.Updates[1].Description) do
+				INFO('Update',n..'. '..text)
+			end
+			if data.Force_Update then
+				INFO('Update',_tr('console.update.force'))
+				Upgrade(data.Updates[1])
+			end
+			if cfg.features.auto_update then
+				INFO('Update',_tr('console.update.auto'))
+				Upgrade(data.Updates[1])
+			end
+		end
+		if langVer>data.Updates[1].NumVer then
+			INFO('Network',AIR.gsubEx(_tr('console.update.preview'),'<a>',plugin_version))
 		end
 	else
 		ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',code))
@@ -2579,10 +2665,11 @@ mc.listen('onServerStarted',function()
 		mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
 		mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
 	end
-	mc.regConsoleCmd(MainCmd,'Land system main command',function(args)end)
-	mc.regConsoleCmd(MainCmd..' op','Add land op',function(args)end)
-	mc.regConsoleCmd(MainCmd..' deop','Delete land op',function(args)end)
-	mc.regConsoleCmd(MainCmd..' test','Test pm',function(args)end)
+	mc.regConsoleCmd(MainCmd,_tr('command.console.land'),function(args)end)
+	mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),function(args)end)
+	mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),function(args)end)
+	mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),function(args)end)
+	mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),function(args)end)
 end)
 
 -- export function
@@ -2604,7 +2691,6 @@ lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 lxl.export(ILAPI.GetLandDimension,'ILAPI_GetLandDimension')
 lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
 lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
-lxl.export(ILAPI.save,'ILAPI_save')
 
 INFO('Powerful land plugin is loaded! Ver-'..plugin_version..',')
 INFO('By: RedbeanW, License: GPLv3 with additional conditions.')
