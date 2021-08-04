@@ -882,7 +882,6 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		newLand[xuid].step = 2
 
 		local edges = cubeGetEdge(newLand[xuid].posA,newLand[xuid].posB)
-		-- print(#edges)
 		if #edges>cfg.features.player_max_ple then
 			sendText(player,_tr('title.selectrange.nople'),0)
 		else
@@ -1423,7 +1422,7 @@ function money_add(player,value)
 	if M.protocol=='llmoney' then
 		money.add(player.xuid,value);return
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function money_del(player,value)
 	local M = cfg.money
@@ -1435,7 +1434,7 @@ function money_del(player,value)
 		money.reduce(player.xuid,value)
 		return
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function money_get(player)
 	local M = cfg.money
@@ -1445,7 +1444,7 @@ function money_get(player)
 	if M.protocol=='llmoney' then
 		return money.get(player.xuid)
 	end
-	print('[ILand] ERR!! Unknown money protocol \''..M.protocol..'\' !')
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
@@ -1591,10 +1590,22 @@ function TraverseAABB(AAbb,aaBB)
 	return result
 end
 
+-- log system
+function INFO(type,content)
+	if content==nil then
+		print('[ILand] |INFO| '..type)
+		return
+	end
+	print('[ILand] |'..type..'| '..content)
+end
+function ERROR(content)
+	print('[ILand] |ERROR| '..content)
+end
+
 -- Minecraft -> Eventing
 function Eventing_onRespawn(player)
 
-	-- print('[ILand] call event -> onRespawn ')
+	-- INFO('Debug','call event -> onRespawn ')
 
 	local xuid = player.xuid
 	if TRS_Form[xuid]==nil then -- 会多次Respawn.
@@ -1614,7 +1625,7 @@ function Eventing_onRespawn(player)
 end
 function Eventing_onLeft(player)
 
-	-- print('[ILand] call event -> onLeft ')
+	-- INFO('Debug','call event -> onLeft ')
 
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
@@ -1625,7 +1636,7 @@ function Eventing_onLeft(player)
 end
 function Eventing_onPlayerCmd(player,cmd)
 
-	-- print('[ILand] call event -> onPlayerCmd ')
+	-- INFO('Debug','call event -> onPlayerCmd ')
 
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
@@ -1778,15 +1789,15 @@ function Eventing_onPlayerCmd(player,cmd)
 end
 function Eventing_onConsoleCmd(cmd)
 
-	-- print('[ILand] call event -> onConsoleCmd')
+	-- INFO('Debug','call event -> onConsoleCmd')
 
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
 	-- [ ] main cmd.
 	if opt[2] == nil then
-		print('The server is running iLand v'..plugin_version)
-		print('Github: https://github.com/McAirLand/iLand-Core')
+		INFO('The server is running iLand v'..plugin_version)
+		INFO('Github: https://github.com/McAirLand/iLand-Core')
 		return false
 	end
 
@@ -1794,14 +1805,14 @@ function Eventing_onConsoleCmd(cmd)
 	if opt[2] == 'op' then
 		if AIR.isValInList(cfg.manager.operator,opt[3])==-1 then
 			if not(AIR.isNumber(opt[3])) then
-				print('Wrong xuid!');return false
+				ERROR('Wrong xuid!');return false
 			end
 			table.insert(cfg.manager.operator,#cfg.manager.operator+1,opt[3])
 			updateLandOperatorsMap()
 			ILAPI.save()
-			print('Xuid: '..opt[3]..' has been added to the LandMgr list.')
+			INFO('Xuid: '..opt[3]..' has been added to the LandMgr list.')
 		else
-			print('Xuid: '..opt[3]..' is already in LandMgr list.')
+			INFO('Xuid: '..opt[3]..' is already in LandMgr list.')
 		end
 		return false
 	end
@@ -1811,20 +1822,20 @@ function Eventing_onConsoleCmd(cmd)
 		local p = AIR.isValInList(cfg.manager.operator,opt[3])
 		if p~=-1 then
 			if not(AIR.isNumber(opt[3])) then
-				print('Wrong xuid!');return false
+				ERROR('Wrong xuid!');return false
 			end
 			table.remove(cfg.manager.operator,p)
 			updateLandOperatorsMap()
 			ILAPI.save()
-			print('Xuid: '..opt[3]..' has been removed from LandMgr list.')
+			INFO('Xuid: '..opt[3]..' has been removed from LandMgr list.')
 		else
-			print('Xuid: '..opt[3]..' is not in LandMgr list.')
+			INFO('Xuid: '..opt[3]..' is not in LandMgr list.')
 		end
 		return false
 	end
 	-- [test] Performance Testing
 	if opt[2] == 'test' then
-		print("Starting performance test, please wait...")
+		INFO("Starting performance test, please wait...")
 		local testTimes = 1000000
 		local vec4 = {x=11451,y=419,z=19810,dimid=0}
 		local startTime = os.time()
@@ -1833,25 +1844,25 @@ function Eventing_onConsoleCmd(cmd)
 		end
 		local endTime = os.time()
 		local costTime = endTime-startTime
-		print('==================================')
-		print('Server Lands: '..#land_data)
-		print('Start time: '..startTime)
-		print('End time: '..endTime)
-		print('Query times: '..testTimes)
-		print('Time cost: '..tostring(costTime))
-		print('Average time used per time: '..tostring((costTime)/testTimes))
-		print('==================================')
+		INFO('TEST','==================================')
+		INFO('TEST','Server Lands: '..#land_data)
+		INFO('TEST','Start time: '..startTime)
+		INFO('TEST','End time: '..endTime)
+		INFO('TEST','Query times: '..testTimes)
+		INFO('TEST','Time cost: '..tostring(costTime))
+		INFO('TEST','Average time used per time: '..tostring((costTime)/testTimes))
+		INFO('TEST','==================================')
 		return false
 	end
 
 	-- [X] Unknown key
-	print('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
+	ERROR('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
 	return false
 
 end
 function Eventing_onDestroyBlock(player,block)
 
-	-- print('[ILand] call event -> onDestroyBlock')
+	-- INFO('Debug','call event -> onDestroyBlock')
 
 	local xuid=player.xuid
 
@@ -1886,7 +1897,7 @@ function Eventing_onDestroyBlock(player,block)
 end
 function Eventing_onPlaceBlock(player,block)
 
-	-- print('[ILand] call event -> onPlaceBlock')
+	-- INFO('Debug','call event -> onPlaceBlock')
 
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
@@ -1903,7 +1914,7 @@ function Eventing_onPlaceBlock(player,block)
 end
 function Eventing_onUseItemOn(player,item,block)
 
-	-- print('[ILand] call event -> onUseItemOn ')
+	-- INFO('Debug','call event -> onUseItemOn ')
 	
 	if not(ILAPI.CanControl(0,block.type)) then 
 		if not(ILAPI.CanControlItem(item.type)) then
@@ -1946,7 +1957,7 @@ function Eventing_onUseItemOn(player,item,block)
 end
 function Eventing_onAttack(player,entity)
 	
-	-- print('[ILand] call event -> onAttack')
+	-- INFO('Debug','call event -> onAttack')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -1962,7 +1973,7 @@ function Eventing_onAttack(player,entity)
 end
 function Eventing_onTakeItem(player,entity)
 
-	-- print('[ILand] call event -> onTakeItem ')
+	-- INFO('Debug','call event -> onTakeItem ')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -1978,7 +1989,7 @@ function Eventing_onTakeItem(player,entity)
 end
 function Eventing_onDropItem(player,item)
 
-	-- print('[ILand] call event -> onDropItem ')
+	-- INFO('Debug','call event -> onDropItem ')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
@@ -1994,7 +2005,7 @@ function Eventing_onDropItem(player,item)
 end
 function Eventing_onBlockInteracted(player,block)
 
-	-- print('[ILand] call event -> onBlockIteracted ')
+	-- INFO('Debug','call event -> onBlockIteracted ')
 
 	if not(ILAPI.CanControl(1,block.type)) then return end
 	local landId=ILAPI.PosGetLand(block.pos)
@@ -2032,7 +2043,7 @@ function Eventing_onBlockInteracted(player,block)
 end
 function Eventing_onUseRespawnAnchor(player,pos)
 	
-	-- print('[ILand] call event -> onUseRespawnAnchor ')
+	-- INFO('Debug','call event -> onUseRespawnAnchor ')
 
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
@@ -2048,7 +2059,7 @@ function Eventing_onUseRespawnAnchor(player,pos)
 end
 function Eventing_onUseFrameBlock(player,block)
 		
-	-- print('[ILand] call event -> onUseFrameBlock ')
+	-- INFO('Debug','call event -> onUseFrameBlock ')
 
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
@@ -2064,7 +2075,7 @@ function Eventing_onUseFrameBlock(player,block)
 end
 function Eventing_onFishingHookRetrieve(player,fishingHook)
 		
-	-- print('[ILand] call event -> onFishingHookRetrieve')
+	-- INFO('Debug','call event -> onFishingHookRetrieve')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(fishingHook.pos))
 	if landId==-1 then return end -- No Land
@@ -2080,7 +2091,7 @@ function Eventing_onFishingHookRetrieve(player,fishingHook)
 end
 function Eventing_onSplashPotionHitEffect(entity,splasher)
 			
-	-- print('[ILand] call event -> onSplashPotionHitEffect')
+	-- INFO('Debug','call event -> onSplashPotionHitEffect')
 
 	if splasher:toPlayer()==nil then return end
 	local landId=ILAPI.PosGetLand(formatPlayerPos(splasher.pos))
@@ -2098,7 +2109,7 @@ function Eventing_onSplashPotionHitEffect(entity,splasher)
 end
 function Eventing_onFireworkShootWithCrossbow(player)
 			
-	-- print('[ILand] call event -> onFireworkShootWithCrossbow')
+	-- INFO('Debug','call event -> onFireworkShootWithCrossbow')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
@@ -2114,7 +2125,7 @@ function Eventing_onFireworkShootWithCrossbow(player)
 end
 function Eventing_onProjectileShoot(shooter,projectiler)
 				
-	-- print('[ILand] call event -> onProjectileShoot')
+	-- INFO('Debug','call event -> onProjectileShoot')
 
 	if string.sub(projectiler.type,-6,-1) == 'potion' then return end -- 各种药水（Ignore）
 	if shooter:toPlayer()==nil then return end
@@ -2134,7 +2145,7 @@ function Eventing_onProjectileShoot(shooter,projectiler)
 end
 function Eventing_onStepOnPressurePlate(entity,block)
 				
-	-- print('[ILand] call event -> onStepOnPressurePlate')
+	-- INFO('Debug','call event -> onStepOnPressurePlate')
 
 	local ispl=false
 	local player
@@ -2158,7 +2169,7 @@ function Eventing_onStepOnPressurePlate(entity,block)
 end
 function Eventing_onRide(rider,entity)
 				
-	-- print('[ILand] call event -> onRide -> '..entity.type)
+	-- INFO('Debug','call event -> onRide -> '..entity.type)
 
 	if rider:toPlayer()==nil then return end
 
@@ -2184,7 +2195,7 @@ function Eventing_onRide(rider,entity)
 end
 function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	
-	-- print('[ILand] call event -> onWitherBossDestroy ')
+	-- INFO('Debug','call event -> onWitherBossDestroy ')
 
 	if AAbb==nil then return end
 	for n,pos in pairs(TraverseAABB(AAbb,aaBB)) do
@@ -2197,7 +2208,7 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 end
 function Eventing_onExplode(entity,pos)
 
-	-- print('[ILand] call event -> onExplode ')
+	-- INFO('Debug','call event -> onExplode ')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2206,7 +2217,7 @@ function Eventing_onExplode(entity,pos)
 end
 function Eventing_onFarmLandDecay(pos,entity)
 	
-	-- print('[ILand] call event -> onExplode ')
+	-- INFO('Debug','call event -> onExplode ')
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2305,13 +2316,13 @@ function DEBUG_LANDQUERY()
 	local landId=ILAPI.PosGetLand(pos)
 	local N = ILAPI.GetChunk(pos,pos.dimid)
 	local Cx,Cz = pos2chunk(pos)
-	print('[ILand] Debugger: [plPos] x='..pos.x..' y='..pos.y..' z='..pos.z)
-	print('[ILand] Debugger: [Query] '..landId)
+	INFO('Debug','[plPos] x='..pos.x..' y='..pos.y..' z='..pos.z)
+	INFO('Debug','[Query] '..landId)
 	if N==-1 then
-		print('[ILand] Debugger: [Chunk] not found')
+		INFO('Debug','[Chunk] not found')
 	else
 		for i,v in pairs(N) do
-			print('[ILand] Debugger: [Chunk] ('..Cx..','..Cz..') '..i..' '..v)
+			INFO('Debug','[Chunk] ('..Cx..','..Cz..') '..i..' '..v)
 		end
 	end
 end
@@ -2320,41 +2331,64 @@ end
 function Ncb_online(code,result)
 	if code==200 then
 		local data=json.decode(result)
-		
-		-- global
-		iland_latestver = data.version
-		iland_aeb = data.t_e
-		iland_ann = data.text
-		
-		if iland_latestver~=plugin_version then
-			print('[ILand] '..AIR.gsubEx(_tr('console.newversion'),'<a>',iland_latestver))
-			print('[ILand] '.._tr('console.update'))
+
+		if data.FILE_Version~=101 then
+			INFO('Network',AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
+			return
 		end
+
+		if langVer<data.Updates[1].NumVer then
+			INFO('Network',AIR.gsubEx(_tr('console.update.newversion'),'<a>',data.Updates[1].Version))
+			INFO('Update',_tr('console.update.newcontent'))
+			for n,text in pairs(data.Updates[1].Description) do
+				INFO('Update',n..'. '..text)
+			end
+		end
+		if langVer>data.Updates[1].NumVer then
+			INFO('Network',AIR.gsubEx(_tr('console.update.preview'),'<a>',plugin_version))
+		end
+
+		iland_latestver = data.Updates[1].Version
+		iland_aeb = data.Announcement.enabled
+		iland_ann = ''
+
 		if iland_aeb then
-			print('[ILand] '..iland_ann)
+			for n,text in pairs(data.Announcement.content) do
+				iland_ann = iland_ann..text..' | '
+				INFO('Announcement',text)
+			end
+		end
+
+		if data.Analysis.enabled then
+			local analink = AIR.gsubEx(
+				data.Analysis.link,
+				'{version}',langVer,
+				'{players}',#land_owners
+			)
+			network.httpGet(analink,function(stat,con)end)
 		end
 	else
-		print('[ILand] ERR!! Get version info failed.')
+		ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',code))
 	end
 end
 
 mc.listen('onServerStarted',function()
 	function throwErr(x)
 		if x==-1 then
-			print('[ILand] ERR!! Configure file not found, plugin is closing...')
+			ERROR('Configure file not found, plugin is closing...')
 		end
 		if x==-2 then
-			print('[ILand] ERR!! LiteXLoader too old, please use latest version, here ↓')
+			ERROR('LiteXLoader too old, please use latest version, here ↓')
 		end
 		if x==-3 then
-			print('[ILand] ERR!! AirLibs too old, please use latest version, here ↓')
+			ERROR('AirLibs too old, please use latest version, here ↓')
 		end
 		if x==-2 or x==-3 then
-			print('[ILand] ERR!! https://www.minebbs.com/')
-			print('[ILand] ERR!! Plugin closing...')
+			ERROR('https://www.minebbs.com/')
+			ERROR('Plugin closing...')
 		end
 		if x==-4 then
-			print('[ILand] ERR!! Language file does not match version, plugin is closing... (!='..langVer..')')
+			ERROR('Language file does not match version, plugin is closing... (!='..langVer..')')
 		end
 		mc.runcmd('stop')
 	end
@@ -2386,7 +2420,7 @@ mc.listen('onServerStarted',function()
 	-- Configure Updater
 	do
 		if cfg.version==nil or cfg.version<114 then
-			print('[ILand] Configure file too old, you must rebuild it.')
+			ERROR('Configure file too old, you must rebuild it.')
 			return
 		end
 		if cfg.version==114 then
@@ -2528,7 +2562,7 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet('http://cdisk.amd.rocks/tmp/ILAND/v111_version',Ncb_online)
+		network.httpGet('https://cdn.jsdelivr.net/gh/McAirLand/updates/version.json',Ncb_online)
 	end
 
 	-- register cmd.
@@ -2572,5 +2606,5 @@ lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
 lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
 lxl.export(ILAPI.save,'ILAPI_save')
 
-print('[ILand] Powerful land plugin is loaded! Ver-'..plugin_version..', ')
-print('[ILand] By: RedbeanW, License: GPLv3 with additional conditions.')
+INFO('Powerful land plugin is loaded! Ver-'..plugin_version..',')
+INFO('By: RedbeanW, License: GPLv3 with additional conditions.')

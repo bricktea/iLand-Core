@@ -240,6 +240,14 @@
     "command.land_mgr.noperm": "§e此命令为领地管理员专有，请在控制台使用 §l/land op <a>§r§e 将自己添加为领地管理员。",
     "command.error": "§c未知的参数 \"<a>\" 请检查您的输入。",
 
-    "console.newversion": "此服务器正在使用旧版领地插件，新版本 <a> 已发布！",
-    "console.update": "存在新版本，请前往https://cdisk.amd.rocks/ILAND.html获取。"
+    "console.update.preview": "正在使用未公开版本 <a> 。",
+    "console.update.newversion": "获取到到新版本 <a> ,可以使用 /land update 自动更新！",
+    "console.update.newcontent": "更新内容：",
+    "console.update.force": "抱歉，由于云端设定，已强制更新您的iLand到 <a>，强制更新大多在旧版本存在严重问题时才会启用。",
+    "console.update.restart": "更新完毕需要重启服务器以生效。",
+
+    "console.getonline.failbycode": "获取联网信息失败，错误代码：<a>。",
+    "console.getonline.failbyver": "无法解析的在线信息文件版本（<a>），您的iLand可能已过时。",
+
+    "console.error.money.protocol": "正在使用未知的经济组件 '<a>'。"
 }
