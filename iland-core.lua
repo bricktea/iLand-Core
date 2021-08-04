@@ -1685,18 +1685,13 @@ function ERROR(content)
 end
 
 -- Minecraft -> Eventing
-function Eventing_onRespawn(player)
+function Eventing_onJoin(player)
 
-	-- INFO('Debug','call event -> onRespawn ')
+	-- INFO('Debug','call event -> onJoin ')
 
 	local xuid = player.xuid
-	if TRS_Form[xuid]==nil then -- 会多次Respawn.
-		TRS_Form[xuid] = {}
-	else
-		return
-	end
+	TRS_Form[xuid] = { inland='null' }
 
-	TRS_Form[xuid].inland = 'null'
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
 		ILAPI.save()
@@ -2364,7 +2359,7 @@ end
 -- listen events,
 mc.listen('onPlayerCmd',Eventing_onPlayerCmd)
 mc.listen('onConsoleCmd',Eventing_onConsoleCmd)
-mc.listen('onRespawn',Eventing_onRespawn)
+mc.listen('onJoin',Eventing_onJoin)
 mc.listen('onLeft',Eventing_onLeft)
 mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
 mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
