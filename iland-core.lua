@@ -109,27 +109,30 @@ function buildUIBITable()
 	CanCtlMap[0] = {} -- UseItem
 	CanCtlMap[1] = {} -- onBlockInteracted
 	CanCtlMap[2] = {} -- ItemWhiteList
+	CanCtlMap[3] = {} -- AttackWhiteList
 	local useItemTmp = {
 		'minecraft:bed',
 		'minecraft:chest',
 		'minecraft:trapped_chest',
 		'minecraft:crafting_table',
 		'minecraft:campfire',
+		'minecraft:soul_campfire',
 		'minecraft:composter',
 		'minecraft:undyed_shulker_box',
-		'shulker_box',
+		'minecraft:shulker_box',
 		'minecraft:noteblock',
 		'minecraft:jukebox',
 		'minecraft:bell',
 		'minecraft:daylight_detector_inverted',
-		'daylight_detector',
+		'minecraft:daylight_detector',
 		'minecraft:lectern',
 		'minecraft:cauldron',
 		'minecraft:lever',
 		'minecraft:stone_button','minecraft:wooden_button','minecraft:spruce_button',
 		'minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
 		'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
-		'minecraft:polished_blackstone_button'
+		'minecraft:polished_blackstone_button',
+		'minecraft:respawn_anchor'
 	}
 	local blockInterTmp = {
 		'minecraft:cartography_table',
@@ -163,6 +166,10 @@ function buildUIBITable()
 		'minecraft:end_crystal',
 		'minecraft:ender_eye'
 	}
+	local attackwlistTmp = {
+		'minecraft:ender_crystal',
+		'minecraft:armor_stand'
+	}
 	for n,uitem in pairs(useItemTmp) do
 		CanCtlMap[0][uitem] = { 'E' }
 	end
@@ -171,6 +178,9 @@ function buildUIBITable()
 	end
 	for n,iwl in pairs(itemWlistTmp) do
 		CanCtlMap[2][iwl] = { 'E' }
+	end
+		for n,awt in pairs(attackwlistTmp) do
+		CanCtlMap[3][awt] = { 'E' }
 	end
 end
 function buildChunks()
@@ -1387,16 +1397,9 @@ function ILAPI.save()
 	file.writeTo(data_path..'data.json',json.encode(land_data))
 	file.writeTo(data_path..'owners.json',json.encode(land_owners,{indent=true}))
 end
-function ILAPI.CanControl(mode,block)
-	-- mode [0]UseItem [1]onBlockInteracted
-	if CanCtlMap[mode][block]==nil then
-		return false
-	else
-		return true
-	end
-end
-function ILAPI.CanControlItem(itemtype)
-	if CanCtlMap[2][itemtype]==nil then
+function ILAPI.CanControl(mode,name)
+	-- mode [0]UseItem [1]onBlockInteracted [2]items [3]attack
+	if CanCtlMap[mode][name]==nil then
 		return false
 	else
 		return true
@@ -1585,13 +1588,13 @@ function refreshBlock(player,pos)
 	local s = pos.x..' '..pos.y..' '..pos.z
 	mc.runcmdEx('execute "'..player.realName..'" ~ ~ ~ clone '..s..' '..s..' '..s)
 end
-function TraverseAABB(AAbb,aaBB)
+function TraverseAABB(AAbb,aaBB,did)
 	local posA,posB = fmCube(AAbb,aaBB)
 	local result = {}
 	for ix=posA.x,posB.x do
 		for iy=posA.y,posB.y do
 			for iz=posA.z,posB.z do
-				result[#result+1] = {x=ix,y=iy,z=iz}
+				result[#result+1] = {x=ix,y=iy,z=iz,dimid=did}
 			end
 		end
 	end
@@ -2002,10 +2005,13 @@ end
 function Eventing_onUseItemOn(player,item,block)
 
 	-- INFO('Debug','call event -> onUseItemOn ')
-	
+
+	local IsConPlus=false
 	if not(ILAPI.CanControl(0,block.type)) then 
-		if not(ILAPI.CanControlItem(item.type)) then
+		if not(ILAPI.CanControl(2,item.type)) then
 			return
+		else
+			IsConPlus=true
 		end
 	end
 
@@ -2018,26 +2024,29 @@ function Eventing_onUseItemOn(player,item,block)
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	
 	local perm = land_data[landId].permissions
-	local bn = block.type
-	if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
-	if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
-	if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
-	if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
-	if bn == 'minecraft:campfire' and perm.use_campfire then return end -- 营火（烧烤）
-	if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
-	if (bn == 'minecraft:undyed_shulker_box' or bn == 'shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
-	if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
-	if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
-	if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
-	if (bn == 'minecraft:daylight_detector_inverted' or bn == 'daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
-	if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
-	if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
-	if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
-	
-	local it = item.type
-	if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色
-	if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
-	if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
+	if IsConPlus then
+		local it = item.type
+		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
+		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
+		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
+	else
+		local bn = block.type
+		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
+		if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
+		if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
+		if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
+		if (bn == 'minecraft:campfire' or bn == 'minecraft:soul_campfire') and perm.use_campfire then return end -- 营火（烧烤）
+		if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
+		if (bn == 'minecraft:undyed_shulker_box' or bn == 'minecraft:shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
+		if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
+		if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
+		if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
+		if (bn == 'minecraft:daylight_detector_inverted' or bn == 'minecraft:daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
+		if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
+		if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
+		if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
+		if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
+	end
 
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
@@ -2050,7 +2059,16 @@ function Eventing_onAttack(player,entity)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if land_data[landId].permissions.allow_attack then return end -- Perm Allow
+	local perm=land_data[landId].permissions
+	local en=entity.type
+	local IsConPlus = false
+	if ILAPI.CanControl(3,en) then IsConPlus=true end
+	if IsConPlus then
+		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
+		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
+	else
+		if perm.allow_attack then return end -- Perm Allow
+	end
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -2128,22 +2146,6 @@ function Eventing_onBlockInteracted(player,block)
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
-function Eventing_onUseRespawnAnchor(player,pos)
-	
-	-- INFO('Debug','call event -> onUseRespawnAnchor ')
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.use_respawn_anchor then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	sendText(player,_tr('title.landlimit.noperm'))
-	return false
-end
 function Eventing_onUseFrameBlock(player,block)
 		
 	-- INFO('Debug','call event -> onUseFrameBlock ')
@@ -2160,25 +2162,9 @@ function Eventing_onUseFrameBlock(player,block)
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
 end
-function Eventing_onFishingHookRetrieve(player,fishingHook)
-		
-	-- INFO('Debug','call event -> onFishingHookRetrieve')
-
-	local landId=ILAPI.PosGetLand(formatPlayerPos(fishingHook.pos))
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.use_fishing_hook then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	sendText(player,_tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onSplashPotionHitEffect(entity,splasher)
+function Eventing_onSpawnProjectile(splasher,type)
 			
-	-- INFO('Debug','call event -> onSplashPotionHitEffect')
+	-- INFO('Debug','call event -> onSpawnProjectile')
 
 	if splasher:toPlayer()==nil then return end
 	local landId=ILAPI.PosGetLand(formatPlayerPos(splasher.pos))
@@ -2186,7 +2172,17 @@ function Eventing_onSplashPotionHitEffect(entity,splasher)
 
 	local player=splasher:toPlayer()
 	local xuid=player.xuid
-	if land_data[landId].permissions.allow_throw_potion then return end -- Perm Allow
+	local perm=land_data[landId].permissions
+
+	if type == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
+	if type == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
+	if type == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
+	if type == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
+	if type == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
+	if type == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
+	if type == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
+	if type == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
+
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
@@ -2201,26 +2197,6 @@ function Eventing_onFireworkShootWithCrossbow(player)
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	sendText(player,_tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onProjectileShoot(shooter,projectiler)
-				
-	-- INFO('Debug','call event -> onProjectileShoot')
-
-	if string.sub(projectiler.type,-6,-1) == 'potion' then return end -- 各种药水（Ignore）
-	if shooter:toPlayer()==nil then return end
-
-	local landId=ILAPI.PosGetLand(formatPlayerPos(shooter.pos))
-	if landId==-1 then return end -- No Land
-
-	local player=shooter:toPlayer()
 	local xuid=player.xuid
 	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
@@ -2285,10 +2261,11 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	-- INFO('Debug','call event -> onWitherBossDestroy ')
 
 	if AAbb==nil then return end
-	for n,pos in pairs(TraverseAABB(AAbb,aaBB)) do
+	local dimid = witherBoss.pos.dimid
+	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
 		landId=ILAPI.PosGetLand(pos)
-		if landId~=-1 then 
-			if land_data[landId].permissions.allow_destroy then return end
+		if landId~=-1 and not(land_data[landId].permissions.allow_destroy) then 
+			break
 		end
 	end
 	return false
@@ -2379,12 +2356,9 @@ mc.listen('onExplode',Eventing_onExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
 mc.listen('onDropItem',Eventing_onDropItem)
 mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
-mc.listen('onUseRespawnAnchor',Eventing_onUseRespawnAnchor)
 mc.listen('onUseFrameBlock',Eventing_onUseFrameBlock)
-mc.listen('onFishingHookRetrieve',Eventing_onFishingHookRetrieve)
-mc.listen('onSplashPotionHitEffect',Eventing_onSplashPotionHitEffect)
+mc.listen('onSpawnProjectile',Eventing_onSpawnProjectile)
 mc.listen('onFireworkShootWithCrossbow',Eventing_onFireworkShootWithCrossbow)
-mc.listen('onProjectileShoot',Eventing_onProjectileShoot)
 mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
 mc.listen('onRide',Eventing_onRide)
 mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
