@@ -1430,7 +1430,7 @@ function money_add(player,value)
 	if M.protocol=='llmoney' then
 		money.add(player.xuid,value);return
 	end
-	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function money_del(player,value)
 	local M = cfg.money
@@ -1442,7 +1442,7 @@ function money_del(player,value)
 		money.reduce(player.xuid,value)
 		return
 	end
-	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function money_get(player)
 	local M = cfg.money
@@ -1452,7 +1452,7 @@ function money_get(player)
 	if M.protocol=='llmoney' then
 		return money.get(player.xuid)
 	end
-	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
@@ -1598,14 +1598,7 @@ function TraverseAABB(AAbb,aaBB)
 	return result
 end
 function Upgrade(updata)
-	-- useless function
-	function HttpGet(a,b) -- a=url
-		if b==nil then
-			network.httpGet(a,HttpGet)
-		else
-			return {a,b} -- a=code,b=result
-		end
-	end
+	
 	function recoverBackup()
 		INFO('AutoUpdate',_tr('console.autoupdate.recoverbackup'))
 		for n,backupfilename in pairs(BackupEd) do
@@ -1638,13 +1631,13 @@ function Upgrade(updata)
 			BackupEd[#BackupEd+1]=path
 		end
 
-		local tmp = HttpGet(source..raw[2])
-		if tmp[1]~=200 then -- download check
+		local tmp = network.httpGetSync(source..raw[2])
+		if tmp.status~=200 then -- download check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbydown'),
 					'<a>',file,
-					'<b>',tmp[1]
+					'<b>',tmp.status
 				)
 			)
 			if n~=1 then -- recover backup
@@ -1653,7 +1646,7 @@ function Upgrade(updata)
 			return
 		end
 		
-		if data.toMD5(tmp[2])~=updata.SHA1[n] then -- SHA1 check
+		if data.toMD5(tmp.data)~=updata.SHA1[n] then -- SHA1 check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbysha1'),
@@ -1666,7 +1659,7 @@ function Upgrade(updata)
 			return
 		end
 
-		file.writeTo(path,tmp[2])
+		file.writeTo(path,tmp.data)
 	end
 
 	INFO('AutoUpdate',_tr('console.autoupdate.success'))
@@ -1910,6 +1903,23 @@ function Eventing_onConsoleCmd(cmd)
 		end
 		return false
 	end
+
+	-- [update] Upgrade iLand
+	if opt[2] == 'update' then
+		local raw = network.httpGetSync('https://cdn.jsdelivr.net/gh/McAirLand/updates/version.json')
+		if raw.status==200 then
+			local v1 = json.decode(raw.data)
+			if v1.FILE_Version==102 then
+				Upgrade(v1.Updates[1])
+			else
+				ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',v1.FILE_Version))
+			end
+		else
+			ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',raw.status))
+		end
+		return false
+	end
+
 	-- [test] Performance Testing
 	if opt[2] == 'test' then
 		INFO("Starting performance test, please wait...")
