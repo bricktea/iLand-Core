@@ -141,6 +141,7 @@
     "gui.oplandmgr.features.2dland": "二维圈地开关",
     "gui.oplandmgr.features.3dland": "三维圈地开关",
     "gui.oplandmgr.features.autoupdate": "自动升级到最新版",
+    "gui.oplandmgr.features.offlinepls": "允许对离线玩家过户领地/添加信任",
     "gui.oplandmgr.selectland": "选择目标领地",
     "gui.oplandmgr.there": "§l[正在此领地] §r",
     

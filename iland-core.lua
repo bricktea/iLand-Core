@@ -697,19 +697,20 @@ function FORM_land_mgr(player,data)
 	cfg.features.force_talk = data[18]
 	cfg.update_check = data[19]
 	cfg.features.auto_update = data[20]
-	cfg.features.land_2D = data[21]
-	cfg.features.land_3D = data[22]
-	if data[23]~='' then
-		cfg.features.selection_tool_name=data[23]
-	end
+	cfg.features.offlinePlayerInList = data[21]
+	cfg.features.land_2D = data[22]
+	cfg.features.land_3D = data[23]
 	if data[24]~='' then
-		cfg.features.sign_frequency=tonumber(data[24])
+		cfg.features.selection_tool_name=data[24]
 	end
 	if data[25]~='' then
-		cfg.features.chunk_side=tonumber(data[25])
+		cfg.features.sign_frequency=tonumber(data[25])
 	end
 	if data[26]~='' then
-		cfg.features.player_max_ple=tonumber(data[26])
+		cfg.features.chunk_side=tonumber(data[26])
+	end
+	if data[27]~='' then
+		cfg.features.player_max_ple=tonumber(data[27])
 	end
 
 	ILAPI.save()
@@ -1151,6 +1152,7 @@ function GUI_OPLMgr(player)
 	Form:addSwitch(_tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
 	Form:addSwitch(_tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
 	Form:addSwitch(_tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
+	Form:addSwitch(_tr('gui.oplandmgr.features.offlinepls'),cfg.features.offlinePlayerInList)
 	Form:addSwitch(_tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
 	Form:addSwitch(_tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
 	Form:addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
