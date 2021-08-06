@@ -10,7 +10,7 @@ debug_mode = false
 
 langVer = 221
 minAirVer = 220
-minLXLVer = {0,3,5}
+minLXLVer = {0,3,2}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -2354,7 +2354,7 @@ function Eventing_onPistonPush(pos,block)
 end
 function Eventing_onFireSpread(pos)
 	
-	INFO('Debug','call event -> onFireSpread ')
+	-- INFO('Debug','call event -> onFireSpread ')
 
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
@@ -2570,7 +2570,7 @@ mc.listen('onServerStarted',function()
 		file.writeTo(data_path..'data.json','{}')
 	end
 	if not(file.exists(data_path..'owners.json')) then
-		file.writeTo(data_path..'data.json','{}')
+		file.writeTo(data_path..'owners.json','{}')
 	end
 	
 	-- Check depends version
