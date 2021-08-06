@@ -10,7 +10,7 @@ debug_mode = false
 
 langVer = 221
 minAirVer = 220
-minLXLVer = {0,3,2}
+minLXLVer = {0,3,5}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -2761,6 +2761,7 @@ mc.listen('onServerStarted',function()
 				end
 			end
 			ILAPI.save()
+		end
 	end
 	
 	-- Load&Check i18n file
