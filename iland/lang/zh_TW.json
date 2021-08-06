@@ -1,5 +1,5 @@
 {
-    "VERSION": 220,
+    "VERSION": 221,
     "#1": "zh_CN 標準漢語翻譯貢獻者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -67,6 +67,7 @@
     "gui.landmgr.landperm.funcblock_options.smithing_table": "允許使用鍛造台",
     "gui.landmgr.landperm.funcblock_options.loom": "允許使用織布機",
     "gui.landmgr.landperm.funcblock_options.beacon": "允許操作信標",
+    "gui.landmgr.landperm.funcblock_options.stonecutter": "允許使用切石機",
     "gui.landmgr.landperm.contblock_options.barrel": "允許開桶",
     "gui.landmgr.landperm.contblock_options.hopper": "允許打開漏斗",
     "gui.landmgr.landperm.contblock_options.dropper": "允許打開投擲器",
@@ -96,7 +97,7 @@
     "gui.fastlmgr.content": "您現在在 §l<a>§r 上，可以使用以下選項快速管理領地。",
     "gui.fastlmgr.operator": "§l管理員模式 §r現在您可以像領地主人一樣操作該領地",
     "gui.fastgde.title": "領地快捷菜單",
-    "gui.fastgde.content": "歡迎使用領地系統，您現在有§l<a>§r 塊領地。 \n\n§lPlease Chose...",
+    "gui.fastgde.content": "歡迎使用領地系統，您現在有 §l<a>§r 塊領地。\n\n§lPlease Chose...",
     "gui.fastgde.create": "新建領地",
     "gui.fastgde.manage": "領地管理",
     
@@ -139,7 +140,8 @@
     "gui.oplandmgr.features.maxple": "單玩家最大粒子數",
     "gui.oplandmgr.features.2dland": "二維圈地開關",
     "gui.oplandmgr.features.3dland": "三維圈地開關",
-    "gui.oplandmgr.features.autoupdate": "自動升級到最新版（暫時不可用）",
+    "gui.oplandmgr.features.autoupdate": "自動升級到最新版",
+    "gui.oplandmgr.features.offlinepls": "允許對離線玩家過戶領地/添加信任",
     "gui.oplandmgr.selectland": "選擇目標領地",
     "gui.oplandmgr.there": "§l[正在此領地] §r",
     
@@ -167,9 +169,9 @@
     "gui.landcfg.inside": "§l領地內事件",
     "gui.landcfg.inside.explode": "允許爆炸發生（附近也生效）",
     "gui.landcfg.inside.farmland_decay": "允許耕地退化",
+    "gui.landcfg.inside.piston_push": "允許活塞推動",
+    "gui.landcfg.inside.fire_spread": "允許火焰蔓延",
     "gui.landcfg.nearby": "§l附近事件",
-    "gui.landcfg.nearby.piston_push": "允許活塞推動",
-    "gui.landcfg.nearby.fire_spread": "允許火焰蔓延",
     "gui.landtp.point": "成功將位置 [<a>] 設定為領地 <b> 的傳送點。",
     "gui.landtp.tip": "將傳送到該領地的傳送點，默認的傳送點是領地起始坐標。\n設置領地傳送點請使用 /land point。",
     "gui.landtp.tip2": "選擇領地",
@@ -195,9 +197,10 @@
     "title.landtransfer.complete": "<a> 已過戶給 <b>",
     "title.landtrust.cantaddown": "不能將您自己添加到信任列表中",
     "title.landtrust.alreadyexists": "該玩家已存在於信任列表中",
-    "title.oplandmgr.invalidchar": "修改項存在不合法字符，已中斷操作。",
+    "title.oplandmgr.invalidchar": "修改項存在不合法字符，已中斷操作。 ",
     "title.oplandmgr.transfered": "已傳送到 <a>",
-    "title.oplandmgr.setselectool": "請手持欲選定的圈地工具破壞方塊","title.oplandmgr.setsuccess": "成功！選定 <a> 作為圈地工具",
+    "title.oplandmgr.setselectool": "請手持欲選定的圈地工具破壞方塊",
+    "title.oplandmgr.setsuccess": "成功！選定 <a> 作為圈地工具",
     "title.landmgr.failed": "你還沒有領地哦，使用“/land new”開始創建一個吧！",
     "title.giveup.succeed": "許可已被放棄",
     "title.giveup.failed": "沒有可以放棄的圈地許可",
@@ -207,8 +210,11 @@
     "title.createorder.failbystep": "購買失敗！請按步驟圈地！",
     "title.createorder.collision": "圈地範圍與 <a> (坐標: <b>) 存在衝突，請重新圈地。\n",
     "title.landlimit.noperm": "這裡是領地，你無權操作",
+    "title.landlimit.nearby": "距離他人領地太近，操作被撤銷",
     "title.landtp.fail.noland": "你需要先站在領地上一點",
     "title.landtp.fail.notowner": "你不是這塊領地的主人",
+    "title.landsign.ownenrbuttom": "正在領地 <a>",
+    "title.landsign.visitorbuttom": "這裡是 <a> 的領地",
 
     "sign.listener.ownertitle": "<a>",
     "sign.listener.ownersubtitle": "歡迎回來",
@@ -239,6 +245,29 @@
     "command.land_mgr.noperm": "§e此命令為領地管理員專有，請在控制台使用 §l/land op <a>§r§e 將自己添加為領地管理員。",
     "command.error": "§c未知的參數 \"<a>\" 請檢查您的輸入。",
 
-    "console.newversion": "此服務器正在使用舊版領地插件，新版本 <a> 已發布！",
-    "console.update": "存在新版本，請前往https://cdisk.amd.rocks/ILAND.html獲取。"
+    "command.console.land": "關於iLand",
+    "command.console.land_op": "添加領地管理員",
+    "command.console.land_deop": "刪除領地管理員",
+    "command.console.land_test": "運行領地性能測試",
+    "command.console.land_update": "升級iLand",
+
+    "console.update.preview": "正在使用未公開版本 <a> 。",
+    "console.update.newversion": "獲取到到新版本 <a> ,可以使用 /land update 自動更新！",
+    "console.update.newcontent": "更新內容：",
+    "console.update.force": "抱歉，由於雲端設定，您的iLand必須更新倒 <a> 才可使用，強制更新大多在舊版本存在嚴重問題時才會啟用。",
+    "console.update.auto": "由於您開啟了自動更新，正在開始更新您的iLand到新版本...",
+    "console.update.restart": "更新完畢需要重啟服務器以生效。",
+    
+    "console.autoupdate.start": "正在開始自動更新...",
+    "console.autoupdate.alreadylatest": "更新停止，因為已經是最新版本（<a>）。",
+    "console.autoupdate.download": "正在下載... ",
+    "console.autoupdate.errorbydown": "下載文件 <a> 失敗，錯誤代碼：<b>。請檢查您的網絡或反饋問題，更新已中斷。",
+    "console.autoupdate.recoverbackup": "正在恢復備份...",
+    "console.autoupdate.errorbysha1": "文件 <a> 的SHA1校驗失敗，請檢查您的網絡或反饋問題，更新已中斷。",
+    "console.autoupdate.success": "自動更新已完成，重啟服務器即可生效。",
+
+    "console.getonline.failbycode": "獲取聯網信息失敗，錯誤代碼：<a>。",
+    "console.getonline.failbyver": "無法解析的在線信息文件版本（<a>），您的iLand可能已過時。",
+
+    "console.error.money.protocol": "正在使用未知的經濟組件 '<a>'。"
 }

@@ -5,12 +5,12 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.20'
+plugin_version = '2.21'
 debug_mode = false
 
-langVer = 220
+langVer = 221
 minAirVer = 220
-minLXLVer = {0,3,1}
+minLXLVer = {0,3,2}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -19,8 +19,8 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
--- (Dev) data_path = 'plugins\\iland\\'
-data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+data_path = 'plugins\\iland\\'
+-- (Dev) data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 
 function updateChunk(landId,mode)
 	local TxTz={}
@@ -2706,6 +2706,61 @@ mc.listen('onServerStarted',function()
 			end
 			ILAPI.save()
 		end
+		if cfg.version==220 then
+			cfg.version=221
+			for landId,data in pairs(land_data) do
+				perm = land_data[landId].permissions
+				if #perm~=46 then
+					INFO('AutoRepair','Land <'..landId..'> Has wrong perm cfg, resetting...')
+					perm.allow_destroy=false
+					perm.allow_place=false
+					perm.allow_attack=false
+					perm.allow_open_chest=false
+					perm.allow_pickupitem=false
+					perm.allow_dropitem=false
+					perm.use_anvil = false
+					perm.use_barrel = false
+					perm.use_beacon = false
+					perm.use_bed = false
+					perm.use_bell = false
+					perm.use_blast_furnace = false
+					perm.use_brewing_stand = false
+					perm.use_campfire = false
+					perm.use_cartography_table = false
+					perm.use_composter = false
+					perm.use_crafting_table = false
+					perm.use_daylight_detector = false
+					perm.use_dispenser = false
+					perm.use_dropper = false
+					perm.use_enchanting_table = false
+					perm.use_door=false
+					perm.use_fence_gate = false
+					perm.use_furnace = false
+					perm.use_grindstone = false
+					perm.use_hopper = false
+					perm.use_jukebox = false
+					perm.use_loom = false
+					perm.use_stonecutter = false
+					perm.use_noteblock = false
+					perm.use_shulker_box = false
+					perm.use_smithing_table = false
+					perm.use_smoker = false
+					perm.use_trapdoor = false
+					perm.use_lectern = false
+					perm.use_cauldron = false
+					perm.use_lever=false
+					perm.use_button=false
+					perm.use_respawn_anchor=false
+					perm.use_item_frame=false
+					perm.use_fishing_hook=false
+					perm.use_pressure_plate=false
+					perm.allow_throw_potion=false
+					perm.allow_ride_entity=false
+					perm.allow_ride_trans=false
+					perm.allow_shoot=false
+				end
+			end
+			ILAPI.save()
 	end
 	
 	-- Load&Check i18n file
