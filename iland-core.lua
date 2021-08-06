@@ -508,9 +508,8 @@ function FORM_land_gui(player,data,lid)
 		Form:addLabel(_tr('gui.landcfg.inside'))
 		Form:addSwitch(_tr('gui.landcfg.inside.explode'),settings.ev_explode) 
 		Form:addSwitch(_tr('gui.landcfg.inside.farmland_decay'),settings.ev_farmland_decay)
-		Form:addLabel(_tr('gui.landcfg.nearby'))
-		Form:addSwitch(_tr('gui.landcfg.nearby.piston_push'),settings.ev_piston_push)
-		Form:addSwitch(_tr('gui.landcfg.nearby.fire_spread'),settings.ev_fire_spread)
+		Form:addSwitch(_tr('gui.landcfg.inside.piston_push'),settings.ev_piston_push)
+		Form:addSwitch(_tr('gui.landcfg.inside.fire_spread'),settings.ev_fire_spread)
 		player:sendForm(Form,FORM_land_gui_cfg)
 		return
 	end
@@ -897,7 +896,12 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			)
 		NewData.step = 2
 
-		local edges = cubeGetEdge(NewData.posA,NewData.posB)
+		local edges
+		if NewData.dimension=='3D' then
+			edges = cubeGetEdge(NewData.posA,NewData.posB)
+		else
+			edges = cubeGetEdge_2D(NewData.posA,NewData.posB)
+		end
 		if #edges>cfg.features.player_max_ple then
 			sendText(player,_tr('title.selectrange.nople'),0)
 		else
@@ -1355,8 +1359,42 @@ function ILAPI.GetTpPoint(landId) --return vec4
 	i[4] = land_data[landId].range.dimid
 	return AIR.pos2vec(i)
 end
-function ILAPI.GetDistence(landId)
-	-- pwt..
+function ILAPI.GetDistence(landId,vec4)
+	-- 设计思路：先索引XZ，再判Y
+	--[[
+	function DoPT(a,b)
+	
+	end
+
+	local pos = formatPlayerPos(vec4)
+	if ILAPI.PosGetLand(pos)==landId then
+		return 0
+	end
+	
+	local edges = cubeGetEdge_2D(VecMap[landId].a,VecMap[landId].b)
+	]]
+	
+	if true then -- // 未完成 //
+		return 0
+	end
+	-- local edges = cubeGetEdge_2D({x=,y=,z=},{x=,y=,z=})
+	local sameXZ = {}
+
+	local ops_posx = 0-pos.z -- 考虑相反数
+	local ops_posz = 0-poz.z
+	for n,ep in pairs(edges) do
+		if ep.x==pos.x or ep.x==ops_posx or ep.z==pos.z or ep.z==ops_posz then
+			sameXZ[#sameXZ+1]=ep
+			if #sameXZ==2 then
+				break
+			end
+		end
+	end -- 筛出2个符合要求的坐标
+
+	for i,v in pairs(sameXZ) do
+		print(v.x,v.y,v.z)
+	end
+	
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if LandTrustedMap[landId][xuid]==nil then
@@ -1489,8 +1527,8 @@ function cubeGetEdge(spos,epos)
 	local posB,posA = fmCube(spos,epos)
 	for i=1,math.abs(posA.x-posB.x)+1 do
 		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
 		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
 		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
 	end
 	for i=1,math.abs(posA.y-posB.y)+1 do
@@ -1504,6 +1542,19 @@ function cubeGetEdge(spos,epos)
 		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
 		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
 		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
+	end
+	return edge
+end
+function cubeGetEdge_2D(spos,epos)
+	local edge={}
+	local posB,posA = fmCube(spos,epos)
+	for i=1,math.abs(posA.x-posB.x)+1 do
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
 	end
 	return edge
 end
@@ -1999,7 +2050,6 @@ function Eventing_onPlaceBlock(player,block)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
-	if player.realName==nil then return end -- Fuck mojang
 	if land_data[landId].permissions.allow_place then return end -- Perm Allow
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
@@ -2266,7 +2316,6 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	
 	-- INFO('Debug','call event -> onWitherBossDestroy ')
 
-	if AAbb==nil then return end
 	local dimid = witherBoss.pos.dimid
 	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
 		landId=ILAPI.PosGetLand(pos)
@@ -2292,6 +2341,24 @@ function Eventing_onFarmLandDecay(pos,entity)
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
+	return false
+end
+function Eventing_onPistonPush(pos,block)
+	
+	-- INFO('Debug','call event -> onPistonPush ')
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
+	return false
+end
+function Eventing_onFireSpread(pos)
+	
+	INFO('Debug','call event -> onFireSpread ')
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
 	return false
 end
 
@@ -2389,6 +2456,8 @@ mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
 mc.listen('onRide',Eventing_onRide)
 mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
 mc.listen('onFarmLandDecay',Eventing_onFarmLandDecay)
+mc.listen('onPistonPush',Eventing_onPistonPush)
+mc.listen('onFireSpread',Eventing_onFireSpread)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()
