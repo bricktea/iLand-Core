@@ -212,6 +212,8 @@
     "title.landlimit.noperm": "这里是领地，你无权操作",
     "title.landtp.fail.noland": "你需要先站在领地上一点",
     "title.landtp.fail.notowner": "你不是这块领地的主人",
+    "title.landsign.ownenrbuttom": "正在领地 <a>",
+    "title.landsign.visitorbuttom": "这里是 <a> 的领地",
 
     "sign.listener.ownertitle": "<a>",
     "sign.listener.ownersubtitle": "欢迎回来",

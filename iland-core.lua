@@ -722,7 +722,9 @@ function FORM_land_mgr(player,data)
 	end
 	if not(cfg.features.landSign) and CLOCK_LANDSIGN~=nil then
 		clearInterval(CLOCK_LANDSIGN)
+		clearInterval(BUTTOM_SIGN)
 		CLOCK_LANDSIGN=nil
+		BUTTOM_SIGN=nil
 	end
 	if cfg.features.particles and CLOCK_PARTICLES==nil then
 		enableParticles()
@@ -1688,7 +1690,7 @@ function Eventing_onJoin(player)
 	-- INFO('Debug','call event -> onJoin ')
 
 	local xuid = player.xuid
-	TRS_Form[xuid] = { inland='null' }
+	TRS_Form[xuid] = { inland='null',inlandv2='null' }
 
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
@@ -2294,47 +2296,67 @@ end
 -- Lua -> Timer Callback
 function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
+		
 		local player=mc.getPlayer(xuid)
 		local xuid = player.xuid
 		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
-		if landId==-1 then TRS_Form[xuid].inland='null';return end -- no land here
-		if landId==TRS_Form[xuid].inland then return end -- signed
+		if landId==-1 then TRS_Form[xuid].inland='null';goto JUMPOUT_SIGN end -- no land here
+		if landId==TRS_Form[xuid].inland then goto JUMPOUT_SIGN end -- signed
+
 		local owner=ILAPI.GetOwner(landId)
 		local ownername='?'
 		if owner~='?' then ownername=GetIdFromXuid(owner) end
-		local slname = ILAPI.GetNickname(landId,false)
-		if xuid==owner then
-			if land_data[landId].settings.signtome then
-				sendTitle(
-					player,
-					AIR.gsubEx(
-						_tr('sign.listener.ownertitle'),
-						'<a>',slname
-					),
-					_tr('sign.listener.ownersubtitle')
-				)
-			else
-				return
+		
+		if xuid==owner then 
+			-- land owner in land.
+			if not(land_data[landId].settings.signtome) then
+				goto JUMPOUT_SIGN
 			end
-		else
-			if land_data[landId].settings.signtother then
-				sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(_tr('sign.listener.visitorsubtitle'),'<a>',ownername))
-				if land_data[landId].settings.describe~='' then
-					sendText(
-						player,
-						AIR.gsubEx(
-							land_data[landId].settings.describe,
-							'$visitor',player.realName,
-							'$n','\n'
-						),
-						0
-					)
-				end
-			else
-				return
+			sendTitle(player,AIR.gsubEx(
+				_tr('sign.listener.ownertitle'),
+				'<a>',ILAPI.GetNickname(landId,false)
+			),
+			_tr('sign.listener.ownersubtitle'))
+		else  
+			-- visitor in land
+			if not(land_data[landId].settings.signtother) then
+				goto JUMPOUT_SIGN
+			end
+			sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(
+				_tr('sign.listener.visitorsubtitle'),
+				'<a>',ownername
+			))
+			if land_data[landId].settings.describe~='' then
+				sendText(player,AIR.gsubEx(
+					land_data[landId].settings.describe,
+					'$visitor',player.realName,
+					'$n','\n'
+				),0)
 			end
 		end
 		TRS_Form[xuid].inland=landId
+		:: JUMPOUT_SIGN ::
+	end
+end
+function Tcb_ButtomSign()
+	for xuid,data in pairs(TRS_Form) do
+		local player=mc.getPlayer(xuid)
+		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
+		
+		if landId==-1 then
+			goto JUMPOUT_BUTTOM
+		end
+
+		local ownerXuid = ILAPI.GetOwner(landId)
+		local landcfg = land_data[landId].settings
+		if (xuid==ownerXuid) and landcfg.signtome and landcfg.signbuttom then
+			player:sendText(AIR.gsubEx(_tr('title.landsign.ownenrbuttom'),'<a>',ILAPI.GetNickname(landId)),4)
+		end
+		if (xuid~=ownerXuid) and landcfg.signtother and landcfg.signbuttom then
+			player:sendText(AIR.gsubEx(_tr('title.landsign.visitorbuttom'),'<a>',GetIdFromXuid(ownerXuid)),4)
+		end
+
+		:: JUMPOUT_BUTTOM ::
 	end
 end
 function Tcb_SelectionParticles()
@@ -2369,6 +2391,7 @@ mc.listen('onFarmLandDecay',Eventing_onFarmLandDecay)
 -- timer -> landsign|particles|debugger
 function enableLandSign()
 	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
+	BUTTOM_SIGN = setInterval(Tcb_ButtomSign,cfg.features.sign_frequency*500)
 end
 function enableParticles()
 	CLOCK_PARTICLES = setInterval(Tcb_SelectionParticles,2*1000)
