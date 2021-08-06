@@ -787,16 +787,20 @@ function FORM_landtp(player,data)
 	local dimid = land_data[landId].range.dimid
 
 	if dimid==0 or dimid==2 then
-		high=255+1
+		high=256+1
 	else
 		high=128+1
 	end
 	local safey=0
+	local NMSL=false
 	for i=pos[2],high do
 		local bl = mc.getBlock(mc.newIntPos(pos[1],i,pos[3],dimid))
 		if bl.type=='minecraft:air' then
-			safey=i
-			break
+			if NMSL then
+				safey=i
+				break
+			end
+			NMSL=true
 		end
 	end
 	player:teleport(mc.newFloatPos(pos[1],safey,pos[3],dimid))
