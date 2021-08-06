@@ -240,10 +240,7 @@ function FORM_land_buy(player,id)
 		money_del(player,newLand[xuid].landprice)
 	end
 	sendText(player,_tr('title.buyland.succeed'))
-	local A=newLand[xuid].posA
-	local B=newLand[xuid].posB
-	local result={fmCube(A,B)}
-	ILAPI.CreateLand(xuid,result[1],result[2],newLand[xuid].dimid)
+	ILAPI.CreateLand(xuid,newLand[xuid].posA,newLand[xuid].posB,newLand[xuid].dimid)
 	newLand[xuid]=nil
 	player:sendModalForm(
 		'Complete.',
@@ -1229,12 +1226,13 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	settings.ev_fire_spread=false
 
 	-- Land ranges
-	table.insert(land_data[landId].range.start_position,1,startpos.x)
-	table.insert(land_data[landId].range.start_position,2,startpos.y)
-	table.insert(land_data[landId].range.start_position,3,startpos.z)
-	table.insert(land_data[landId].range.end_position,1,endpos.x)
-	table.insert(land_data[landId].range.end_position,2,endpos.y)
-	table.insert(land_data[landId].range.end_position,3,endpos.z)
+	local posA,posB = fmCube(startpos,endpos)
+	table.insert(land_data[landId].range.start_position,1,posA.x)
+	table.insert(land_data[landId].range.start_position,2,posA.y)
+	table.insert(land_data[landId].range.start_position,3,posA.z)
+	table.insert(land_data[landId].range.end_position,1,posB.x)
+	table.insert(land_data[landId].range.end_position,2,posB.y)
+	table.insert(land_data[landId].range.end_position,3,posB.z)
 	land_data[landId].range.dimid=dimid
 
 	local perm = land_data[landId].permissions
