@@ -2725,8 +2725,8 @@ mc.listen('onServerStarted',function()
 			end
 			ILAPI.save()
 		end
-		if cfg.version==220 then
-			cfg.version=221
+		if cfg.version==220 or cfg.version==221 then
+			cfg.version=223
 			for landId,data in pairs(land_data) do
 				perm = land_data[landId].permissions
 				if #perm~=46 then
