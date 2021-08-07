@@ -6,7 +6,7 @@
 Powerful land plugin, made by lua.<br>
 
 ### Usage
-👉 [**Github Wiki**](https://github.com/Redbeanw44602/iLand/wiki)
+👉 [**iLand Wiki**](https://myland.amd.rocks/)
 
 ### Credits
 [Minecraft](https://www.minecraft.net/) | [LLLua](https://www.minebbs.com/resources/litelualoader-lua.2390/)
