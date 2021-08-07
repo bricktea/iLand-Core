@@ -5,12 +5,12 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.21'
+plugin_version = '2.23'
 debug_mode = false
 
-langVer = 221
+langVer = 223
 minAirVer = 220
-minLXLVer = {0,3,2}
+minLXLVer = {0,4,0}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -481,8 +481,8 @@ function FORM_land_gui(player,data,lid)
 					'<a>',GetIdFromXuid(ILAPI.GetOwner(landId)),
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
-					'<d>',did2dim(dpos.dimid),
-					'<e>',ILAPI.GetLandDimension(landId),
+					'<d>',ILAPI.GetLandDimension(landId),
+					'<e>',did2dim(dpos.dimid),
 					'<f>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
 					'<g>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
 					'<h>',length,'<i>',width,'<j>',height,
@@ -2023,13 +2023,6 @@ function Eventing_onDestroyBlock(player,block)
 		return false
 	end
 
-	if newLand[xuid]~=nil then
-		local HandItem = player:getHand()
-		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then goto PROCESS_1 end
-		BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
-		return false
-	end
-
 	:: PROCESS_1 ::
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
@@ -2041,6 +2034,19 @@ function Eventing_onDestroyBlock(player,block)
 
 	sendText(player,_tr('title.landlimit.noperm'))
 	return false
+end
+function Eventing_onStartDestroyBlock(player,block)
+	
+	-- INFO('Debug','call event -> onStartDestroyBlock')
+
+	local xuid = player.xuid
+	
+	if newLand[xuid]~=nil then
+		local HandItem = player:getHand()
+		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
+		BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
+	end
+
 end
 function Eventing_onPlaceBlock(player,block)
 
@@ -2273,6 +2279,10 @@ function Eventing_onStepOnPressurePlate(entity,block)
 		player=entity:toPlayer()
 	end
 
+	if entity.pos==nil then -- what a silly mojang?
+		return
+	end
+
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
 	
@@ -2365,8 +2375,12 @@ end
 -- Lua -> Timer Callback
 function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
-		
 		local player=mc.getPlayer(xuid)
+		
+		if player.pos==nil then -- i dont know why, i want know why???
+			goto JUMPOUT_SIGN
+		end
+
 		local xuid = player.xuid
 		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		if landId==-1 then TRS_Form[xuid].inland='null';goto JUMPOUT_SIGN end -- no land here
@@ -2412,6 +2426,10 @@ function Tcb_ButtomSign()
 		local player=mc.getPlayer(xuid)
 		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		
+		if player.pos==nil then -- i dont know why, i want know why???
+			goto JUMPOUT_BUTTOM
+		end
+
 		if landId==-1 then
 			goto JUMPOUT_BUTTOM
 		end
@@ -2458,6 +2476,7 @@ mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
 mc.listen('onFarmLandDecay',Eventing_onFarmLandDecay)
 mc.listen('onPistonPush',Eventing_onPistonPush)
 mc.listen('onFireSpread',Eventing_onFireSpread)
+mc.listen('onStartDestroyBlock',Eventing_onStartDestroyBlock)
 
 -- timer -> landsign|particles|debugger
 function enableLandSign()

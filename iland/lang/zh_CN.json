@@ -1,5 +1,5 @@
 {
-    "VERSION": 221,
+    "VERSION": 223,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -28,7 +28,7 @@
     "gui.general.cancel": "取消",
     "gui.general.plzchose": "请选择",
     
-    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n昵称: <c>\\n范围:  §l<e>§r <d> -> <f>\\n长/宽/高: <g>/<h>/<i>\\n底面积: <j> 平方格    体积: <k> 立方格",
+    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n昵称: <c>\\n范围:  §l<d>§r <e> <f> -> <g>\\n长/宽/高: <h>/<i>/<j>\\n底面积: <k> 平方格    体积: <l> 立方格",
     "gui.landmgr.content": "欢迎使用领地管理器",
     "gui.landmgr.ctplus": "\n您现在正在 §l<a>§r 上",
     "gui.landmgr.unnamed": "未命名",
@@ -180,9 +180,9 @@
     
     "title.selectrange.failbystep": "操作失败！请按步骤圈地！",
     "title.selectrange.failbycdim": "选点失败！禁止跨纬度选点！",
-    "title.selectrange.spointa": "请手持 <a>, 破坏方块或使用 /land a 选定第一个点。",
-    "title.selectrange.spointb": "请手持 <a>, 破坏方块或使用 /land b 选定第二个点。",
-    "title.selectrange.bebuy": "请手持 <a>, 使用 /land buy 或再次破坏方块以创建订单。",
+    "title.selectrange.spointa": "请手持 <a>, 点击方块或使用 /land a 选定第一个点。",
+    "title.selectrange.spointb": "请手持 <a>, 点击方块或使用 /land b 选定第二个点。",
+    "title.selectrange.bebuy": "请手持 <a>, 使用 /land buy 或再次点击任意方块以创建订单。",
     "title.selectrange.seled": "点 <a> 已选定：<b> (<c>, <d>, <e>)",
     "title.selectrange.nople": "您圈地较大，为避免服务器卡顿已暂时关闭粒子特效。",
     "title.land.nolicense": "请先使用 /land new 请求创建新领地",

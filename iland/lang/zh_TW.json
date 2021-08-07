@@ -1,5 +1,5 @@
 {
-    "VERSION": 221,
+    "VERSION": 223,
     "#1": "zh_CN 標準漢語翻譯貢獻者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -28,7 +28,7 @@
     "gui.general.cancel": "取消",
     "gui.general.plzchose": "請選擇",
     
-    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n暱稱: <c>\\n範圍:  §l<e>§r <d> -> <f>\\n長/寬/高: <g>/<h>/<i>\\n底面積: <j> 平方格    體積: <k> 立方格",
+    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n暱稱: <c>\\n範圍:  §l<d>§r <e> <f> -> <g>\\n長/寬/高: <h>/<i>/<j>\\n底面積: <k> 平方格    體積: <l> 立方格",
     "gui.landmgr.content": "歡迎使用領地管理器",
     "gui.landmgr.ctplus": "\n您現在正在 §l<a>§r 上",
     "gui.landmgr.unnamed": "未命名",
@@ -95,8 +95,7 @@
     
     "gui.fastlmgr.title": "Fast LMgr",
     "gui.fastlmgr.content": "您現在在 §l<a>§r 上，可以使用以下選項快速管理領地。",
-    "gui.fastlmgr.operator": "§l管理員模式 §r現在您可以像領地主人一樣操作該領地",
-    "gui.fastgde.title": "領地快捷菜單",
+    "gui.fastlmgr.operator": "§l管理員模式 §r現在您可以像領地主人一樣操作該領地","gui.fastgde.title": "領地快捷菜單",
     "gui.fastgde.content": "歡迎使用領地系統，您現在有 §l<a>§r 塊領地。\n\n§lPlease Chose...",
     "gui.fastgde.create": "新建領地",
     "gui.fastgde.manage": "領地管理",
@@ -180,9 +179,9 @@
     
     "title.selectrange.failbystep": "操作失敗！請按步驟圈地！",
     "title.selectrange.failbycdim": "選點失敗！禁止跨緯度選點！",
-    "title.selectrange.spointa": "請手持 <a>, 破壞方塊或使用 /land a 選定第一個點。",
-    "title.selectrange.spointb": "請手持 <a>, 破壞方塊或使用 /land b 選定第二個點。",
-    "title.selectrange.bebuy": "請手持 <a>, 使用 /land buy 或再次破壞方塊以創建訂單。",
+    "title.selectrange.spointa": "請手持 <a>, 點擊方塊或使用 /land a 選定第一個點。",
+    "title.selectrange.spointb": "請手持 <a>, 點擊方塊或使用 /land b 選定第二個點。",
+    "title.selectrange.bebuy": "請手持 <a>, 使用 /land buy 或再次點擊任意方塊以創建訂單。",
     "title.selectrange.seled": "點 <a> 已選定：<b> (<c>, <d>, <e>)",
     "title.selectrange.nople": "您圈地較大，為避免服務器卡頓已暫時關閉粒子特效。",
     "title.land.nolicense": "請先使用 /land new 請求創建新領地",
