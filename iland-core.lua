@@ -1658,16 +1658,15 @@ function TraverseAABB(AAbb,aaBB,did)
 	return result
 end
 function Upgrade(updata)
-	
-	function recoverBackup()
+
+	INFO('AutoUpdate',_tr('console.autoupdate.start'))
+	function recoverBackup(dt)
 		INFO('AutoUpdate',_tr('console.autoupdate.recoverbackup'))
-		for n,backupfilename in pairs(BackupEd) do
+		for n,backupfilename in pairs(dt) do
 			file.rename(backupfilename..'.bak',backupfilename)
 		end
 	end
-
-	-- start update
-	INFO('AutoUpdate',_tr('console.autoupdate.start'))
+	
 	if updata.NumVer<=langVer then
 		ERROR(AIR.gsubEx(_tr('console.autoupdate.alreadylatest'),'<a>',updata.NumVer..'<='..langVer))
 		return
@@ -1681,8 +1680,8 @@ function Upgrade(updata)
 	RawPath['$data_path'] = data_path
 	
 
-	for n,file in pairs(updata.FileChanged) do
-		local raw = AIR.split(file,'::')
+	for n,thefile in pairs(updata.FileChanged) do
+		local raw = AIR.split(thefile,'::')
 		local path = RawPath[raw[1]]..raw[2]
 		INFO('Network',_tr('console.autoupdate.download')..raw[2])
 		
@@ -1696,13 +1695,11 @@ function Upgrade(updata)
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbydown'),
-					'<a>',file,
+					'<a>',raw[2],
 					'<b>',tmp.status
 				)
 			)
-			if n~=1 then -- recover backup
-				recoverBackup()
-			end
+			recoverBackup(BackupEd)
 			return
 		end
 		
@@ -1710,12 +1707,10 @@ function Upgrade(updata)
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbysha1'),
-					'<a>',file
+					'<a>',raw[2]
 				)
 			)
-			if n~=1 then
-				recoverBackup()
-			end
+			recoverBackup(BackupEd)
 			return
 		end
 
