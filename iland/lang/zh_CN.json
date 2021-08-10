@@ -262,7 +262,7 @@
     "console.autoupdate.alreadylatest": "更新停止，因为已经是最新版本（<a>）。",
     "console.autoupdate.download": "正在下载... ",
     "console.autoupdate.errorbydown": "下载文件 <a> 失败，错误代码：<b>。请检查您的网络或反馈问题，更新已中断。",
-    "console.autoupdate.recoverbackup": "正在恢复备份...",
+    "console.autoupdate.recoverbackup": "已经恢复备份，正在使用旧版本iLand。",
     "console.autoupdate.errorbysha1": "文件 <a> 的SHA1校验失败，请检查您的网络或反馈问题，更新已中断。",
     "console.autoupdate.success": "自动更新已完成，重启服务器即可生效。",
 

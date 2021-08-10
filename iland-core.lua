@@ -19,8 +19,8 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
-data_path = 'plugins\\iland\\'
--- (Dev) data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+-- (Dev) data_path = 'plugins\\iland\\'
+data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 
 function updateChunk(landId,mode)
 	local TxTz={}
@@ -1703,7 +1703,7 @@ function Upgrade(updata)
 			return
 		end
 		
-		if data.toMD5(tmp.data)~=updata.SHA1[n] then -- SHA1 check
+		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- SHA1 check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbysha1'),
