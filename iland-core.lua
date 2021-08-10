@@ -1306,6 +1306,10 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.allow_shoot=false
 
 	-- Write data
+	if land_owners[xuid]==nil then -- ilapi
+		land_owners[xuid]={}
+	end
+
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	ILAPI.save()
 	updateChunk(landId,'add')
