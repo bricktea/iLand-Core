@@ -5,7 +5,7 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.23'
+plugin_version = '2.30'
 debug_mode = false
 
 langVer = 223
@@ -730,6 +730,8 @@ function FORM_land_mgr(player,data)
 		CLOCK_PARTICLES=nil
 	end
 
+	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+
 	-- lands manager
 	
 	if data[1]==0 then
@@ -980,6 +982,16 @@ function BoughtProg_CreateOrder(player)
 	else
 		dim_info = '§l2D-Land §r'
 	end
+	print(AIR.gsubEx(
+		_tr('gui.buyland.content'),
+		'<a>',length,
+		'<b>',width,
+		'<c>',height,
+		'<d>',vol,
+		'<e>',NewData.landprice,
+		'<f>',cfg.money.credit_name,
+		'<g>',money_get(player)
+	))
 	player:sendModalForm(
 		dim_info.._tr('gui.buyland.title')..dis_info,
 		AIR.gsubEx(

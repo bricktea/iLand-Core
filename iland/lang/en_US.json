@@ -148,7 +148,7 @@
     "gui.buyland.unsupport": "This server does not currently support <a> Enclosure",
     "gui.buyland.2d": "Two-dimensional territory",
     "gui.buyland.3d": "Three-dimensional territory",
-    "gui.buyland.content": "Successful enclosure! \\nLength\\\\Width\\\\Height: <a>\\\\<b>\\<c>Grid\\n Volume : <d>Block\\nPrice: <e><f>\\nWallet: <g><f>",
+    "gui.buyland.content": "Successful enclosure! \\nLength\\\\Width\\\\Height: <a>\\\\<b>\\\\<c>Grid\\n Volume : <d>Block\\nPrice: <e><f>\\nWallet: <g><f>",
     "gui.buyland.succeed": "Successful purchase of the territory! Do you want to open the territory manager now?",
     "gui.buyland.discount": "(Discounted <a>％)",
     "gui.delland.content": "Are you sure you want to delete your territory? \\nIf you are sure, you will get a <a><b> refund. Then your territory will lose its protection and the configuration file will be deleted immediately. ",

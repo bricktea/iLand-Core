@@ -4,9 +4,8 @@
  - [ ] 添加控制项：火焰蔓延
  - [ ] deopitem（附近）
  - [ ] 各种shoot（附近）
- - [x] 位点：压力板，landsign，生物有效性判断
- - [x] LMGR语言包错误
- - [x] 破坏方块改为点击
+ - [x] 修复autoupdate
+ - [x] land mgr修改语言包可热重载
 
  > 3-rd Plugins 计划
  - [ ] 附近领地传感器
