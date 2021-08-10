@@ -5,7 +5,7 @@
 [![Package iLand-Core](https://github.com/McAirLand/iLand-Core/actions/workflows/test.yml/badge.svg?branch=LiteLoader-Lua)](https://github.com/McAirLand/iLand-Core/actions/workflows/test.yml) ![](https://img.shields.io/github/stars/Redbeanw44602/iLand) ![](https://shields.io/github/downloads/Redbeanw44602/iLand/total) ![](https://shields.io/github/repo-size/Redbeanw44602/iLand) ![](https://img.shields.io/github/license/Redbeanw44602/iLand) <br>
 Powerful land plugin, made by lua.<br>
 
-### Usage
+### All things to...
 👉 [**iLand Wiki**](https://myland.amd.rocks/)
 
 ### Loaders
