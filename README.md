@@ -8,11 +8,6 @@ Powerful land plugin, made by lua.<br>
 ### Usage
 👉 [**iLand Wiki**](https://myland.amd.rocks/)
 
-### Credits
-[Minecraft](https://www.minecraft.net/) | [LLLua](https://www.minebbs.com/resources/litelualoader-lua.2390/)
--|-
-[cJson](https://github.com/DaveGamble/cJSON) | [LLMoney](https://www.minebbs.com/resources/llmoney-ll.2385/)
-
 ### Loaders
 **LiteXLoader** | **now** | **Supporting**
 -|-|-
