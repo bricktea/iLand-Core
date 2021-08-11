@@ -1306,7 +1306,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	updateVecMap(landId,'add')
 	updateLandOwnersMap(landId)
 	updateLandTrustMap(landId)
-	return true
+	return landId
 end
 function ILAPI.DeleteLand(landId)
 	if land_data[landId]==nil then
