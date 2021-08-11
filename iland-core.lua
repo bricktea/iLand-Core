@@ -6,7 +6,7 @@
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
 plugin_version = '2.30'
-debug_mode = false
+DEV_MODE = true
 
 langVer = 224
 minAirVer = 220
@@ -19,8 +19,11 @@ ArrayParticles={};ILAPI={}
 newLand={};TRS_Form={}
 
 MainCmd = 'land'
--- (Dev) data_path = 'plugins\\iland\\'
-data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+data_path = 'plugins\\iland\\'
+
+if DEV_MODE then
+	data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
+end
 
 function updateChunk(landId,mode)
 	local TxTz={}
@@ -1500,7 +1503,9 @@ function GetOnlinePlayerList()
 	return r
 end
 function _tr(a)
-	if debug_mode and i18n_data[a]==nil then print(a) end
+	if DEV_MODE and i18n_data[a]==nil then
+		ERROR('Translation not found: '..a)
+	end
 	return i18n_data[a]
 end
 function money_add(player,value)
@@ -1777,9 +1782,6 @@ function Eventing_onJoin(player)
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
 		ILAPI.save()
-	end
-	if debug_mode then
-		debug_landquery=player
 	end
 end
 function Eventing_onLeft(player)
@@ -2828,9 +2830,6 @@ mc.listen('onServerStarted',function()
 	end
 	if cfg.features.particles then
 		enableParticles()
-	end
-	if debug_mode then
-		setInterval(DEBUG_LANDQUERY,3*1000)
 	end
 
 	-- Check Update
