@@ -8,9 +8,9 @@
 plugin_version = '2.30'
 debug_mode = false
 
-langVer = 223
+langVer = 224
 minAirVer = 220
-minLXLVer = {0,4,0}
+minLXLVer = {0,4,3}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -982,16 +982,6 @@ function BoughtProg_CreateOrder(player)
 	else
 		dim_info = '§l2D-Land §r'
 	end
-	print(AIR.gsubEx(
-		_tr('gui.buyland.content'),
-		'<a>',length,
-		'<b>',width,
-		'<c>',height,
-		'<d>',vol,
-		'<e>',NewData.landprice,
-		'<f>',cfg.money.credit_name,
-		'<g>',money_get(player)
-	))
 	player:sendModalForm(
 		dim_info.._tr('gui.buyland.title')..dis_info,
 		AIR.gsubEx(
@@ -1316,8 +1306,13 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	updateVecMap(landId,'add')
 	updateLandOwnersMap(landId)
 	updateLandTrustMap(landId)
+	return true
 end
 function ILAPI.DeleteLand(landId)
+	if land_data[landId]==nil then
+		return false
+	end
+
 	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
 		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landId))
@@ -1326,6 +1321,29 @@ function ILAPI.DeleteLand(landId)
 	updateVecMap(landId,'del')
 	land_data[landId]=nil
 	ILAPI.save()
+	return true
+end
+function ILAPI.GetLand(landId)
+	if land_data[landId]==nil then
+		return ''
+	end
+	return AIR.deepcopy(land_data[landId])
+end
+function ILAPI.UpdatePermission(landId,perm,value)
+	if land_data[landId]==nil or land_data[landId].permissions[perm]==nil or (value~=true and value~=false) then
+		return false
+	end
+	land_data[landId].permissions[perm]=value
+	ILAPI.save()
+	return true
+end
+function ILAPI.UpdateSetting(landId,cfgname,value)
+	if land_data[landId]==nil or land_data[landId].settings[cfgname]==nil or value==nil then
+		return false
+	end
+	land_data[landId].settings[cfgname]=value
+	ILAPI.save()
+	return true
 end
 function ILAPI.GetPlayerLands(xuid)
 	return AIR.deepcopy(land_owners[xuid])
@@ -1450,7 +1468,7 @@ function ILAPI.GetAllTrustedLand(xuid)
 	return trusted
 end
 function ILAPI.GetVersion()
-	return plugin_version
+	return langVer
 end
 function ILAPI.save()
 	file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
@@ -1718,7 +1736,7 @@ function Upgrade(updata)
 			recoverBackup(BackupEd)
 			return
 		end
-		
+
 		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- SHA1 check
 			ERROR(
 				AIR.gsubEx(
@@ -1977,10 +1995,10 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- [update] Upgrade iLand
 	if opt[2] == 'update' then
-		local raw = network.httpGetSync('https://cdn.jsdelivr.net/gh/McAirLand/updates/version.json')
+		local raw = network.httpGetSync('https://cdisk.amd.rocks/tmp/ILAND/server.json')
 		if raw.status==200 then
 			local v1 = json.decode(raw.data)
-			if v1.FILE_Version==102 then
+			if v1.FILE_Version==200 then
 				Upgrade(v1.Updates[1])
 			else
 				ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',v1.FILE_Version))
@@ -2388,7 +2406,7 @@ function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
 		
-		if player.pos==nil then -- i dont know why, i want know why???
+		if player==nil or player.pos==nil then -- i dont know why, i want know why???
 			goto JUMPOUT_SIGN
 		end
 
@@ -2437,7 +2455,7 @@ function Tcb_ButtomSign()
 		local player=mc.getPlayer(xuid)
 		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		
-		if player.pos==nil then -- i dont know why, i want know why???
+		if player==nil or player.pos==nil then -- i dont know why, i want know why???
 			goto JUMPOUT_BUTTOM
 		end
 
@@ -2520,7 +2538,7 @@ function Ncb_online(code,result)
 		local data=json.decode(result)
 
 		-- Check File Version
-		if data.FILE_Version~=102 then
+		if data.FILE_Version~=200 then
 			INFO('Network',AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
 			return
 		end
@@ -2817,7 +2835,7 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet('https://cdn.jsdelivr.net/gh/McAirLand/updates/version.json',Ncb_online)
+		network.httpGet('https://cdisk.amd.rocks/tmp/ILAND/server.json',Ncb_online)
 	end
 
 	-- register cmd.
@@ -2858,8 +2876,10 @@ lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
 lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
 lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 lxl.export(ILAPI.GetLandDimension,'ILAPI_GetLandDimension')
+lxl.export(ILAPI.GetLand,'ILAPI_GetLand')
+lxl.export(ILAPI.UpdatePermission,'ILAPI_UpdatePermission')
+lxl.export(ILAPI.UpdateSetting,'ILAPI_UpdateSetting')
 lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
-lxl.export(Eventing_onPlaceBlock,'ILENV_onPlaceBlock')
 
 INFO('Powerful land plugin is loaded! Ver-'..plugin_version..',')
 INFO('By: RedbeanW, License: GPLv3 with additional conditions.')

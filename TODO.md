@@ -1,4 +1,4 @@
- > Version **2.30**
+ > Version **2.24**
  - [ ] 添加ILAPI.GetDistence，支持领地边缘保护
  - [ ] 添加控制项：活塞推动
  - [ ] 添加控制项：火焰蔓延
@@ -6,6 +6,8 @@
  - [ ] 各种shoot（附近）
  - [x] 修复autoupdate
  - [x] land mgr修改语言包可热重载
+ - [x] 再次修复landsign报错
+ - [x] 增加领地数据操作类ILAPI，完善createland，deleteland
 
  > 3-rd Plugins 计划
  - [ ] 附近领地传感器
