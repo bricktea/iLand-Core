@@ -9,7 +9,7 @@
  - [x] 再次修复landsign报错
  - [x] 增加领地数据操作类ILAPI，完善createland，deleteland
  - [x] 修复领地内放岩浆&防水问题
- - [x] 领地管理员landtrust
+ - [x] 领地管理员landtrust,somewrong
 
  > 3-rd Plugins 计划
  - [ ] 附近领地传感器

@@ -1084,7 +1084,7 @@ function GUI_OPLMgr(player)
 		end
 		if i==lid then
 			landlst[#landlst] = _tr('gui.oplandmgr.there')..landlst[#landlst]
-			land_default = #landlst-1
+			land_default = #landlst
 		end
 	end
 	table.insert(landlst,1,'['.._tr('gui.general.plzchose')..']')
