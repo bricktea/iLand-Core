@@ -352,15 +352,16 @@ end
 function FORM_land_gui_trust(player,data)
 	if data==nil then return end
 	
-	local xuid=player.xuid
+	local xuid = player.xuid
 	local landId = TRS_Form[xuid].landId
 	local shareList = land_data[landId].settings.share
 	local playerList = TRS_Form[xuid].playerList
+	local ownerXuid = ILAPI.GetOwner(landId)
 
 	if data[1] then
 		if data[2]==0 then return end
 		local targetXuid=GetXuidFromId(playerList[data[2]+1])
-		if xuid==targetXuid then
+		if ownerXuid==targetXuid then
 			sendText(player,_tr('title.landtrust.cantaddown'));return
 		end
 		if AIR.isValInList(shareList,targetXuid)~=-1 then
