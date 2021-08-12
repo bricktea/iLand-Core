@@ -91,6 +91,7 @@
     "gui.landmgr.landperm.other_options.throw_potion": "Potion throwing allowed",
     "gui.landmgr.landperm.other_options.respawn_anchor": "Allow use of respawn anchor",
     "gui.landmgr.landperm.other_options.fishing": "Allow the use of fishing rods",
+    "gui.landmgr.landperm.other_options.bucket": "Allow the use of bucket",
     "gui.landmgr.landperm.editevent": "Control the events that can occur in (near) the territory, please move to the Territory Settings tab.",
     
     "gui.fastlmgr.title": "Fast LMgr",
