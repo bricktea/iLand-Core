@@ -167,7 +167,17 @@ function buildUIBITable()
 	local itemWlistTmp = {
 		'minecraft:glow_ink_sac',
 		'minecraft:end_crystal',
-		'minecraft:ender_eye'
+		'minecraft:ender_eye',
+		'minecraft:axolotl_bucket',
+		'minecraft:powder_snow_bucket',
+		'minecraft:pufferfish_bucket',
+		'minecraft:tropical_fish_bucket',
+		'minecraft:salmon_bucket',
+		'minecraft:cod_bucket',
+		'minecraft:water_bucket',
+		'minecraft:cod_bucket',
+		'minecraft:lava_bucket',
+		'minecraft:bucket'
 	}
 	local attackwlistTmp = {
 		'minecraft:ender_crystal',
@@ -328,6 +338,7 @@ function FORM_land_gui_perm(player,data)
 	perm.allow_throw_potion = data[43]
 	perm.use_respawn_anchor = data[44]
 	perm.use_fishing_hook = data[45]
+	perm.use_bucket = data[46]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -570,6 +581,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.throw_potion'),perm.allow_throw_potion)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bucket'),perm.use_bucket)
 		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
@@ -1292,6 +1304,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_respawn_anchor=false
 	perm.use_item_frame=false
 	perm.use_fishing_hook=false
+	perm.use_bucket=false
 	perm.use_pressure_plate=false
 	perm.allow_throw_potion=false
 	perm.allow_ride_entity=false
@@ -2119,6 +2132,7 @@ function Eventing_onUseItemOn(player,item,block)
 	local perm = land_data[landId].permissions
 	if IsConPlus then
 		local it = item.type
+		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
 		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
 		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
 		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
@@ -2708,8 +2722,8 @@ mc.listen('onServerStarted',function()
 			cfg.features.land_3D=true
 			cfg.features.auto_update=true
 			for landId,data in pairs(land_data) do
-				land_data[landId].range.dimid = land_data[landId].range.dim
-				-- land_data[landId].range.dim=nil
+				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
+				land_data[landId].range.dim=nil
 				for n,xuid in pairs(land_data[landId].settings.share) do
 					if type(xuid)~='string' then
 						land_data[landId].settings.share[n]=tostring(land_data[landId].settings.share[n])
@@ -2809,6 +2823,13 @@ mc.listen('onServerStarted',function()
 					perm.allow_ride_trans=false
 					perm.allow_shoot=false
 				end
+			end
+			ILAPI.save()
+		end
+		if cfg.version==223 then
+			cfg.version=224
+			for landId,data in pairs(land_data) do
+				land_data[landId].permissions.use_bucket=false
 			end
 			ILAPI.save()
 		end
