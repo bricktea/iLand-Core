@@ -5,10 +5,10 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.24'
-DEV_MODE = false
+plugin_version = '2.25'
+DEV_MODE = true
 
-langVer = 224
+langVer = 225
 minAirVer = 220
 minLXLVer = {0,4,3}
 
@@ -1772,6 +1772,12 @@ function Upgrade(updata)
 
 	INFO('AutoUpdate',_tr('console.autoupdate.success'))
 end
+function isNull(val)
+	return (val == nil)
+end
+function isNullX2(val,val2)
+	return (val == nil) or (val2 == nil)
+end
 
 -- log system
 function INFO(type,content)
@@ -1788,7 +1794,9 @@ end
 -- Minecraft -> Eventing
 function Eventing_onJoin(player)
 
-	-- INFO('Debug','call event -> onJoin ')
+	if isNull(player) then
+		return
+	end
 
 	local xuid = player.xuid
 	TRS_Form[xuid] = { inland='null',inlandv2='null' }
@@ -1800,7 +1808,10 @@ function Eventing_onJoin(player)
 end
 function Eventing_onLeft(player)
 
-	-- INFO('Debug','call event -> onLeft ')
+	if isNull(player) then
+		return
+	end
+
 
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
@@ -1811,7 +1822,9 @@ function Eventing_onLeft(player)
 end
 function Eventing_onPlayerCmd(player,cmd)
 
-	-- INFO('Debug','call event -> onPlayerCmd ')
+	if isNull(player) then
+		return
+	end
 
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
@@ -2054,7 +2067,9 @@ function Eventing_onConsoleCmd(cmd)
 end
 function Eventing_onDestroyBlock(player,block)
 
-	-- INFO('Debug','call event -> onDestroyBlock')
+	if isNull(player) then
+		return
+	end
 
 	local xuid=player.xuid
 
@@ -2082,7 +2097,9 @@ function Eventing_onDestroyBlock(player,block)
 end
 function Eventing_onStartDestroyBlock(player,block)
 	
-	-- INFO('Debug','call event -> onStartDestroyBlock')
+	if isNull(player) then
+		return
+	end
 
 	local xuid = player.xuid
 	
@@ -2095,7 +2112,9 @@ function Eventing_onStartDestroyBlock(player,block)
 end
 function Eventing_onPlaceBlock(player,block)
 
-	-- INFO('Debug','call event -> onPlaceBlock')
+	if isNull(player) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
@@ -2111,7 +2130,9 @@ function Eventing_onPlaceBlock(player,block)
 end
 function Eventing_onUseItemOn(player,item,block)
 
-	-- INFO('Debug','call event -> onUseItemOn ')
+	if isNull(player) then
+		return
+	end
 
 	local IsConPlus=false
 	if not(ILAPI.CanControl(0,block.type)) then 
@@ -2161,7 +2182,9 @@ function Eventing_onUseItemOn(player,item,block)
 end
 function Eventing_onAttack(player,entity)
 	
-	-- INFO('Debug','call event -> onAttack')
+	if isNullX2(player,entity) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2186,7 +2209,9 @@ function Eventing_onAttack(player,entity)
 end
 function Eventing_onTakeItem(player,entity)
 
-	-- INFO('Debug','call event -> onTakeItem ')
+	if isNullX2(player,entity) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2202,7 +2227,9 @@ function Eventing_onTakeItem(player,entity)
 end
 function Eventing_onDropItem(player,item)
 
-	-- INFO('Debug','call event -> onDropItem ')
+	if isNull(player) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
@@ -2218,7 +2245,9 @@ function Eventing_onDropItem(player,item)
 end
 function Eventing_onBlockInteracted(player,block)
 
-	-- INFO('Debug','call event -> onBlockIteracted ')
+	if isNull(player) then
+		return
+	end
 
 	if not(ILAPI.CanControl(1,block.type)) then return end
 	local landId=ILAPI.PosGetLand(block.pos)
@@ -2256,7 +2285,9 @@ function Eventing_onBlockInteracted(player,block)
 end
 function Eventing_onUseFrameBlock(player,block)
 		
-	-- INFO('Debug','call event -> onUseFrameBlock ')
+	if isNull(player) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
@@ -2272,7 +2303,9 @@ function Eventing_onUseFrameBlock(player,block)
 end
 function Eventing_onSpawnProjectile(splasher,type)
 			
-	-- INFO('Debug','call event -> onSpawnProjectile')
+	if isNull(splasher) then
+		return
+	end
 
 	if splasher:toPlayer()==nil then return end
 	local landId=ILAPI.PosGetLand(formatPlayerPos(splasher.pos))
@@ -2300,7 +2333,9 @@ function Eventing_onSpawnProjectile(splasher,type)
 end
 function Eventing_onFireworkShootWithCrossbow(player)
 			
-	-- INFO('Debug','call event -> onFireworkShootWithCrossbow')
+	if isNull(player) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
 	if landId==-1 then return end -- No Land
@@ -2316,7 +2351,9 @@ function Eventing_onFireworkShootWithCrossbow(player)
 end
 function Eventing_onStepOnPressurePlate(entity,block)
 				
-	-- INFO('Debug','call event -> onStepOnPressurePlate')
+	if isNull(entity) then
+		return
+	end
 
 	local ispl=false
 	local player
@@ -2344,7 +2381,9 @@ function Eventing_onStepOnPressurePlate(entity,block)
 end
 function Eventing_onRide(rider,entity)
 				
-	-- INFO('Debug','call event -> onRide -> '..entity.type)
+	if isNullX2(rider,entity) then
+		return
+	end
 
 	if rider:toPlayer()==nil then return end
 
@@ -2369,9 +2408,6 @@ function Eventing_onRide(rider,entity)
 	return false
 end
 function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
-	
-	-- INFO('Debug','call event -> onWitherBossDestroy ')
-
 	local dimid = witherBoss.pos.dimid
 	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
 		landId=ILAPI.PosGetLand(pos)
@@ -2383,7 +2419,9 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 end
 function Eventing_onExplode(entity,pos)
 
-	-- INFO('Debug','call event -> onExplode ')
+	if isNull(entity) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2392,7 +2430,9 @@ function Eventing_onExplode(entity,pos)
 end
 function Eventing_onFarmLandDecay(pos,entity)
 	
-	-- INFO('Debug','call event -> onExplode ')
+	if isNull(entity) then
+		return
+	end
 
 	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
 	if landId==-1 then return end -- No Land
@@ -2400,18 +2440,12 @@ function Eventing_onFarmLandDecay(pos,entity)
 	return false
 end
 function Eventing_onPistonPush(pos,block)
-	
-	-- INFO('Debug','call event -> onPistonPush ')
-
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
 	return false
 end
 function Eventing_onFireSpread(pos)
-	
-	-- INFO('Debug','call event -> onFireSpread ')
-
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
@@ -2423,7 +2457,7 @@ function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
 		
-		if player==nil or player.pos==nil then -- i dont know why, i want know why???
+		if isNull(player) then
 			goto JUMPOUT_SIGN
 		end
 
@@ -2472,7 +2506,7 @@ function Tcb_ButtomSign()
 		local player=mc.getPlayer(xuid)
 		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		
-		if player==nil or player.pos==nil then -- i dont know why, i want know why???
+		if isNull(player) then
 			goto JUMPOUT_BUTTOM
 		end
 
