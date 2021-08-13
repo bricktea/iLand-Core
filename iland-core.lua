@@ -1793,11 +1793,6 @@ end
 
 -- Minecraft -> Eventing
 function Eventing_onJoin(player)
-
-	if isNull(player) then
-		return
-	end
-
 	local xuid = player.xuid
 	TRS_Form[xuid] = { inland='null',inlandv2='null' }
 
@@ -1806,12 +1801,16 @@ function Eventing_onJoin(player)
 		ILAPI.save()
 	end
 end
+function Eventing_onPreJoin(player)
+	if player.xuid=='' then -- no xuid
+		player:kick(_tr('talk.prejoin.noxuid'))
+	end
+end
 function Eventing_onLeft(player)
 
 	if isNull(player) then
 		return
 	end
-
 
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
@@ -2538,6 +2537,7 @@ end
 mc.listen('onPlayerCmd',Eventing_onPlayerCmd)
 mc.listen('onConsoleCmd',Eventing_onConsoleCmd)
 mc.listen('onJoin',Eventing_onJoin)
+mc.listen('onPreJoin',Eventing_onPreJoin)
 mc.listen('onLeft',Eventing_onLeft)
 mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
 mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
