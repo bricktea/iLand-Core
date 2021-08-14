@@ -1,5 +1,5 @@
 {
-    "VERSION": 224,
+    "VERSION": 225,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -231,6 +231,8 @@
     "talk.dim.one": "地狱",
     "talk.dim.two": "末地",
     "talk.dim.other": "其他维度",
+    "talk.prejoin.noxuid": "抱歉，加入使用iLand插件的服务器的玩家必须拥有XUID。",
+    "talk.gametype.creative": "检测到创造玩家 <a> ，一些控制项将对创造模式玩家失效。",
 
     "command.land": "领地系统主命令",
     "command.land_new": "创建一个新领地",
