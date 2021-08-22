@@ -1800,6 +1800,10 @@ function Eventing_onJoin(player)
 		land_owners[xuid] = {}
 		ILAPI.save()
 	end
+
+	if player.gameMode==1 then
+		ERROR(AIR.gsubEx(_tr('talk.gametype.creative'),'<a>',player.realName))
+	end
 end
 function Eventing_onPreJoin(player)
 	if player.xuid=='' then -- no xuid
@@ -2456,7 +2460,7 @@ function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
 		
-		if isNull(player) then
+		if isNullX2(player,player.pos) then
 			goto JUMPOUT_SIGN
 		end
 
@@ -2503,12 +2507,12 @@ end
 function Tcb_ButtomSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
-		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
-		
-		if isNull(player) then
+
+		if isNullX2(player,player.pos) then
 			goto JUMPOUT_BUTTOM
 		end
 
+		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
 		if landId==-1 then
 			goto JUMPOUT_BUTTOM
 		end
