@@ -885,15 +885,16 @@ end
 function BoughtProg_SelectRange(player,vec4,mode)
 	local xuid = player.xuid
     local NewData = newLand[xuid]
-    
+
     if NewData==nil then return end
     if mode==0 then -- point A
         if mode~=NewData.step then
 			sendText(player,_tr('title.selectrange.failbystep'));return
         end
+		NewData.posA = vec4
 		NewData.dimid = vec4.dimid
 		if NewData.dimension=='3D' then
-			NewData.posA.y=math.modf(vec4.y)
+			NewData.posA.y=vec4.y
 		else
 			NewData.posA.y=-64
 		end
@@ -918,8 +919,9 @@ function BoughtProg_SelectRange(player,vec4,mode)
         if vec4.dimid~=NewData.dimid then
 			sendText(player,_tr('title.selectrange.failbycdimid'));return
         end
+		NewData.posB = vec4
 		if NewData.dimension=='3D' then
-			NewData.posB.y=math.modf(vec4.y)
+			NewData.posB.y=vec4.y
 		else
 			NewData.posB.y=320
 		end
@@ -1673,7 +1675,8 @@ function formatGuid(guid)
     )
 end
 function FixBp(pos)
-	return {x=pos.x,y=pos.y-1,z=pos.z}
+	pos.y=pos.y-1
+	return pos
 end
 function did2dim(a)
 	if a==0 then return _tr('talk.dim.zero') end
@@ -1820,8 +1823,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	if opt[1] ~= MainCmd then return end
 
 	local xuid = player.xuid
-	local pos = player.blockPos
-	pos.y=pos.y-1
+	local pos = FixBp(player.blockPos)
 
 	-- [ ] Main Command
 	if opt[1] == MainCmd and opt[2]==nil then
