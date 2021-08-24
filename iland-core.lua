@@ -176,21 +176,20 @@ function buildUIBITable()
 		'minecraft:cauldron','minecraft:lever','minecraft:stone_button','minecraft:wooden_button',
 		'minecraft:spruce_button','minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
 		'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
-		'minecraft:polished_blackstone_button','minecraft:respawn_anchor'
+		'minecraft:polished_blackstone_button','minecraft:respawn_anchor','minecraft:trapdoor',
+		'minecraft:spruce_trapdoor','minecraft:birch_trapdoor','minecraft:jungle_trapdoor',
+		'minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor','minecraft:crimson_trapdoor',
+		'minecraft:warped_trapdoor','minecraft:fence_gate','minecraft:spruce_fence_gate',
+		'minecraft:birch_fence_gate','minecraft:jungle_fence_gate','minecraft:acacia_fence_gate',
+		'minecraft:dark_oak_fence_gate','minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
+		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door','minecraft:jungle_door',
+		'minecraft:acacia_door','minecraft:dark_oak_door','minecraft:crimson_door','minecraft:warped_door',
 	}
 	local blockInterTmp = {
 		'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
 		'minecraft:smoker','minecraft:brewing_stand','minecraft:anvil','minecraft:grindstone','minecraft:enchanting_table',
-		'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper',
-		'minecraft:dispenser','minecraft:loom','minecraft:trapdoor','minecraft:spruce_trapdoor','minecraft:birch_trapdoor',
-		'minecraft:jungle_trapdoor','minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor',
-		'minecraft:crimson_trapdoor','minecraft:warped_trapdoor','minecraft:fence_gate',
-		'minecraft:spruce_fence_gate','minecraft:birch_fence_gate','minecraft:jungle_fence_gate',
-		'minecraft:acacia_fence_gate','minecraft:dark_oak_fence_gate',
-		'minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
-		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door',
-		'minecraft:jungle_door','minecraft:acacia_door','minecraft:dark_oak_door',
-		'minecraft:crimson_door','minecraft:warped_door','minecraft:stonecutter_block'
+		'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper','minecraft:dispenser',
+		'minecraft:loom','minecraft:stonecutter_block'
 	}
 	local itemWlistTmp = {
 		'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
@@ -2184,6 +2183,9 @@ function Eventing_onUseItemOn(player,item,block)
 		if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 		if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
 		if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
+		if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+		if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
+		if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
 	end
 
 	sendText(player,_tr('title.landlimit.noperm'))
@@ -2272,9 +2274,6 @@ function Eventing_onBlockInteracted(player,block)
 
 	local perm = land_data[landId].permissions
 	local bn = block.type
-	if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
-	if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
-	if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
 	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
 	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
 	if bn == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
