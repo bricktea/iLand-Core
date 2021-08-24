@@ -442,9 +442,6 @@ function FORM_land_gui_name(player,data)
 	if data==nil then return end
 	
 	local landId=TRS_Form[player.xuid].landId
-	if AIR.isTextSpecial(data[1]) then
-		sendText(player,'FAILED');return
-	end
 	land_data[landId].settings.nickname=data[1]
 	ILAPI.save()
 	player:sendModalForm(
@@ -459,16 +456,6 @@ function FORM_land_gui_describe(player,data)
 	if data==nil then return end
 	
 	local landId=TRS_Form[player.xuid].landId
-	if AIR.isTextSpecial(AIR.gsubEx(
-		data[1],
-		'$','Y',
-		',','Y',
-		'.','Y',
-		'!','Y'
-	))
-	then
-		sendText(player,'FAILED');return
-	end
 	land_data[landId].settings.describe=data[1]
 	ILAPI.save()
 	player:sendModalForm(
