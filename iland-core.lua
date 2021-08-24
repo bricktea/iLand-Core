@@ -909,7 +909,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		if NewData.dimension=='3D' then
 			NewData.posA.y=math.modf(vec4.y)
 		else
-			NewData.posA.y=0
+			NewData.posA.y=-64
 		end
 		NewData.posA.z=math.modf(vec4.z)
         sendText(
@@ -937,7 +937,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		if NewData.dimension=='3D' then
 			NewData.posB.y=math.modf(vec4.y)
 		else
-			NewData.posB.y=255
+			NewData.posB.y=320
 		end
 		NewData.posB.z=math.modf(vec4.z)
         sendText(
@@ -1508,7 +1508,7 @@ function ILAPI.IsLandOperator(xuid)
 	end
 end
 function ILAPI.GetLandDimension(landId)
-	if land_data[landId].range.start_position[2]==0 and land_data[landId].range.end_position[2]==255 then
+	if land_data[landId].range.start_position[2]==-64 and land_data[landId].range.end_position[2]==320 then
 		return '2D'
 	else
 		return '3D'
@@ -2884,6 +2884,16 @@ mc.listen('onServerStarted',function()
 				land_data[landId].permissions.use_bucket=false
 			end
 			ILAPI.save()
+		end
+		if cfg.version==224 then
+			cfg.verison=230
+			for landId,data in pairs(land_data) do
+				if data.range.start_position.y==0 and data.range.end_position.y==255 then
+					land_data[landId].range.start_position.y=-64
+					land_data[landId].range.start_position.y=320
+				end
+			end
+			--ILAPI.save()
 		end
 	end
 	
