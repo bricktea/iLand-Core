@@ -165,87 +165,85 @@ function buildUIBITable()
 	CanCtlMap[1] = {} -- onBlockInteracted
 	CanCtlMap[2] = {} -- ItemWhiteList
 	CanCtlMap[3] = {} -- AttackWhiteList
+	CanCtlMap[4] = {} -- EntityTypeList
+	CanCtlMap[4].animals = {}
+	CanCtlMap[4].mobs = {}
 	local useItemTmp = {
-		'minecraft:bed',
-		'minecraft:chest',
-		'minecraft:trapped_chest',
-		'minecraft:crafting_table',
-		'minecraft:campfire',
-		'minecraft:soul_campfire',
-		'minecraft:composter',
-		'minecraft:undyed_shulker_box',
-		'minecraft:shulker_box',
-		'minecraft:noteblock',
-		'minecraft:jukebox',
-		'minecraft:bell',
-		'minecraft:daylight_detector_inverted',
-		'minecraft:daylight_detector',
-		'minecraft:lectern',
-		'minecraft:cauldron',
-		'minecraft:lever',
-		'minecraft:stone_button','minecraft:wooden_button','minecraft:spruce_button',
-		'minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
+		'minecraft:bed','minecraft:chest','minecraft:trapped_chest','minecraft:crafting_table',
+		'minecraft:campfire','minecraft:soul_campfire','minecraft:composter','minecraft:undyed_shulker_box',
+		'minecraft:shulker_box','minecraft:noteblock','minecraft:jukebox','minecraft:bell',
+		'minecraft:daylight_detector_inverted','minecraft:daylight_detector','minecraft:lectern',
+		'minecraft:cauldron','minecraft:lever','minecraft:stone_button','minecraft:wooden_button',
+		'minecraft:spruce_button','minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
 		'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
-		'minecraft:polished_blackstone_button',
-		'minecraft:respawn_anchor'
+		'minecraft:polished_blackstone_button','minecraft:respawn_anchor'
 	}
 	local blockInterTmp = {
-		'minecraft:cartography_table',
-		'minecraft:smithing_table',
-		'minecraft:furnace',
-		'minecraft:blast_furnace',
-		'minecraft:smoker',
-		'minecraft:brewing_stand',
-		'minecraft:anvil',
-		'minecraft:grindstone',
-		'minecraft:enchanting_table',
-		'minecraft:barrel',
-		'minecraft:beacon',
-		'minecraft:hopper',
-		'minecraft:dropper',
-		'minecraft:dispenser',
-		'minecraft:loom',
-		'minecraft:trapdoor','minecraft:spruce_trapdoor','minecraft:birch_trapdoor',
+		'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
+		'minecraft:smoker','minecraft:brewing_stand','minecraft:anvil','minecraft:grindstone','minecraft:enchanting_table',
+		'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper',
+		'minecraft:dispenser','minecraft:loom','minecraft:trapdoor','minecraft:spruce_trapdoor','minecraft:birch_trapdoor',
 		'minecraft:jungle_trapdoor','minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor',
-		'minecraft:crimson_trapdoor','minecraft:warped_trapdoor',
-		'minecraft:fence_gate','minecraft:spruce_fence_gate','minecraft:birch_fence_gate',
-		'minecraft:jungle_fence_gate','minecraft:acacia_fence_gate','minecraft:dark_oak_fence_gate',
+		'minecraft:crimson_trapdoor','minecraft:warped_trapdoor','minecraft:fence_gate',
+		'minecraft:spruce_fence_gate','minecraft:birch_fence_gate','minecraft:jungle_fence_gate',
+		'minecraft:acacia_fence_gate','minecraft:dark_oak_fence_gate',
 		'minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
 		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door',
 		'minecraft:jungle_door','minecraft:acacia_door','minecraft:dark_oak_door',
-		'minecraft:crimson_door','minecraft:warped_door',
-		'minecraft:stonecutter_block'
+		'minecraft:crimson_door','minecraft:warped_door','minecraft:stonecutter_block'
 	}
 	local itemWlistTmp = {
-		'minecraft:glow_ink_sac',
-		'minecraft:end_crystal',
-		'minecraft:ender_eye',
-		'minecraft:axolotl_bucket',
-		'minecraft:powder_snow_bucket',
-		'minecraft:pufferfish_bucket',
-		'minecraft:tropical_fish_bucket',
-		'minecraft:salmon_bucket',
-		'minecraft:cod_bucket',
-		'minecraft:water_bucket',
-		'minecraft:cod_bucket',
-		'minecraft:lava_bucket',
-		'minecraft:bucket'
+		'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
+		'minecraft:powder_snow_bucket','minecraft:pufferfish_bucket','minecraft:tropical_fish_bucket',
+		'minecraft:salmon_bucket','minecraft:cod_bucket','minecraft:water_bucket','minecraft:cod_bucket',
+		'minecraft:lava_bucket','minecraft:bucket'
 	}
 	local attackwlistTmp = {
-		'minecraft:ender_crystal',
-		'minecraft:armor_stand'
+		'minecraft:ender_crystal','minecraft:armor_stand'
+	}
+	local animals = {
+		'minecraft:axolotl','minecraft:bat','minecraft:cat','minecraft:chicken',
+		'minecraft:cod','minecraft:cow','minecraft:donkey','minecraft:fox',
+		'minecraft:glow_squid','minecraft:horse','minecraft:mooshroom','minecraft:mule',
+		'minecraft:ocelot','minecraft:parrot','minecraft:pig','minecraft:rabbit',
+		'minecraft:salmon','minecraft:snow_golem','minecraft:sheep','minecraft:skeleton_horse',
+		'minecraft:squid','minecraft:strider','minecraft:tropical_fish','minecraft:turtle',
+		'minecraft:villager_v2','minecraft:wandering_trader','minecraft:npc' -- npc not animal? hengaaaaaaaa~
+	}
+	local mobs = {
+		-- type A
+		'minecraft:pufferfish','minecraft:bee','minecraft:dolphin','minecraft:goat',
+		'minecraft:iron_golem','minecraft:llama','minecraft:llama_spit','minecraft:wolf',
+		'minecraft:panda','minecraft:polar_bear','minecraft:enderman','minecraft:piglin',
+		'minecraft:spider','minecraft:cave_spider','minecraft:zombie_pigman',
+		-- type B
+		'minecraft:blaze','minecraft:small_fireball','minecraft:creeper','minecraft:drowned',
+		'minecraft:elder_guardian','minecraft:endermite','minecraft:evocation_illager','minecraft:evocation_fang',
+		'minecraft:ghast','minecraft:fireball','minecraft:guardian','minecraft:hoglin',
+		'minecraft:husk','minecraft:magma_cube','minecraft:phantom','minecraft:pillager',
+		'minecraft:ravager','minecraft:shulker','minecraft:shulker_bullet','minecraft:silverfish',
+		'minecraft:skeleton','minecraft:skeleton_horse','minecraft:slime','minecraft:vex',
+		'minecraft:vindicator','minecraft:witch','minecraft:wither_skeleton','minecraft:zoglin',
+		'minecraft:zombie','minecraft:zombie_villager_v2','minecraft:piglin_brute','minecraft:ender_dragon',
+		'minecraft:dragon_fireball','minecraft:wither','minecraft:wither_skull','minecraft:wither_skull_dangerous'
 	}
 	for n,uitem in pairs(useItemTmp) do
-		CanCtlMap[0][uitem] = { 'E' }
+		CanCtlMap[0][uitem] = { true }
 	end
 	for n,bint in pairs(blockInterTmp) do
-		CanCtlMap[1][bint] = { 'E' }
+		CanCtlMap[1][bint] = { true }
 	end
 	for n,iwl in pairs(itemWlistTmp) do
-		CanCtlMap[2][iwl] = { 'E' }
+		CanCtlMap[2][iwl] = { true }
 	end
-		for n,awt in pairs(attackwlistTmp) do
-		CanCtlMap[3][awt] = { 'E' }
+	for n,awt in pairs(attackwlistTmp) do
+		CanCtlMap[3][awt] = { true }
+	end
+	for n,anis in pairs(animals) do
+		CanCtlMap[4].animals[anis] = { true }
+	end
+	for n,mons in pairs(mobs) do
+		CanCtlMap[4].mobs[mons] = { true }
 	end
 end
 function buildAnyMap()
@@ -340,48 +338,50 @@ function FORM_land_gui_perm(player,data)
 	perm.allow_ride_entity = data[5]
 	perm.allow_ride_trans = data[6]
 	perm.allow_shoot = data[7]
-	perm.allow_attack = data[8]
+	perm.allow_attack_player = data[8]
+	perm.allow_attack_animal = data[9]
+	perm.allow_attack_mobs = data[10]
 
-	perm.use_crafting_table = data[9]
-	perm.use_furnace = data[10]
-	perm.use_blast_furnace = data[11]
-	perm.use_smoker = data[12]
-	perm.use_brewing_stand = data[13]
-	perm.use_cauldron = data[14]
-	perm.use_anvil = data[15]
-	perm.use_grindstone = data[16]
-	perm.use_enchanting_table = data[17]
-	perm.use_cartography_table = data[18]
-	perm.use_smithing_table = data[19]
-	perm.use_loom = data[20]
-	perm.use_stonecutter = data[21]
-	perm.use_beacon = data[22]
+	perm.use_crafting_table = data[11]
+	perm.use_furnace = data[12]
+	perm.use_blast_furnace = data[13]
+	perm.use_smoker = data[14]
+	perm.use_brewing_stand = data[15]
+	perm.use_cauldron = data[16]
+	perm.use_anvil = data[17]
+	perm.use_grindstone = data[18]
+	perm.use_enchanting_table = data[19]
+	perm.use_cartography_table = data[20]
+	perm.use_smithing_table = data[21]
+	perm.use_loom = data[22]
+	perm.use_stonecutter = data[23]
+	perm.use_beacon = data[24]
 	
-	perm.use_barrel = data[23]
-	perm.use_hopper = data[24]
-	perm.use_dropper = data[25]
-	perm.use_dispenser = data[26]
-	perm.use_shulker_box = data[27]
-	perm.allow_open_chest = data[28]
+	perm.use_barrel = data[25]
+	perm.use_hopper = data[26]
+	perm.use_dropper = data[27]
+	perm.use_dispenser = data[28]
+	perm.use_shulker_box = data[29]
+	perm.allow_open_chest = data[30]
 	
-	perm.use_campfire = data[29]
-	perm.use_door = data[30]
-	perm.use_trapdoor = data[31]
-	perm.use_fence_gate = data[32]
-	perm.use_bell = data[33]
-	perm.use_jukebox = data[34]
-	perm.use_noteblock = data[35]
-	perm.use_composter = data[36]
-	perm.use_bed = data[37]
-	perm.use_item_frame = data[38]
-	perm.use_daylight_detector = data[39]
-	perm.use_lever = data[40]
-	perm.use_button = data[41]
-	perm.use_pressure_plate = data[42]
-	perm.allow_throw_potion = data[43]
-	perm.use_respawn_anchor = data[44]
-	perm.use_fishing_hook = data[45]
-	perm.use_bucket = data[46]
+	perm.use_campfire = data[31]
+	perm.use_door = data[32]
+	perm.use_trapdoor = data[33]
+	perm.use_fence_gate = data[34]
+	perm.use_bell = data[35]
+	perm.use_jukebox = data[36]
+	perm.use_noteblock = data[37]
+	perm.use_composter = data[38]
+	perm.use_bed = data[39]
+	perm.use_item_frame = data[40]
+	perm.use_daylight_detector = data[41]
+	perm.use_lever = data[42]
+	perm.use_button = data[43]
+	perm.use_pressure_plate = data[44]
+	perm.allow_throw_potion = data[45]
+	perm.use_respawn_anchor = data[46]
+	perm.use_fishing_hook = data[47]
+	perm.use_bucket = data[48]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -571,7 +571,9 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.ride_entity'),perm.allow_ride_entity)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.ride_trans'),perm.allow_ride_trans)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.shoot'),perm.allow_shoot)
-		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack'),perm.allow_attack)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack_player'),perm.allow_attack_player)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack_animal'),perm.allow_attack_animal)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.attack_mobs'),perm.allow_attack_mobs)
 		Form:addLabel(_tr('gui.landmgr.landperm.funcblock_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.crafting_table'),perm.use_crafting_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.furnace'),perm.use_furnace)
@@ -1294,10 +1296,12 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	-- Land permission
 	perm.allow_destroy=false
 	perm.allow_place=false
-	perm.allow_attack=false
+	perm.allow_attack_player=false
+	perm.allow_attack_animal=false
+	perm.allow_attack_mobs=true
 	perm.allow_open_chest=false
 	perm.allow_pickupitem=false
-	perm.allow_dropitem=false
+	perm.allow_dropitem=true
 	perm.use_anvil = false
 	perm.use_barrel = false
 	perm.use_beacon = false
@@ -1768,6 +1772,18 @@ end
 function isNullX2(val,val2)
 	return (val == nil) or (val2 == nil)
 end
+function getEntityType(type)
+	if type=='minecraft:player' then
+		return 0
+	end
+	if CanCtlMap[4].animals[type]~=nil then
+		return 1
+	end
+	if CanCtlMap[4].mobs[type]~=nil then
+		return 2
+	end
+	return 0
+end
 
 -- log system
 function INFO(type,content)
@@ -2187,11 +2203,14 @@ function Eventing_onAttack(player,entity)
 	local en=entity.type
 	local IsConPlus = false
 	if ILAPI.CanControl(3,en) then IsConPlus=true end
+	local entityType = getEntityType(entity.type)
 	if IsConPlus then
 		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
 		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
 	else
-		if perm.allow_attack then return end -- Perm Allow
+		if perm.allow_attack_player and entityType==0 then return end -- Perm Allow
+		if perm.allow_attack_animal and entityType==1 then return end
+		if perm.allow_attack_mobs and entityType==2 then return end
 	end
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
