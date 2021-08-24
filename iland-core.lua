@@ -1455,11 +1455,18 @@ function ILAPI.GetEdge(landId)
 	return EdgeMap[landId].D3D
 end
 function ILAPI.GetDistence(landId,vec4)
+	if ILAPI.PosGetLand(vec4)==landId then
+		return 0.0
+	end
+
 	function pow(num)
 		return num*num
 	end
 	function EucM(A,B) -- 2D
 		return math.sqrt(pow(B.x-A.x)+pow(B.z-A.z))
+	end
+	function IsInRange(num,range)
+		return (num >= range[1]) and (num <= range[2])
 	end
 
 	local edge = EdgeMap[landId].D2D
@@ -1470,7 +1477,11 @@ function ILAPI.GetDistence(landId,vec4)
 			depos = { pos,euc }
 		end
 	end
-	if ILAPI.GetLandDimension(landId)=='2D' then
+
+	if isPosInCube_2D(vec4,VecMap[landId].a,VecMap[landId].b) then
+		return math.min(math.abs(VecMap[landId].a.y-vec4.y),math.abs(VecMap[landId].b.y-vec4.y))
+	end
+	if ILAPI.GetLandDimension(landId)=='2D' or IsInRange(vec4.y,{VecMap[landId].a.y,VecMap[landId].b.y}) then
 		return depos[2]
 	end
 	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-VecMap[landId].a.y),math.abs(vec4.y-VecMap[landId].b.y))))
@@ -1603,12 +1614,20 @@ function sendText(player,text,mode)
 		return
 	end
 end
-function isPosInCube(pos,posA,posB)
+function isPosInCube(pos,posA,posB) -- 3D
 	if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x) then
 		if (pos.y>=posA.y and pos.y<=posB.y) or (pos.y<=posA.y and pos.y>=posB.y) then
 			if (pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z) then
 				return true
 			end
+		end
+	end
+	return false
+end
+function isPosInCube_2D(pos,posA,posB) -- 2D
+	if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x) then
+		if (pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z) then
+			return true
 		end
 	end
 	return false
@@ -2454,7 +2473,7 @@ function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
 		
-		if isNullX2(player,player.pos) then
+		if isNull(player) then
 			goto JUMPOUT_SIGN
 		end
 
@@ -2502,7 +2521,7 @@ function Tcb_ButtomSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
 
-		if isNullX2(player,player.pos) then
+		if isNull(player) then
 			goto JUMPOUT_BUTTOM
 		end
 
