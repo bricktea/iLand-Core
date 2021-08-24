@@ -1366,6 +1366,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	updateVecMap(landId,'add')
 	updateLandOwnersMap(landId)
 	updateLandTrustMap(landId)
+	updateEdgeMap(landId,'add')
 	return landId
 end
 function ILAPI.DeleteLand(landId)
@@ -1454,7 +1455,25 @@ function ILAPI.GetEdge(landId)
 	return EdgeMap[landId].D3D
 end
 function ILAPI.GetDistence(landId,vec4)
+	function pow(num)
+		return num*num
+	end
+	function EucM(A,B) -- 2D
+		return math.sqrt(pow(B.x-A.x)+pow(B.z-A.z))
+	end
 
+	local edge = EdgeMap[landId].D2D
+	local depos = { edge[1],EucM(edge[1],vec4) }
+	for i,pos in pairs(edge) do
+		local euc = EucM(pos,vec4)
+		if euc<depos[2] then
+			depos = { pos,euc }
+		end
+	end
+	if ILAPI.GetLandDimension(landId)=='2D' then
+		return depos[2]
+	end
+	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-VecMap[landId].a.y),math.abs(vec4.y-VecMap[landId].b.y))))
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if LandTrustedMap[landId][xuid]==nil then
@@ -1801,6 +1820,8 @@ function Eventing_onPlayerCmd(player,cmd)
 	if isNull(player) then
 		return
 	end
+
+	print(ILAPI.GetDistence('354bfd33-f26b-4fa0-8d4d-2c84fc8d2570',player.pos))	
 
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
