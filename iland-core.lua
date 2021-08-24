@@ -892,13 +892,11 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			sendText(player,_tr('title.selectrange.failbystep'));return
         end
 		NewData.dimid = vec4.dimid
-		NewData.posA.x=math.modf(vec4.x) --省函数...
 		if NewData.dimension=='3D' then
 			NewData.posA.y=math.modf(vec4.y)
 		else
 			NewData.posA.y=-64
 		end
-		NewData.posA.z=math.modf(vec4.z)
         sendText(
 			player,
 			AIR.gsubEx(
@@ -920,13 +918,11 @@ function BoughtProg_SelectRange(player,vec4,mode)
         if vec4.dimid~=NewData.dimid then
 			sendText(player,_tr('title.selectrange.failbycdimid'));return
         end
-		NewData.posB.x=math.modf(vec4.x)
 		if NewData.dimension=='3D' then
 			NewData.posB.y=math.modf(vec4.y)
 		else
 			NewData.posB.y=320
 		end
-		NewData.posB.z=math.modf(vec4.z)
         sendText(
 			player,
 			AIR.gsubEx(
@@ -1063,7 +1059,7 @@ function GUI_LMgr(player)
 	end
 
 	local welcomeText=_tr('gui.landmgr.content')
-	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
 
 	if landId~=-1 then
 		welcomeText = welcomeText..AIR.gsubEx(
@@ -1103,7 +1099,7 @@ function GUI_OPLMgr(player)
 	-- build land_list
 	local landlst={}
 	local land_default=0
-	local lid=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+	local lid=ILAPI.PosGetLand(FixBp(player.blockPos))
 	for i,v in pairs(land_data) do
 		local thisOwner=ILAPI.GetOwner(i)
 		if thisOwner~='?' then thisOwner=GetIdFromXuid(thisOwner) else thisOwner='?' end
@@ -1676,15 +1672,8 @@ function formatGuid(guid)
         string.sub(guid,21,32)
     )
 end
-function formatPlayerPos(pos)
-	local p={}
-	p.x=math.floor(pos.x)
-	p.y=math.floor(pos.y)
-	p.z=math.floor(pos.z)
-	if pos.dimid~=nil then
-		p.dimid=pos.dimid
-	end
-	return p
+function FixBp(pos)
+	return {x=pos.x,y=pos.y-1,z=pos.z}
 end
 function did2dim(a)
 	if a==0 then return _tr('talk.dim.zero') end
@@ -1827,13 +1816,12 @@ function Eventing_onPlayerCmd(player,cmd)
 		return
 	end
 
-	print(ILAPI.GetDistence('354bfd33-f26b-4fa0-8d4d-2c84fc8d2570',player.pos))	
-
 	local opt = AIR.split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
 	local xuid = player.xuid
-	local pos = formatPlayerPos(player.pos)
+	local pos = player.blockPos
+	pos.y=pos.y-1
 
 	-- [ ] Main Command
 	if opt[1] == MainCmd and opt[2]==nil then
@@ -2189,7 +2177,7 @@ function Eventing_onAttack(player,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -2216,7 +2204,7 @@ function Eventing_onTakeItem(player,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -2234,7 +2222,7 @@ function Eventing_onDropItem(player,item)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -2311,7 +2299,7 @@ function Eventing_onSpawnProjectile(splasher,type)
 	end
 
 	if splasher:toPlayer()==nil then return end
-	local landId=ILAPI.PosGetLand(formatPlayerPos(splasher.pos))
+	local landId=ILAPI.PosGetLand(FixBp(splasher.blockPos))
 	if landId==-1 then return end -- No Land
 
 	local player=splasher:toPlayer()
@@ -2340,7 +2328,7 @@ function Eventing_onFireworkShootWithCrossbow(player)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -2369,7 +2357,7 @@ function Eventing_onStepOnPressurePlate(entity,block)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
 	if landId==-1 then return end -- No Land
 	
 	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
@@ -2390,7 +2378,7 @@ function Eventing_onRide(rider,entity)
 
 	if rider:toPlayer()==nil then return end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(rider.pos))
+	local landId=ILAPI.PosGetLand(FixBp(rider.blockPos))
 	if landId==-1 then return end -- No Land 
 
 	local player=rider:toPlayer()
@@ -2426,7 +2414,7 @@ function Eventing_onExplode(entity,pos)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
@@ -2437,7 +2425,7 @@ function Eventing_onFarmLandDecay(pos,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(formatPlayerPos(entity.pos))
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
@@ -2465,7 +2453,7 @@ function Tcb_LandSign()
 		end
 
 		local xuid = player.xuid
-		local landId=ILAPI.PosGetLand(formatPlayerPos(player.pos))
+		local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
 		if landId==-1 then TRS_Form[xuid].inland='null';goto JUMPOUT_SIGN end -- no land here
 		if landId==TRS_Form[xuid].inland then goto JUMPOUT_SIGN end -- signed
 
@@ -2512,7 +2500,7 @@ function Tcb_ButtomSign()
 			goto JUMPOUT_BUTTOM
 		end
 
-		local landId = ILAPI.PosGetLand(formatPlayerPos(player.pos))
+		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
 		if landId==-1 then
 			goto JUMPOUT_BUTTOM
 		end
@@ -2572,7 +2560,7 @@ function enableParticles()
 end
 function DEBUG_LANDQUERY()
 	if debug_landquery==nil then return end
-	local pos = formatPlayerPos(debug_landquery.pos)
+	local pos = FixBp(debug_landquery.blockPos)
 	local landId=ILAPI.PosGetLand(pos)
 	local N = ILAPI.GetChunk(pos,pos.dimid)
 	local Cx,Cz = pos2chunk(pos)
