@@ -5,10 +5,10 @@
 --  | || |__| (_| | | | | (_| |  ~ License  GPLv3 未经许可禁止商用  ~
 -- |___|_____\__,_|_| |_|\__,_|  ~ ------------------------------- ~
 -- ——————————————————————————————————————————————————————————————————
-plugin_version = '2.25'
+plugin_version = '2.30'
 DEV_MODE = true
 
-langVer = 225
+langVer = 230
 minAirVer = 220
 minLXLVer = {0,4,3}
 
@@ -25,6 +25,45 @@ if DEV_MODE then
 	data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 end
 
+-- something preload
+function cubeGetEdge(spos,epos)
+	local edge={}
+	local posB,posA = fmCube(spos,epos)
+	for i=1,math.abs(posA.x-posB.x)+1 do
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
+	end
+	for i=1,math.abs(posA.y-posB.y)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posA.z }
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posA.z }
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
+	end
+	return edge
+end
+function cubeGetEdge_2D(spos,epos)
+	local edge={}
+	local posB,posA = fmCube(spos,epos)
+	for i=1,math.abs(posA.x-posB.x)+1 do
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+	end
+	return edge
+end
+
+-- map builder
 function updateChunk(landId,mode)
 	local TxTz={}
 	local dimid = land_data[landId].range.dimid
@@ -105,6 +144,19 @@ function updateLandOperatorsMap()
 	LandOperatorsMap = {}
 	for n,xuid in pairs(cfg.manager.operator) do
 		LandOperatorsMap[xuid]={}
+	end
+end
+function updateEdgeMap(landId,mode)
+	if mode=='del' then
+		EdgeMap[landId]=nil
+		return
+	end
+	if mode=='add' then
+		EdgeMap[landId]={}
+		local spos = AIR.pos2vec(land_data[landId].range.start_position)
+		local epos = AIR.pos2vec(land_data[landId].range.end_position)
+		EdgeMap[landId].D2D = cubeGetEdge_2D(spos,epos)
+		EdgeMap[landId].D3D = cubeGetEdge(spos,epos)
 	end
 end
 function buildUIBITable()
@@ -196,29 +248,20 @@ function buildUIBITable()
 		CanCtlMap[3][awt] = { 'E' }
 	end
 end
-function buildChunks()
-	ChunkMap={}
-
-	ChunkMap[0] = {} -- 主世界
-	ChunkMap[1] = {} -- 地狱
-	ChunkMap[2] = {} -- 末地
-
-	for landId,data in pairs(land_data) do
-		updateChunk(landId,'add')
-	end
-end
-function buildVecMap()
+function buildAnyMap()
+	EdgeMap={}
 	VecMap={}
-	for landId,data in pairs(land_data) do
-		updateVecMap(landId,'add')
-	end
-end
-function buildLTOPMap()
-	-- LTOP = Land Trust|Owners|Operator
 	LandTrustedMap={}
 	LandOwnersMap={}
 	LandOperatorsMap={}
+	ChunkMap={}
+	ChunkMap[0] = {} -- 主世界
+	ChunkMap[1] = {} -- 地狱
+	ChunkMap[2] = {} -- 末地
 	for landId,data in pairs(land_data) do
+		updateEdgeMap(landId,'add')
+		updateVecMap(landId,'add')
+		updateChunk(landId,'add')
 		updateLandTrustMap(landId)
 		updateLandOwnersMap(landId)
 	end
@@ -976,7 +1019,7 @@ function BoughtProg_CreateOrder(player)
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
 		if land_data[landId].range.dimid==NewData.dimid then
-			edge=cubeGetEdge(VecMap[landId].a,VecMap[landId].b)
+			edge=EdgeMap[landId].D3D
 			for i=1,#edge do
 				if isPosInCube(edge[i],NewData.posA,NewData.posB)==true then
 					sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
@@ -1326,16 +1369,13 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	return landId
 end
 function ILAPI.DeleteLand(landId)
-	if land_data[landId]==nil then
-		return false
-	end
-
 	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
 		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landId))
 	end
 	updateChunk(landId,'del')
 	updateVecMap(landId,'del')
+	updateEdgeMap(landId,'del')
 	land_data[landId]=nil
 	ILAPI.save()
 	return true
@@ -1411,41 +1451,7 @@ function ILAPI.GetTpPoint(landId) --return vec4
 	return AIR.pos2vec(i)
 end
 function ILAPI.GetDistence(landId,vec4)
-	-- 设计思路：先索引XZ，再判Y
-	--[[
-	function DoPT(a,b)
-	
-	end
 
-	local pos = formatPlayerPos(vec4)
-	if ILAPI.PosGetLand(pos)==landId then
-		return 0
-	end
-	
-	local edges = cubeGetEdge_2D(VecMap[landId].a,VecMap[landId].b)
-	]]
-	
-	if true then -- // 未完成 //
-		return 0
-	end
-	-- local edges = cubeGetEdge_2D({x=,y=,z=},{x=,y=,z=})
-	local sameXZ = {}
-
-	local ops_posx = 0-pos.z -- 考虑相反数
-	local ops_posz = 0-poz.z
-	for n,ep in pairs(edges) do
-		if ep.x==pos.x or ep.x==ops_posx or ep.z==pos.z or ep.z==ops_posz then
-			sameXZ[#sameXZ+1]=ep
-			if #sameXZ==2 then
-				break
-			end
-		end
-	end -- 筛出2个符合要求的坐标
-
-	for i,v in pairs(sameXZ) do
-		print(v.x,v.y,v.z)
-	end
-	
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if LandTrustedMap[landId][xuid]==nil then
@@ -1574,42 +1580,6 @@ function sendText(player,text,mode)
 		player:sendText('§l§b[§a LAND §b] §r'..text)
 		return
 	end
-end
-function cubeGetEdge(spos,epos)
-	local edge={}
-	local posB,posA = fmCube(spos,epos)
-	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
-	end
-	for i=1,math.abs(posA.y-posB.y)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posA.z }
-		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posB.z }
-		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posB.z }
-		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posA.z }
-	end
-	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
-	end
-	return edge
-end
-function cubeGetEdge_2D(spos,epos)
-	local edge={}
-	local posB,posA = fmCube(spos,epos)
-	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
-	end
-	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
-	end
-	return edge
 end
 function isPosInCube(pos,posA,posB)
 	if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x) then
@@ -2880,9 +2850,7 @@ mc.listen('onServerStarted',function()
 		throwErr(-4)
 	end
 	-- Build maps
-	buildChunks()
-	buildVecMap()
-	buildLTOPMap()
+	buildAnyMap()
 
 	-- Make timer
 	if cfg.features.landSign then
