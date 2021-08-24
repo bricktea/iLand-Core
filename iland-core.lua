@@ -1450,6 +1450,9 @@ function ILAPI.GetTpPoint(landId) --return vec4
 	i[4] = land_data[landId].range.dimid
 	return AIR.pos2vec(i)
 end
+function ILAPI.GetEdge(landId)
+	return EdgeMap[landId].D3D
+end
 function ILAPI.GetDistence(landId,vec4)
 
 end
@@ -2906,6 +2909,7 @@ lxl.export(ILAPI.GetLandDimension,'ILAPI_GetLandDimension')
 lxl.export(ILAPI.GetLand,'ILAPI_GetLand')
 lxl.export(ILAPI.UpdatePermission,'ILAPI_UpdatePermission')
 lxl.export(ILAPI.UpdateSetting,'ILAPI_UpdateSetting')
+lxl.export(ILAPI.GetEdge,"ILAPI_GetEdge")
 lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
 
 INFO('Powerful land plugin is loaded! Ver-'..plugin_version..',')
