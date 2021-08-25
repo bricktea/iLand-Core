@@ -4,7 +4,8 @@
  - [x] 二维领地适配洞穴更新（-64~320）
  - [x] landname允许其他符号
  - [x] 修复无法拦截活板门与栏栅门
- - [ ] land op使用玩家名，允许游戏内op操作
+ - [x] land op使用玩家名
+ - [x] 删除`land test`，`land update`
  - [ ] 优化landtp（错误提示窒息）
  - [ ] 领地过户/添加信任GUI支持分页
  - [ ] 修改领地管理器逻辑
@@ -12,8 +13,8 @@
  - [ ] 其他维度圈地开关
  - [ ] dropitem控制开关
  - [ ] ButtomSign开关（LMgr）
- - [ ] 重建ILAPI
- - [ ] LXL0.4.6
+ - [x] 重建ILAPI
+ - [ ] LXL0.4.6 SCOREBOARD
  - [ ] 使用LXL更新服务
  - [ ] 整合landtp与landpoint进landmgr
  - [x] 创造检测，无XUID玩家检测

@@ -9,7 +9,7 @@ plugin_version = '2.30'
 DEV_MODE = true
 
 langVer = 230
-minAirVer = 220
+minAirVer = 230
 minLXLVer = {0,4,3}
 
 AIR = require('airLibs')
@@ -525,7 +525,7 @@ function FORM_land_gui(player,data,lid)
 					'<a>',GetIdFromXuid(ILAPI.GetOwner(landId)),
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
-					'<d>',ILAPI.GetLandDimension(landId),
+					'<d>',ILAPI.GetDimension(landId),
 					'<e>',did2dim(dpos.dimid),
 					'<f>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
 					'<g>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
@@ -677,7 +677,7 @@ function FORM_land_gui(player,data,lid)
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
 		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
-		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height,ILAPI.GetLandDimension(landId))*cfg.land_buy.refund_rate)
+		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height,ILAPI.GetDimension(landId))*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_tr('gui.delland.title'),
 			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',cfg.money.credit_name),
@@ -1084,7 +1084,7 @@ function GUI_LMgr(player)
 
 	local lands={}
 	for i,v in pairs(thelands) do
-		local f='§l'..ILAPI.GetLandDimension(v)..'§r '..ILAPI.GetNickname(v,true)
+		local f='§l'..ILAPI.GetDimension(v)..'§r '..ILAPI.GetNickname(v,true)
 		lands[i]=f
 	end
 
@@ -1247,7 +1247,12 @@ function GUI_FastMgr(player,isOP)
 	player:sendForm(Form,FORM_land_fast)
 end
 
--- ILAPI
+-- +-+ +-+ +-+ +-+ +-+
+-- |I| |L| |A| |P| |I|
+-- +-+ +-+ +-+ +-+ +-+
+-- Exported Apis Here!
+
+-- [[ KERNEL ]]
 function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	local landId
 	while true do
@@ -1369,52 +1374,6 @@ function ILAPI.DeleteLand(landId)
 	ILAPI.save()
 	return true
 end
-function ILAPI.GetLand(landId)
-	if land_data[landId]==nil then
-		return ''
-	end
-	return AIR.deepcopy(land_data[landId])
-end
-function ILAPI.UpdatePermission(landId,perm,value)
-	if land_data[landId]==nil or land_data[landId].permissions[perm]==nil or (value~=true and value~=false) then
-		return false
-	end
-	land_data[landId].permissions[perm]=value
-	ILAPI.save()
-	return true
-end
-function ILAPI.UpdateSetting(landId,cfgname,value)
-	if land_data[landId]==nil or land_data[landId].settings[cfgname]==nil or value==nil then
-		return false
-	end
-	land_data[landId].settings[cfgname]=value
-	ILAPI.save()
-	return true
-end
-function ILAPI.GetPlayerLands(xuid)
-	return AIR.deepcopy(land_owners[xuid])
-end
-function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
-	local n = land_data[landId].settings.nickname
-	if n=='' then
-		n='<'.._tr('gui.landmgr.unnamed')..'>'
-		if returnIdIfNameEmpty then
-			n=n..' '..landId
-		end
-	end
-	return n
-end
-function ILAPI.GetDescribe(landId)
-	return AIR.deepcopy(land_data[landId].settings.describe)
-end
-function ILAPI.GetOwner(landId)
-	for i,v in pairs(land_owners) do
-		if AIR.isValInList(v,landId)~=-1 then
-			return i
-		end
-	end
-	return '?'
-end
 function ILAPI.PosGetLand(vec4)
 	local Cx,Cz = pos2chunk(vec4)
 	local dimid = vec4.dimid
@@ -1433,46 +1392,63 @@ function ILAPI.GetChunk(vec2,dimid)
 		return AIR.deepcopy(ChunkMap[dimid][Cx][Cz])
 	end
 	return -1
+end 
+function ILAPI.GetAllLands()
+	local lst = {}
+	for id,v in pairs(land_data) do
+		lst[#lst+1] = id
+	end
+	return lst
 end
-function ILAPI.GetTpPoint(landId) --return vec4
+function ILAPI.CheckPerm(landId,perm)
+	return land_data[landId].permissions[perm]
+end
+function ILAPI.CheckSetting(landId,cfgname)
+	if cfgname=='share' or cfgname=='tpoint' or cfgname=='nickname' or cfgname=='describe' then
+		return nil
+	end
+	return land_data[landId].settings[cfgname]
+end
+function ILAPI.GetRange(landId)
+	return { VecMap[landId].a,VecMap[landId].b,land_data[landId].range.dimid }
+end
+function ILAPI.GetEdge(landId,dimtype)
+	if dimtype=='2D' then
+		return EdgeMap[landId].D2D
+	end
+	if dimtype=='3D' then
+		return EdgeMap[landId].D3D
+	end
+end
+function ILAPI.GetDimension(landId)
+	if land_data[landId].range.start_position[2]==-64 and land_data[landId].range.end_position[2]==320 then
+		return '2D'
+	else
+		return '3D'
+	end
+end
+function ILAPI.GetName(landId)
+	return land_data[landId].settings.nickname
+end
+function ILAPI.GetDescribe(landId)
+	return land_data[landId].settings.describe
+end
+function ILAPI.GetOwner(landId)
+	for i,v in pairs(land_owners) do
+		if AIR.isValInList(v,landId)~=-1 then
+			return i
+		end
+	end
+	return '?'
+end
+function ILAPI.GetPoint(landId)
 	local i = AIR.deepcopy(land_data[landId].settings.tpoint)
 	i[4] = land_data[landId].range.dimid
 	return AIR.pos2vec(i)
 end
-function ILAPI.GetEdge(landId)
-	return EdgeMap[landId].D3D
-end
-function ILAPI.GetDistence(landId,vec4)
-	if ILAPI.PosGetLand(vec4)==landId then
-		return 0.0
-	end
-
-	function pow(num)
-		return num*num
-	end
-	function EucM(A,B) -- 2D
-		return math.sqrt(pow(B.x-A.x)+pow(B.z-A.z))
-	end
-	function IsInRange(num,range)
-		return (num >= range[1]) and (num <= range[2])
-	end
-
-	local edge = EdgeMap[landId].D2D
-	local depos = { edge[1],EucM(edge[1],vec4) }
-	for i,pos in pairs(edge) do
-		local euc = EucM(pos,vec4)
-		if euc<depos[2] then
-			depos = { pos,euc }
-		end
-	end
-
-	if isPosInCube_2D(vec4,VecMap[landId].a,VecMap[landId].b) then
-		return math.min(math.abs(VecMap[landId].a.y-vec4.y),math.abs(VecMap[landId].b.y-vec4.y))
-	end
-	if ILAPI.GetLandDimension(landId)=='2D' or IsInRange(vec4.y,{VecMap[landId].a.y,VecMap[landId].b.y}) then
-		return depos[2]
-	end
-	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-VecMap[landId].a.y),math.abs(vec4.y-VecMap[landId].b.y))))
+-- [[ INFORMATION => PLAYER ]]
+function ILAPI.GetPlayerLands(xuid)
+	return AIR.deepcopy(land_owners[xuid])
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if LandTrustedMap[landId][xuid]==nil then
@@ -1495,13 +1471,6 @@ function ILAPI.IsLandOperator(xuid)
 		return true
 	end
 end
-function ILAPI.GetLandDimension(landId)
-	if land_data[landId].range.start_position[2]==-64 and land_data[landId].range.end_position[2]==320 then
-		return '2D'
-	else
-		return '3D'
-	end
-end
 function ILAPI.GetAllTrustedLand(xuid)
 	local trusted = {}
 	for landId,data in pairs(land_data) do
@@ -1511,9 +1480,58 @@ function ILAPI.GetAllTrustedLand(xuid)
 	end
 	return trusted
 end
+-- [[ CONFIGURE ]]
+function ILAPI.UpdatePermission(landId,perm,value)
+	if land_data[landId]==nil or land_data[landId].permissions[perm]==nil or (value~=true and value~=false) then
+		return false
+	end
+	land_data[landId].permissions[perm]=value
+	ILAPI.save()
+	return true
+end
+function ILAPI.UpdateSetting(landId,cfgname,value)
+	if land_data[landId]==nil or land_data[landId].settings[cfgname]==nil or value==nil then
+		return false
+	end
+	if cfgname=='share' then
+		return false
+	end
+	land_data[landId].settings[cfgname]=value
+	ILAPI.save()
+	return true
+end
+function ILAPI.AddTrust(landId,xuid)
+	local shareList = land_data[landId].settings.share
+	shareList[#shareList+1]=xuid
+	updateLandTrustMap(landId)
+	ILAPI.save()
+	return true
+end
+function ILAPI.RemoveTrust(landId,xuid)
+	local shareList = land_data[landId].settings.share
+	table.remove(shareList,AIR.isValInList(shareList,targetXuid))
+	updateLandTrustMap(landId)
+	ILAPI.save()
+	return true
+end
+-- [[ PLUGIN ]]
+function ILAPI.GetMoneyProtocol()
+	local m = cfg.money.protocol
+	if m~="llmoney" and m~="scoreboard" then
+		return nil
+	end
+	return m
+end
+function ILAPI.GetLanguage()
+	return cfg.manager.default_language
+end
+function ILAPI.GetChunkSide()
+	return cfg.features.chunk_side
+end
 function ILAPI.GetVersion()
 	return langVer
 end
+-- [[ UNEXPORT FUNCTIONS ]]
 function ILAPI.save()
 	file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
 	file.writeTo(data_path..'data.json',json.encode(land_data))
@@ -1527,6 +1545,20 @@ function ILAPI.CanControl(mode,name)
 		return true
 	end
 end
+function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
+	local n = land_data[landId].settings.nickname
+	if n=='' then
+		n='<'.._tr('gui.landmgr.unnamed')..'>'
+		if returnIdIfNameEmpty then
+			n=n..' '..landId
+		end
+	end
+	return n
+end
+
+-- +-+ +-+ +-+   +-+ +-+ +-+
+-- |T| |H| |E|   |E| |N| |D|
+-- +-+ +-+ +-+   +-+ +-+ +-+
 
 -- feature function
 function GetAllPlayerList() -- all player namelist
@@ -1643,18 +1675,10 @@ function calculation_price(length,width,height,dimension)
 	return math.modf(price*(cfg.money.discount/100))
 end
 function GetIdFromXuid(xuid)
-	if data.xuid2name(xuid)~=nil then
-		return data.xuid2name(xuid)
-	else
-		return xuid
-	end
+	return data.xuid2name(xuid)
 end
 function GetXuidFromId(playerid)
-	if data.name2xuid(playerid)~=nil then
-		return data.name2xuid(playerid)
-	else
-		return playerid
-	end
+	return data.name2xuid(playerid)
 end
 function pos2chunk(pos)
 	local p = cfg.features.chunk_side
@@ -1994,77 +2018,45 @@ function Eventing_onConsoleCmd(cmd)
 	if opt[2] == nil then
 		INFO('The server is running iLand v'..plugin_version)
 		INFO('Github: https://github.com/McAirLand/iLand-Core')
+
 		return false
 	end
 
 	-- [op] add land operator.
 	if opt[2] == 'op' then
-		if AIR.isValInList(cfg.manager.operator,opt[3])==-1 then
-			if not(AIR.isNumber(opt[3])) then
-				ERROR('Wrong xuid!');return false
-			end
-			table.insert(cfg.manager.operator,#cfg.manager.operator+1,opt[3])
-			updateLandOperatorsMap()
-			ILAPI.save()
-			INFO('Xuid: '..opt[3]..' has been added to the LandMgr list.')
-		else
-			INFO('Xuid: '..opt[3]..' is already in LandMgr list.')
+		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." op ")+1),'"')[1]
+		local xuid = GetXuidFromId(name)
+		if xuid == "" then
+			INFO('System',AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			return
 		end
+		if ILAPI.IsLandOperator(xuid) then
+			INFO('System',AIR.gsubEx(_tr('console.landop.add.failbyexist'),'<a>',name))
+			return
+		end
+		table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
+		updateLandOperatorsMap()
+		ILAPI.save()
+		INFO('System',AIR.gsubEx(_tr('console.landop.add.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
 
 	-- [deop] add land operator.
 	if opt[2] == 'deop' then
-		local p = AIR.isValInList(cfg.manager.operator,opt[3])
-		if p~=-1 then
-			if not(AIR.isNumber(opt[3])) then
-				ERROR('Wrong xuid!');return false
-			end
-			table.remove(cfg.manager.operator,p)
-			updateLandOperatorsMap()
-			ILAPI.save()
-			INFO('Xuid: '..opt[3]..' has been removed from LandMgr list.')
-		else
-			INFO('Xuid: '..opt[3]..' is not in LandMgr list.')
+		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
+		local xuid = GetXuidFromId(name)
+		if xuid == "" then
+			INFO('System',AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			return
 		end
-		return false
-	end
-
-	-- [update] Upgrade iLand
-	if opt[2] == 'update' then
-		local raw = network.httpGetSync('https://cdisk.amd.rocks/tmp/ILAND/server.json')
-		if raw.status==200 then
-			local v1 = json.decode(raw.data)
-			if v1.FILE_Version==200 then
-				Upgrade(v1.Updates[1])
-			else
-				ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',v1.FILE_Version))
-			end
-		else
-			ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',raw.status))
+		if not(ILAPI.IsLandOperator(xuid)) then
+			INFO('System',AIR.gsubEx(_tr('console.landop.del.failbynull'),'<a>',name))
+			return
 		end
-		return false
-	end
-
-	-- [test] Performance Testing
-	if opt[2] == 'test' then
-		INFO("Starting performance test, please wait...")
-		local testTimes = 1000000
-		local vec4 = {x=11451,y=419,z=19810,dimid=0}
-		local startTime = os.time()
-		for i=1,testTimes do
-			ILAPI.PosGetLand(vec4[i])
-		end
-		local endTime = os.time()
-		local costTime = endTime-startTime
-		INFO('TEST','==================================')
-		INFO('TEST','Server Lands: '..#land_data)
-		INFO('TEST','Start time: '..startTime)
-		INFO('TEST','End time: '..endTime)
-		INFO('TEST','Query times: '..testTimes)
-		INFO('TEST','Time cost: '..tostring(costTime))
-		INFO('TEST','Average time used per time: '..tostring((costTime)/testTimes))
-		INFO('TEST','==================================')
+		table.remove(cfg.manager.operator,AIR.isValInList(cfg.manager.operator,xuid))
+		updateLandOperatorsMap()
+		ILAPI.save()
+		INFO('System',AIR.gsubEx(_tr('console.landop.del.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
 
@@ -2937,25 +2929,31 @@ end)
 -- export function
 lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
 lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
-lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
-lxl.export(ILAPI.GetNickname,'ILAPI_GetNickname')
-lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
-lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
 lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
 lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
-lxl.export(ILAPI.GetTpPoint,'ILAPI_GetTpPoint')
-lxl.export(ILAPI.GetDistence,'ILAPI_GetDistence')
+lxl.export(ILAPI.GetAllLands,'ILAPI_GetAllLands')
+lxl.export(ILAPI.CheckPerm,'ILAPI_CheckPerm')
+lxl.export(ILAPI.CheckSetting,'ILAPI_CheckSetting')
+lxl.export(ILAPI.GetRange,'ILAPI_GetRange')
+lxl.export(ILAPI.GetEdge,'ILAPI_GetEdge')
+lxl.export(ILAPI.GetDimension,'ILAPI_GetDimension')
+lxl.export(ILAPI.GetName,'ILAPI_GetName')
+lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
+lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
+lxl.export(ILAPI.GetPoint,'ILAPI_GetPoint')
+lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
 lxl.export(ILAPI.IsPlayerTrusted,'ILAPI_IsPlayerTrusted')
 lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
 lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
 lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
-lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
-lxl.export(ILAPI.GetLandDimension,'ILAPI_GetLandDimension')
-lxl.export(ILAPI.GetLand,'ILAPI_GetLand')
 lxl.export(ILAPI.UpdatePermission,'ILAPI_UpdatePermission')
 lxl.export(ILAPI.UpdateSetting,'ILAPI_UpdateSetting')
-lxl.export(ILAPI.GetEdge,"ILAPI_GetEdge")
-lxl.export(Eventing_onDestroyBlock,'ILENV_onDestroyBlock')
+lxl.export(ILAPI.AddTrust,'ILAPI_AddTrust')
+lxl.export(ILAPI.RemoveTrust,'ILAPI_RemoveTrust')
+lxl.export(ILAPI.GetMoneyProtocol,'ILAPI_GetMoneyProtocol')
+lxl.export(ILAPI.GetLanguage,'ILAPI_GetLanguage')
+lxl.export(ILAPI.GetChunkSide,'ILAPI_GetChunkSide')
+lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 
 INFO('Powerful land plugin is loaded! Ver-'..plugin_version..',')
 INFO('By: RedbeanW, License: GPLv3 with additional conditions.')

@@ -256,6 +256,12 @@
     "command.console.land_test": "运行领地性能测试",
     "command.console.land_update": "升级iLand",
 
+    "console.landop.add.success": "成功添加 <a>（<b>）为领地管理员。",
+    "console.landop.add.failbyexist": "玩家 <a> 已经是领地管理员了。",
+    "console.landop.del.success": "已将 <a>（<b>）从领地管理员列表中删除。",
+    "console.landop.del.failbynull": "玩家 <a> 不是领地管理员。",
+    "console.landop.failbyxuid": "找不到 <a> 的XUID信息，请重新进服或检查大小写后重试。",
+
     "console.update.preview": "正在使用未公开版本 <a> 。",
     "console.update.newversion": "获取到到新版本 <a> ,可以使用 /land update 自动更新！",
     "console.update.newcontent": "更新内容：",
