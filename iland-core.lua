@@ -281,7 +281,7 @@ function FORM_BACK_LandMgr(player,id)
 	GUI_LMgr(player)
 end
 function FORM_land_buy(player,id)
-	if not(id) then 
+	if not(id) then
 		sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	end
 
@@ -778,7 +778,8 @@ function FORM_land_mgr(player,data)
 	end
 
 	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-
+	gl_objective = mc.getScoreObjective(cfg.money.scoreboard_objname)
+	
 	-- lands manager
 	
 	if data[1]==0 then
@@ -963,13 +964,13 @@ end
 function BoughtProg_CreateOrder(player)
 	local xuid=player.xuid
     local NewData = newLand[xuid]
-	ArrayParticles[xuid]=nil 
 
-    if NewData==nil or NewData.step~=2 then
+	if NewData==nil or NewData.step~=2 then
 		sendText(player,_tr('title.createorder.failbystep'))
         return
     end
 
+	ArrayParticles[xuid]=nil 
     local length = math.abs(NewData.posA.x - NewData.posB.x) + 1
     local width = math.abs(NewData.posA.z - NewData.posB.z) + 1
     local height = math.abs(NewData.posA.y - NewData.posB.y) + 1
@@ -1582,36 +1583,47 @@ function _tr(a)
 	return i18n_data[a]
 end
 function money_add(player,value)
-	local M = cfg.money
-	if M.protocol=='scoreboard' then
-		player:addScore(M.scoreboard_objname,value);return
+	local tol = cfg.money.protocol
+	if tol=='scoreboard' then
+		if gl_objective==nil then
+			ERROR(_tr('console.error.money.scorenull'))
+			return
+		end
+		gl_objective:addScore(player.realName,value);return
 	end
-	if M.protocol=='llmoney' then
+	if tol=='llmoney' then
 		money.add(player.xuid,value);return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
 end
 function money_del(player,value)
-	local M = cfg.money
-	if M.protocol=='scoreboard' then
-		player:setScore(M.scoreboard_objname,player:getScore(M.scoreboard_objname)-value)
-		return
+	local tol = cfg.money.protocol
+	if tol=='scoreboard' then
+		if gl_objective==nil then
+			ERROR(_tr('console.error.money.scorenull'))
+			return
+		end
+		gl_objective:removeScore(player.realName,value);return
 	end
-	if M.protocol=='llmoney' then
+	if tol=='llmoney' then
 		money.reduce(player.xuid,value)
 		return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
 end
 function money_get(player)
-	local M = cfg.money
-	if M.protocol=='scoreboard' then
-		return player:getScore(M.scoreboard_objname)
+	local tol = cfg.money.protocol
+	if tol == 'scoreboard' then
+		if gl_objective==nil then
+			ERROR(_tr('console.error.money.scorenull'))
+			return 0
+		end
+		return gl_objective:getScore(player.realName)
 	end
-	if M.protocol=='llmoney' then
+	if tol=='llmoney' then
 		return money.get(player.xuid)
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',M.protocol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
@@ -1984,7 +1996,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [mgr] OP-LandMgr GUI
 	if opt[2] == 'mgr' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
 		end
 		GUI_OPLMgr(player)
@@ -1994,7 +2006,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [mgr selectool] Set land_select tool
 	if opt[2] == 'mgr' and opt[3] == 'selectool' then
 		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',xuid),0)
+			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
 		end
 		sendText(player,_tr('title.oplandmgr.setselectool'))
@@ -2027,11 +2039,11 @@ function Eventing_onConsoleCmd(cmd)
 		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." op ")+1),'"')[1]
 		local xuid = GetXuidFromId(name)
 		if xuid == "" then
-			INFO('System',AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			ERROR(AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
 			return
 		end
 		if ILAPI.IsLandOperator(xuid) then
-			INFO('System',AIR.gsubEx(_tr('console.landop.add.failbyexist'),'<a>',name))
+			ERROR(AIR.gsubEx(_tr('console.landop.add.failbyexist'),'<a>',name))
 			return
 		end
 		table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
@@ -2046,11 +2058,11 @@ function Eventing_onConsoleCmd(cmd)
 		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
 		local xuid = GetXuidFromId(name)
 		if xuid == "" then
-			INFO('System',AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			ERROR(AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
 			return
 		end
 		if not(ILAPI.IsLandOperator(xuid)) then
-			INFO('System',AIR.gsubEx(_tr('console.landop.del.failbynull'),'<a>',name))
+			ERROR(AIR.gsubEx(_tr('console.landop.del.failbynull'),'<a>',name))
 			return
 		end
 		table.remove(cfg.manager.operator,AIR.isValInList(cfg.manager.operator,xuid))
@@ -2197,7 +2209,7 @@ function Eventing_onAttack(player,entity)
 	local en=entity.type
 	local IsConPlus = false
 	if ILAPI.CanControl(3,en) then IsConPlus=true end
-	local entityType = getEntityType(entity.type)
+	local entityType = getEntityType(en)
 	if IsConPlus then
 		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
 		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
@@ -2688,6 +2700,9 @@ mc.listen('onServerStarted',function()
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
 	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
+	if cfg.money.protocol=='scoreboard' then
+		gl_objective = mc.getScoreObjective(cfg.money.scoreboard_objname)
+	end
 
 	-- Configure Updater
 	do

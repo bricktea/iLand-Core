@@ -247,7 +247,7 @@
     "command.land_point": "设置领地传送点",
     "command.land_mgr": "打开OP领地控制台界面",
     "command.land_mgr_selectool": "选择圈地工具",
-    "command.land_mgr.noperm": "§e此命令为领地管理员专有，请在控制台使用 §l/land op <a>§r§e 将自己添加为领地管理员。",
+    "command.land_mgr.noperm": "§e此命令为领地管理员专有，请在控制台使用 §l/land op \"<a>\"§r§e 将自己添加为领地管理员。",
     "command.error": "§c未知的参数 \"<a>\" 请检查您的输入。",
 
     "command.console.land": "关于iLand",
@@ -280,5 +280,6 @@
     "console.getonline.failbycode": "获取联网信息失败，错误代码：<a>。",
     "console.getonline.failbyver": "无法解析的在线信息文件版本（<a>），您的iLand可能已过时。",
 
-    "console.error.money.protocol": "正在使用未知的经济组件 '<a>'。"
+    "console.error.money.protocol": "正在使用未知的经济组件 '<a>'。",
+    "console.error.money.scorenull": "无法访问计分板对象，可能对应的经济计分板不存在。请使用/land mgr更改为正确计分板或尝试重启服务器。"
 }
