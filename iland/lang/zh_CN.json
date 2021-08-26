@@ -180,7 +180,6 @@
     "gui.landtp.tip": "将传送到该领地的传送点，默认的传送点是领地起始坐标。\n设置领地传送点请使用 /land point。",
     "gui.landtp.tip2": "选择领地",
     "gui.landtp.trusted": "受信任",
-    "gui.landtp.safetp": "目标传送点可能导致窒息，已将您向上传送 <a> 个方块",
     
     "title.selectrange.failbystep": "操作失败！请按步骤圈地！",
     "title.selectrange.failbycdim": "选点失败！禁止跨纬度选点！",
@@ -219,6 +218,9 @@
     "title.landtp.fail.notowner": "你不是这块领地的主人",
     "title.landsign.ownenrbuttom": "正在领地 <a>",
     "title.landsign.visitorbuttom": "这里是 <a> 的领地",
+    "title.landtp.failbysame": "该领地尚未设置传送点",
+    "title.landtp.plzset": "，请先使用/land point设定。",
+    "title.landtp.safetp": "目标传送点可能导致窒息，已停止传送。",
 
     "sign.listener.ownertitle": "<a>",
     "sign.listener.ownersubtitle": "欢迎回来",

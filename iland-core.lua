@@ -846,36 +846,29 @@ function FORM_landtp(player,data)
 	for n,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
 		lands[#lands+1]=landId
 	end
+
 	local landId = lands[data[1]]
+	local pos = ILAPI.GetPoint(landId)
+	local srt = VecMap[landId].a
 
-	local pos = land_data[landId].settings.tpoint
-	local dimid = land_data[landId].range.dimid
-
-	if dimid==0 or dimid==2 then
-		high=256+1
-	else
-		high=128+1
-	end
-	local safey=0
-	local NMSL=false
-	for i=pos[2],high do
-		local bl = mc.getBlock(mc.newIntPos(pos[1],i,pos[3],dimid))
-		if bl.type=='minecraft:air' then
-			if NMSL then
-				safey=i
-				break
-			end
-			NMSL=true
+	if pos.x==srt.x and (pos.y-1)==srt.y and pos.z==srt.z then
+		local msg = _tr('title.landtp.failbysame')
+		if ILAPI.GetOwner(landId)==xuid then
+			msg = msg.._tr('title.landtp.plzset')
 		end
+		sendText(player,msg)
+		return
 	end
-	player:teleport(mc.newFloatPos(pos[1],safey,pos[3],dimid))
-	local ct = 'Complete.'
-	if pos[2]~=safey then
-		ct = AIR.gsubEx(_tr('gui.landtp.safetp'),'<a>',tostring(safey-pos[2]))
+
+	if not(IsPosSafe(pos)) then
+		sendText(player,_tr('title.landtp.safetp'))
+		return
 	end
+	
+	player:teleport(pos.x,pos.y,pos.z,pos.dimid)
 	player:sendModalForm(
 		_tr('gui.general.complete'),
-		ct,
+		'Complete.',
 		_tr('gui.general.yes'),
 		_tr('gui.general.close'),
 		FORM_NULL
@@ -1419,23 +1412,23 @@ function ILAPI.GetAllLands()
 	return lst
 end
 function ILAPI.CheckPerm(landId,perm)
-	return land_data[landId].permissions[perm]
+	return AIR.deepcopy(land_data[landId].permissions[perm])
 end
 function ILAPI.CheckSetting(landId,cfgname)
 	if cfgname=='share' or cfgname=='tpoint' or cfgname=='nickname' or cfgname=='describe' then
 		return nil
 	end
-	return land_data[landId].settings[cfgname]
+	return AIR.deepcopy(land_data[landId].settings[cfgname])
 end
 function ILAPI.GetRange(landId)
 	return { VecMap[landId].a,VecMap[landId].b,land_data[landId].range.dimid }
 end
 function ILAPI.GetEdge(landId,dimtype)
 	if dimtype=='2D' then
-		return EdgeMap[landId].D2D
+		return AIR.deepcopy(EdgeMap[landId].D2D)
 	end
 	if dimtype=='3D' then
-		return EdgeMap[landId].D3D
+		return AIR.deepcopy(EdgeMap[landId].D3D)
 	end
 end
 function ILAPI.GetDimension(landId)
@@ -1446,10 +1439,10 @@ function ILAPI.GetDimension(landId)
 	end
 end
 function ILAPI.GetName(landId)
-	return land_data[landId].settings.nickname
+	return AIR.deepcopy(land_data[landId].settings.nickname)
 end
 function ILAPI.GetDescribe(landId)
-	return land_data[landId].settings.describe
+	return AIR.deepcopy(land_data[landId].settings.describe)
 end
 function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
@@ -1842,6 +1835,16 @@ function getEntityType(type)
 	end
 	return 0
 end
+function IsPosSafe(pos)
+	local posA = {x=pos.x+1,y=pos.y+1,z=pos.z+1,dimid=pos.dimid}
+	local posB = {x=pos.x-1,y=pos.y-1,z=pos.z-1,dimid=pos.dimid}
+	for n,sta in pairs(TraverseAABB(posA,posB,pos.dimid)) do
+		if sta.y~=pos.y-1 and mc.getBlock(sta.x,sta.y,sta.z,sta.dimid).type~='minecraft:air' then
+			return false
+		end
+	end
+	return true
+end
 
 -- log system
 function INFO(type,content)
@@ -1981,13 +1984,13 @@ function Eventing_onPlayerCmd(player,cmd)
 		local landname = ILAPI.GetNickname(landId,true)
 		land_data[landId].settings.tpoint = {
 			pos.x,
-			pos.y,
+			pos.y+1,
 			pos.z
 		}
 		ILAPI.save()
 		player:sendModalForm(
 			_tr('gui.general.complete'),
-			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text(pos),'<b>',landname),
+			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
 			FORM_NULL
