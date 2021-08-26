@@ -25,6 +25,7 @@
     },
     "features": {
         "auto_update":true,
+        "regFakeCmd":true,
         "landSign": true,
         "offlinePlayerInList":true,
         "particles": true,

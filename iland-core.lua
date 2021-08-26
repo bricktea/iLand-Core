@@ -409,6 +409,8 @@ end
 function FORM_land_gui_trust(player,data)
 	if data==nil then return end
 	
+	PlayerSelector(player,FORM_land_gui_trust)
+
 	local xuid = player.xuid
 	local landId = TRS_Form[xuid].landId
 	local shareList = land_data[landId].settings.share
@@ -645,13 +647,12 @@ function FORM_land_gui(player,data,lid)
 		end
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		table.insert(shareList,1,'['.._tr('gui.general.plzchose')..']')
-		local Form = mc.newCustomForm()
+		local Form = mc.newSimpleForm()
 		Form:setTitle(_tr('gui.landtrust.title'))
-		Form:addLabel(_tr('gui.landtrust.tip'))
-		Form:addSwitch(_tr('gui.landtrust.addtrust'),false)
-		Form:addDropdown(_tr('gui.landtrust.selectplayer'),TRS_Form[xuid].playerList)
-		Form:addSwitch(_tr('gui.landtrust.rmtrust'),false)
-		Form:addDropdown(_tr('gui.landtrust.selectplayer'),shareList)
+		Form:setContent(_tr('gui.landtrust.tip'))
+		Form:addButton(_tr('gui.landtrust.addtrust'))
+		Form:addButton(_tr('gui.landtrust.rmtrust'))
+
 		player:sendForm(Form,FORM_land_gui_trust)
 		return
 	end
@@ -1266,6 +1267,21 @@ function GUI_FastMgr(player,isOP)
 	player:sendForm(Form,FORM_land_fast)
 end
 
+-- Selector
+function PlayerSelector(player,landId,actionType,callback)
+	local pl_list = {}
+	local forTol
+	if cfg.features.offlinePlayerInList then
+		forTol = land_owners
+	else
+		forTol = TRS_Form
+	end
+	for xuid,lds in pairs(forTol) do
+		pl_list = [#pl_list+1]=GetIdFromXuid(xuid)
+	end
+
+end
+
 -- +-+ +-+ +-+ +-+ +-+
 -- |I| |L| |A| |P| |I|
 -- +-+ +-+ +-+ +-+ +-+
@@ -1587,20 +1603,6 @@ end
 -- +-+ +-+ +-+   +-+ +-+ +-+
 
 -- feature function
-function GetAllPlayerList() -- all player namelist
-	local r = {}
-	for xuid,lds in pairs(land_owners) do
-		r[#r+1]=GetIdFromXuid(xuid)
-	end
-	return r
-end
-function GetOnlinePlayerList()
-	local r = {}
-	for xuid,lds in pairs(TRS_Form) do
-		r[#r+1]=GetIdFromXuid(xuid)
-	end
-	return r
-end
 function _tr(a)
 	if DEV_MODE and i18n_data[a]==nil then
 		ERROR('Translation not found: '..a)
@@ -2946,6 +2948,7 @@ mc.listen('onServerStarted',function()
 			cfg.verison=230
 			cfg.features.disabled_listener = {}
 			cfg.features.blockLandDims = {}
+			cfg.features.regFakeCmd=true
 			for landId,data in pairs(land_data) do
 				if data.range.start_position.y==0 and data.range.end_position.y==255 then
 					land_data[landId].range.start_position.y=-64
@@ -2979,24 +2982,27 @@ mc.listen('onServerStarted',function()
 	end
 
 	-- register cmd.
-	mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
-	mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
-	if cfg.features.landtp then
-		mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
+	if cfg.features.regFakeCmd then
+		mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
+		if cfg.features.landtp then
+			mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
+			mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
+		end
+		mc.regConsoleCmd(MainCmd,_tr('command.console.land'),function(args)end)
+		mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),function(args)end)
+		mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),function(args)end)
+		mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),function(args)end)
+		mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),function(args)end)
 	end
-	mc.regConsoleCmd(MainCmd,_tr('command.console.land'),function(args)end)
-	mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),function(args)end)
-	mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),function(args)end)
-	mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),function(args)end)
-	mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),function(args)end)
+
 end)
 
 -- export function
