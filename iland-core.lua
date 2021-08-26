@@ -195,7 +195,7 @@ function buildUIBITable()
 		'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
 		'minecraft:powder_snow_bucket','minecraft:pufferfish_bucket','minecraft:tropical_fish_bucket',
 		'minecraft:salmon_bucket','minecraft:cod_bucket','minecraft:water_bucket','minecraft:cod_bucket',
-		'minecraft:lava_bucket','minecraft:bucket'
+		'minecraft:lava_bucket','minecraft:bucket','minecraft:flint_and_steel'
 	}
 	local attackwlistTmp = {
 		'minecraft:ender_crystal','minecraft:armor_stand'
@@ -364,23 +364,24 @@ function FORM_land_gui_perm(player,data)
 	perm.allow_open_chest = data[30]
 	
 	perm.use_campfire = data[31]
-	perm.use_door = data[32]
-	perm.use_trapdoor = data[33]
-	perm.use_fence_gate = data[34]
-	perm.use_bell = data[35]
-	perm.use_jukebox = data[36]
-	perm.use_noteblock = data[37]
-	perm.use_composter = data[38]
-	perm.use_bed = data[39]
-	perm.use_item_frame = data[40]
-	perm.use_daylight_detector = data[41]
-	perm.use_lever = data[42]
-	perm.use_button = data[43]
-	perm.use_pressure_plate = data[44]
-	perm.allow_throw_potion = data[45]
-	perm.use_respawn_anchor = data[46]
-	perm.use_fishing_hook = data[47]
-	perm.use_bucket = data[48]
+	perm.use_firegen = data[32]
+	perm.use_door = data[33]
+	perm.use_trapdoor = data[34]
+	perm.use_fence_gate = data[35]
+	perm.use_bell = data[36]
+	perm.use_jukebox = data[37]
+	perm.use_noteblock = data[38]
+	perm.use_composter = data[39]
+	perm.use_bed = data[40]
+	perm.use_item_frame = data[41]
+	perm.use_daylight_detector = data[42]
+	perm.use_lever = data[43]
+	perm.use_button = data[44]
+	perm.use_pressure_plate = data[45]
+	perm.allow_throw_potion = data[46]
+	perm.use_respawn_anchor = data[47]
+	perm.use_fishing_hook = data[48]
+	perm.use_bucket = data[49]
 
 	ILAPI.save()
 	player:sendModalForm(
@@ -597,6 +598,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.chest'),perm.allow_open_chest)
 		Form:addLabel(_tr('gui.landmgr.landperm.other_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.campfire'),perm.use_campfire)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.firegen'),perm.use_firegen)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.door'),perm.use_door)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.trapdoor'),perm.use_trapdoor)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fence_gate'),perm.use_fence_gate)
@@ -1315,6 +1317,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_blast_furnace = false
 	perm.use_brewing_stand = false
 	perm.use_campfire = false
+	perm.use_firegen = false
 	perm.use_cartography_table = false
 	perm.use_composter = false
 	perm.use_crafting_table = false
@@ -2170,6 +2173,7 @@ function Eventing_onUseItemOn(player,item,block)
 		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
 		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
 		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
+		if it == 'minecraft:flint_and_steel' and perm.use_firegen then return end -- 使用打火石
 	else
 		local bn = block.type
 		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
@@ -2894,6 +2898,7 @@ mc.listen('onServerStarted',function()
 					land_data[landId].range.start_position.y=-64
 					land_data[landId].range.start_position.y=320
 				end
+				land_data[landId].permissions.use_firegen=false
 			end
 			--ILAPI.save()
 		end

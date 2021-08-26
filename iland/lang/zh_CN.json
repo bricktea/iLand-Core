@@ -77,6 +77,7 @@
     "gui.landmgr.landperm.contblock_options.shulker_box": "允许开潜匿箱",
     "gui.landmgr.landperm.contblock_options.chest": "允许开箱",
     "gui.landmgr.landperm.other_options.campfire": "允许使用营火烤肉",
+    "gui.landmgr.landperm.other_options.firegen": "允许使用打火石放火",
     "gui.landmgr.landperm.other_options.door": "允许打开门",
     "gui.landmgr.landperm.other_options.trapdoor": "允许开关活板门",
     "gui.landmgr.landperm.other_options.fence_gate": "允许开关栏栅门",
