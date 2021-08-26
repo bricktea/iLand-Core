@@ -30,6 +30,7 @@
         "particles": true,
         "landtp": true,
         "force_talk": false,
+        "blockLandDims": [],
         "land_3D":true,
         "land_2D":true,
         "disabled_listener":["onDropItem"],

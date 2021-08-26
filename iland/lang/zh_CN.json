@@ -181,6 +181,7 @@
     "gui.landtp.tip2": "选择领地",
     "gui.landtp.trusted": "受信任",
     
+    "title.selectrange.failbydim": "抱歉，管理员关闭了此维度的圈地功能。",
     "title.selectrange.failbystep": "操作失败！请按步骤圈地！",
     "title.selectrange.failbycdim": "选点失败！禁止跨纬度选点！",
     "title.selectrange.spointa": "请手持 <a>, 点击方块或使用 /land a 选定第一个点。",

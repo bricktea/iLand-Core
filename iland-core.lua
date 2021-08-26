@@ -900,9 +900,15 @@ function BoughtProg_SelectRange(player,vec4,mode)
     if NewData==nil then return end
     if mode==0 then -- point A
         if mode~=NewData.step then
-			sendText(player,_tr('title.selectrange.failbystep'));return
+			sendText(player,_tr('title.selectrange.failbystep'))
+			return
         end
 		NewData.posA = vec4
+		if AIR.isValInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
+			sendText(player,_tr('title.selectrange.failbydim'))
+			newLand[xuid]=nil
+			return
+		end
 		NewData.dimid = vec4.dimid
 		if NewData.dimension=='3D' then
 			NewData.posA.y=vec4.y
@@ -2932,6 +2938,7 @@ mc.listen('onServerStarted',function()
 		if cfg.version==224 then
 			cfg.verison=230
 			cfg.features.disabled_listener = {}
+			cfg.features.blockLandDims = {}
 			for landId,data in pairs(land_data) do
 				if data.range.start_position.y==0 and data.range.end_position.y==255 then
 					land_data[landId].range.start_position.y=-64
