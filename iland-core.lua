@@ -2968,7 +2968,7 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet('https://cdisk.amd.rocks/tmp/ILAND/server.json',Ncb_online)
+		network.httpGet('https://lxl-upgrade.amd.rocks/iLand/server.json',Ncb_online)
 	end
 
 	-- register cmd.

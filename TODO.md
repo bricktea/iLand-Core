@@ -14,7 +14,7 @@
  - [x] 增加监听器控制开关
  - [x] 重建ILAPI
  - [ ] LXL0.4.6 SCOREBOARD
- - [ ] 使用LXL更新服务
+ - [x] 使用LXL更新服务
  - [ ] 整合landtp与landpoint进landmgr
  - [x] 创造检测，无XUID玩家检测
  - [x] 空指针判断
