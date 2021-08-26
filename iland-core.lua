@@ -838,8 +838,8 @@ function FORM_land_choseDim(player,id)
 	newLand[xuid].posB={}
 	newLand[xuid].step=0
 end
-function FORM_landtp(player,data)
-	if data==nil or data[1]==0 then return end
+function FORM_landtp(player,id)
+	if id==nil or id==0 then return end
 
 	local xuid=player.xuid
 	local lands = ILAPI.GetPlayerLands(xuid)
@@ -847,7 +847,7 @@ function FORM_landtp(player,data)
 		lands[#lands+1]=landId
 	end
 
-	local landId = lands[data[1]]
+	local landId = lands[id]
 	local pos = ILAPI.GetPoint(landId)
 	local srt = VecMap[landId].a
 
@@ -887,10 +887,13 @@ end
 function FORM_land_gde(player,id)
 	if id==nil then return end
 	if id==0 then
-		Eventing_onPlayerCmd(player,'land new')
+		Eventing_onPlayerCmd(player,MainCmd..' new')
 	end
 	if id==1 then
-		Eventing_onPlayerCmd(player,'land gui')
+		Eventing_onPlayerCmd(player,MainCmd..' gui')
+	end
+	if id==2 then
+		Eventing_onPlayerCmd(player,MainCmd..' tp')
 	end
 end
 function BoughtProg_SelectRange(player,vec4,mode)
@@ -1921,7 +1924,8 @@ function Eventing_onPlayerCmd(player,cmd)
 			Form:setContent(AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
 			Form:addButton(_tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
 			Form:addButton(_tr('gui.fastgde.manage'),'textures/ui/confirm')
-			Form:addButton(_tr('gui.general.close'),'textures/ui/icon_import')
+			Form:addButton(_tr('gui.fastgde.landtp'),'textures/ui/World')
+			Form:addButton(_tr('gui.general.close'))
 			player:sendForm(Form,FORM_land_gde)
 		end
 		return false
@@ -2006,21 +2010,24 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [tp] LandTp GUI
 	if opt[2] == 'tp' and cfg.features.landtp then
-		local tplands = { '['.._tr('gui.general.plzchose')..']' }
+		local tplands = {}
 		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-			local name = ILAPI.GetNickname(landId,true)
-			local xpos = land_data[landId].settings.tpoint
-			tplands[i+1]='('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1]=did2dim(xpos.dimid)..' ('..AIR.vec2text(xpos)..') '..name
 		end
 		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-			local name = ILAPI.GetNickname(landId,true)
-			local xpos = land_data[landId].settings.tpoint
-			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..' §r('..xpos[1]..','..xpos[2]..','..xpos[3]..') '..name
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..'§r '..did2dim(xpos.dimid)..'('..AIR.vec2text(xpos)..') '..name
 		end
-		local Form = mc.newCustomForm()
+		local Form = mc.newSimpleForm()
 		Form:setTitle(_tr('gui.landtp.title'))
-		Form:addLabel(_tr('gui.landtp.tip'))
-		Form:addDropdown(_tr('gui.landtp.tip2'),tplands)
+		Form:setContent(_tr('gui.landtp.tip'))
+		Form:addButton(_tr('gui.general.close'))
+		for i,land in pairs(tplands) do
+			Form:addButton(land,'textures/ui/world_glyph_color')
+		end
 		player:sendForm(Form,FORM_landtp)
 		return false
 	end

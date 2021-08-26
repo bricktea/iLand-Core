@@ -104,6 +104,7 @@
     "gui.fastgde.content": "欢迎使用领地系统，您现在有 §l<a>§r 块领地。\n\n§lPlease Chose...",
     "gui.fastgde.create": "新建领地",
     "gui.fastgde.manage": "领地管理",
+    "gui.fastgde.landtp": "领地传送",
     
     "gui.oplandmgr.trsland.content": "强制将领地过户，所有权限将被转移。",
     "gui.oplandmgr.unknownland": "找不到该领地的主人",
@@ -177,8 +178,7 @@
     "gui.landcfg.inside.fire_spread": "允许火焰蔓延",
     "gui.landcfg.nearby": "§l附近事件",
     "gui.landtp.point": "成功将位置 [<a>] 设定为领地 <b> 的传送点。",
-    "gui.landtp.tip": "将传送到该领地的传送点，默认的传送点是领地起始坐标。\n设置领地传送点请使用 /land point。",
-    "gui.landtp.tip2": "选择领地",
+    "gui.landtp.tip": "请选择要传送的目标领地",
     "gui.landtp.trusted": "受信任",
     
     "title.selectrange.failbydim": "抱歉，管理员关闭了此维度的圈地功能。",

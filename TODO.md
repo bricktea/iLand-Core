@@ -15,7 +15,7 @@
  - [x] 重建ILAPI
  - [ ] LXL0.4.6 SCOREBOARD
  - [x] 使用LXL更新服务
- - [ ] 整合landtp与landpoint进landmgr
+ - [x] 整合landtp与landpoint进fastgde
  - [x] 创造检测，无XUID玩家检测
  - [x] 空指针判断
 
