@@ -159,6 +159,12 @@ function updateEdgeMap(landId,mode)
 		EdgeMap[landId].D3D = cubeGetEdge(spos,epos)
 	end
 end
+function buildLDMap(listener)
+	ListenerDisabled={}
+	for n,lner in pairs(cfg.features.disabled_listener) do
+		ListenerDisabled[lner] = { true }
+	end
+end
 function buildUIBITable()
 	CanCtlMap = {}
 	CanCtlMap[0] = {} -- UseItem
@@ -264,6 +270,7 @@ function buildAnyMap()
 	end
 	updateLandOperatorsMap()
 	buildUIBITable()
+	buildLDMap()
 end
 
 -- form -> callback
@@ -1559,6 +1566,12 @@ function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 	end
 	return n
 end
+function ILAPI.IsDisabled(listener)
+	if ListenerDisabled[listener]~=nil then
+		return true
+	end
+	return false
+end
 
 -- +-+ +-+ +-+   +-+ +-+ +-+
 -- |T| |H| |E|   |E| |N| |D|
@@ -2082,7 +2095,7 @@ function Eventing_onConsoleCmd(cmd)
 end
 function Eventing_onDestroyBlock(player,block)
 
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onDestroyBlock') then
 		return
 	end
 
@@ -2127,7 +2140,7 @@ function Eventing_onStartDestroyBlock(player,block)
 end
 function Eventing_onPlaceBlock(player,block)
 
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onPlaceBlock') then
 		return
 	end
 
@@ -2145,7 +2158,7 @@ function Eventing_onPlaceBlock(player,block)
 end
 function Eventing_onUseItemOn(player,item,block)
 
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onUseItemOn') then
 		return
 	end
 
@@ -2201,7 +2214,7 @@ function Eventing_onUseItemOn(player,item,block)
 end
 function Eventing_onAttack(player,entity)
 	
-	if isNullX2(player,entity) then
+	if isNullX2(player,entity) or ILAPI.IsDisabled('onAttack') then
 		return
 	end
 
@@ -2231,7 +2244,7 @@ function Eventing_onAttack(player,entity)
 end
 function Eventing_onTakeItem(player,entity)
 
-	if isNullX2(player,entity) then
+	if isNullX2(player,entity) or ILAPI.IsDisabled('onTakeItem') then
 		return
 	end
 
@@ -2249,7 +2262,7 @@ function Eventing_onTakeItem(player,entity)
 end
 function Eventing_onDropItem(player,item)
 
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onDropItem') then
 		return
 	end
 
@@ -2267,7 +2280,7 @@ function Eventing_onDropItem(player,item)
 end
 function Eventing_onBlockInteracted(player,block)
 
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onBlockInteracted') then
 		return
 	end
 
@@ -2304,7 +2317,7 @@ function Eventing_onBlockInteracted(player,block)
 end
 function Eventing_onUseFrameBlock(player,block)
 		
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onUseFrameBlock') then
 		return
 	end
 
@@ -2322,7 +2335,7 @@ function Eventing_onUseFrameBlock(player,block)
 end
 function Eventing_onSpawnProjectile(splasher,type)
 			
-	if isNull(splasher) then
+	if isNull(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
 		return
 	end
 
@@ -2352,7 +2365,7 @@ function Eventing_onSpawnProjectile(splasher,type)
 end
 function Eventing_onFireworkShootWithCrossbow(player)
 			
-	if isNull(player) then
+	if isNull(player) or ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
 		return
 	end
 
@@ -2370,7 +2383,7 @@ function Eventing_onFireworkShootWithCrossbow(player)
 end
 function Eventing_onStepOnPressurePlate(entity,block)
 				
-	if isNull(entity) then
+	if isNull(entity) or ILAPI.IsDisabled('onStepOnPressurePlate') then
 		return
 	end
 
@@ -2400,7 +2413,7 @@ function Eventing_onStepOnPressurePlate(entity,block)
 end
 function Eventing_onRide(rider,entity)
 				
-	if isNullX2(rider,entity) then
+	if isNullX2(rider,entity) or ILAPI.IsDisabled('onRide') then
 		return
 	end
 
@@ -2427,6 +2440,11 @@ function Eventing_onRide(rider,entity)
 	return false
 end
 function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
+
+	if ILAPI.IsDisabled('onWitherBossDestroy') then
+		return
+	end
+
 	local dimid = witherBoss.pos.dimid
 	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
 		landId=ILAPI.PosGetLand(pos)
@@ -2438,7 +2456,7 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 end
 function Eventing_onExplode(entity,pos)
 
-	if isNull(entity) then
+	if isNull(entity) or ILAPI.IsDisabled('onExplode') then
 		return
 	end
 
@@ -2449,7 +2467,7 @@ function Eventing_onExplode(entity,pos)
 end
 function Eventing_onFarmLandDecay(pos,entity)
 	
-	if isNull(entity) then
+	if isNull(entity) or ILAPI.IsDisabled('onFarmLandDecay') then
 		return
 	end
 
@@ -2459,12 +2477,22 @@ function Eventing_onFarmLandDecay(pos,entity)
 	return false
 end
 function Eventing_onPistonPush(pos,block)
+
+	if ILAPI.IsDisabled('onPistonPush') then
+		return
+	end
+
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
 	return false
 end
 function Eventing_onFireSpread(pos)
+
+	if ILAPI.IsDisabled('onFireSpread') then
+		return
+	end
+
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
@@ -2893,6 +2921,7 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==224 then
 			cfg.verison=230
+			cfg.features.disabled_listener = {}
 			for landId,data in pairs(land_data) do
 				if data.range.start_position.y==0 and data.range.end_position.y==255 then
 					land_data[landId].range.start_position.y=-64
