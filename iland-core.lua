@@ -1277,7 +1277,7 @@ function PSR_New(player,callback,customlist)
 		filter = ""
 	}
 
-	if customlist==nil then
+	if customlist~=nil then
 		TRS_Form[player.xuid].psr.playerList = ToPages(customlist)
 	else
 		TRS_Form[player.xuid].psr.playerList = ToPages(pl_list,cfg.features.playersPerPage)
@@ -1309,6 +1309,14 @@ function PSR_Callback(player,data,isFirstCall)
 	if type(data)=='table' then
 		local selected = {}
 
+		-- refresh page
+		local npg = data[#data] + 1 -- custom page
+		if npg~=psrdata.nowpage and npg<=maxpage then
+			psrdata.nowpage = npg
+			rawList = AIR.deepcopy(psrdata.playerList[npg])
+			goto JUMPOUT_PSR_OTHER
+		end
+
 		-- create filter
 		if data[1]~='' then
 			local findTarget = string.lower(data[1])
@@ -1331,8 +1339,11 @@ function PSR_Callback(player,data,isFirstCall)
 				rawList = tableList[psrdata.nowpage]
 				maxpage = #tableList
 			end
+			psrdata.filter = data[1] -- needed!
+			goto JUMPOUT_PSR_OTHER
 		end
 		psrdata.filter = data[1]
+
 		-- gen selects
 		for num,key in pairs(data) do
 			if num~=1 and num~=#data and key==true then
@@ -1344,12 +1355,7 @@ function PSR_Callback(player,data,isFirstCall)
 			return
 		end
 
-		-- refresh page
-		local npg = data[#data] + 1 -- custom page
-		if npg~=psrdata.nowpage and npg<=maxpage then
-			psrdata.nowpage = npg
-			rawList = AIR.deepcopy(psrdata.playerList[npg])
-		end
+		:: JUMPOUT_PSR_OTHER ::
 	end
 
 	-- build form
