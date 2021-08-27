@@ -10,7 +10,7 @@
 	  Github   https://github.com/LiteLDev-LXL/iLand-Core
 	  License  GPLv3 未经许可禁止商业使用
 	  
---]] -------------------------------------------------------
+--]] ------------------------------------------------------
 
 plugin_version = '2.30'
 DEV_MODE = true
@@ -406,58 +406,6 @@ function FORM_land_gui_perm(player,data)
 		FORM_BACK_LandMgr
 	)
 end
-function FORM_land_gui_trust(player,data)
-	if data==nil then return end
-	
-	PSR_New(player,FORM_NULL)
-
-	if true then
-		return
-	end
-
-	local xuid = player.xuid
-	local landId = TRS_Form[xuid].landId
-	local shareList = land_data[landId].settings.share
-	local playerList = TRS_Form[xuid].playerList
-	local ownerXuid = ILAPI.GetOwner(landId)
-
-	if data[1] then
-		if data[2]==0 then return end
-		local targetXuid=GetXuidFromId(playerList[data[2]+1])
-		if ownerXuid==targetXuid then
-			sendText(player,_tr('title.landtrust.cantaddown'));return
-		end
-		if AIR.isValInList(shareList,targetXuid)~=-1 then
-			sendText(player,_tr('title.landtrust.alreadyexists'));return
-		end
-		shareList[#shareList+1]=targetXuid
-		updateLandTrustMap(landId)
-		ILAPI.save()
-		if not(data[3]) then 
-			player:sendModalForm(
-				_tr('gui.general.complete'),
-				'Complete.',
-				_tr('gui.general.back'),
-				_tr('gui.general.close'),
-				FORM_BACK_LandMgr
-			)
-		end
-	end
-	if data[3] then
-		if data[4]==0 then return end
-		local targetXuid=shareList[data[4]]
-		table.remove(shareList,AIR.isValInList(shareList,targetXuid))
-		updateLandTrustMap(landId)
-		ILAPI.save()
-		player:sendModalForm(
-			_tr('gui.general.complete'),
-			'Complete.',
-			_tr('gui.general.back'),
-			_tr('gui.general.close'),
-			FORM_BACK_LandMgr
-		)
-	end
-end
 function FORM_land_gui_name(player,data)
 	if data==nil then return end
 	
@@ -481,26 +429,6 @@ function FORM_land_gui_describe(player,data)
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
-		_tr('gui.general.back'),
-		_tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_transfer(player,data)
-	if data==nil or data[1]==0 then return end
-	
-	local xuid=player.xuid
-	local landId=TRS_Form[xuid].landId
-	local ownerXuid=ILAPI.GetOwner(landId)
-	local targetXuid=GetXuidFromId(TRS_Form[xuid].playerList[data[1]+1])
-	if targetXuid==ownerXuid then sendText(player,_tr('title.landtransfer.canttoown'));return end
-	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
-	table.insert(land_owners[targetXuid],#land_owners[targetXuid]+1,landId)
-	updateLandOwnersMap(landId)
-	ILAPI.save()
-	player:sendModalForm(
-		_tr('gui.general.complete'),
-		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',GetIdFromXuid(targetXuid)),
 		_tr('gui.general.back'),
 		_tr('gui.general.close'),
 		FORM_BACK_LandMgr
@@ -645,7 +573,21 @@ function FORM_land_gui(player,data,lid)
 		Form:setContent(_tr('gui.landtrust.tip'))
 		Form:addButton(_tr('gui.landtrust.addtrust'))
 		Form:addButton(_tr('gui.landtrust.rmtrust'))
-		player:sendForm(Form,FORM_land_gui_trust)
+		player:sendForm(Form,function(pl,dta)
+			if dta==nil then return end
+			local xuid = pl.xuid
+			TRS_Form[xuid].edittype = dta
+			-- gen idlist
+			if dta==1 then -- del
+				local ids = {}
+				for i,v in pairs(land_data[TRS_Form[xuid].landId].settings.share) do
+					ids[#ids+1] = GetIdFromXuid(v)
+				end
+				PSR_New(pl,SRCB_land_trust,ids)
+				return
+			end
+			PSR_New(pl,SRCB_land_trust)
+		end)
 		return
 	end
 	if data[2]==4 then --领地nickname
@@ -668,12 +610,16 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if data[2]==6 then --领地过户
-		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
-		local Form = mc.newCustomForm()
-		Form:setTitle(_tr('gui.landtransfer.title'))
-		Form:addLabel(_tr('gui.landtransfer.tip'))
-		Form:addDropdown(_tr('talk.land.selecttargetplayer'),TRS_Form[xuid].playerList)
-		player:sendForm(Form,FORM_land_gui_transfer)
+		player:sendModalForm(
+			_tr('gui.landtransfer.title'),
+			_tr('gui.landtransfer.tip'),
+			_tr('gui.general.yes'),
+			_tr('gui.general.close'),
+			function(pl,ids)
+				if not(ids) then return end
+				PSR_New(pl,SRCB_land_transfer)
+			end
+		)
 		return
 	end
 	if data[2]==7 then --删除领地
@@ -883,6 +829,74 @@ function FORM_land_gde(player,id)
 	if id==2 then
 		Eventing_onPlayerCmd(player,MainCmd..' tp')
 	end
+end
+function SRCB_land_trust(player,selected)
+	
+	local xuid = player.xuid
+	local landId = TRS_Form[xuid].landId
+	local data = TRS_Form[xuid].edittype
+	local status_list = {}
+
+	if data==0 then -- add
+		for n,ID in pairs(selected) do
+			local targetXuid=GetXuidFromId(ID)
+			status_list[ID] = {}
+			if ILAPI.GetOwner(landId)==targetXuid then
+				status_list[ID] = _tr('gui.landtrust.fail.cantaddown')
+				goto CONTINUE_ADDTRUST
+			end
+			if ILAPI.AddTrust(landId,targetXuid)==false then
+				status_list[ID] = _tr('gui.landtrust.fail.alreadyexists')
+			else
+				status_list[ID] = _tr('gui.landtrust.addsuccess')
+			end
+			:: CONTINUE_ADDTRUST ::
+		end
+	end
+	if data==1 then -- rm
+		for n,ID in pairs(selected) do
+			local targetXuid=GetXuidFromId(ID)
+			ILAPI.RemoveTrust(landId,targetXuid)
+			status_list[ID] = {}
+			status_list[ID] = _tr('gui.landtrust.rmsuccess')
+		end
+	end
+
+	local text = "Completed."
+	for i,v in pairs(status_list) do
+		text = text..'\n'..i..' => '..v
+	end
+	player:sendModalForm(
+		_tr('gui.general.complete'),
+		text,
+		_tr('gui.general.back'),
+		_tr('gui.general.close'),
+		FORM_BACK_LandMgr
+	)
+end
+function SRCB_land_transfer(player,selected)
+	if #selected > 1 then
+		sendText(player,_tr('title.landtransfer.toomanyids'))
+		return
+	end
+
+	local xuid=player.xuid
+	local landId=TRS_Form[xuid].landId
+	local targetXuid=GetXuidFromId(selected[1])
+
+	if ILAPI.IsLandOwner(landId,targetXuid) then 
+		sendText(player,_tr('title.landtransfer.canttoown'))
+		return
+	end
+	ILAPI.SetOwner(landId,targetXuid)
+
+	player:sendModalForm(
+		_tr('gui.general.complete'),
+		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
+		_tr('gui.general.back'),
+		_tr('gui.general.close'),
+		FORM_BACK_LandMgr
+	)
 end
 function BoughtProg_SelectRange(player,vec4,mode)
 	local xuid = player.xuid
@@ -1270,17 +1284,19 @@ function PSR_New(player,callback,customlist)
 	end
 
 	-- set TRS
-	TRS_Form[player.xuid].psr = {
+	local xuid = player.xuid
+	TRS_Form[xuid].psr = {
 		playerList = {},
 		cbfunc = callback,
 		nowpage = 1,
 		filter = ""
 	}
 
+	local perpage = cfg.features.playersPerPage
 	if customlist~=nil then
-		TRS_Form[player.xuid].psr.playerList = ToPages(customlist)
+		TRS_Form[xuid].psr.playerList = ToPages(customlist,perpage)
 	else
-		TRS_Form[player.xuid].psr.playerList = ToPages(pl_list,cfg.features.playersPerPage)
+		TRS_Form[xuid].psr.playerList = ToPages(pl_list,perpage)
 	end
 
 	-- call
@@ -1288,7 +1304,10 @@ function PSR_New(player,callback,customlist)
 
 end
 function PSR_Callback(player,data,isFirstCall)
-	if data==nil then return end
+	if data==nil then
+		TRS_Form[xuid].psr=nil
+		return
+	end
 	
 	-- get data
 	local xuid = player.xuid
@@ -1352,6 +1371,7 @@ function PSR_Callback(player,data,isFirstCall)
 		end
 		if next(selected) ~= nil then
 			psrdata.cbfunc(player,selected)
+			psrdata=nil
 			return
 		end
 
@@ -1377,7 +1397,6 @@ function PSR_Callback(player,data,isFirstCall)
 	end
 	Form:addStepSlider(_tr('gui.playerselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
 	player:sendForm(Form,PSR_Callback)
-
 end
 function ToPages(list,perpage)
 	local rtn = {}
@@ -1647,6 +1666,9 @@ function ILAPI.UpdateSetting(landId,cfgname,value)
 end
 function ILAPI.AddTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
+	if ILAPI.IsPlayerTrusted(landId,xuid) then
+		return false
+	end
 	shareList[#shareList+1]=xuid
 	updateLandTrustMap(landId)
 	ILAPI.save()
@@ -1654,8 +1676,16 @@ function ILAPI.AddTrust(landId,xuid)
 end
 function ILAPI.RemoveTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
-	table.remove(shareList,AIR.isValInList(shareList,targetXuid))
+	table.remove(shareList,AIR.isValInList(shareList,xuid))
 	updateLandTrustMap(landId)
+	ILAPI.save()
+	return true
+end
+function ILAPI.SetOwner(landId,xuid)
+	local ownerXuid = ILAPI.GetOwner(landId)
+	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
+	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
+	updateLandOwnersMap(landId)
 	ILAPI.save()
 	return true
 end
