@@ -728,7 +728,6 @@ function FORM_land_mgr(player,data)
 	end
 
 	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-	gl_objective = mc.getScoreObjective(cfg.money.scoreboard_objname)
 	
 	-- lands manager
 	
@@ -1749,47 +1748,36 @@ function _tr(a)
 	return i18n_data[a]
 end
 function money_add(player,value)
-	local tol = cfg.money.protocol
-	if tol=='scoreboard' then
-		if gl_objective==nil then
-			ERROR(_tr('console.error.money.scorenull'))
-			return
-		end
-		gl_objective:addScore(player.realName,value);return
+	local ptc = cfg.money.protocol
+	if ptc=='scoreboard' then
+		player:addScore(cfg.money.scoreboard_objname,value);return
 	end
-	if tol=='llmoney' then
+	if ptc=='llmoney' then
 		money.add(player.xuid,value);return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function money_del(player,value)
-	local tol = cfg.money.protocol
-	if tol=='scoreboard' then
-		if gl_objective==nil then
-			ERROR(_tr('console.error.money.scorenull'))
-			return
-		end
-		gl_objective:removeScore(player.realName,value);return
+	local ptc = cfg.money.protocol
+	if ptc=='scoreboard' then
+		player:setScore(cfg.money.scoreboard_objname,player:getScore(cfg.money.scoreboard_objname)-value)
+		return
 	end
-	if tol=='llmoney' then
+	if ptc=='llmoney' then
 		money.reduce(player.xuid,value)
 		return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function money_get(player)
-	local tol = cfg.money.protocol
-	if tol == 'scoreboard' then
-		if gl_objective==nil then
-			ERROR(_tr('console.error.money.scorenull'))
-			return 0
-		end
-		return gl_objective:getScore(player.realName)
+	local ptc = cfg.money.protocol
+	if ptc=='scoreboard' then
+		return player:getScore(cfg.money.scoreboard_objname)
 	end
-	if tol=='llmoney' then
+	if ptc=='llmoney' then
 		return money.get(player.xuid)
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',tol))
+	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
@@ -2920,9 +2908,6 @@ mc.listen('onServerStarted',function()
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
 	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
-	if cfg.money.protocol=='scoreboard' then
-		gl_objective = mc.getScoreObjective(cfg.money.scoreboard_objname)
-	end
 
 	-- Configure Updater
 	do

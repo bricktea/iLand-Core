@@ -15,7 +15,6 @@
  - [x] 其他维度圈地开关
  - [x] 增加监听器控制开关
  - [x] 重建ILAPI
- - [x] LXL0.5.0 SCOREBOARD
  - [x] 使用LXL更新服务
  - [x] 整合landtp与landpoint进fastgde
  - [x] 创造检测，无XUID玩家检测
