@@ -409,7 +409,11 @@ end
 function FORM_land_gui_trust(player,data)
 	if data==nil then return end
 	
-	PlayerSelector(player,FORM_land_gui_trust)
+	PSR_New(player,FORM_NULL)
+
+	if true then
+		return
+	end
 
 	local xuid = player.xuid
 	local landId = TRS_Form[xuid].landId
@@ -636,23 +640,11 @@ function FORM_land_gui(player,data,lid)
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
 	if data[2]==3 then --编辑信任名单
-		if cfg.features.offlinePlayerInList then
-			TRS_Form[xuid].playerList = GetAllPlayerList()
-		else
-			TRS_Form[xuid].playerList = GetOnlinePlayerList()
-		end
-		local shareList={}
-		for num,xuid in pairs(land_data[landId].settings.share) do
-			shareList[#shareList+1]=GetIdFromXuid(xuid)
-		end
-		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
-		table.insert(shareList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_tr('gui.landtrust.title'))
 		Form:setContent(_tr('gui.landtrust.tip'))
 		Form:addButton(_tr('gui.landtrust.addtrust'))
 		Form:addButton(_tr('gui.landtrust.rmtrust'))
-
 		player:sendForm(Form,FORM_land_gui_trust)
 		return
 	end
@@ -676,11 +668,6 @@ function FORM_land_gui(player,data,lid)
 		return
 	end
 	if data[2]==6 then --领地过户
-		if cfg.features.offlinePlayerInList then
-			TRS_Form[xuid].playerList = GetAllPlayerList()
-		else
-			TRS_Form[xuid].playerList = GetOnlinePlayerList()
-		end
 		table.insert(TRS_Form[xuid].playerList,1,'['.._tr('gui.general.plzchose')..']')
 		local Form = mc.newCustomForm()
 		Form:setTitle(_tr('gui.landtransfer.title'))
@@ -1268,7 +1255,9 @@ function GUI_FastMgr(player,isOP)
 end
 
 -- Selector
-function PlayerSelector(player,landId,actionType,callback)
+function PSR_New(player,callback)
+	
+	-- get player list
 	local pl_list = {}
 	local forTol
 	if cfg.features.offlinePlayerInList then
@@ -1277,9 +1266,117 @@ function PlayerSelector(player,landId,actionType,callback)
 		forTol = TRS_Form
 	end
 	for xuid,lds in pairs(forTol) do
-		pl_list = [#pl_list+1]=GetIdFromXuid(xuid)
+		pl_list[#pl_list+1] = GetIdFromXuid(xuid)
 	end
 
+	-- set TRS
+	TRS_Form[player.xuid].psr = {
+		playerList = ToPages(pl_list,cfg.features.playersPerPage),
+		cbfunc = callback,
+		nowpage = 1,
+		filter = ""
+	}
+
+	-- call
+	PSR_Callback(player,'#',true)
+
+end
+function PSR_Callback(player,data,isFirstCall)
+	if data==nil then return end
+	
+	-- get data
+	local xuid = player.xuid
+	local psrdata = TRS_Form[xuid].psr
+
+	function buildPage(num)
+		local tmp = {}
+		for i=1,num do
+			tmp[i]=AIR.gsubEx(_tr('gui.playerselector.num'),'<a>',i)
+		end
+		return tmp
+	end
+
+	local perpage = cfg.features.playersPerPage
+	local maxpage = #psrdata.playerList
+	local rawList = AIR.deepcopy(psrdata.playerList[psrdata.nowpage])
+
+	if type(data)=='table' then
+		local selected = {}
+
+		-- create filter
+		if data[1]~='' then
+			local findTarget = string.lower(data[1])
+			tmpList = {}
+			for num,pagelist in pairs(psrdata.playerList) do
+				for page,name in pairs(pagelist) do
+					if string.find(string.lower(name),findTarget) ~= nil then
+						tmpList[#tmpList+1] = name
+					end
+				end
+			end
+			local tableList = ToPages(tmpList,perpage)
+			if psrdata.nowpage>#tableList then
+				psrdata.nowpage = 1
+			end
+			if tableList[psrdata.nowpage]==nil then
+				rawList = {}
+				maxpage = 1
+			else
+				rawList = tableList[psrdata.nowpage]
+				maxpage = #tableList
+			end
+		end
+		psrdata.filter = data[1]
+		-- gen selects
+		for num,key in pairs(data) do
+			if num~=1 and num~=#data and key==true then
+				selected[#selected+1] = psrdata.playerList[psrdata.nowpage][num-1]
+			end
+		end
+		if next(selected) ~= nil then
+			psrdata.cbfunc(player,selected)
+			return
+		end
+
+		-- refresh page
+		local npg = data[#data] + 1 -- custom page
+		if npg~=psrdata.nowpage and npg<=maxpage then
+			psrdata.nowpage = npg
+			rawList = AIR.deepcopy(psrdata.playerList[npg])
+		end
+	end
+
+	-- build form
+	local Form = mc.newCustomForm()
+	Form:setTitle(_tr('gui.playerselector.title'))
+	Form:addLabel(_tr('gui.playerselector.search.tip'))
+	Form:addLabel(_tr('gui.playerselector.search.tip2'))
+	Form:addInput(_tr('gui.playerselector.search.type'),_tr('gui.playerselector.search.ph'),psrdata.filter)
+	Form:addLabel(
+		AIR.gsubEx(
+			_tr('gui.playerselector.pages'),
+			'<a>',psrdata.nowpage,
+			'<b>',maxpage,
+			'<c>',#rawList
+		)
+	)
+	for n,plname in pairs(rawList) do
+		Form:addSwitch(plname,false)
+	end
+	Form:addStepSlider(_tr('gui.playerselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
+	player:sendForm(Form,PSR_Callback)
+
+end
+function ToPages(list,perpage)
+	local rtn = {}
+	for n,pl in pairs(list) do
+		local num = math.ceil(n/perpage)
+		if rtn[num]==nil then
+			rtn[num] = {}
+		end
+		rtn[num][#rtn[num]+1] = pl
+	end
+	return rtn
 end
 
 -- +-+ +-+ +-+ +-+ +-+
