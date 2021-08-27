@@ -2629,6 +2629,28 @@ function Eventing_onExplode(entity,pos)
 	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end
+function Eventing_onBedExplode(pos)
+
+	if ILAPI.IsDisabled('onBedExplode') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	return false
+end
+function Eventing_onRespawnAnchorExplode(pos,player)
+
+	if ILAPI.IsDisabled('onRespawnAnchorExplode') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	return false
+end
 function Eventing_onFarmLandDecay(pos,entity)
 	
 	if isNull(entity) or ILAPI.IsDisabled('onFarmLandDecay') then
@@ -2756,6 +2778,8 @@ mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
 mc.listen('onUseItemOn',Eventing_onUseItemOn)
 mc.listen('onAttack',Eventing_onAttack)
 mc.listen('onExplode',Eventing_onExplode)
+mc.listen('onBedExplode',Eventing_onBedExplode)
+mc.listen('onRespawnAnchorExplode',Eventing_onRespawnAnchorExplode)
 mc.listen('onTakeItem',Eventing_onTakeItem)
 mc.listen('onDropItem',Eventing_onDropItem)
 mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
