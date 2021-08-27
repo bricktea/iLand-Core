@@ -1255,7 +1255,7 @@ function GUI_FastMgr(player,isOP)
 end
 
 -- Selector
-function PSR_New(player,callback)
+function PSR_New(player,callback,customlist)
 	
 	-- get player list
 	local pl_list = {}
@@ -1271,11 +1271,17 @@ function PSR_New(player,callback)
 
 	-- set TRS
 	TRS_Form[player.xuid].psr = {
-		playerList = ToPages(pl_list,cfg.features.playersPerPage),
+		playerList = {},
 		cbfunc = callback,
 		nowpage = 1,
 		filter = ""
 	}
+
+	if customlist==nil then
+		TRS_Form[player.xuid].psr.playerList = ToPages(customlist)
+	else
+		TRS_Form[player.xuid].psr.playerList = ToPages(pl_list,cfg.features.playersPerPage)
+	end
 
 	-- call
 	PSR_Callback(player,'#',true)
