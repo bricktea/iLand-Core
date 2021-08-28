@@ -2406,6 +2406,22 @@ function Eventing_onConsoleCmd(cmd)
 		return false
 	end
 
+	-- [update] Upgrade iLand
+	if opt[2] == 'update' then
+		local raw = network.httpGetSync('https://lxl-upgrade.amd.rocks/iLand/server.json')
+		if raw.status==200 then
+			local v1 = json.decode(raw.data)
+			if v1.FILE_Version==200 then
+				Upgrade(v1.Updates[1])
+			else
+				ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',v1.FILE_Version))
+			end
+		else
+			ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',raw.status))
+		end
+		return false
+	end
+
 	-- [X] Unknown key
 	ERROR('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
 	return false
