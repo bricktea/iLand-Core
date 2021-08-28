@@ -17,7 +17,7 @@ DEV_MODE = true
 
 langVer = 230
 minAirVer = 230
-minLXLVer = {0,4,3}
+minLXLVer = {0,5,1}
 
 AIR = require('airLibs')
 json = require('dkjson')
@@ -2408,7 +2408,7 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- [update] Upgrade iLand
 	if opt[2] == 'update' then
-		local raw = network.httpGetSync('https://lxl-upgrade.amd.rocks/iLand/server.json')
+		local raw = network.httpGetSync(gl_server_link)
 		if raw.status==200 then
 			local v1 = json.decode(raw.data)
 			if v1.FILE_Version==200 then
@@ -3090,7 +3090,8 @@ mc.listen('onServerStarted',function()
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
 	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
-
+	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand/server.json'
+	
 	-- Configure Updater
 	do
 		if cfg.version==nil or cfg.version<114 then
@@ -3292,7 +3293,7 @@ mc.listen('onServerStarted',function()
 				end
 				land_data[landId].permissions.use_firegen=false
 			end
-			--ILAPI.save()
+			ILAPI.save()
 		end
 	end
 	
@@ -3314,7 +3315,7 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet('https://lxl-upgrade.amd.rocks/iLand/server.json',Ncb_online)
+		network.httpGet(gl_server_link,Ncb_online)
 	end
 
 	-- register cmd.
