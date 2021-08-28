@@ -34,7 +34,6 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           curl -L -o D:/out/lib/dkjson.lua "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3"
-          curl -L -o D:/out/lib/airLibs.lua "https://raw.githubusercontent.com/McAirLand/AirLibs/main/airLibs.lua"
       
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0

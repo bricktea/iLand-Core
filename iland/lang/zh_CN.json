@@ -173,7 +173,7 @@
     "gui.buyland.3d": "三维领地",
     "gui.buyland.content": "圈地成功！\\n长\\\\宽\\\\高: <a>\\\\<b>\\\\<c>格\\n体积: <d>块\\n价格: <e><f> \\n钱包: <g><f>",
     "gui.buyland.succeed": "领地购买成功！是否现在打开领地管理器？",
-    "gui.buyland.discount": " （已折扣<a>%%）",
+    "gui.buyland.discount": " （已折扣<a>%%%%）",
     "gui.delland.content": "您确定要删除您的领地吗？\\n如果确定，您将得到<a><b>退款。然后您的领地将失去保护，配置文件将立刻删除。",
     "gui.landdescribe.tip": "领地备注会在其他访客来到您的领地时发送给他们。\n\n支持变量：\n$visitor = 造访者名称\n$n = 换行符",
     "gui.landtrust.tip": "选择操作模式",
