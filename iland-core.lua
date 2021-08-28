@@ -12,8 +12,8 @@
 	  
 --]] ------------------------------------------------------
 
-plugin_version = '2.30'
-DEV_MODE = false
+plugin_version = '2.31'
+DEV_MODE = true
 
 langVer = 230
 minAirVer = 230
