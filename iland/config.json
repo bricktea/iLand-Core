@@ -34,6 +34,12 @@
         "blockLandDims": [],
         "land_3D":true,
         "land_2D":true,
+        "nearby_protection": {
+          "enabled": true,
+          "side": 10,
+          "blockselectland": true
+        },
+        "playersPerPage":20,
         "disabled_listener":["onDropItem"],
         "chunk_side": 16,
         "sign_frequency": 2,

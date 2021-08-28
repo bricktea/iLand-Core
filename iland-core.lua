@@ -166,7 +166,7 @@ function updateEdgeMap(landId,mode)
 		EdgeMap[landId].D3D = cubeGetEdge(spos,epos)
 	end
 end
-function buildLDMap(listener)
+function buildLDMap()
 	ListenerDisabled={}
 	for n,lner in pairs(cfg.features.disabled_listener) do
 		ListenerDisabled[lner] = { true }
@@ -638,77 +638,98 @@ function FORM_land_gui(player,data,lid)
 	end
 end
 function FORM_land_mgr(player,data)
+
 	if data==nil then return end
 	local xuid=player.xuid
+	if data[1]~='' then
+		cfg.land.player_max_lands = tonumber(data[1])
+	end
 	if data[2]~='' then
-		cfg.land.player_max_lands = tonumber(data[2])
+		cfg.land.land_max_square = tonumber(data[2])
 	end
 	if data[3]~='' then
-		cfg.land.land_max_square = tonumber(data[3])
+		cfg.land.land_min_square = tonumber(data[3])
 	end
-	if data[4]~='' then
-		cfg.land.land_min_square = tonumber(data[4])
-	end
-	cfg.land_buy.refund_rate = data[5]/100
-	if data[6]==0 then
+	cfg.land_buy.refund_rate = data[4]/100
+	if data[5]==0 then
 		cfg.money.protocol='llmoney'
-	end
-	if data[6]==1 then
+	else
 		cfg.money.protocol='scoreboard'
 	end
+	if data[6]~='' then
+		cfg.money.scoreboard_objname=data[6]
+	end
 	if data[7]~='' then
-		cfg.money.scoreboard_objname=data[7]
+		cfg.money.credit_name=data[7]
 	end
-	if data[8]~='' then
-		cfg.money.credit_name=data[8]
-	end
-	cfg.money.discount=data[9]
-	if data[10]==0 then
+	cfg.money.discount=data[8]
+	if data[9]==0 then
 		cfg.land_buy.calculation_3D='m-1'
 	end
-	if data[10]==1 then
+	if data[9]==1 then
 		cfg.land_buy.calculation_3D='m-2'
 	end
-	if data[10]==2 then
+	if data[9]==2 then
 		cfg.land_buy.calculation_3D='m-3'
 	end
+	if data[10]~='' then
+		cfg.land_buy.price_3D[1]=tonumber(data[10])
+	end
 	if data[11]~='' then
-		cfg.land_buy.price_3D[1]=tonumber(data[11])
+		cfg.land_buy.price_3D[2]=tonumber(data[11])
 	end
-	if data[12]~='' then
-		cfg.land_buy.price_3D[2]=tonumber(data[12])
-	end
-	if data[13]==0 then
+	if data[12]==0 then
 		cfg.land_buy.calculation_2D='d-1'
 	end
-	if data[14]~='' then
-		cfg.land_buy.price_2D[1]=tonumber(data[14])
+	if data[13]~='' then
+		cfg.land_buy.price_2D[1]=tonumber(data[13])
 	end
-	cfg.manager.default_language=TRS_Form[xuid].langlist[data[15]+1]
-	cfg.features.landSign = data[16]
-	cfg.features.particles = data[17]
-	cfg.features.force_talk = data[18]
-	cfg.update_check = data[19]
-	cfg.features.auto_update = data[20]
-	cfg.features.offlinePlayerInList = data[21]
-	cfg.features.land_2D = data[22]
-	cfg.features.land_3D = data[23]
-	if data[24]~='' then
-		cfg.features.selection_tool_name=data[24]
+	cfg.manager.default_language=TRS_Form[xuid].langlist[data[14]+1]
+	cfg.features.landSign = data[15]
+	cfg.features.particles = data[16]
+	cfg.features.force_talk = data[17]
+	-- 18~20 (3) BlockLandDims
+	cfg.features.nearby_protection.enabled = data[21]
+	cfg.features.nearby_protection.blockselectland = data[22]
+	cfg.update_check = data[23]
+	cfg.features.auto_update = data[24]
+	cfg.features.offlinePlayerInList = data[25]
+	cfg.features.land_2D = data[26]
+	cfg.features.land_3D = data[27]
+	if data[28]~='' then
+		cfg.features.playersPerPage=tonumber(data[28])
 	end
-	if data[25]~='' then
-		cfg.features.sign_frequency=tonumber(data[25])
+	if data[29]~='' then
+		cfg.features.nearby_protection.side=tonumber(data[29])
 	end
-	if data[26]~='' then
-		cfg.features.chunk_side=tonumber(data[26])
+	if data[30]~='' then
+		cfg.features.selection_tool_name=data[30]
 	end
-	if data[27]~='' then
-		cfg.features.player_max_ple=tonumber(data[27])
+	if data[31]~='' then
+		cfg.features.sign_frequency=tonumber(data[31])
+	end
+	if data[32]~='' then
+		cfg.features.chunk_side=tonumber(data[32])
+	end
+	if data[33]~='' then
+		cfg.features.player_max_ple=tonumber(data[33])
+	end
+
+	-- BlockLandDims
+	local bldims = cfg.features.blockLandDims
+	if not(data[18]) then
+		bldims[#bldims+1]=0
+	end
+	if not(data[19]) then
+		bldims[#bldims+1]=1
+	end
+	if not(data[20]) then
+		bldims[#bldims+1]=2
 	end
 
 	ILAPI.save()
 	
-	-- do rt
+	-- Do Realtime
 
 	if cfg.features.landSign and CLOCK_LANDSIGN==nil then
 		enableLandSign()
@@ -728,26 +749,51 @@ function FORM_land_mgr(player,data)
 	end
 
 	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-	
-	-- lands manager
-	
-	if data[1]==0 then
-		player:sendModalForm(
-			_tr('gui.general.complete'),
-			"Complete.",
-			_tr('gui.general.back'),
-			_tr('gui.general.close'),
-			FORM_BACK_LandOPMgr
-		)
-		return
-	end
 
-	local IdLst={}
-	for landId,data in pairs(land_data) do
-		IdLst[#IdLst+1]=landId
-	end
-	TRS_Form[xuid].landId = IdLst[data[1]]
-	GUI_FastMgr(player,true)
+	player:sendModalForm(
+		_tr('gui.general.complete'),
+		"Complete.",
+		_tr('gui.general.back'),
+		_tr('gui.general.close'),
+		FORM_BACK_LandOPMgr
+	)
+
+end
+function FORM_land_listener(player,data)
+	if data==nil then return end
+
+	cfg.features.disabled_listener = {}
+	local dbl = cfg.features.disabled_listener
+	if not(data[1]) then dbl[#dbl+1] = "onDestroyBlock" end
+	if not(data[2]) then dbl[#dbl+1] = "onPlaceBlock" end
+	if not(data[3]) then dbl[#dbl+1] = "onUseItemOn" end
+	if not(data[4]) then dbl[#dbl+1] = "onAttack" end
+	if not(data[5]) then dbl[#dbl+1] = "onExplode" end
+	if not(data[6]) then dbl[#dbl+1] = "onBedExplode" end
+	if not(data[7]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
+	if not(data[8]) then dbl[#dbl+1] = "onTakeItem" end
+	if not(data[9]) then dbl[#dbl+1] = "onDropItem" end
+	if not(data[10]) then dbl[#dbl+1] = "onBlockInteracted" end
+	if not(data[11]) then dbl[#dbl+1] = "onUseFrameBlock" end
+	if not(data[12]) then dbl[#dbl+1] = "onSpawnProjectile" end
+	if not(data[13]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
+	if not(data[14]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
+	if not(data[15]) then dbl[#dbl+1] = "onRide" end
+	if not(data[16]) then dbl[#dbl+1] = "onWitherBossDestroy" end
+	if not(data[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
+	if not(data[18]) then dbl[#dbl+1] = "onPistonPush" end
+	if not(data[19]) then dbl[#dbl+1] = "onFireSpread" end
+	
+	buildLDMap()
+	ILAPI.save()
+	player:sendModalForm(
+		_tr('gui.general.complete'),
+		"Complete.",
+		_tr('gui.general.back'),
+		_tr('gui.general.close'),
+		FORM_BACK_LandOPMgr
+	)
+
 end
 function FORM_land_choseDim(player,id)
 	if id==true and not(cfg.features.land_3D) then
@@ -771,16 +817,22 @@ function FORM_land_choseDim(player,id)
 	newLand[xuid].posB={}
 	newLand[xuid].step=0
 end
-function FORM_landtp(player,id)
+function FORM_landtp(player,id,customID)
 	if id==nil or id==0 then return end
 
 	local xuid=player.xuid
-	local lands = ILAPI.GetPlayerLands(xuid)
-	for n,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-		lands[#lands+1]=landId
+	local landId
+	if customID~=nil then
+		landId = customID
+	else
+		local lands = ILAPI.GetPlayerLands(xuid)
+		for n,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+			lands[#lands+1]=landId
+		end
+	
+		landId = lands[id]
 	end
 
-	local landId = lands[id]
 	local pos = ILAPI.GetPoint(landId)
 	local srt = VecMap[landId].a
 
@@ -1118,91 +1170,170 @@ function GUI_LMgr(player)
 end
 function GUI_OPLMgr(player)
 
-	local xuid=player.xuid
-	-- build land_list
-	local landlst={}
-	local land_default=0
-	local lid=ILAPI.PosGetLand(FixBp(player.blockPos))
-	for i,v in pairs(land_data) do
-		local thisOwner=ILAPI.GetOwner(i)
-		if thisOwner~='?' then thisOwner=GetIdFromXuid(thisOwner) else thisOwner='?' end
-		if land_data[i].settings.nickname=='' then
-			landlst[#landlst+1]='['.._tr('gui.landmgr.unnamed')..'] ('..thisOwner..') ['..i..']'
-		else
-			landlst[#landlst+1]=land_data[i].settings.nickname..' ('..thisOwner..') ['..i..']'
+	local Form = mc.newSimpleForm()
+	Form:setTitle(_tr('gui.oplandmgr.landmgr.title'))
+	Form:setContent(_tr('gui.oplandmgr.landmgr.tip'))
+	Form:addButton(_tr('gui.oplandmgr.mgrtype.land'),'textures/ui/icon_book_writable')
+	Form:addButton(_tr('gui.oplandmgr.mgrtype.plugin'),'textures/ui/icon_setting')
+	Form:addButton(_tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
+	Form:addButton(_tr('gui.general.close'))
+	player:sendForm(Form,function(player,id)
+		if id==nil then return end
+		if id==0 then
+			local Form = mc.newSimpleForm()
+			Form:setTitle(_tr('gui.oplandmgr.title'))
+			Form:setContent(_tr('gui.oplandmgr.landmgr.tip'))
+			Form:addButton(_tr('gui.oplandmgr.landmgr.byplayer'),'textures/ui/icon_multiplayer')
+			Form:addButton(_tr('gui.oplandmgr.landmgr.teleport'),'textures/ui/icon_blackfriday')
+			Form:addButton(_tr('gui.oplandmgr.landmgr.byfeet'),'textures/ui/icon_sign')
+			Form:addButton(_tr('gui.general.back'))
+			player:sendForm(Form,GUI_OPLMgr_land)
 		end
-		if i==lid then
-			landlst[#landlst] = _tr('gui.oplandmgr.there')..landlst[#landlst]
-			land_default = #landlst
+		if id==1 then
+			GUI_OPLMgr_plugin(player)
 		end
-	end
-	table.insert(landlst,1,'['.._tr('gui.general.plzchose')..']')
+		if id==2 then
+			GUI_OPLMgr_listener(player)
+		end
+	end)
 
-	-- plugin information
-	local latestVer,iAnn
-	if Global_LatestVersion~=nil then
-		latestVer = Global_LatestVersion
-	else
-		latestVer = '-'
+end
+function GUI_OPLMgr_land(player,mode)
+	if mode==nil then return end
+
+	local xuid = player.xuid
+	if mode==0 then -- 按玩家
+		PSR_New(player,function(pl,selected) 
+			local landlst = {}
+			if #selected>1 then
+				sendText(pl,_tr('talk.tomany'))
+				return
+			end
+			local id = selected[1]
+			local Form = mc.newSimpleForm()
+			Form:setTitle(AIR.gsubEx(_tr('gui.oplandmgr.landmgr.title2'),'<a>',id))
+			Form:setContent(_tr('gui.oplandmgr.landmgr.tip2'))
+			for n,landId in pairs(ILAPI.GetPlayerLands(GetXuidFromId(id))) do
+				Form:addButton(ILAPI.GetNickname(landId,true),'textures/ui/worldsIcon')
+				landlst[#landlst+1] = landId
+			end
+			Form:addButton(_tr('gui.general.back'))
+			TRS_Form[xuid].landlst = landlst
+			pl:sendForm(Form,function(player,id) -- callback
+				if id==nil then return end
+				local xuid = player.xuid
+				local landlst = TRS_Form[xuid].landlst
+				if id==#landlst then -- back
+					GUI_OPLMgr_land(player,0)
+					return
+				end
+				TRS_Form[xuid].landId = landlst[id+1]
+				GUI_FastMgr(player,true)
+			end)
+		end)
 	end
-	if Global_IsAnnouncementEnabled~=nil and Global_IsAnnouncementEnabled~=false then
-		iAnn = Global_Announcement
-	else
-		iAnn = '-'
+	if mode==1 then -- 传送
+		local Form = mc.newSimpleForm()
+		Form:setTitle(_tr('gui.oplandmgr.landmgr.landtp.title'))
+		Form:setContent(_tr('gui.oplandmgr.landmgr.landtp.tip'))
+		local landlst = ILAPI.GetAllLands()
+		for num,landId in pairs(landlst) do
+			local ownerId = ILAPI.GetOwner(landId)
+			if ownerId~='?' then
+				ownerId=GetIdFromXuid(ownerId)
+			end
+			Form:addButton(
+				AIR.gsubEx(
+					_tr('gui.oplandmgr.landmgr.button'),
+					'<a>',ILAPI.GetNickname(landId,true),
+					'<b>',ownerId
+				),
+				'textures/ui/worldsIcon'
+			)
+		end
+		TRS_Form[xuid].landlst = landlst
+		player:sendForm(Form,function(pl,id) -- callback
+			if id==nil then return end
+			local xuid = pl.xuid
+			local landId = TRS_Form[xuid].landlst[id+1]
+			FORM_landtp(pl,1,landId)
+		end)
 	end
-	
-	-- money protocol
-	local money_protocols = {'LLMoney',_tr('talk.scoreboard')}
-	local money_default
-	if cfg.money.protocol=='scoreboard' then
-		money_default=1
-	else
-		money_default=0
+	if mode==2 then -- 脚下
+		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+		if landId==-1 then
+			sendText(player,_tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
+			return
+		end
+		TRS_Form[xuid].landId = landId
+		GUI_FastMgr(player,true)
 	end
-	local calculation_3D = {'m-1','m-2','m-3'}
+	if mode==3 then -- 返回
+		FORM_BACK_LandOPMgr(player,true)
+	end
+
+end
+function GUI_OPLMgr_plugin(player)
+
+	local xuid  = player.xuid
+
+	-- Set Money Protocol
+	local money_protocols = { 'LLMoney', _tr('talk.scoreboard') }
+	local money_default = 0
+	if cfg.money.protocol == 'scoreboard' then
+		money_default = 1
+	end
+
+	-- Land Calculation
+	local calculation_3D = { 'm-1', 'm-2', 'm-3' }
 	local c3d_default=0
-	if cfg.land_buy.calculation_3D=='m-1' then
+	if cfg.land_buy.calculation_3D == 'm-1' then
 		c3d_default=0
 	end
-	if cfg.land_buy.calculation_3D=='m-2' then
+	if cfg.land_buy.calculation_3D == 'm-2' then
 		c3d_default=1
 	end
-	if cfg.land_buy.calculation_3D=='m-3' then
+	if cfg.land_buy.calculation_3D == 'm-3' then
 		c3d_default=2
 	end
-	local calculation_2D = {'d-1'}
+	local calculation_2D = { 'd-1' }
 	local aprice = AIR.deepcopy(cfg.land_buy.price_3D)
 	if aprice[2]==nil then
 		aprice[2]=''
 	end
 	local bprice = AIR.deepcopy(cfg.land_buy.price_2D)
-
-	-- language
+	
+	-- I18N System
 	local langLst = {}
 	local default_lang = 0
 	for n,file in pairs(file.getFilesList(data_path..'lang\\')) do
 		local tmp = AIR.split(file,'.')
 		if tmp[2]=='json' then
-			langLst[#langLst+1]=tmp[1]
+			langLst[#langLst+1] = tmp[1]
 		end
 		if tmp[1]==cfg.manager.default_language then
-			default_lang=#langLst-1
+			default_lang = #langLst-1
 		end
 	end
 	TRS_Form[xuid].langlist = langLst
+	
+	-- Blockland Dims
+	local enableDims = { true,true,true }
+	local bldims = cfg.features.blockLandDims
+	if AIR.isValInList(bldims,0)~=-1 then
+		enableDims[1] = false
+	end
+	if AIR.isValInList(bldims,1)~=-1 then
+		enableDims[2] = false
+	end
+	if AIR.isValInList(bldims,2)~=-1 then
+		enableDims[3] = false
+	end
 
-	-- build form
+	-- Build Form
 	local Form = mc.newCustomForm()
 	Form:setTitle(_tr('gui.oplandmgr.title'))
 	Form:addLabel(_tr('gui.oplandmgr.tip'))
-	Form:addLabel(AIR.gsubEx(_tr('gui.oplandmgr.plugin'),'<a>',langVer))
-	Form:addLabel(
-		AIR.gsubEx(_tr('gui.oplandmgr.plugin.ver'),'<a>',plugin_version)..'\n'..
-		AIR.gsubEx(_tr('gui.oplandmgr.plugin.latest'),'<a>',latestVer)..'\n'..
-		AIR.gsubEx(_tr('gui.oplandmgr.plugin.acement'),'<a>',iAnn)
-	)
-	Form:addLabel(_tr('gui.oplandmgr.landmgr'))
-	Form:addDropdown(_tr('gui.oplandmgr.selectland'),landlst,land_default)
 	Form:addLabel(_tr('gui.oplandmgr.landcfg'))
 	Form:addInput(_tr('gui.oplandmgr.landcfg.maxland'),tostring(cfg.land.player_max_lands))
 	Form:addInput(_tr('gui.oplandmgr.landcfg.maxsqu'),tostring(cfg.land.land_max_square))
@@ -1224,17 +1355,52 @@ function GUI_OPLMgr(player)
 	Form:addSwitch(_tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
 	Form:addSwitch(_tr('gui.oplandmgr.features.particles'),cfg.features.particles)
 	Form:addSwitch(_tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
+	Form:addSwitch(_tr('gui.oplandmgr.features.dim0'),enableDims[1])
+	Form:addSwitch(_tr('gui.oplandmgr.features.dim1'),enableDims[2])
+	Form:addSwitch(_tr('gui.oplandmgr.features.dim2'),enableDims[3])
+	Form:addSwitch(_tr('gui.oplandmgr.features.nearbyprotection'),cfg.features.nearby_protection.enabled)
+	Form:addSwitch(_tr('gui.oplandmgr.features.nearbyblockselectland'),cfg.features.nearby_protection.blockselectland)
 	Form:addSwitch(_tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
 	Form:addSwitch(_tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
 	Form:addSwitch(_tr('gui.oplandmgr.features.offlinepls'),cfg.features.offlinePlayerInList)
 	Form:addSwitch(_tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
 	Form:addSwitch(_tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
+	Form:addInput(_tr('gui.oplandmgr.features.playersperpage'),tostring(cfg.features.playersPerPage))
+	Form:addInput(_tr('gui.oplandmgr.features.nearbyside'),tostring(cfg.features.nearby_protection.side))
 	Form:addInput(_tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
 	Form:addInput(_tr('gui.oplandmgr.features.frequency'),tostring(cfg.features.sign_frequency))
 	Form:addInput(_tr('gui.oplandmgr.features.chunksize'),tostring(cfg.features.chunk_side))
 	Form:addInput(_tr('gui.oplandmgr.features.maxple'),tostring(cfg.features.player_max_ple))
+		
+	player:sendForm(Form,FORM_land_mgr)
 
-	player:sendForm(Form,FORM_land_mgr)						
+end
+function GUI_OPLMgr_listener(player)
+
+	local Form = mc.newCustomForm()
+	Form:setTitle(_tr('gui.listenmgr.title'))
+	Form:addLabel(_tr('gui.listenmgr.tip'))
+	Form:addSwitch('onDestroyBlock',not(ILAPI.IsDisabled('onDestroyBlock')))
+	Form:addSwitch('onPlaceBlock',not(ILAPI.IsDisabled('onPlaceBlock')))
+	Form:addSwitch('onUseItemOn',not(ILAPI.IsDisabled('onUseItemOn')))
+	Form:addSwitch('onAttack',not(ILAPI.IsDisabled('onAttack')))
+	Form:addSwitch('onExplode',not(ILAPI.IsDisabled('onExplode')))
+	Form:addSwitch('onBedExplode',not(ILAPI.IsDisabled('onBedExplode')))
+	Form:addSwitch('onRespawnAnchorExplode',not(ILAPI.IsDisabled('onRespawnAnchorExplode')))
+	Form:addSwitch('onTakeItem',not(ILAPI.IsDisabled('onTakeItem')))
+	Form:addSwitch('onDropItem',not(ILAPI.IsDisabled('onDropItem')))
+	Form:addSwitch('onBlockInteracted',not(ILAPI.IsDisabled('onBlockInteracted')))
+	Form:addSwitch('onUseFrameBlock',not(ILAPI.IsDisabled('onUseFrameBlock')))
+	Form:addSwitch('onSpawnProjectile',not(ILAPI.IsDisabled('onSpawnProjectile')))
+	Form:addSwitch('onFireworkShootWithCrossbow',not(ILAPI.IsDisabled('onFireworkShootWithCrossbow')))
+	Form:addSwitch('onStepOnPressurePlate',not(ILAPI.IsDisabled('onStepOnPressurePlate')))
+	Form:addSwitch('onRide',not(ILAPI.IsDisabled('onRide')))
+	Form:addSwitch('onWitherBossDestroy',not(ILAPI.IsDisabled('onWitherBossDestroy')))
+	Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
+	Form:addSwitch('onPistonPush',not(ILAPI.IsDisabled('onPistonPush')))
+	Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
+
+	player:sendForm(Form,FORM_land_listener)
 end
 function GUI_FastMgr(player,isOP)
 	local xuid=player.xuid
@@ -1304,7 +1470,7 @@ function PSR_New(player,callback,customlist)
 end
 function PSR_Callback(player,data,isFirstCall)
 	if data==nil then
-		TRS_Form[xuid].psr=nil
+		TRS_Form[player.xuid].psr=nil
 		return
 	end
 	
@@ -2163,7 +2329,7 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [mgr] OP-LandMgr GUI
 	if opt[2] == 'mgr' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+		if not(ILAPI.IsLandOperator(xuid)) then
 			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
 		end
@@ -3096,7 +3262,13 @@ mc.listen('onServerStarted',function()
 			cfg.verison=230
 			cfg.features.disabled_listener = {}
 			cfg.features.blockLandDims = {}
+			cfg.features.nearby_protection = {
+				side = 10,
+				enabled = true,
+				blockselectland = true
+			}
 			cfg.features.regFakeCmd=true
+			cfg.features.playersPerPage=20
 			for landId,data in pairs(land_data) do
 				if data.range.start_position.y==0 and data.range.end_position.y==255 then
 					land_data[landId].range.start_position.y=-64
