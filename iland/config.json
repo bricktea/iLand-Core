@@ -24,7 +24,7 @@
         "refund_rate": 0.9
     },
     "features": {
-        "auto_update":true,
+        "auto_update":false,
         "regFakeCmd":true,
         "landSign": true,
         "offlinePlayerInList":true,

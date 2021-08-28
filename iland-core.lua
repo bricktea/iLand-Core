@@ -13,7 +13,7 @@
 --]] ------------------------------------------------------
 
 plugin_version = '2.30'
-DEV_MODE = true
+DEV_MODE = false
 
 langVer = 230
 minAirVer = 230
@@ -3091,7 +3091,7 @@ mc.listen('onServerStarted',function()
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
 	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
 	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand/server.json'
-	
+
 	-- Configure Updater
 	do
 		if cfg.version==nil or cfg.version<114 then
