@@ -3094,67 +3094,9 @@ mc.listen('onServerStarted',function()
 
 	-- Configure Updater
 	do
-		if cfg.version==nil or cfg.version<114 then
+		if cfg.version==nil or cfg.version<200 then
 			ERROR('Configure file too old, you must rebuild it.')
 			return
-		end
-		if cfg.version==114 then
-			cfg.version=115
-			cfg.features.landtp=true
-			for landId,data in pairs(land_data) do
-				land_data[landId].settings.tpoint={}
-				land_data[landId].settings.tpoint[1]=land_data[landId].range.start_position[1]
-				land_data[landId].settings.tpoint[2]=land_data[landId].range.start_position[2]
-				land_data[landId].settings.tpoint[3]=land_data[landId].range.start_position[3]
-				land_data[landId].settings.signtome=true
-				land_data[landId].settings.signtother=true
-			end
-			ILAPI.save()
-		end
-		if cfg.features.selection_tool_name==nil then
-			cfg.features.selection_tool_name='Wooden Axe'
-			ILAPI.save()
-		end
-		if cfg.version==115 then
-			cfg.version=200
-			for landId,data in pairs(land_data) do
-				local perm = land_data[landId].permissions
-				local TMPPM = AIR.deepcopy(perm.allow_use_item)
-				local TMPBL = AIR.deepcopy(perm.allow_open_barrel)
-				perm.use_anvil = TMPPM
-				perm.use_barrel = TMPPM
-				perm.use_beacon = TMPPM
-				perm.use_bed = TMPPM
-				perm.use_bell = TMPPM
-				perm.use_blast_furnace = TMPPM
-				perm.use_brewing_stand = TMPPM
-				perm.use_campfire = TMPPM
-				perm.use_cartography_table = TMPPM
-				perm.use_composter = TMPPM
-				perm.use_crafting_table = TMPPM
-				perm.use_daylight_detector = TMPPM
-				perm.use_dispenser = TMPPM
-				perm.use_dropper = TMPPM
-				perm.use_enchanting_table = TMPPM
-				perm.use_fence_gate = TMPPM
-				perm.use_furnace = TMPPM
-				perm.use_grindstone = TMPPM
-				perm.use_hopper = TMPPM
-				perm.use_jukebox = TMPPM
-				perm.use_loom = TMPPM
-				perm.use_noteblock = TMPPM
-				perm.use_shulker_box = TMPPM
-				perm.use_smithing_table = TMPPM
-				perm.use_smoker = TMPPM
-				perm.use_trapdoor = TMPPM
-				perm.use_lectern = TMPPM
-				perm.use_cauldron = TMPPM
-				perm.allow_use_item = nil
-				perm.allow_open_barrel = nil
-			end
-			cfg.features.force_talk = false
-			cfg.features.player_max_ple = 600
-			ILAPI.save()
 		end
 		if cfg.version==200 then
 			cfg.version=210
@@ -3214,16 +3156,54 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==220 or cfg.version==221 then
 			cfg.version=223
+			ILAPI.save()
+		end
+		if cfg.version==223 then
+			cfg.version=224
 			for landId,data in pairs(land_data) do
-				perm = land_data[landId].permissions
-				if #perm~=46 then
+				land_data[landId].permissions.use_bucket=false
+			end
+			ILAPI.save()
+		end
+		if cfg.version==224 then
+			cfg.verison=230
+			cfg.features.disabled_listener = {}
+			cfg.features.blockLandDims = {}
+			cfg.features.nearby_protection = {
+				side = 10,
+				enabled = true,
+				blockselectland = true
+			}
+			cfg.features.regFakeCmd=true
+			cfg.features.playersPerPage=20
+			for landId,data in pairs(land_data) do
+				local perm = land_data[landId].permissions
+				if data.range.start_position.y==0 and data.range.end_position.y==255 then
+					land_data[landId].range.start_position.y=-64
+					land_data[landId].range.start_position.y=320
+				end
+				perm.use_firegen=false
+				perm.allow_attack=nil
+				perm.allow_attack_player=false
+				perm.allow_attack_animal=false
+				perm.allow_attack_mobs=true
+			end
+			ILAPI.save()
+		end
+		if cfg.version==230 then
+			cfg.version=231
+			for landId,data in pairs(land_data) do
+				local perm = land_data[landId].permissions
+				if #perm~=49 then
 					INFO('AutoRepair','Land <'..landId..'> Has wrong perm cfg, resetting...')
 					perm.allow_destroy=false
 					perm.allow_place=false
-					perm.allow_attack=false
+					perm.allow_attack_player=false
+					perm.allow_attack_animal=false
+					perm.allow_attack_mobs=true
 					perm.allow_open_chest=false
 					perm.allow_pickupitem=false
-					perm.allow_dropitem=false
+					perm.allow_dropitem=true
 					perm.use_anvil = false
 					perm.use_barrel = false
 					perm.use_beacon = false
@@ -3232,6 +3212,7 @@ mc.listen('onServerStarted',function()
 					perm.use_blast_furnace = false
 					perm.use_brewing_stand = false
 					perm.use_campfire = false
+					perm.use_firegen = false
 					perm.use_cartography_table = false
 					perm.use_composter = false
 					perm.use_crafting_table = false
@@ -3259,39 +3240,13 @@ mc.listen('onServerStarted',function()
 					perm.use_respawn_anchor=false
 					perm.use_item_frame=false
 					perm.use_fishing_hook=false
+					perm.use_bucket=false
 					perm.use_pressure_plate=false
 					perm.allow_throw_potion=false
 					perm.allow_ride_entity=false
 					perm.allow_ride_trans=false
 					perm.allow_shoot=false
 				end
-			end
-			ILAPI.save()
-		end
-		if cfg.version==223 then
-			cfg.version=224
-			for landId,data in pairs(land_data) do
-				land_data[landId].permissions.use_bucket=false
-			end
-			ILAPI.save()
-		end
-		if cfg.version==224 then
-			cfg.verison=230
-			cfg.features.disabled_listener = {}
-			cfg.features.blockLandDims = {}
-			cfg.features.nearby_protection = {
-				side = 10,
-				enabled = true,
-				blockselectland = true
-			}
-			cfg.features.regFakeCmd=true
-			cfg.features.playersPerPage=20
-			for landId,data in pairs(land_data) do
-				if data.range.start_position.y==0 and data.range.end_position.y==255 then
-					land_data[landId].range.start_position.y=-64
-					land_data[landId].range.start_position.y=320
-				end
-				land_data[landId].permissions.use_firegen=false
 			end
 			ILAPI.save()
 		end
