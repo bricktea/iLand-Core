@@ -2936,8 +2936,14 @@ function Tcb_ButtomSign()
 end
 function Tcb_SelectionParticles()
 	for xuid,posarr in pairs(ArrayParticles) do
+		local Tpos = mc.getPlayer(xuid).blockPos
 		for n,pos in pairs(posarr) do
-			mc.runcmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..tostring(pos.y+1.6)..' '..pos.z)
+			if newLand[xuid].dimension=='2D' then
+				posY = Tpos.y + 2
+			else
+				posY = pos.y + 1.6
+			end
+			mc.runcmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..posY..' '..pos.z)
 		end
 	end
 end
@@ -3172,7 +3178,7 @@ mc.listen('onServerStarted',function()
 			ILAPI.save()
 		end
 		if cfg.version==224 then
-			cfg.verison=230
+			cfg.version=230
 			cfg.features.disabled_listener = {}
 			cfg.features.blockLandDims = {}
 			cfg.features.nearby_protection = {
@@ -3198,6 +3204,7 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==230 then
 			cfg.version=231
+			cfg.verison=nil -- sb..
 			for landId,data in pairs(land_data) do
 				local perm = land_data[landId].permissions
 				if #perm~=49 then
