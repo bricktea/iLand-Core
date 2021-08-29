@@ -13,9 +13,9 @@
 --]] ------------------------------------------------------
 
 plugin_version = '2.31'
-DEV_MODE = true
+DEV_MODE = false
 
-langVer = 230
+langVer = 231
 minAirVer = 230
 minLXLVer = {0,5,1}
 
@@ -2108,8 +2108,7 @@ function Upgrade(rawInfo)
 		end
 
 		local tmp = network.httpGetSync(source..raw[2])
-		local tmp_md5 = network.httpGetSync(source..raw[2]..'.md5')
-		if tmp.status~=200 or tmp_md5.status~=200 then -- download check
+		if tmp.status~=200 then -- download check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbydown'),
@@ -2121,7 +2120,7 @@ function Upgrade(rawInfo)
 			return
 		end
 
-		if data.toMD5(tmp.data)~=tmp_md5.data then -- MD5 check
+		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- MD5 check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbyverify'),
@@ -2379,7 +2378,7 @@ function Eventing_onConsoleCmd(cmd)
 	-- [ ] main cmd.
 	if opt[2] == nil then
 		INFO('The server is running iLand v'..plugin_version)
-		INFO('Github: https://github.com/McAirLand/iLand-Core')
+		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
 
 		return false
 	end
