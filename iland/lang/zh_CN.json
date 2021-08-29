@@ -301,6 +301,7 @@
     "console.update.newversion": "获取到到新版本 <a> ,可以使用 /land update 自动更新！",
     "console.update.newcontent": "更新内容：",
     "console.update.force": "抱歉，由于云端设定，您的iLand必须更新倒 <a> 才可使用，强制更新大多在旧版本存在严重问题时才会启用。",
+    "console.update.disabled": "云端设定关闭了自动更新，请及时手动更新。",
     "console.update.auto": "由于您开启了自动更新，正在开始更新您的iLand到新版本...",
     "console.update.restart": "更新完毕需要重启服务器以生效。",
     
@@ -309,7 +310,7 @@
     "console.autoupdate.download": "正在下载... ",
     "console.autoupdate.errorbydown": "下载文件 <a> 失败，错误代码：<b>。请检查您的网络或反馈问题，更新已中断。",
     "console.autoupdate.recoverbackup": "已经恢复备份，正在使用旧版本iLand。",
-    "console.autoupdate.errorbysha1": "文件 <a> 的SHA1校验失败，请检查您的网络或反馈问题，更新已中断。",
+    "console.autoupdate.errorbyverify": "文件 <a> 校验失败，请检查您的网络或反馈问题，更新已中断。",
     "console.autoupdate.success": "自动更新已完成，重启服务器即可生效。",
 
     "console.getonline.failbycode": "获取联网信息失败，错误代码：<a>。",

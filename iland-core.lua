@@ -2059,29 +2059,44 @@ function TraverseAABB(AAbb,aaBB,did)
 	end
 	return result
 end
-function Upgrade(updata)
+function Upgrade(rawInfo)
 
-	INFO('AutoUpdate',_tr('console.autoupdate.start'))
 	function recoverBackup(dt)
 		INFO('AutoUpdate',_tr('console.autoupdate.recoverbackup'))
 		for n,backupfilename in pairs(dt) do
 			file.rename(backupfilename..'.bak',backupfilename)
 		end
 	end
+
+	--  Check Data
+	local updata
+	if rawInfo.FILE_Version==201 then
+		updata = rawInfo.Updates[1]
+	else
+		ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',rawInfo.FILE_Version))
+		return
+	end
+	if  rawInfo.DisableClientUpdate then
+		ERROR(_tr('console.update.disabled'))
+		return
+	end
 	
+	-- Check Plugin version
 	if updata.NumVer<=langVer then
 		ERROR(AIR.gsubEx(_tr('console.autoupdate.alreadylatest'),'<a>',updata.NumVer..'<='..langVer))
 		return
 	end
+	INFO('AutoUpdate',_tr('console.autoupdate.start'))
 	
+	-- Set Resource
 	local RawPath = {}
 	local BackupEd = {}
-	local source = 'https://cdn.jsdelivr.net/gh/McAirLand/updates/files/'..updata.NumVer..'/'
+	local source = gl_server_link..'/'..updata.NumVer..'/'
 	INFO('AutoUpdate',plugin_version..' => '..updata.Version)
 	RawPath['$plugin_path'] = 'plugins\\'
 	RawPath['$data_path'] = data_path
 	
-
+	-- Get it, update.
 	for n,thefile in pairs(updata.FileChanged) do
 		local raw = AIR.split(thefile,'::')
 		local path = RawPath[raw[1]]..raw[2]
@@ -2093,7 +2108,8 @@ function Upgrade(updata)
 		end
 
 		local tmp = network.httpGetSync(source..raw[2])
-		if tmp.status~=200 then -- download check
+		local tmp_md5 = network.httpGetSync(source..raw[2]..'.md5')
+		if tmp.status~=200 or tmp_md5.status~=200 then -- download check
 			ERROR(
 				AIR.gsubEx(
 					_tr('console.autoupdate.errorbydown'),
@@ -2105,10 +2121,10 @@ function Upgrade(updata)
 			return
 		end
 
-		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- SHA1 check
+		if data.toMD5(tmp.data)~=tmp_md5.data then -- MD5 check
 			ERROR(
 				AIR.gsubEx(
-					_tr('console.autoupdate.errorbysha1'),
+					_tr('console.autoupdate.errorbyverify'),
 					'<a>',raw[2]
 				)
 			)
@@ -2408,17 +2424,7 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- [update] Upgrade iLand
 	if opt[2] == 'update' then
-		local raw = network.httpGetSync(gl_server_link)
-		if raw.status==200 then
-			local v1 = json.decode(raw.data)
-			if v1.FILE_Version==200 then
-				Upgrade(v1.Updates[1])
-			else
-				ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',v1.FILE_Version))
-			end
-		else
-			ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',raw.status))
-		end
+		Upgrade(gl_server_info)
 		return false
 	end
 
@@ -2992,10 +2998,11 @@ end
 -- check update
 function Ncb_online(code,result)
 	if code==200 then
-		local data=json.decode(result)
+		local data = json.decode(result)
+		gl_server_info = data
 
 		-- Check File Version
-		if data.FILE_Version~=200 then
+		if data.FILE_Version~=201 then
 			INFO('Network',AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
 			return
 		end
@@ -3031,11 +3038,11 @@ function Ncb_online(code,result)
 			end
 			if data.Force_Update then
 				INFO('Update',_tr('console.update.force'))
-				Upgrade(data.Updates[1])
+				Upgrade(data)
 			end
 			if cfg.features.auto_update then
 				INFO('Update',_tr('console.update.auto'))
-				Upgrade(data.Updates[1])
+				Upgrade(data)
 			end
 		end
 		if langVer>data.Updates[1].NumVer then
@@ -3090,7 +3097,7 @@ mc.listen('onServerStarted',function()
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
 	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
-	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand/server.json'
+	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand'
 
 	-- Configure Updater
 	do
@@ -3270,7 +3277,7 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet(gl_server_link,Ncb_online)
+		network.httpGet(gl_server_link..'/newServer.json',Ncb_online)
 	end
 
 	-- register cmd.
