@@ -40,7 +40,7 @@
           "blockselectland": true
         },
         "playersPerPage":20,
-        "disabled_listener":["onDropItem"],
+        "disabled_listener":[],
         "chunk_side": 16,
         "sign_frequency": 2,
         "selection_tool": "minecraft:wooden_axe",
