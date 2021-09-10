@@ -13,7 +13,7 @@
 --]] ------------------------------------------------------
 
 plugin_version = '2.31'
-DEV_MODE = false
+DEV_MODE = true
 
 langVer = 231
 minAirVer = 230
