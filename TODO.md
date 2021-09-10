@@ -10,7 +10,8 @@
  - [ ]  `UpdateChunk` code cleanup
  - [ ] 移除传统领地管理器，全部改用FastLMgr
  - [ ] 支持删除领地传送点功能
- - [ ] 修复PSR中搜索与选择共用Bug
+ - [x] 修复PSR中搜索与选择共用Bug
+ - [x] 修复某些情况下PSR中搜索后无法选中玩家的Bug
 
 > ILAPI Examples 计划
  - [ ] 领地边框显示

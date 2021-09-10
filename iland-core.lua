@@ -1523,15 +1523,17 @@ function PSR_Callback(player,data,isFirstCall)
 				rawList = tableList[psrdata.nowpage]
 				maxpage = #tableList
 			end
-			psrdata.filter = data[1] -- needed!
-			goto JUMPOUT_PSR_OTHER
+			if psrdata.filter~=data[1] then
+				psrdata.filter = data[1]
+				goto JUMPOUT_PSR_OTHER
+			end
 		end
 		psrdata.filter = data[1]
 
 		-- gen selects
 		for num,key in pairs(data) do
 			if num~=1 and num~=#data and key==true then
-				selected[#selected+1] = psrdata.playerList[psrdata.nowpage][num-1]
+				selected[#selected+1] = rawList[num-1]
 			end
 		end
 		if next(selected) ~= nil then
