@@ -1,15 +1,11 @@
-> Version **2.31**
- - [x] 攻击权限问题
- - [x] 修复自动更新
- - [x] 不再提供ilandv1的配置文件自动更新支持
-
 > Version **2.40**
  - [ ] 添加语言包安装功能`land language ~`
  - [ ] 修改选点提示方式，改为Title持续提示
  - [ ] 修复Place相关问题
- - [ ]  `UpdateChunk` code cleanup
+ - [x]  `UpdateChunk` code cleanup
  - [ ] 移除传统领地管理器，全部改用FastLMgr
  - [ ] 支持删除领地传送点功能
+ - [ ] Button限制LandID显示长度
  - [x] 修复PSR中搜索与选择共用Bug
  - [x] 修复某些情况下PSR中搜索后无法选中玩家的Bug
 

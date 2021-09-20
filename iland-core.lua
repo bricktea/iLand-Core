@@ -72,45 +72,44 @@ end
 
 -- map builder
 function updateChunk(landId,mode)
-	local TxTz={}
-	local dimid = land_data[landId].range.dimid
-	function txz(x,z)
-		if TxTz[x] == nil then TxTz[x] = {} end
-		if TxTz[x][z] == nil then TxTz[x][z] = {} end
+
+	-- [CODE] Get all chunk for this land.
+
+	local TxTz={} -- ChunkData(position)
+	local ThisRange = land_data[landId].range
+	local dimid = ThisRange.dimid
+	function ChkNil(table,a,b)
+		if table[a]==nil then
+			table[a] = {}
+		end
+		if table[a][b]==nil then
+			table[a][b] = {}
+		end
 	end
-	function chkmap(d,x,z)
-		if ChunkMap[dimid][x] == nil then ChunkMap[dimid][x] = {} end
-		if ChunkMap[dimid][x][z] == nil then ChunkMap[dimid][x][z] = {} end
-	end
-	function buildVec2(x,z)
-		local f = {}
-		f.x=x
-		f.z=z
-		return f
-	end
+
 	local size = cfg.features.chunk_side
-	local sX = land_data[landId].range.start_position[1]
-	local sZ = land_data[landId].range.start_position[3]
+	local sX = ThisRange.start_position[1]
+	local sZ = ThisRange.start_position[3]
 	local count = 0
-	while (sX+size*count<=land_data[landId].range.end_position[1]+size) do
-		local Cx,Cz = pos2chunk(buildVec2(sX+size*count,sZ+size*count))
-		txz(Cx,Cz)
+	while (sX+size*count<=ThisRange.end_position[1]+size) do
+		local Cx,Cz = pos2chunk({x=sX+size*count,z=sZ+size*count})
+		ChkNil(TxTz,Cx,Cz)
 		local count2 = 0
-		while (sZ+size*count2<=land_data[landId].range.end_position[3]+size) do
-			local Cx,Cz = pos2chunk(buildVec2(sX+size*count,sZ+size*count2))
-			txz(Cx,Cz)
+		while (sZ+size*count2<=ThisRange.end_position[3]+size) do
+			local Cx,Cz = pos2chunk({x=sX+size*count,z=sZ+size*count2)
+			ChkNil(TxTz,Cx,Cz)
 			count2 = count2 + 1
 		end
 		count = count +1
 	end
 
-	-- add & del
+	-- [CODE] Add or Del some chunks.
 
 	for Tx,a in pairs(TxTz) do
 		for Tz,b in pairs(a) do
 			-- Tx Tz
 			if mode=='add' then
-				chkmap(dimid,Tx,Tz)
+				ChkNil(ChunkMap,Tx,Tz)
 				if AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
 					table.insert(ChunkMap[dimid][Tx][Tz],#ChunkMap[dimid][Tx][Tz]+1,landId)
 				end
@@ -123,6 +122,7 @@ function updateChunk(landId,mode)
 			end
 		end
 	end
+
 end
 function updateVecMap(landId,mode)
 	if mode=='add' then

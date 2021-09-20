@@ -21,9 +21,9 @@ Install:
 3. Check if iland-core.lua is in the \plugins directory
 4. Open server test
 
-renew:
+Update:
 1. Unpack the compressed package
 2. Delete the config.json in the \plugins\iland directory in the decompression result
-3. Repeat the "installation" step 2-4
+3. Repeat the "Install" step 2-4
 
 Donate: https://www.paypal.com/paypalme/zhangrab
