@@ -29,8 +29,6 @@
     "gui.general.plzchose": "请选择",
     
     "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n昵称: <c>\\n范围:  §l<d>§r <e> <f> -> <g>\\n长/宽/高: <h>/<i>/<j>\\n底面积: <k> 平方格    体积: <l> 立方格",
-    "gui.landmgr.content": "欢迎使用领地管理器",
-    "gui.landmgr.ctplus": "\n您现在正在 §l<a>§r 上",
     "gui.landmgr.unnamed": "未命名",
     "gui.landmgr.unmodified": "未修改",
     "gui.landmgr.options.landinfo": "查看领地信息",
@@ -235,7 +233,7 @@
     "title.oplandmgr.transfered": "已传送到 <a>",
     "title.oplandmgr.setselectool": "请手持欲选定的圈地工具破坏方块",
     "title.oplandmgr.setsuccess": "成功！选定 <a> 作为圈地工具",
-    "title.landmgr.failed": "你还没有领地哦，使用\"/land new\"开始创建一个吧！",
+    "title.landmgr.failed": "没有可以管理领地，使用\"/land new\"创建一个吧！",
     "title.giveup.succeed": "许可已被放弃",
     "title.giveup.failed": "没有可以放弃的圈地许可",
     "title.createorder.toobig": "所圈领地太大，请重新圈地。\n",

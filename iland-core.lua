@@ -96,7 +96,7 @@ function updateChunk(landId,mode)
 		ChkNil(TxTz,Cx,Cz)
 		local count2 = 0
 		while (sZ+size*count2<=ThisRange.end_position[3]+size) do
-			local Cx,Cz = pos2chunk({x=sX+size*count,z=sZ+size*count2)
+			local Cx,Cz = pos2chunk({x=sX+size*count,z=sZ+size*count2})
 			ChkNil(TxTz,Cx,Cz)
 			count2 = count2 + 1
 		end
@@ -109,7 +109,7 @@ function updateChunk(landId,mode)
 		for Tz,b in pairs(a) do
 			-- Tx Tz
 			if mode=='add' then
-				ChkNil(ChunkMap,Tx,Tz)
+				ChkNil(ChunkMap[dimid],Tx,Tz)
 				if AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
 					table.insert(ChunkMap[dimid][Tx][Tz],#ChunkMap[dimid][Tx][Tz]+1,landId)
 				end
@@ -1126,47 +1126,34 @@ function BoughtProg_GiveUp(player)
 	ArrayParticles[xuid]=nil
 	sendText(player,_tr('title.giveup.succeed'))
 end
-function GUI_LMgr(player)
+function GUI_LMgr(player,realMgrLOwn)
 	local xuid=player.xuid
-	local thelands=ILAPI.GetPlayerLands(xuid)
-	if #thelands==0 then
-		sendText(player,_tr('title.landmgr.failed'));return
+
+	local ownerXuid
+	if realMgrLOwn==nil then
+		ownerXuid=xuid
+	else
+		ownerXuid=realMgrLOwn
 	end
 
-	local welcomeText=_tr('gui.landmgr.content')
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
-
-	if landId~=-1 then
-		welcomeText = welcomeText..AIR.gsubEx(
-			_tr('gui.landmgr.ctplus'),
-			'<a>',ILAPI.GetNickname(landId,true)
-		)
+	local landlst = ILAPI.GetPlayerLands(ownerXuid)
+	if #landlst==0 then
+		player:sendText(_tr('title.landmgr.failed'))
+		return
 	end
-
-	local features = {
-		_tr('gui.landmgr.options.landinfo'),
-		_tr('gui.landmgr.options.landcfg'),
-		_tr('gui.landmgr.options.landperm'),
-		_tr('gui.landmgr.options.landtrust'),
-		_tr('gui.landmgr.options.landtag'),
-		_tr('gui.landmgr.options.landdescribe'),
-		_tr('gui.landmgr.options.landtransfer'),
-		_tr('gui.landmgr.options.delland')
-	}
-
-	local lands={}
-	for i,v in pairs(thelands) do
-		local f='§l'..ILAPI.GetDimension(v)..'§r '..ILAPI.GetNickname(v,true)
-		lands[i]=f
-	end
-
-	local Form = mc.newCustomForm()
+	local Form = mc.newSimpleForm()
 	Form:setTitle(_tr('gui.landmgr.title'))
-	Form:addLabel(welcomeText)
-	Form:addDropdown(_tr('gui.landmgr.select'),lands)
-	Form:addStepSlider(_tr('gui.oplandmgr.selectoption'),features)
-
-	player:sendForm(Form,FORM_land_gui)
+	Form:setContent(_tr('gui.landmgr.select'))
+	for n,landId in pairs(landlst) do
+		Form:addButton(ILAPI.GetNickname(landId,true),'textures/ui/worldsIcon')
+	end
+	TRS_Form[xuid].enableBackButton = 0
+	player:sendForm(Form,function(pl,id) -- callback
+		if id==nil then return end
+		local xuid = pl.xuid
+		TRS_Form[xuid].landId = landlst[id+1]
+		GUI_FastMgr(pl)
+	end)
 end
 function GUI_OPLMgr(player)
 
@@ -1209,27 +1196,8 @@ function GUI_OPLMgr_land(player,mode)
 				sendText(pl,_tr('talk.tomany'))
 				return
 			end
-			local id = selected[1]
-			local Form = mc.newSimpleForm()
-			Form:setTitle(AIR.gsubEx(_tr('gui.oplandmgr.landmgr.title2'),'<a>',id))
-			Form:setContent(_tr('gui.oplandmgr.landmgr.tip2'))
-			for n,landId in pairs(ILAPI.GetPlayerLands(GetXuidFromId(id))) do
-				Form:addButton(ILAPI.GetNickname(landId,true),'textures/ui/worldsIcon')
-				landlst[#landlst+1] = landId
-			end
-			Form:addButton(_tr('gui.general.back'))
-			TRS_Form[xuid].landlst = landlst
-			pl:sendForm(Form,function(player,id) -- callback
-				if id==nil then return end
-				local xuid = player.xuid
-				local landlst = TRS_Form[xuid].landlst
-				if id==#landlst then -- back
-					GUI_OPLMgr_land(player,0)
-					return
-				end
-				TRS_Form[xuid].landId = landlst[id+1]
-				GUI_FastMgr(player,true)
-			end)
+			local thisXid = GetXuidFromId(selected[1])
+			GUI_LMgr(pl,thisXid)
 		end)
 	end
 	if mode==1 then -- 传送
@@ -1576,6 +1544,9 @@ function ToPages(list,perpage)
 	end
 	return rtn
 end
+function MakeShortILD(landId)
+	return string.sub(landId,0,16) .. '....'
+end
 
 -- +-+ +-+ +-+ +-+ +-+
 -- |I| |L| |A| |P| |I|
@@ -1892,7 +1863,7 @@ function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 	if n=='' then
 		n='<'.._tr('gui.landmgr.unnamed')..'>'
 		if returnIdIfNameEmpty then
-			n=n..' '..landId
+			n=n..' '..MakeShortILD(landId)
 		end
 	end
 	return n
