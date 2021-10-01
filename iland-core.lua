@@ -16,10 +16,8 @@ plugin_version = '2.31'
 DEV_MODE = true
 
 langVer = 231
-minAirVer = 230
-minLXLVer = {0,5,1}
+minLXLVer = {0,5,6}
 
-AIR = require('airLibs')
 json = require('dkjson')
 
 ArrayParticles={};ILAPI={}
@@ -110,12 +108,12 @@ function updateChunk(landId,mode)
 			-- Tx Tz
 			if mode=='add' then
 				ChkNil(ChunkMap[dimid],Tx,Tz)
-				if AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
+				if isValInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
 					table.insert(ChunkMap[dimid][Tx][Tz],#ChunkMap[dimid][Tx][Tz]+1,landId)
 				end
 			end
 			if mode=='del' then
-				local p = AIR.isValInList(ChunkMap[dimid][Tx][Tz],landId)
+				local p = isValInList(ChunkMap[dimid][Tx][Tz],landId)
 				if p~=-1 then
 					table.remove(ChunkMap[dimid][Tx][Tz],p)
 				end
@@ -160,8 +158,8 @@ function updateEdgeMap(landId,mode)
 	end
 	if mode=='add' then
 		EdgeMap[landId]={}
-		local spos = AIR.pos2vec(land_data[landId].range.start_position)
-		local epos = AIR.pos2vec(land_data[landId].range.end_position)
+		local spos = pos2vec(land_data[landId].range.start_position)
+		local epos = pos2vec(land_data[landId].range.end_position)
 		EdgeMap[landId].D2D = cubeGetEdge_2D(spos,epos)
 		EdgeMap[landId].D3D = cubeGetEdge(spos,epos)
 	end
@@ -296,13 +294,13 @@ function FORM_BACK_LandMgr(player,id)
 end
 function FORM_land_buy(player,id)
 	if not(id) then
-		sendText(player,AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
+		sendText(player,gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	end
 
 	local xuid = player.xuid
 	local player_credits = money_get(player)
 	if newLand[xuid].landprice>player_credits then
-		sendText(player,_tr('title.buyland.moneynotenough')..AIR.gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
+		sendText(player,_tr('title.buyland.moneynotenough')..gsubEx(_tr('title.buyland.ordersaved'),'<a>',cfg.features.selection_tool_name));return
 	else
 		money_del(player,newLand[xuid].landprice)
 	end
@@ -472,14 +470,14 @@ function FORM_land_gui(player,data,lid)
 		if owner~='?' then owner=GetIdFromXuid(owner) end
 		player:sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
-			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
+			gsubEx(_tr('gui.landmgr.landinfo.content'),
 					'<a>',owner,
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
 					'<d>',ILAPI.GetDimension(landId),
 					'<e>',did2dim(dpos.dimid),
-					'<f>',AIR.vec2text(AIR.pos2vec(dpos.start_position)),
-					'<g>',AIR.vec2text(AIR.pos2vec(dpos.end_position)),
+					'<f>',vec2text(pos2vec(dpos.start_position)),
+					'<g>',vec2text(pos2vec(dpos.end_position)),
 					'<h>',length,'<i>',width,'<j>',height,
 					'<k>',squ,'<l>',vol),
 			_tr('gui.general.iknow'),
@@ -632,7 +630,7 @@ function FORM_land_gui(player,data,lid)
 		TRS_Form[xuid].landvalue=math.modf(calculation_price(length,width,height,ILAPI.GetDimension(landId))*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_tr('gui.delland.title'),
-			AIR.gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',cfg.money.credit_name),
+			gsubEx(_tr('gui.delland.content'),'<a>',TRS_Form[xuid].landvalue,'<b>',cfg.money.credit_name),
 			_tr('gui.general.yes'),
 			_tr('gui.general.cancel'),
 			FORM_land_gui_delete
@@ -799,15 +797,15 @@ function FORM_land_listener(player,data)
 end
 function FORM_land_choseDim(player,id)
 	if id==true and not(cfg.features.land_3D) then
-		sendText(player,AIR.gsubEx(_tr('gui.buyland.unsupport'),'<a>','3D'))
+		sendText(player,gsubEx(_tr('gui.buyland.unsupport'),'<a>','3D'))
 		return
 	end
 	if id==false and not(cfg.features.land_2D) then
-		sendText(player,AIR.gsubEx(_tr('gui.buyland.unsupport'),'<a>','2D'))
+		sendText(player,gsubEx(_tr('gui.buyland.unsupport'),'<a>','2D'))
 		return
 	end
 
-	sendText(player,_tr('title.getlicense.succeed')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+	sendText(player,_tr('title.getlicense.succeed')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 	local xuid=player.xuid
 	newLand[xuid]={}
 	if id then
@@ -945,7 +943,7 @@ function SRCB_land_transfer(player,selected)
 
 	player:sendModalForm(
 		_tr('gui.general.complete'),
-		AIR.gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
+		gsubEx(_tr('title.landtransfer.complete'),'<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
 		_tr('gui.general.back'),
 		_tr('gui.general.close'),
 		FORM_BACK_LandMgr
@@ -962,7 +960,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			return
         end
 		NewData.posA = vec4
-		if AIR.isValInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
+		if isValInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
 			sendText(player,_tr('title.selectrange.failbydim'))
 			newLand[xuid]=nil
 			return
@@ -975,7 +973,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		end
         sendText(
 			player,
-			AIR.gsubEx(
+			gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','a',
 				'<b>',did2dim(vec4.dimid),
@@ -983,7 +981,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 				'<d>',NewData.posA.y,
 				'<e>',NewData.posA.z)
 				..'\n'..
-				AIR.gsubEx(
+				gsubEx(
 					_tr('title.selectrange.spointb'),
 					'<a>',cfg.features.selection_tool_name
 				)
@@ -1002,7 +1000,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		end
         sendText(
 			player,
-			AIR.gsubEx(
+			gsubEx(
 				_tr('title.selectrange.seled'),
 				'<a>','b',
 				'<b>',did2dim(vec4.dimid),
@@ -1010,7 +1008,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 				'<d>',NewData.posB.y,
 				'<e>',NewData.posB.z)
 				..'\n'..
-				AIR.gsubEx(
+				gsubEx(
 					_tr('title.selectrange.bebuy'),
 					'<a>',cfg.features.selection_tool_name
 				)
@@ -1051,18 +1049,18 @@ function BoughtProg_CreateOrder(player)
     local squ = length * width
 
 	--- 违规圈地判断
-	if squ>cfg.land.land_max_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		sendText(player,_tr('title.createorder.toobig')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+	if squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
+		sendText(player,_tr('title.createorder.toobig')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		NewData.step=0
 		return
 	end
-	if squ<cfg.land.land_min_square and AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-		sendText(player,_tr('title.createorder.toosmall')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+	if squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
+		sendText(player,_tr('title.createorder.toosmall')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		NewData.step=0
 		return
 	end
 	if height<2 then
-		sendText(player,_tr('title.createorder.toolow')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+		sendText(player,_tr('title.createorder.toolow')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 		NewData.step=0
 		return
 	end
@@ -1073,7 +1071,7 @@ function BoughtProg_CreateOrder(player)
 		edge[i].dimid=NewData.dimid
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+			sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i]))..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 			NewData.step=0;return
 		end
 	end
@@ -1082,7 +1080,7 @@ function BoughtProg_CreateOrder(player)
 			edge=EdgeMap[landId].D3D
 			for i=1,#edge do
 				if isPosInCube(edge[i],NewData.posA,NewData.posB)==true then
-					sendText(player,AIR.gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',AIR.vec2text(edge[i]))..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+					sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',vec2text(edge[i]))..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 					NewData.step=0;return
 				end
 			end
@@ -1094,7 +1092,7 @@ function BoughtProg_CreateOrder(player)
 	local dis_info = ''
 	local dim_info = ''
 	if cfg.money.discount<100 then
-		dis_info=AIR.gsubEx(_tr('gui.buyland.discount'),'<a>',tostring(100-cfg.money.discount))
+		dis_info=gsubEx(_tr('gui.buyland.discount'),'<a>',tostring(100-cfg.money.discount))
 	end
 	if NewData.dimension=='3D' then
 		dim_info = '§l3D-Land §r'
@@ -1103,7 +1101,7 @@ function BoughtProg_CreateOrder(player)
 	end
 	player:sendModalForm(
 		dim_info.._tr('gui.buyland.title')..dis_info,
-		AIR.gsubEx(
+		gsubEx(
 			_tr('gui.buyland.content'),
 			'<a>',length,
 			'<b>',width,
@@ -1211,7 +1209,7 @@ function GUI_OPLMgr_land(player,mode)
 			local ownerId = ILAPI.GetOwner(landId)
 			if ownerId~='?' then ownerId=GetIdFromXuid(ownerId) end
 			Form:addButton(
-				AIR.gsubEx(
+				gsubEx(
 					_tr('gui.oplandmgr.landmgr.button'),
 					'<a>',ILAPI.GetNickname(landId,true),
 					'<b>',ownerId
@@ -1265,17 +1263,17 @@ function GUI_OPLMgr_plugin(player)
 		c3d_default=2
 	end
 	local calculation_2D = { 'd-1' }
-	local aprice = AIR.deepcopy(cfg.land_buy.price_3D)
+	local aprice = deepcopy(cfg.land_buy.price_3D)
 	if aprice[2]==nil then
 		aprice[2]=''
 	end
-	local bprice = AIR.deepcopy(cfg.land_buy.price_2D)
+	local bprice = deepcopy(cfg.land_buy.price_2D)
 	
 	-- I18N System
 	local langLst = {}
 	local default_lang = 0
 	for n,file in pairs(file.getFilesList(data_path..'lang\\')) do
-		local tmp = AIR.split(file,'.')
+		local tmp = split(file,'.')
 		if tmp[2]=='json' then
 			langLst[#langLst+1] = tmp[1]
 		end
@@ -1288,13 +1286,13 @@ function GUI_OPLMgr_plugin(player)
 	-- Blockland Dims
 	local enableDims = { true,true,true }
 	local bldims = cfg.features.blockLandDims
-	if AIR.isValInList(bldims,0)~=-1 then
+	if isValInList(bldims,0)~=-1 then
 		enableDims[1] = false
 	end
-	if AIR.isValInList(bldims,1)~=-1 then
+	if isValInList(bldims,1)~=-1 then
 		enableDims[2] = false
 	end
-	if AIR.isValInList(bldims,2)~=-1 then
+	if isValInList(bldims,2)~=-1 then
 		enableDims[3] = false
 	end
 
@@ -1385,7 +1383,7 @@ function GUI_FastMgr(player,isOP)
 	local Form = mc.newSimpleForm()
 	Form:setTitle(_tr('gui.fastlmgr.title'))
 	if isOP==nil then
-		Form:setContent(AIR.gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
+		Form:setContent(gsubEx(_tr('gui.fastlmgr.content'),'<a>',ILAPI.GetNickname(landId,true)))
 	else
 		Form:setContent(_tr('gui.fastlmgr.operator'))
 	end
@@ -1449,14 +1447,14 @@ function PSR_Callback(player,data,isFirstCall)
 	function buildPage(num)
 		local tmp = {}
 		for i=1,num do
-			tmp[i]=AIR.gsubEx(_tr('gui.playerselector.num'),'<a>',i)
+			tmp[i]=gsubEx(_tr('gui.playerselector.num'),'<a>',i)
 		end
 		return tmp
 	end
 
 	local perpage = cfg.features.playersPerPage
 	local maxpage = #psrdata.playerList
-	local rawList = AIR.deepcopy(psrdata.playerList[psrdata.nowpage])
+	local rawList = deepcopy(psrdata.playerList[psrdata.nowpage])
 
 	if type(data)=='table' then
 		local selected = {}
@@ -1465,7 +1463,7 @@ function PSR_Callback(player,data,isFirstCall)
 		local npg = data[#data] + 1 -- custom page
 		if npg~=psrdata.nowpage and npg<=maxpage then
 			psrdata.nowpage = npg
-			rawList = AIR.deepcopy(psrdata.playerList[npg])
+			rawList = deepcopy(psrdata.playerList[npg])
 			goto JUMPOUT_PSR_OTHER
 		end
 
@@ -1520,7 +1518,7 @@ function PSR_Callback(player,data,isFirstCall)
 	Form:addLabel(_tr('gui.playerselector.search.tip2'))
 	Form:addInput(_tr('gui.playerselector.search.type'),_tr('gui.playerselector.search.ph'),psrdata.filter)
 	Form:addLabel(
-		AIR.gsubEx(
+		gsubEx(
 			_tr('gui.playerselector.pages'),
 			'<a>',psrdata.nowpage,
 			'<b>',maxpage,
@@ -1667,7 +1665,7 @@ end
 function ILAPI.DeleteLand(landId)
 	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
-		table.remove(land_owners[owner],AIR.isValInList(land_owners[owner],landId))
+		table.remove(land_owners[owner],isValInList(land_owners[owner],landId))
 	end
 	updateChunk(landId,'del')
 	updateVecMap(landId,'del')
@@ -1691,7 +1689,7 @@ end
 function ILAPI.GetChunk(vec2,dimid)
 	local Cx,Cz = pos2chunk(vec2)
 	if ChunkMap[dimid][Cx]~=nil and ChunkMap[dimid][Cx][Cz]~=nil then
-		return AIR.deepcopy(ChunkMap[dimid][Cx][Cz])
+		return deepcopy(ChunkMap[dimid][Cx][Cz])
 	end
 	return -1
 end 
@@ -1703,23 +1701,23 @@ function ILAPI.GetAllLands()
 	return lst
 end
 function ILAPI.CheckPerm(landId,perm)
-	return AIR.deepcopy(land_data[landId].permissions[perm])
+	return deepcopy(land_data[landId].permissions[perm])
 end
 function ILAPI.CheckSetting(landId,cfgname)
 	if cfgname=='share' or cfgname=='tpoint' or cfgname=='nickname' or cfgname=='describe' then
 		return nil
 	end
-	return AIR.deepcopy(land_data[landId].settings[cfgname])
+	return deepcopy(land_data[landId].settings[cfgname])
 end
 function ILAPI.GetRange(landId)
 	return { VecMap[landId].a,VecMap[landId].b,land_data[landId].range.dimid }
 end
 function ILAPI.GetEdge(landId,dimtype)
 	if dimtype=='2D' then
-		return AIR.deepcopy(EdgeMap[landId].D2D)
+		return deepcopy(EdgeMap[landId].D2D)
 	end
 	if dimtype=='3D' then
-		return AIR.deepcopy(EdgeMap[landId].D3D)
+		return deepcopy(EdgeMap[landId].D3D)
 	end
 end
 function ILAPI.GetDimension(landId)
@@ -1730,27 +1728,27 @@ function ILAPI.GetDimension(landId)
 	end
 end
 function ILAPI.GetName(landId)
-	return AIR.deepcopy(land_data[landId].settings.nickname)
+	return deepcopy(land_data[landId].settings.nickname)
 end
 function ILAPI.GetDescribe(landId)
-	return AIR.deepcopy(land_data[landId].settings.describe)
+	return deepcopy(land_data[landId].settings.describe)
 end
 function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
-		if AIR.isValInList(v,landId)~=-1 then
+		if isValInList(v,landId)~=-1 then
 			return i
 		end
 	end
 	return '?'
 end
 function ILAPI.GetPoint(landId)
-	local i = AIR.deepcopy(land_data[landId].settings.tpoint)
+	local i = deepcopy(land_data[landId].settings.tpoint)
 	i[4] = land_data[landId].range.dimid
-	return AIR.pos2vec(i)
+	return pos2vec(i)
 end
 -- [[ INFORMATION => PLAYER ]]
 function ILAPI.GetPlayerLands(xuid)
-	return AIR.deepcopy(land_owners[xuid])
+	return deepcopy(land_owners[xuid])
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if LandTrustedMap[landId][xuid]==nil then
@@ -1814,14 +1812,14 @@ function ILAPI.AddTrust(landId,xuid)
 end
 function ILAPI.RemoveTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
-	table.remove(shareList,AIR.isValInList(shareList,xuid))
+	table.remove(shareList,isValInList(shareList,xuid))
 	updateLandTrustMap(landId)
 	ILAPI.save(0,1,0)
 	return true
 end
 function ILAPI.SetOwner(landId,xuid)
 	local ownerXuid = ILAPI.GetOwner(landId)
-	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
+	table.remove(land_owners[ownerXuid],isValInList(land_owners[ownerXuid],landId))
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	updateLandOwnersMap(landId)
 	ILAPI.save(0,0,1)
@@ -1853,7 +1851,7 @@ function ILAPI.save(mode) -- {config,data,owners}
 		file.writeTo(data_path..'data.json',json.encode(land_data))
 	end
 	if mode[3] == 1 then
-		local tmpowners = AIR.deepcopy(land_owners)
+		local tmpowners = deepcopy(land_owners)
 		for xuid,landIds in pairs(wrong_landowners) do
 			tmpowners[xuid] = landIds
 		end
@@ -1904,7 +1902,7 @@ function money_add(player,value)
 	if ptc=='llmoney' then
 		money.add(player.xuid,value);return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function money_del(player,value)
 	local ptc = cfg.money.protocol
@@ -1916,7 +1914,7 @@ function money_del(player,value)
 		money.reduce(player.xuid,value)
 		return
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function money_get(player)
 	local ptc = cfg.money.protocol
@@ -1926,7 +1924,7 @@ function money_get(player)
 	if ptc=='llmoney' then
 		return money.get(player.xuid)
 	end
-	ERROR(AIR.gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
+	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
 function sendTitle(player,title,subtitle)
 	local name = player.realName
@@ -2056,7 +2054,7 @@ function Upgrade(rawInfo)
 	if rawInfo.FILE_Version==201 then
 		updata = rawInfo.Updates[1]
 	else
-		ERROR(AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',rawInfo.FILE_Version))
+		ERROR(gsubEx(_tr('console.getonline.failbyver'),'<a>',rawInfo.FILE_Version))
 		return
 	end
 	if  rawInfo.DisableClientUpdate then
@@ -2066,7 +2064,7 @@ function Upgrade(rawInfo)
 	
 	-- Check Plugin version
 	if updata.NumVer<=langVer then
-		ERROR(AIR.gsubEx(_tr('console.autoupdate.alreadylatest'),'<a>',updata.NumVer..'<='..langVer))
+		ERROR(gsubEx(_tr('console.autoupdate.alreadylatest'),'<a>',updata.NumVer..'<='..langVer))
 		return
 	end
 	INFO('AutoUpdate',_tr('console.autoupdate.start'))
@@ -2081,7 +2079,7 @@ function Upgrade(rawInfo)
 	
 	-- Get it, update.
 	for n,thefile in pairs(updata.FileChanged) do
-		local raw = AIR.split(thefile,'::')
+		local raw = split(thefile,'::')
 		local path = RawPath[raw[1]]..raw[2]
 		INFO('Network',_tr('console.autoupdate.download')..raw[2])
 		
@@ -2093,7 +2091,7 @@ function Upgrade(rawInfo)
 		local tmp = network.httpGetSync(source..raw[2])
 		if tmp.status~=200 then -- download check
 			ERROR(
-				AIR.gsubEx(
+				gsubEx(
 					_tr('console.autoupdate.errorbydown'),
 					'<a>',raw[2],
 					'<b>',tmp.status
@@ -2105,7 +2103,7 @@ function Upgrade(rawInfo)
 
 		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- MD5 check
 			ERROR(
-				AIR.gsubEx(
+				gsubEx(
 					_tr('console.autoupdate.errorbyverify'),
 					'<a>',raw[2]
 				)
@@ -2147,6 +2145,62 @@ function IsPosSafe(pos)
 	end
 	return true
 end
+function isValInList(list, value)
+	for i, nowValue in pairs(list) do
+        if nowValue == value then
+            return i
+        end
+    end
+    return -1
+end
+function deepcopy(orig) -- [NOTICE] This function from: lua-users.org
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+function gsubEx(key,...)
+	local thisWord = false
+	local result = deepcopy(key)
+	local args = {...}
+
+	for n,word in pairs(args) do
+		if thisWord==true then
+			result = string.gsub(result,args[n-1],word)
+		end
+		thisWord = not(thisWord)
+	end
+
+	return result
+end
+function split(str,reps) -- [NOTICE] This function from: blog.csdn.net
+    local resultStrList = {}
+    string.gsub(str,'[^'..reps..']+',function (w)
+        table.insert(resultStrList,w)
+    end)
+    return resultStrList
+end
+function pos2vec(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
+	local t={}
+	t.x=math.floor(table[1])
+	t.y=math.floor(table[2])
+	t.z=math.floor(table[3])
+	if table[4]~=nil then
+		t.dimid=table[4]
+	end
+		return t
+end
+function vec2text(vec3)
+	return vec3.x..','..vec3.y..','..vec3.z
+end
 
 -- log system
 function INFO(type,content)
@@ -2166,7 +2220,7 @@ function Eventing_onJoin(player)
 	TRS_Form[xuid] = { inland='null',inlandv2='null' }
 
 	if wrong_landowners[xuid]~=nil then
-		land_owners[xuid] = AIR.deepcopy(wrong_landowners[xuid])
+		land_owners[xuid] = deepcopy(wrong_landowners[xuid])
 		wrong_landowners[xuid] = nil
 	end
 	if land_owners[xuid]==nil then
@@ -2175,7 +2229,7 @@ function Eventing_onJoin(player)
 	end
 
 	if player.gameMode==1 then
-		ERROR(AIR.gsubEx(_tr('talk.gametype.creative'),'<a>',player.realName))
+		ERROR(gsubEx(_tr('talk.gametype.creative'),'<a>',player.realName))
 	end
 end
 function Eventing_onPreJoin(player)
@@ -2202,7 +2256,7 @@ function Eventing_onPlayerCmd(player,cmd)
 		return
 	end
 
-	local opt = AIR.split(cmd,' ')
+	local opt = split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
 	local xuid = player.xuid
@@ -2218,7 +2272,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			local land_count = tostring(#land_owners[xuid])
 			local Form = mc.newSimpleForm()
 			Form:setTitle(_tr('gui.fastgde.title'))
-			Form:setContent(AIR.gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
+			Form:setContent(gsubEx(_tr('gui.fastgde.content'),'<a>',land_count))
 			Form:addButton(_tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
 			Form:addButton(_tr('gui.fastgde.manage'),'textures/ui/confirm')
 			Form:addButton(_tr('gui.fastgde.landtp'),'textures/ui/World')
@@ -2231,10 +2285,10 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [new] Create newLand
 	if opt[2] == 'new' then
 		if newLand[xuid]~=nil then
-			sendText(player,_tr('title.getlicense.alreadyexists')..AIR.gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+			sendText(player,_tr('title.getlicense.alreadyexists')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 			return false
 		end
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
+		if isValInList(cfg.manager.operator,xuid)==-1 then
 			if #land_owners[xuid]>=cfg.land.player_max_lands then
 				sendText(player,_tr('title.getlicense.limit'))
 				return false
@@ -2297,7 +2351,7 @@ function Eventing_onPlayerCmd(player,cmd)
 		ILAPI.save({0,1,0})
 		player:sendModalForm(
 			_tr('gui.general.complete'),
-			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+			gsubEx(_tr('gui.landtp.point'),'<a>',vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
 			FORM_NULL
@@ -2311,12 +2365,12 @@ function Eventing_onPlayerCmd(player,cmd)
 		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
 			local name = ILAPI.GetNickname(landId)
 			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]=did2dim(xpos.dimid)..' ('..AIR.vec2text(xpos)..') '..name
+			tplands[#tplands+1]=did2dim(xpos.dimid)..' ('..vec2text(xpos)..') '..name
 		end
 		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
 			local name = ILAPI.GetNickname(landId)
 			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..'§r '..did2dim(xpos.dimid)..'('..AIR.vec2text(xpos)..') '..name
+			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..'§r '..did2dim(xpos.dimid)..'('..vec2text(xpos)..') '..name
 		end
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_tr('gui.landtp.title'))
@@ -2332,7 +2386,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [mgr] OP-LandMgr GUI
 	if opt[2] == 'mgr' then
 		if not(ILAPI.IsLandOperator(xuid)) then
-			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
+			sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
 		end
 		GUI_OPLMgr(player)
@@ -2341,8 +2395,8 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [mgr selectool] Set land_select tool
 	if opt[2] == 'mgr' and opt[3] == 'selectool' then
-		if AIR.isValInList(cfg.manager.operator,xuid)==-1 then
-			sendText(player,AIR.gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
+		if isValInList(cfg.manager.operator,xuid)==-1 then
+			sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
 		end
 		sendText(player,_tr('title.oplandmgr.setselectool'))
@@ -2351,7 +2405,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	end
 
 	-- [X] Unknown key
-	sendText(player,AIR.gsubEx(_tr('command.error'),'<a>',opt[2]),0)
+	sendText(player,gsubEx(_tr('command.error'),'<a>',opt[2]),0)
 	return false
 
 end
@@ -2359,7 +2413,7 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- INFO('Debug','call event -> onConsoleCmd')
 
-	local opt = AIR.split(cmd,' ')
+	local opt = split(cmd,' ')
 	if opt[1] ~= MainCmd then return end
 
 	-- [ ] main cmd.
@@ -2372,39 +2426,39 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- [op] add land operator.
 	if opt[2] == 'op' then
-		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." op ")+1),'"')[1]
+		local name = split(string.sub(cmd,string.len(MainCmd.." op ")+1),'"')[1]
 		local xuid = GetXuidFromId(name)
 		if xuid == "" then
-			ERROR(AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			ERROR(gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
 			return
 		end
 		if ILAPI.IsLandOperator(xuid) then
-			ERROR(AIR.gsubEx(_tr('console.landop.add.failbyexist'),'<a>',name))
+			ERROR(gsubEx(_tr('console.landop.add.failbyexist'),'<a>',name))
 			return
 		end
 		table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
 		updateLandOperatorsMap()
 		ILAPI.save({1,0,0})
-		INFO('System',AIR.gsubEx(_tr('console.landop.add.success'),'<a>',name,'<b>',xuid))
+		INFO('System',gsubEx(_tr('console.landop.add.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
 
 	-- [deop] delete land operator.
 	if opt[2] == 'deop' then
-		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
+		local name = split(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
 		local xuid = GetXuidFromId(name)
 		if xuid == "" then
-			ERROR(AIR.gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
+			ERROR(gsubEx(_tr('console.landop.failbyxuid'),'<a>',name))
 			return
 		end
 		if not(ILAPI.IsLandOperator(xuid)) then
-			ERROR(AIR.gsubEx(_tr('console.landop.del.failbynull'),'<a>',name))
+			ERROR(gsubEx(_tr('console.landop.del.failbynull'),'<a>',name))
 			return
 		end
-		table.remove(cfg.manager.operator,AIR.isValInList(cfg.manager.operator,xuid))
+		table.remove(cfg.manager.operator,isValInList(cfg.manager.operator,xuid))
 		updateLandOperatorsMap()
 		ILAPI.save({1,0,0})
-		INFO('System',AIR.gsubEx(_tr('console.landop.del.success'),'<a>',name,'<b>',xuid))
+		INFO('System',gsubEx(_tr('console.landop.del.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
 
@@ -2430,7 +2484,7 @@ function Eventing_onDestroyBlock(player,block)
 	if TRS_Form[xuid].selectool==0 then
 		local HandItem = player:getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
-		sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',HandItem.name))
+		sendText(player,gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',HandItem.name))
 		cfg.features.selection_tool=HandItem.type
 		ILAPI.save({1,0,0})
 		TRS_Form[xuid].selectool=-1
@@ -2869,7 +2923,7 @@ function Tcb_LandSign()
 			if not(land_data[landId].settings.signtome) then
 				goto JUMPOUT_SIGN
 			end
-			sendTitle(player,AIR.gsubEx(
+			sendTitle(player,gsubEx(
 				_tr('sign.listener.ownertitle'),
 				'<a>',ILAPI.GetNickname(landId,false)
 			),
@@ -2879,12 +2933,12 @@ function Tcb_LandSign()
 			if not(land_data[landId].settings.signtother) then
 				goto JUMPOUT_SIGN
 			end
-			sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(
+			sendTitle(player,_tr('sign.listener.visitortitle'),gsubEx(
 				_tr('sign.listener.visitorsubtitle'),
 				'<a>',owner
 			))
 			if land_data[landId].settings.describe~='' then
-				sendText(player,AIR.gsubEx(
+				sendText(player,gsubEx(
 					land_data[landId].settings.describe,
 					'$visitor',player.realName,
 					'$n','\n'
@@ -2908,15 +2962,15 @@ function Tcb_ButtomSign()
 			goto JUMPOUT_BUTTOM
 		end
 
-		local ownerXid = ILAPI.GetOwner(landId)
+		local ownerXuid = ILAPI.GetOwner(landId)
 		local ownerName = '?'
-		if ownerXid~='?' then ownerName=GetIdFromXuid(owner) end
+		if ownerXuid~='?' then ownerName=GetIdFromXuid(ownerXuid) end
 		local landcfg = land_data[landId].settings
-		if (xuid==ownerXid) and landcfg.signtome and landcfg.signbuttom then
-			player:sendText(AIR.gsubEx(_tr('title.landsign.ownenrbuttom'),'<a>',ILAPI.GetNickname(landId)),4)
+		if (xuid==ownerXuid) and landcfg.signtome and landcfg.signbuttom then
+			player:sendText(gsubEx(_tr('title.landsign.ownenrbuttom'),'<a>',ILAPI.GetNickname(landId)),4)
 		end
-		if (xuid~=ownerXid) and landcfg.signtother and landcfg.signbuttom then
-			player:sendText(AIR.gsubEx(_tr('title.landsign.visitorbuttom'),'<a>',ownerName),4)
+		if (xuid~=ownerXuid) and landcfg.signtother and landcfg.signbuttom then
+			player:sendText(gsubEx(_tr('title.landsign.visitorbuttom'),'<a>',ownerName),4)
 		end
 
 		:: JUMPOUT_BUTTOM ::
@@ -2996,7 +3050,7 @@ function Ncb_online(code,result)
 
 		-- Check File Version
 		if data.FILE_Version~=201 then
-			INFO('Network',AIR.gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
+			INFO('Network',gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
 			return
 		end
 
@@ -3014,7 +3068,7 @@ function Ncb_online(code,result)
 
 		-- Do Analysis
 		if data.Analysis.enabled then
-			local analink = AIR.gsubEx(
+			local analink = gsubEx(
 				data.Analysis.link,
 				'{version}',langVer,
 				'{players}',#land_owners
@@ -3024,7 +3078,7 @@ function Ncb_online(code,result)
 
 		-- Check Update
 		if langVer<data.Updates[1].NumVer then
-			INFO('Network',AIR.gsubEx(_tr('console.update.newversion'),'<a>',data.Updates[1].Version))
+			INFO('Network',gsubEx(_tr('console.update.newversion'),'<a>',data.Updates[1].Version))
 			INFO('Update',_tr('console.update.newcontent'))
 			for n,text in pairs(data.Updates[1].Description) do
 				INFO('Update',n..'. '..text)
@@ -3039,31 +3093,26 @@ function Ncb_online(code,result)
 			end
 		end
 		if langVer>data.Updates[1].NumVer then
-			INFO('Network',AIR.gsubEx(_tr('console.update.preview'),'<a>',plugin_version))
+			INFO('Network',gsubEx(_tr('console.update.preview'),'<a>',plugin_version))
 		end
 	else
-		ERROR(AIR.gsubEx(_tr('console.getonline.failbycode'),'<a>',code))
+		ERROR(gsubEx(_tr('console.getonline.failbycode'),'<a>',code))
 	end
 end
 
 mc.listen('onServerStarted',function()
 	function throwErr(x)
 		if x==-1 then
-			ERROR('Configure file not found, plugin is closing...')
+			ERROR('Configure file not found.')
 		end
 		if x==-2 then
 			ERROR('LiteXLoader too old, please use latest version, here ↓')
-		end
-		if x==-3 then
-			ERROR('AirLibs too old, please use latest version, here ↓')
-		end
-		if x==-2 or x==-3 then
 			ERROR('https://www.minebbs.com/')
-			ERROR('Plugin closing...')
 		end
 		if x==-4 then
-			ERROR('Language file does not match version, plugin is closing... (!='..langVer..')')
+			ERROR('Language file does not match version. (!='..langVer..')')
 		end
+		ERROR('Plugin closing...')
 		mc.runcmd('stop')
 	end
 
@@ -3082,9 +3131,6 @@ mc.listen('onServerStarted',function()
 	if not(lxl.checkVersion(minLXLVer[1],minLXLVer[2],minLXLVer[3])) then
 		throwErr(-2)
 	end
-	if AIR.VERSION < minAirVer then
-		throwErr(-3)
-	end
 
 	-- Load data file
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
@@ -3098,7 +3144,7 @@ mc.listen('onServerStarted',function()
 	local itHasWrongXuid = false
 	for ownerXuid,landIds in pairs(json.decode(file.readFrom(data_path..'owners.json'))) do
 		if GetIdFromXuid(ownerXuid) == '' then
-			ERROR(AIR.gsubEx(_tr('console.error.readowner.xuid'),'<a>',ownerXuid))
+			ERROR(gsubEx(_tr('console.error.readowner.xuid'),'<a>',ownerXuid))
 			wrong_landowners[ownerXuid] = landIds
 			itHasWrongXuid = true
 		else
@@ -3126,7 +3172,7 @@ mc.listen('onServerStarted',function()
 			cfg.features.land_3D=true
 			cfg.features.auto_update=true
 			for landId,data in pairs(land_data) do
-				land_data[landId].range.dimid = AIR.deepcopy(land_data[landId].range.dim)
+				land_data[landId].range.dimid = deepcopy(land_data[landId].range.dim)
 				land_data[landId].range.dim=nil
 				for n,xuid in pairs(land_data[landId].settings.share) do
 					if type(xuid)~='string' then
@@ -3163,7 +3209,7 @@ mc.listen('onServerStarted',function()
 				perm.allow_ride_trans=false
 				perm.allow_shoot=false
 				local settings=land_data[landId].settings
-				settings.ev_explode=AIR.deepcopy(perm.allow_exploding)
+				settings.ev_explode=deepcopy(perm.allow_exploding)
 				settings.ev_farmland_decay=false
 				settings.ev_piston_push=false
 				settings.ev_fire_spread=false

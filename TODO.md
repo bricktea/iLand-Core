@@ -4,6 +4,7 @@
  - [ ] 修复Place相关问题（useitem..
  - [ ] 修复盔甲架权限问题
  - [x] 添加开服XUID可用性验证
+ - [ ] 使用船新的Cloud更新检测
  - [ ] 领地传送支持关闭，支持删除传送点 !LTP改进
  - [ ] `land mgr selectool`问题
  - [x]  `UpdateChunk` code cleanup
@@ -12,7 +13,7 @@
  - [x] Button限制LandID显示长度
  - [x] 修复PSR中搜索与选择共用Bug
  - [x] 修复某些情况下PSR中搜索后无法选中玩家的Bug
- - [ ] 移除AirLibs依赖
+ - [x] 移除AirLibs依赖
 
 > ILAPI Examples 计划
  - [ ] 领地边框显示
