@@ -2384,7 +2384,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	end
 
 	-- [mgr] OP-LandMgr GUI
-	if opt[2] == 'mgr' then
+	if opt[2] == 'mgr' and opt[3] == nil then
 		if not(ILAPI.IsLandOperator(xuid)) then
 			sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
 			return false
