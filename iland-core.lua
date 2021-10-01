@@ -329,7 +329,7 @@ function FORM_land_gui_cfg(player,data)
 	settings.ev_farmland_decay=data[5]
 	settings.ev_piston_push=data[6]
 	settings.ev_fire_spread=data[7]
-	ILAPI.save()
+	ILAPI.save({0,1,0})
 
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -397,7 +397,7 @@ function FORM_land_gui_perm(player,data)
 	perm.use_fishing_hook = data[48]
 	perm.use_bucket = data[49]
 
-	ILAPI.save()
+	ILAPI.save({0,1,0})
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
@@ -411,7 +411,7 @@ function FORM_land_gui_name(player,data)
 	
 	local landId=TRS_Form[player.xuid].landId
 	land_data[landId].settings.nickname=data[1]
-	ILAPI.save()
+	ILAPI.save({0,1,0})
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
@@ -425,7 +425,7 @@ function FORM_land_gui_describe(player,data)
 	
 	local landId=TRS_Form[player.xuid].landId
 	land_data[landId].settings.describe=data[1]
-	ILAPI.save()
+	ILAPI.save({0,1,0})
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		'Complete.',
@@ -468,10 +468,12 @@ function FORM_land_gui(player,data,lid)
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local vol = length * width * height
 		local squ = length * width
+		local owner = ILAPI.GetOwner(landId)
+		if owner~='?' then owner=GetIdFromXuid(owner) end
 		player:sendModalForm(
 			_tr('gui.landmgr.landinfo.title'),
 			AIR.gsubEx(_tr('gui.landmgr.landinfo.content'),
-					'<a>',GetIdFromXuid(ILAPI.GetOwner(landId)),
+					'<a>',owner,
 					'<b>',landId,
 					'<c>',ILAPI.GetNickname(landId,false),
 					'<d>',ILAPI.GetDimension(landId),
@@ -727,7 +729,7 @@ function FORM_land_mgr(player,data)
 		bldims[#bldims+1]=2
 	end
 
-	ILAPI.save()
+	ILAPI.save({1,0,0})
 	
 	-- Do Realtime
 
@@ -785,7 +787,7 @@ function FORM_land_listener(player,data)
 	if not(data[19]) then dbl[#dbl+1] = "onFireSpread" end
 	
 	buildLDMap()
-	ILAPI.save()
+	ILAPI.save({1,0,0})
 	player:sendModalForm(
 		_tr('gui.general.complete'),
 		"Complete.",
@@ -1207,9 +1209,7 @@ function GUI_OPLMgr_land(player,mode)
 		local landlst = ILAPI.GetAllLands()
 		for num,landId in pairs(landlst) do
 			local ownerId = ILAPI.GetOwner(landId)
-			if ownerId~='?' then
-				ownerId=GetIdFromXuid(ownerId)
-			end
+			if ownerId~='?' then ownerId=GetIdFromXuid(ownerId) end
 			Form:addButton(
 				AIR.gsubEx(
 					_tr('gui.oplandmgr.landmgr.button'),
@@ -1656,7 +1656,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	end
 
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
-	ILAPI.save()
+	ILAPI.save({0,1,1})
 	updateChunk(landId,'add')
 	updateVecMap(landId,'add')
 	updateLandOwnersMap(landId)
@@ -1673,7 +1673,7 @@ function ILAPI.DeleteLand(landId)
 	updateVecMap(landId,'del')
 	updateEdgeMap(landId,'del')
 	land_data[landId]=nil
-	ILAPI.save()
+	ILAPI.save({0,1,1})
 	return true
 end
 function ILAPI.PosGetLand(vec4)
@@ -1788,7 +1788,7 @@ function ILAPI.UpdatePermission(landId,perm,value)
 		return false
 	end
 	land_data[landId].permissions[perm]=value
-	ILAPI.save()
+	ILAPI.save(0,1,0)
 	return true
 end
 function ILAPI.UpdateSetting(landId,cfgname,value)
@@ -1799,7 +1799,7 @@ function ILAPI.UpdateSetting(landId,cfgname,value)
 		return false
 	end
 	land_data[landId].settings[cfgname]=value
-	ILAPI.save()
+	ILAPI.save(0,1,0)
 	return true
 end
 function ILAPI.AddTrust(landId,xuid)
@@ -1809,14 +1809,14 @@ function ILAPI.AddTrust(landId,xuid)
 	end
 	shareList[#shareList+1]=xuid
 	updateLandTrustMap(landId)
-	ILAPI.save()
+	ILAPI.save(0,1,0)
 	return true
 end
 function ILAPI.RemoveTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
 	table.remove(shareList,AIR.isValInList(shareList,xuid))
 	updateLandTrustMap(landId)
-	ILAPI.save()
+	ILAPI.save(0,1,0)
 	return true
 end
 function ILAPI.SetOwner(landId,xuid)
@@ -1824,7 +1824,7 @@ function ILAPI.SetOwner(landId,xuid)
 	table.remove(land_owners[ownerXuid],AIR.isValInList(land_owners[ownerXuid],landId))
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	updateLandOwnersMap(landId)
-	ILAPI.save()
+	ILAPI.save(0,0,1)
 	return true
 end
 -- [[ PLUGIN ]]
@@ -1845,10 +1845,20 @@ function ILAPI.GetVersion()
 	return langVer
 end
 -- [[ UNEXPORT FUNCTIONS ]]
-function ILAPI.save()
-	file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
-	file.writeTo(data_path..'data.json',json.encode(land_data))
-	file.writeTo(data_path..'owners.json',json.encode(land_owners,{indent=true}))
+function ILAPI.save(mode) -- {config,data,owners}
+	if mode[1] == 1 then
+		file.writeTo(data_path..'config.json',json.encode(cfg,{indent=true}))
+	end
+	if mode[2] == 1 then
+		file.writeTo(data_path..'data.json',json.encode(land_data))
+	end
+	if mode[3] == 1 then
+		local tmpowners = AIR.deepcopy(land_owners)
+		for xuid,landIds in pairs(wrong_landowners) do
+			tmpowners[xuid] = landIds
+		end
+		file.writeTo(data_path..'owners.json',json.encode(tmpowners,{indent=true}))
+	end
 end
 function ILAPI.CanControl(mode,name)
 	-- mode [0]UseItem [1]onBlockInteracted [2]items [3]attack
@@ -2155,9 +2165,13 @@ function Eventing_onJoin(player)
 	local xuid = player.xuid
 	TRS_Form[xuid] = { inland='null',inlandv2='null' }
 
+	if wrong_landowners[xuid]~=nil then
+		land_owners[xuid] = AIR.deepcopy(wrong_landowners[xuid])
+		wrong_landowners[xuid] = nil
+	end
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
-		ILAPI.save()
+		ILAPI.save({0,0,1})
 	end
 
 	if player.gameMode==1 then
@@ -2280,7 +2294,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			pos.y+1,
 			pos.z
 		}
-		ILAPI.save()
+		ILAPI.save({0,1,0})
 		player:sendModalForm(
 			_tr('gui.general.complete'),
 			AIR.gsubEx(_tr('gui.landtp.point'),'<a>',AIR.vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
@@ -2370,12 +2384,12 @@ function Eventing_onConsoleCmd(cmd)
 		end
 		table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
 		updateLandOperatorsMap()
-		ILAPI.save()
+		ILAPI.save({1,0,0})
 		INFO('System',AIR.gsubEx(_tr('console.landop.add.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
 
-	-- [deop] add land operator.
+	-- [deop] delete land operator.
 	if opt[2] == 'deop' then
 		local name = AIR.split(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
 		local xuid = GetXuidFromId(name)
@@ -2389,7 +2403,7 @@ function Eventing_onConsoleCmd(cmd)
 		end
 		table.remove(cfg.manager.operator,AIR.isValInList(cfg.manager.operator,xuid))
 		updateLandOperatorsMap()
-		ILAPI.save()
+		ILAPI.save({1,0,0})
 		INFO('System',AIR.gsubEx(_tr('console.landop.del.success'),'<a>',name,'<b>',xuid))
 		return false
 	end
@@ -2418,7 +2432,7 @@ function Eventing_onDestroyBlock(player,block)
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
 		sendText(player,AIR.gsubEx(_tr('title.oplandmgr.setsuccess'),'<a>',HandItem.name))
 		cfg.features.selection_tool=HandItem.type
-		ILAPI.save()
+		ILAPI.save({1,0,0})
 		TRS_Form[xuid].selectool=-1
 		return false
 	end
@@ -2848,8 +2862,7 @@ function Tcb_LandSign()
 		if landId==TRS_Form[xuid].inland then goto JUMPOUT_SIGN end -- signed
 
 		local owner=ILAPI.GetOwner(landId)
-		local ownername='?'
-		if owner~='?' then ownername=GetIdFromXuid(owner) end
+		if owner~='?' then owner=GetIdFromXuid(owner) end
 		
 		if xuid==owner then 
 			-- land owner in land.
@@ -2868,7 +2881,7 @@ function Tcb_LandSign()
 			end
 			sendTitle(player,_tr('sign.listener.visitortitle'),AIR.gsubEx(
 				_tr('sign.listener.visitorsubtitle'),
-				'<a>',ownername
+				'<a>',owner
 			))
 			if land_data[landId].settings.describe~='' then
 				sendText(player,AIR.gsubEx(
@@ -2895,13 +2908,15 @@ function Tcb_ButtomSign()
 			goto JUMPOUT_BUTTOM
 		end
 
-		local ownerXuid = ILAPI.GetOwner(landId)
+		local ownerXid = ILAPI.GetOwner(landId)
+		local ownerName = '?'
+		if ownerXid~='?' then ownerName=GetIdFromXuid(owner) end
 		local landcfg = land_data[landId].settings
-		if (xuid==ownerXuid) and landcfg.signtome and landcfg.signbuttom then
+		if (xuid==ownerXid) and landcfg.signtome and landcfg.signbuttom then
 			player:sendText(AIR.gsubEx(_tr('title.landsign.ownenrbuttom'),'<a>',ILAPI.GetNickname(landId)),4)
 		end
-		if (xuid~=ownerXuid) and landcfg.signtother and landcfg.signbuttom then
-			player:sendText(AIR.gsubEx(_tr('title.landsign.visitorbuttom'),'<a>',GetIdFromXuid(ownerXuid)),4)
+		if (xuid~=ownerXid) and landcfg.signtother and landcfg.signbuttom then
+			player:sendText(AIR.gsubEx(_tr('title.landsign.visitorbuttom'),'<a>',ownerName),4)
 		end
 
 		:: JUMPOUT_BUTTOM ::
@@ -3073,8 +3088,28 @@ mc.listen('onServerStarted',function()
 
 	-- Load data file
 	cfg = json.decode(file.readFrom(data_path..'config.json'))
+	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
+	if i18n_data.VERSION ~= langVer then
+		throwErr(-4)
+	end
 	land_data = json.decode(file.readFrom(data_path..'data.json'))
-	land_owners = json.decode(file.readFrom(data_path..'owners.json'))
+	land_owners = {}
+	wrong_landowners = {}
+	local itHasWrongXuid = false
+	for ownerXuid,landIds in pairs(json.decode(file.readFrom(data_path..'owners.json'))) do
+		if GetIdFromXuid(ownerXuid) == '' then
+			ERROR(AIR.gsubEx(_tr('console.error.readowner.xuid'),'<a>',ownerXuid))
+			wrong_landowners[ownerXuid] = landIds
+			itHasWrongXuid = true
+		else
+			land_owners[ownerXuid] = landIds
+		end
+	end
+
+	if itHasWrongXuid then
+		INFO('TIP',_tr('console.error.readowner.tipxid'))
+	end
+	
 	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand'
 
 	-- Configure Updater
@@ -3099,7 +3134,7 @@ mc.listen('onServerStarted',function()
 					end
 				end
 			end
-			ILAPI.save()
+			ILAPI.save({1,1,0})
 		end
 		if cfg.version==210 then
 			cfg.version=211
@@ -3110,7 +3145,7 @@ mc.listen('onServerStarted',function()
 			landbuy.price_2D={35}
 			landbuy.price=nil
 			landbuy.calculation=nil
-			ILAPI.save()
+			ILAPI.save({1,0,0})
 		end
 		if cfg.version==211 then
 			cfg.version=220
@@ -3137,18 +3172,18 @@ mc.listen('onServerStarted',function()
 				perm.use_stonecutter=false
 				perm.allow_exploding=nil
 			end
-			ILAPI.save()
+			ILAPI.save({1,1,0})
 		end
 		if cfg.version==220 or cfg.version==221 then
 			cfg.version=223
-			ILAPI.save()
+			ILAPI.save({1,0,0})
 		end
 		if cfg.version==223 then
 			cfg.version=224
 			for landId,data in pairs(land_data) do
 				land_data[landId].permissions.use_bucket=false
 			end
-			ILAPI.save()
+			ILAPI.save({1,1,0})
 		end
 		if cfg.version==224 then
 			cfg.version=230
@@ -3173,7 +3208,7 @@ mc.listen('onServerStarted',function()
 				perm.allow_attack_animal=false
 				perm.allow_attack_mobs=true
 			end
-			ILAPI.save()
+			ILAPI.save({1,1,0})
 		end
 		if cfg.version==230 then
 			cfg.version=231
@@ -3234,15 +3269,10 @@ mc.listen('onServerStarted',function()
 					perm.allow_shoot=false
 				end
 			end
-			ILAPI.save()
+			ILAPI.save({1,1,0})
 		end
 	end
 	
-	-- Load&Check i18n file
-	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
-	if i18n_data.VERSION ~= langVer then
-		throwErr(-4)
-	end
 	-- Build maps
 	buildAnyMap()
 
