@@ -279,7 +279,7 @@ function buildAnyMap()
 end
 
 -- form -> callback
-function FORM_NULL(player,id) end
+function F_NULL(a1,a2,a3,a4) end
 function FORM_BACK_LandOPMgr(player,id)
 	if not(id) then return end
 	GUI_OPLMgr(player)
@@ -856,7 +856,7 @@ function FORM_landtp(player,id,customID)
 		'Complete.',
 		_tr('gui.general.yes'),
 		_tr('gui.general.close'),
-		FORM_NULL
+		F_NULL
 	)
 end
 function FORM_land_fast(player,id)
@@ -1882,6 +1882,35 @@ function ILAPI.IsDisabled(listener)
 	end
 	return false
 end
+function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
+	-- [0] return list (0:zh_CN....)
+	-- [1] return table (official:....)
+	if type == 0 then
+		local langs = {}
+		for n,file in pairs(file.getFilesList(data_path..'lang\\')) do
+			local tmp = split(file,'.')
+			if tmp[2]=='json' then
+				langs[#langs+1] = tmp[1]
+			end
+		end
+		return langs
+	end
+	if type == 1 then
+		local server = getLink()
+		if server ~= false then
+			local raw = network.httpGetSync(server..'/languages/repo.json')
+			if raw.status==200 then
+				return json.decode(raw.data)
+			else
+				ERROR(gsubEx(_tr('console.getonline.failbycode'),'<a>',raw.status))
+				return false
+			end
+		else
+			ERROR(_tr('console.getonline.failed'))
+			return false
+		end
+	end
+end
 
 -- +-+ +-+ +-+   +-+ +-+ +-+
 -- |T| |H| |E|   |E| |N| |D|
@@ -2051,7 +2080,7 @@ function Upgrade(rawInfo)
 
 	--  Check Data
 	local updata
-	if rawInfo.FILE_Version==201 then
+	if rawInfo.FILE_Version==202 then
 		updata = rawInfo.Updates[1]
 	else
 		ERROR(gsubEx(_tr('console.getonline.failbyver'),'<a>',rawInfo.FILE_Version))
@@ -2072,7 +2101,14 @@ function Upgrade(rawInfo)
 	-- Set Resource
 	local RawPath = {}
 	local BackupEd = {}
-	local source = gl_server_link..'/'..updata.NumVer..'/'
+	local server = getLink()
+	if server ~= false then
+		local source = server..'/'..updata.NumVer..'/'
+	else
+		ERROR(_tr('console.getonline.failed'))
+		return false
+	end
+	
 	INFO('AutoUpdate',plugin_version..' => '..updata.Version)
 	RawPath['$plugin_path'] = 'plugins\\'
 	RawPath['$data_path'] = data_path
@@ -2201,6 +2237,14 @@ end
 function vec2text(vec3)
 	return vec3.x..','..vec3.y..','..vec3.z
 end
+function getLink()
+	local tokenRaw = network.httpGetSync('https://lxl-cloud.amd.rocks/id.json')
+	if tokenRaw.status~=200 then
+		return false
+	end
+	local id = json.decode(tokenRaw.data).token
+	return 'https://cdn.jsdelivr.net/gh/LiteLDev-LXL/Cloud/'..id..'/iLand'
+end
 
 -- log system
 function INFO(type,content)
@@ -2212,6 +2256,27 @@ function INFO(type,content)
 end
 function ERROR(content)
 	print('[ILand] |ERROR| '..content)
+end
+
+-- command helper
+function DownloadLanguage(name)
+	local lang_n = network.httpGetSync(getLink()..'/languages/'..name..'.json')
+	local lang_v = network.httpGetSync(getLink()..'/languages/'..name..'.json.md5')
+	if lang_n.status~=200 or lang_v.status~=200 then
+		ERROR(gsubEx(_tr('console.languages.install.statfail'),'<a>',name,'<b>',lang_n.status..','..lang_v.status))
+		return false
+	end
+	if data.toMD5(lang_n.data)~=lang_v.data then
+		ERROR(gsubEx(_tr('console.languages.install.verifyfail'),'<a>',name))
+		return false
+	end
+	local THISVER = json.decode(lang_n.data).VERSION
+	if THISVER~=langVer then
+		ERROR(gsubEx(_tr('console.languages.install.versionfail'),'<a>',name,'<b>',THISVER,'<c>',langVer))
+		return false
+	end
+	file.writeTo(data_path..'lang\\'..name..'.json',lang_n.data)
+	return true
 end
 
 -- Minecraft -> Eventing
@@ -2354,7 +2419,7 @@ function Eventing_onPlayerCmd(player,cmd)
 			gsubEx(_tr('gui.landtp.point'),'<a>',vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
 			_tr('gui.general.iknow'),
 			_tr('gui.general.close'),
-			FORM_NULL
+			F_NULL
 		)
 		return false
 	end
@@ -2385,22 +2450,21 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [mgr] OP-LandMgr GUI
 	if opt[2] == 'mgr' and opt[3] == nil then
-		if not(ILAPI.IsLandOperator(xuid)) then
-			sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
-			return false
+		if opt[3] == nil then -- no child-command.
+			if not(ILAPI.IsLandOperator(xuid)) then
+				sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
+				return false
+			end
+			GUI_OPLMgr(player)
 		end
-		GUI_OPLMgr(player)
-		return false
-	end
-
-	-- [mgr selectool] Set land_select tool
-	if opt[2] == 'mgr' and opt[3] == 'selectool' then
-		if isValInList(cfg.manager.operator,xuid)==-1 then
-			sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
-			return false
+		if opt[3] == 'selectool' then -- set land select_tool.
+			if isValInList(cfg.manager.operator,xuid)==-1 then
+				sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
+				return false
+			end
+			sendText(player,_tr('title.oplandmgr.setselectool'))
+			TRS_Form[xuid].selectool=0
 		end
-		sendText(player,_tr('title.oplandmgr.setselectool'))
-		TRS_Form[xuid].selectool=0
 		return false
 	end
 
@@ -2464,9 +2528,140 @@ function Eventing_onConsoleCmd(cmd)
 
 	-- [update] Upgrade iLand
 	if opt[2] == 'update' then
-		Upgrade(gl_server_info)
+		if cfg.update_check then
+			Upgrade(gl_server_info)
+		else
+			ERROR(_tr('console.update.nodata'))
+		end
 		return false
 	end
+
+	-- [language] Manager for i18n.
+	if opt[2] == 'language' then
+		local langpath = data_path..'lang\\'
+		if opt[3] == nil then -- no child-command.
+			INFO('I18N',gsubEx(_tr('console.languages.sign'),'<a>',cfg.manager.default_language,'<b>',_tr('VERSION')))
+			local isNone = false
+			local count = 1
+			while(not(isNone)) do
+				if i18n_data['#'..count] ~= nil then
+					INFO('I18N',_tr('#'..count))
+				else
+					isNone = true
+				end
+				count = count + 1
+			end
+		end
+		if opt[3] == 'set' then -- set language
+			if opt[4] == nil then
+				ERROR(_tr('console.languages.set.misspara'))
+				return false;
+			end
+			local path = langpath..opt[4]..'.json'
+			if File.exists(path) then
+				cfg.manager.default_language = opt[4]
+				i18n_data = json.decode(file.readFrom(path))
+				ILAPI.save({1,0,0})
+				INFO(gsubEx(_tr('console.languages.set.succeed'),'<a>',cfg.manager.default_language))
+			else
+				ERROR(gsubEx(_tr('console.languages.set.nofile'),'<a>',opt[4]))
+			end
+		end
+		if opt[3] == 'list' then
+			local langlist = ILAPI.GetLanguageList(0)
+			for i,lang in pairs(langlist) do
+				if lang==cfg.manager.default_language then
+					INFO('I18N',lang..' <- Using.')
+				else
+					INFO('I18N',lang)
+				end
+			end
+			INFO('I18N',gsubEx(_tr('console.languages.list.count'),'<a>',#langlist))
+		end
+		if opt[3] == 'list-online' then
+			INFO('Network',_tr('console.languages.list-online.wait'))
+			local rawdata = ILAPI.GetLanguageList(1)
+			if rawdata == false then
+				return false
+			end
+			INFO('I18N',_tr('console.languages.official'))
+			for i,lang in pairs(rawdata.official) do
+				INFO('I18N',lang)
+			end
+			INFO('I18N',_tr('console.languages.3rd'))
+			for i,lang in pairs(rawdata['3-rd']) do
+				INFO('I18N',lang)
+			end
+		end
+		if opt[3] == 'install' then
+			if opt[4] == nil then
+				ERROR(_tr('console.languages.install.misspara'))
+				return false
+			end
+			INFO('Network',_tr('console.languages.list-online.wait'))
+			local rawdata = ILAPI.GetLanguageList(1)
+			if rawdata == false then
+				return false
+			end
+			if isValInList(ILAPI.GetLanguageList(0),opt[4])~=-1 then
+				ERROR(_tr('console.languages.install.existed'))
+				return false
+			end
+			if isValInList(rawdata.official,opt[4])==-1 and isValInList(rawdata['3-rd'],opt[4])==-1 then
+				ERROR(gsubEx(_tr('console.languages.install.notfound'),'<a>',opt[4]))
+				return false
+			end
+			INFO(_tr('console.autoupdate.download'))
+			if DownloadLanguage(opt[4]) then
+				INFO(gsubEx(_tr('console.languages.install.succeed'),'<a>',opt[4]))
+			end
+		end
+		if opt[3] == 'update' then
+			local langlist = ILAPI.GetLanguageList(0)
+			local langlist_o = ILAPI.GetLanguageList(1)
+			function updateLang(lang)
+				local langdata
+				if File.exists(langpath..lang..'.json') then
+					langdata = json.decode(file.readFrom(langpath..lang..'.json'))
+				else
+					ERROR(gsubEx(_tr('console.languages.update.notfound'),'<a>',lang))
+					return false -- this false like 'fail'
+				end
+				if langdata.VERSION == langVer then
+					ERROR(lang..': '.._tr('console.languages.update.alreadylatest'))
+					return true -- continue
+				end
+				if isValInList(langlist,lang)==-1 then
+					ERROR(gsubEx(_tr('console.languages.update.notfound'),'<a>',lang))
+					return false
+				end
+				if isValInList(langlist_o.official,lang)==-1 and isValInList(langlist_o['3-rd'],lang)==-1 then
+					ERROR(gsubEx(_tr('console.languages.update.notfoundonline'),'<a>',lang))
+					return false
+				end
+				if DownloadLanguage(lang) then
+					INFO(gsubEx(_tr('console.languages.update.succeed'),'<a>',lang))
+				end
+			end
+			if opt[4] == nil then
+				INFO(_tr('console.languages.update.all'))
+				for i,lang in pairs(langlist) do
+					if not(updateLang(lang)) then
+						return false
+					end
+				end
+			else
+				INFO(_tr('console.languages.update.all'),'<a>',opt[4])
+				updateLang(opt[4])
+			end
+
+		end
+		return false
+	end
+
+	-- [repair] Repairing tools for iland
+	-- [repair checkall] Check iland
+	-- [repair apply <N>] Try repair the problem
 
 	-- [X] Unknown key
 	ERROR('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
@@ -3046,34 +3241,13 @@ end
 function Ncb_online(code,result)
 	if code==200 then
 		local data = json.decode(result)
+
 		gl_server_info = data
 
 		-- Check File Version
-		if data.FILE_Version~=201 then
+		if data.FILE_Version~=202 then
 			INFO('Network',gsubEx(_tr('console.getonline.failbyver'),'<a>',data.FILE_Version))
 			return
-		end
-
-		-- Read Announcement
-		Global_LatestVersion = data.Updates[1].Version
-		Global_IsAnnouncementEnabled = data.Announcement.enabled
-		Global_Announcement = ''
-
-		if data.Announcement.enabled then
-			for n,text in pairs(data.Announcement.content) do
-				Global_Announcement = Global_Announcement..text..' | '
-				INFO('Announcement',text)
-			end
-		end
-
-		-- Do Analysis
-		if data.Analysis.enabled then
-			local analink = gsubEx(
-				data.Analysis.link,
-				'{version}',langVer,
-				'{players}',#land_owners
-			)
-			network.httpGet(analink,function(stat,con)end)
 		end
 
 		-- Check Update
@@ -3155,8 +3329,6 @@ mc.listen('onServerStarted',function()
 	if itHasWrongXuid then
 		INFO('TIP',_tr('console.error.readowner.tipxid'))
 	end
-	
-	gl_server_link = 'https://lxl-upgrade.amd.rocks/iLand'
 
 	-- Configure Updater
 	do
@@ -3332,29 +3504,34 @@ mc.listen('onServerStarted',function()
 
 	-- Check Update
 	if cfg.update_check then
-		network.httpGet(gl_server_link..'/newServer.json',Ncb_online)
+		local server = getLink()
+		if server ~=  false then
+			network.httpGet(server..'/server.json',Ncb_online)
+		else
+			ERROR(_tr('console.getonline.failed'))
+		end
 	end
 
 	-- register cmd.
 	if cfg.features.regFakeCmd then
-		mc.regPlayerCmd(MainCmd,_tr('command.land'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),function(pl,args)end)
-		mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),function(pl,args)end)
+		mc.regPlayerCmd(MainCmd,_tr('command.land'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' new',_tr('command.land_new'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' giveup',_tr('command.land_giveup'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' gui',_tr('command.land_gui'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' a',_tr('command.land_a'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' b',_tr('command.land_b'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' buy',_tr('command.land_buy'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' mgr',_tr('command.land_mgr'),F_NULL)
+		mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),F_NULL)
 		if cfg.features.landtp then
-			mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),function(pl,args)end)
-			mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),function(pl,args)end)
+			mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),F_NULL)
+			mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),F_NULL)
 		end
-		mc.regConsoleCmd(MainCmd,_tr('command.console.land'),function(args)end)
-		mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),function(args)end)
-		mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),function(args)end)
-		mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),function(args)end)
-		mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),function(args)end)
+		mc.regConsoleCmd(MainCmd,_tr('command.console.land'),F_NULL)
+		mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),F_NULL)
+		mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),F_NULL)
+		mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),F_NULL)
+		mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),F_NULL)
 	end
 
 end)
