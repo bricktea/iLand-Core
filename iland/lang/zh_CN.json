@@ -125,8 +125,6 @@
     "gui.oplandmgr.economy.calculation_3D": "价格计算方式（三维）",
     "gui.oplandmgr.economy.calculation_2D": "价格计算方式（二维）",
     "gui.oplandmgr.economy.price": "价格数值",
-    "gui.oplandmgr.i18n": "§l语言设定",
-    "gui.oplandmgr.i18n.default": "默认语言",
     "gui.oplandmgr.features": "§l功能开关",
     "gui.oplandmgr.features.landsign": "领地提示",
     "gui.oplandmgr.features.particles": "粒子特效",

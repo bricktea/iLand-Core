@@ -684,46 +684,45 @@ function FORM_land_mgr(player,data)
 	if data[13]~='' then
 		cfg.land_buy.price_2D[1]=tonumber(data[13])
 	end
-	cfg.manager.default_language=TRS_Form[xuid].langlist[data[14]+1]
-	cfg.features.landSign = data[15]
-	cfg.features.particles = data[16]
-	cfg.features.force_talk = data[17]
+	cfg.features.landSign = data[14]
+	cfg.features.particles = data[15]
+	cfg.features.force_talk = data[16]
 	-- 18~20 (3) BlockLandDims
-	cfg.features.nearby_protection.enabled = data[21]
-	cfg.features.nearby_protection.blockselectland = data[22]
-	cfg.update_check = data[23]
-	cfg.features.auto_update = data[24]
-	cfg.features.offlinePlayerInList = data[25]
-	cfg.features.land_2D = data[26]
-	cfg.features.land_3D = data[27]
+	cfg.features.nearby_protection.enabled = data[20]
+	cfg.features.nearby_protection.blockselectland = data[21]
+	cfg.update_check = data[22]
+	cfg.features.auto_update = data[23]
+	cfg.features.offlinePlayerInList = data[24]
+	cfg.features.land_2D = data[25]
+	cfg.features.land_3D = data[26]
+	if data[27]~='' then
+		cfg.features.playersPerPage=tonumber(data[27])
+	end
 	if data[28]~='' then
-		cfg.features.playersPerPage=tonumber(data[28])
+		cfg.features.nearby_protection.side=tonumber(data[28])
 	end
 	if data[29]~='' then
-		cfg.features.nearby_protection.side=tonumber(data[29])
+		cfg.features.selection_tool_name=data[29]
 	end
 	if data[30]~='' then
-		cfg.features.selection_tool_name=data[30]
+		cfg.features.sign_frequency=tonumber(data[30])
 	end
 	if data[31]~='' then
-		cfg.features.sign_frequency=tonumber(data[31])
+		cfg.features.chunk_side=tonumber(data[31])
 	end
 	if data[32]~='' then
-		cfg.features.chunk_side=tonumber(data[32])
-	end
-	if data[33]~='' then
-		cfg.features.player_max_ple=tonumber(data[33])
+		cfg.features.player_max_ple=tonumber(data[32])
 	end
 
 	-- BlockLandDims
 	local bldims = cfg.features.blockLandDims
-	if not(data[18]) then
+	if not(data[17]) then
 		bldims[#bldims+1]=0
 	end
-	if not(data[19]) then
+	if not(data[18]) then
 		bldims[#bldims+1]=1
 	end
-	if not(data[20]) then
+	if not(data[19]) then
 		bldims[#bldims+1]=2
 	end
 
@@ -747,8 +746,6 @@ function FORM_land_mgr(player,data)
 		clearInterval(CLOCK_PARTICLES)
 		CLOCK_PARTICLES=nil
 	end
-
-	i18n_data = json.decode(file.readFrom(data_path..'lang\\'..cfg.manager.default_language..'.json'))
 
 	player:sendModalForm(
 		_tr('gui.general.complete'),
@@ -1269,20 +1266,6 @@ function GUI_OPLMgr_plugin(player)
 	end
 	local bprice = deepcopy(cfg.land_buy.price_2D)
 	
-	-- I18N System
-	local langLst = {}
-	local default_lang = 0
-	for n,file in pairs(file.getFilesList(data_path..'lang\\')) do
-		local tmp = split(file,'.')
-		if tmp[2]=='json' then
-			langLst[#langLst+1] = tmp[1]
-		end
-		if tmp[1]==cfg.manager.default_language then
-			default_lang = #langLst-1
-		end
-	end
-	TRS_Form[xuid].langlist = langLst
-	
 	-- Blockland Dims
 	local enableDims = { true,true,true }
 	local bldims = cfg.features.blockLandDims
@@ -1315,8 +1298,6 @@ function GUI_OPLMgr_plugin(player)
 	Form:addInput(_tr('gui.oplandmgr.economy.price')..'[2]',tostring(aprice[2]))
 	Form:addDropdown(_tr('gui.oplandmgr.economy.calculation_2D'),calculation_2D)
 	Form:addInput(_tr('gui.oplandmgr.economy.price')..'[1]',tostring(bprice[1]))
-	Form:addLabel(_tr('gui.oplandmgr.i18n'))
-	Form:addDropdown(_tr('gui.oplandmgr.i18n.default'),langLst,default_lang)
 	Form:addLabel(_tr('gui.oplandmgr.features'))
 	Form:addSwitch(_tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
 	Form:addSwitch(_tr('gui.oplandmgr.features.particles'),cfg.features.particles)
