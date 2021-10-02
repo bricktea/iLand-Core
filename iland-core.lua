@@ -2651,7 +2651,7 @@ function Eventing_onConsoleCmd(cmd)
 					end
 				end
 			else
-				INFO(_tr('console.languages.update.all'),'<a>',opt[4])
+				INFO(gsubEx(_tr('console.languages.update.single'),'<a>',opt[4]))
 				updateLang(opt[4])
 			end
 
