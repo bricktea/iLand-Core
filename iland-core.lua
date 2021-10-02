@@ -2106,19 +2106,21 @@ function Upgrade(rawInfo)
 		end
 
 		local tmp = network.httpGetSync(source..raw[2])
-		if tmp.status~=200 then -- download check
+		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
+		if tmp.status~=200 or tmp2.status then -- download check
 			ERROR(
 				gsubEx(
 					_tr('console.autoupdate.errorbydown'),
 					'<a>',raw[2],
-					'<b>',tmp.status
+					'<b>',tmp.status..','..tmp2.status
 				)
 			)
 			recoverBackup(BackupEd)
 			return
 		end
 
-		if data.toSHA1(tmp.data)~=updata.SHA1[n] then -- MD5 check
+		local raw = string.gsub(lang_n.data,'\n','\r\n')
+		if data.toMD5(raw)~=tmp2.data then -- MD5 check
 			ERROR(
 				gsubEx(
 					_tr('console.autoupdate.errorbyverify'),
@@ -2129,7 +2131,7 @@ function Upgrade(rawInfo)
 			return
 		end
 
-		file.writeTo(path,tmp.data)
+		file.writeTo(path,raw)
 	end
 
 	INFO('AutoUpdate',_tr('console.autoupdate.success'))
@@ -2242,21 +2244,22 @@ end
 -- command helper
 function DownloadLanguage(name)
 	local lang_n = network.httpGetSync(getLink()..'/languages/'..name..'.json')
-	local lang_v = network.httpGetSync(getLink()..'/languages/'..name..'.json.md5')
+	local lang_v = network.httpGetSync(getLink()..'/languages/'..name..'.json.md5.verify')
 	if lang_n.status~=200 or lang_v.status~=200 then
 		ERROR(gsubEx(_tr('console.languages.install.statfail'),'<a>',name,'<b>',lang_n.status..','..lang_v.status))
 		return false
 	end
-	if data.toMD5(lang_n.data)~=lang_v.data then
+	local raw = string.gsub(lang_n.data,'\n','\r\n')
+	if data.toMD5(raw)~=lang_v.data then
 		ERROR(gsubEx(_tr('console.languages.install.verifyfail'),'<a>',name))
 		return false
 	end
-	local THISVER = json.decode(lang_n.data).VERSION
+	local THISVER = json.decode(raw).VERSION
 	if THISVER~=langVer then
 		ERROR(gsubEx(_tr('console.languages.install.versionfail'),'<a>',name,'<b>',THISVER,'<c>',langVer))
 		return false
 	end
-	file.writeTo(data_path..'lang\\'..name..'.json',lang_n.data)
+	file.writeTo(data_path..'lang\\'..name..'.json',raw)
 	return true
 end
 
