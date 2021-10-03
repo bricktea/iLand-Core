@@ -21,7 +21,8 @@ minLXLVer = {0,5,6}
 json = require('dkjson')
 
 ArrayParticles={};KeepingTitle={}
-ILAPI={};newLand={};TRS_Form={}
+ILAPI={};TRS_Form={}
+newLand={};reselectLand={}
 
 MainCmd = 'land'
 data_path = 'plugins\\iland\\'
@@ -29,6 +30,9 @@ data_path = 'plugins\\iland\\'
 if DEV_MODE then
 	data_path = 'plugins\\LXL_Plugins\\iLand\\iland\\'
 end
+
+local minY = -64
+local maxY = 320
 
 -- something preload
 function cubeGetEdge(spos,epos)
@@ -622,7 +626,26 @@ function FORM_land_gui(player,data,lid)
 		)
 		return
 	end
-	if data[2]==7 then --删除领地
+	if data[2]==7 then --重新圈地
+		player:sendModalForm(
+			_tr('gui.reselectland.title'),
+			_tr('gui.reselectland.tip'),
+			_tr('gui.general.yes'),
+			_tr('gui.general.cancel'),
+			function(player,result)
+				local xuid = player.xuid
+				if result == nil or result == false then
+					return
+				end
+				reselectLand[xuid] = { id=landId,step=0 }
+				KeepingTitle[xuid] = {
+					_tr('title.selectrange.mode'),
+					gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name)
+				}
+			end
+		)
+	end
+	if data[2]==8 then --删除领地
 		local dpos = land_data[landId].range
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
@@ -868,7 +891,7 @@ function FORM_land_fast(player,id)
 	TRS_Form[xuid].backpo = 1
 	FakeData = {}
 	FakeData[2] = id
-	if id~=8 then
+	if id~=9 then
 		FORM_land_gui(player,FakeData,TRS_Form[xuid].landId)
 	end
 end
@@ -972,7 +995,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		if NewData.dimension=='3D' then
 			NewData.posA.y=vec4.y
 		else
-			NewData.posA.y=-64
+			NewData.posA.y=minY
 		end
 		KeepingTitle[xuid] = {
 			_tr('title.selectrange.mode'),
@@ -999,7 +1022,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		if NewData.dimension=='3D' then
 			NewData.posB.y=vec4.y
 		else
-			NewData.posB.y=320
+			NewData.posB.y=maxY
 		end
 		KeepingTitle[xuid] = {
 			_tr('title.selectrange.mode'),
@@ -1060,44 +1083,28 @@ function BoughtProg_CreateOrder(player)
 	end
 
 	--- 违规圈地判断
-	if squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
+	local isV = ILAPI.IsLandViolation(squ,height,xuid)
+	if isV==-1 then
 		KeepTitle_break()
 		sendText(player,_tr('title.createorder.toobig'))
 		return
 	end
-	if squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
+	if isV==-2 then
 		KeepTitle_break()
 		sendText(player,_tr('title.createorder.toosmall'))
 		return
 	end
-	if height<2 then
+	if isV==-3 then
 		KeepTitle_break()
 		sendText(player,_tr('title.createorder.toolow'))
 		return
 	end
 
-	--- 领地冲突判断
-	local edge=cubeGetEdge(NewData.posA,NewData.posB)
-	for i=1,#edge do
-		edge[i].dimid=NewData.dimid
-		local tryLand = ILAPI.PosGetLand(edge[i])
-		if tryLand ~= -1 then
-			KeepTitle_break()
-			sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i])))
-			return
-		end
-	end
-	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
-		if land_data[landId].range.dimid==NewData.dimid then
-			edge=EdgeMap[landId].D3D
-			for i=1,#edge do
-				if isPosInCube(edge[i],NewData.posA,NewData.posB)==true then
-					KeepTitle_break()
-					sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',vec2text(edge[i])))
-					return
-				end
-			end
-		end
+	--- 领地冲突
+	if ILAPI.IsLandCollision(NewData.posA,NewData.posB,NewData.dimid) then
+		KeepTitle_break()
+		sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i])))
+		return
 	end
 
 	--- 购买
@@ -1129,17 +1136,217 @@ function BoughtProg_CreateOrder(player)
 		_tr('gui.general.close'),
 		FORM_land_buy
 	)
-
 end
 function BoughtProg_GiveUp(player)
     local xuid=player.xuid
-	if newLand[xuid]==nil then
-        sendText(player,_tr('title.giveup.failed'));return
-    end
 	newLand[xuid]=nil
 	ArrayParticles[xuid]=nil
 	KeepingTitle[xuid]=nil
 	sendText(player,_tr('title.giveup.succeed'))
+end
+function ReselectLand_Do(player,vec4,mode)
+	local xuid = player.xuid
+    local ReData = reselectLand[xuid]
+	
+    if ReData==nil then return end
+    if mode==0 then -- select A
+        if mode~=ReData.step then
+			sendText(player,_tr('title.selectrange.failbystep'))
+			return
+        end
+		ReData.posA = vec4
+		if isValInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
+			sendText(player,_tr('title.selectrange.failbydim'))
+			reselectLand[xuid]=nil
+			return
+		end
+		ReData.dimid = vec4.dimid
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name)
+		}
+		sendText(
+			player,
+			gsubEx(
+				_tr('title.selectrange.seled'),
+				'<a>','a',
+				'<b>',did2dim(vec4.dimid),
+				'<c>',ReData.posA.x,
+				'<d>',ReData.posA.y,
+				'<e>',ReData.posA.z
+			)
+		)
+		ReData.step = 1
+    end
+    if mode==1 then -- point B
+        if vec4.dimid~=ReData.dimid then
+			sendText(player,_tr('title.selectrange.failbycdimid'));return
+        end
+		ReData.posB = vec4
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.reselectland.complete'),'<a>',cfg.features.selection_tool_name)
+		}
+        sendText(
+			player,
+			gsubEx(
+				_tr('title.selectrange.seled'),
+				'<a>','b',
+				'<b>',did2dim(vec4.dimid),
+				'<c>',ReData.posB.x,
+				'<d>',ReData.posB.y,
+				'<e>',ReData.posB.z
+			)
+		)
+		ReData.step = 2
+
+		local edges = cubeGetEdge(ReData.posA,ReData.posB)
+		if #edges>cfg.features.player_max_ple then
+			sendText(player,_tr('title.selectrange.nople'),0)
+		else
+			ArrayParticles[xuid]={}
+			ArrayParticles[xuid]=edges
+		end
+    end
+	if mode==2 then -- do complete && calculation.
+		ReselectLand_Complete(player)
+	end
+end
+function ReselectLand_Complete(player)
+	local xuid=player.xuid
+    local ReData = reselectLand[xuid]
+
+	if ReData==nil or ReData.step~=2 then
+		sendText(player,_tr('title.createorder.failbystep'))
+        return
+    end
+
+	ArrayParticles[xuid]=nil
+	ReData.posA,ReData.posB = fmCube(ReData.posA,ReData.posB)
+    local length = math.abs(ReData.posA.x - ReData.posB.x) + 1
+    local width = math.abs(ReData.posA.z - ReData.posB.z) + 1
+    local height = math.abs(ReData.posA.y - ReData.posB.y) + 1
+    local squ = length * width
+
+	local oposA = VecMap[ReData.id].a
+	local oposB = VecMap[ReData.id].b
+	local or_length = math.abs(oposA.x - oposB.x) + 1
+    local or_width = math.abs(oposA.z - oposB.z) + 1
+    local or_height = math.abs(oposA.y - oposB.y) + 1
+    local or_squ = or_length * or_width
+
+	function KeepTitle_break()
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name)
+		}
+		ReData.step=0
+	end
+
+	-- 违规圈地判断
+	local isV = ILAPI.IsLandViolation(squ,height,xuid)
+	if isV==-1 then
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toobig'))
+		return
+	end
+	if isV==-2 then
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toosmall'))
+		return
+	end
+	if isV==-3 then
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toolow'))
+		return
+	end
+
+	-- 领地冲突
+	if ILAPI.IsLandCollision(ReData.posA,ReData.posB,ReData.dimid) then
+		KeepTitle_break()
+		sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i])))
+		return
+	end
+
+	-- Checkout
+	KeepingTitle[xuid] = nil
+	player:sendModalForm(
+		'Chose Dimension',
+		_tr('gui.reselectland.transferDimension'),
+		'2D',
+		'3D',
+		function(player,result)
+			if result==nil then
+				return
+			end
+			local dimension
+			if result then -- 2D
+				dimension = '2D'
+			else -- 3D
+				dimension = '3D'
+			end
+			local nr_price = calculation_price(length,width,height,dimension)
+			local or_price = calculation_price(or_length,or_width,or_height,dimension)
+			local mode
+			local payT
+			if nr_price>=or_price then
+				mode = _tr('gui.reselectland.pay')
+				payT = 0
+			else
+				mode = _tr('gui.reselectland.refund')
+				payT = 1
+			end
+			local needto = math.abs(nr_price-or_price)
+			local landId = reselectLand[player.xuid].id
+			player:sendModalForm(
+				'Checkout',
+				gsubEx(
+					_tr('gui.reselectland.content'),
+					'<a>',ILAPI.GetDimension(landId),
+					'<c>',dimension,
+					'<b>',or_price,
+					'<d>',nr_price,
+					'<e>',mode,
+					'<f>',needto,
+					'<g>',cfg.money.credit_name
+				),
+				_tr('gui.general.yes'),
+				_tr('gui.general.cancel'),
+				function(player,result)
+					if result==nil or not(result) then return end
+					if payT==0 then
+						if money_get(player)<needto then
+							sendText(player,_tr('title.buyland.moneynotenough'))
+							return
+						end
+						money_del(player,needto)
+					else
+						money_add(player,needto)
+					end
+					local pA = ReData.posA
+					local pB = ReData.posB
+					if dimension == '2D' then
+						pA.y = minY
+						pB.y = maxY
+					end
+					land_data[landId].range.start_position = {pA.x,pA.y,pA.z}
+					land_data[landId].range.end_position = {pB.x,pB.y,pB.z}
+					land_data[landId].range.dimid = ReData.dimid
+					reselectLand[xuid]=nil
+					ILAPI.save({0,1,0})
+					sendText(player,_tr('title.reselectland.succeed'))
+				end
+			)
+		end
+	)
+
+end
+function ReselectLand_GiveUp(player)
+    local xuid=player.xuid
+	reselectLand[xuid]=nil
+	ArrayParticles[xuid]=nil
+	KeepingTitle[xuid]=nil
+	sendText(player,_tr('title.reselectland.giveup.succeed'))
 end
 function GUI_LMgr(player,realMgrLOwn)
 	local xuid=player.xuid
@@ -1393,6 +1600,7 @@ function GUI_FastMgr(player,isOP)
 	Form:addButton(_tr('gui.landmgr.options.landtag'))
 	Form:addButton(_tr('gui.landmgr.options.landdescribe'))
 	Form:addButton(_tr('gui.landmgr.options.landtransfer'))
+	Form:addButton(_tr('gui.landmgr.options.reselectrange'))
 	Form:addButton(_tr('gui.landmgr.options.delland'))
 	Form:addButton(_tr('gui.general.close'),'textures/ui/icon_import')
 	player:sendForm(Form,FORM_land_fast)
@@ -1720,7 +1928,7 @@ function ILAPI.GetEdge(landId,dimtype)
 	end
 end
 function ILAPI.GetDimension(landId)
-	if land_data[landId].range.start_position[2]==-64 and land_data[landId].range.end_position[2]==320 then
+	if land_data[landId].range.start_position[2]==minY and land_data[landId].range.end_position[2]==maxY then
 		return '2D'
 	else
 		return '3D'
@@ -1907,6 +2115,38 @@ function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 		else
 			ERROR(_tr('console.getonline.failed'))
 			return false
+		end
+	end
+end
+function ILAPI.IsLandViolation(square,height,xuid) -- 违规圈地判断
+	if square>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
+		return -1 -- 太大
+	end
+	if square<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
+		return -2 -- 太小
+	end
+	if height<2 then
+		return -3 -- 太低
+	end
+	return true
+end
+function ILAPI.IsLandCollision(newposA,newposB,newDimid) -- 领地冲突判断
+	local edge=cubeGetEdge(newposA,newposB)
+	for i=1,#edge do
+		edge[i].dimid=newDimid
+		local tryLand = ILAPI.PosGetLand(edge[i])
+		if tryLand ~= -1 then
+			return false
+		end
+	end
+	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
+		if land_data[landId].range.dimid==newDimid then
+			edge=EdgeMap[landId].D3D
+			for i=1,#edge do
+				if isPosInCube(edge[i],newposA,newposB)==true then
+					return false
+				end
+			end
 		end
 	end
 end
@@ -2383,21 +2623,38 @@ function Eventing_onPlayerCmd(player,cmd)
 
 	-- [a|b|buy] Select Range
 	if opt[2] == 'a' or opt[2] == 'b' or opt[2] == 'buy' then
-		if newLand[xuid]==nil then
+		local new = (newLand[xuid]~=nil)
+		local res = (reselectLand[xuid]~=nil)
+		if not(new) and not(res) then
 			sendText(player,_tr('title.land.nolicense'))
 			return false
 		end
-		if (opt[2]=='a' and newLand[xuid].step~=0) or (opt[2]=='b' and newLand[xuid].step~=1) or (opt[2]=='buy' and newLand[xuid].step~=2) then
-			sendText(player,_tr('title.selectrange.failbystep'))
-			return false
+		if new then
+			if (opt[2]=='a' and newLand[xuid].step~=0) or (opt[2]=='b' and newLand[xuid].step~=1) or (opt[2]=='buy' and newLand[xuid].step~=2) then
+				sendText(player,_tr('title.selectrange.failbystep'))
+				return false
+			end
+			BoughtProg_SelectRange(player,pos,newLand[xuid].step)
+		else
+			if (opt[2]=='a' and reselectLand[xuid].step~=0) or (opt[2]=='b' and reselectLand[xuid].step~=1) then
+				sendText(player,_tr('title.selectrange.failbystep'))
+				return false
+			end
+			if opt[2]~='buy' then
+				ReselectLand_Do(player,pos,reselectLand[xuid].step)
+			end
 		end
-		BoughtProg_SelectRange(player,pos,newLand[xuid].step)
 		return false
 	end
 
 	-- [giveup] Give up incp land
 	if opt[2] == 'giveup' then
-		BoughtProg_GiveUp(player)
+		if newLand[xuid]~=nil then
+			BoughtProg_GiveUp(player)
+		end
+		if reselectLand[xuid]~=nil then
+			ReselectLand_GiveUp(player)
+		end
 		return false
 	end
 
@@ -2717,11 +2974,17 @@ function Eventing_onStartDestroyBlock(player,block)
 	end
 
 	local xuid = player.xuid
+	local new = (newLand[xuid]~=nil)
+	local res = (reselectLand[xuid]~=nil)
 
-	if newLand[xuid]~=nil then
+	if new or res then
 		local HandItem = player:getHand()
 		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
-		BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
+		if new then
+			BoughtProg_SelectRange(player,block.pos,newLand[xuid].step)
+		else
+			ReselectLand_Do(player,block.pos,reselectLand[xuid].step)
+		end
 	end
 
 end
@@ -3187,10 +3450,15 @@ function Tcb_SelectionParticles()
 	for xuid,posarr in pairs(ArrayParticles) do
 		local Tpos = mc.getPlayer(xuid).blockPos
 		for n,pos in pairs(posarr) do
-			if newLand[xuid].dimension=='2D' then
-				posY = Tpos.y + 2
-			else
-				posY = pos.y + 1.6
+			if newLand[xuid]~=nil then
+				if newLand[xuid].dimension=='2D' then
+					posY = Tpos.y + 2
+				else
+					posY = pos.y + 1.6
+				end
+			end
+			if reselectLand[xuid]~=nil then
+				posY = pos.y
 			end
 			mc.runcmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..posY..' '..pos.z)
 		end
@@ -3438,8 +3706,8 @@ mc.listen('onServerStarted',function()
 			for landId,data in pairs(land_data) do
 				local perm = land_data[landId].permissions
 				if data.range.start_position.y==0 and data.range.end_position.y==255 then
-					land_data[landId].range.start_position.y=-64
-					land_data[landId].range.start_position.y=320
+					land_data[landId].range.start_position.y=minY
+					land_data[landId].range.start_position.y=maxY
 				end
 				perm.use_firegen=false
 				perm.allow_attack=nil
