@@ -20,8 +20,8 @@ minLXLVer = {0,5,6}
 
 json = require('dkjson')
 
-ArrayParticles={};ILAPI={}
-newLand={};TRS_Form={}
+ArrayParticles={};KeepingTitle={}
+ILAPI={};newLand={};TRS_Form={}
 
 MainCmd = 'land'
 data_path = 'plugins\\iland\\'
@@ -802,8 +802,14 @@ function FORM_land_choseDim(player,id)
 		return
 	end
 
-	sendText(player,_tr('title.getlicense.succeed')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
 	local xuid=player.xuid
+
+	KeepingTitle[xuid] = {
+		_tr('title.selectrange.mode'),
+		gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name)
+	}
+	sendText(player,_tr('title.getlicense.succeed'))
+	
 	newLand[xuid]={}
 	if id then
 		newLand[xuid].dimension='3D'
@@ -968,7 +974,11 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		else
 			NewData.posA.y=-64
 		end
-        sendText(
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.selectrange.spointb'),'<a>',cfg.features.selection_tool_name)
+		}
+		sendText(
 			player,
 			gsubEx(
 				_tr('title.selectrange.seled'),
@@ -976,13 +986,9 @@ function BoughtProg_SelectRange(player,vec4,mode)
 				'<b>',did2dim(vec4.dimid),
 				'<c>',NewData.posA.x,
 				'<d>',NewData.posA.y,
-				'<e>',NewData.posA.z)
-				..'\n'..
-				gsubEx(
-					_tr('title.selectrange.spointb'),
-					'<a>',cfg.features.selection_tool_name
-				)
+				'<e>',NewData.posA.z
 			)
+		)
 		NewData.step = 1
     end
     if mode==1 then -- point B
@@ -995,6 +1001,10 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		else
 			NewData.posB.y=320
 		end
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.selectrange.bebuy'),'<a>',cfg.features.selection_tool_name)
+		}
         sendText(
 			player,
 			gsubEx(
@@ -1003,13 +1013,9 @@ function BoughtProg_SelectRange(player,vec4,mode)
 				'<b>',did2dim(vec4.dimid),
 				'<c>',NewData.posB.x,
 				'<d>',NewData.posB.y,
-				'<e>',NewData.posB.z)
-				..'\n'..
-				gsubEx(
-					_tr('title.selectrange.bebuy'),
-					'<a>',cfg.features.selection_tool_name
-				)
+				'<e>',NewData.posB.z
 			)
+		)
 		NewData.step = 2
 
 		local edges
@@ -1045,20 +1051,28 @@ function BoughtProg_CreateOrder(player)
     local vol = length * width * height
     local squ = length * width
 
+	function KeepTitle_break()
+		KeepingTitle[xuid] = {
+			_tr('title.selectrange.mode'),
+			gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name)
+		}
+		NewData.step=0
+	end
+
 	--- 违规圈地判断
 	if squ>cfg.land.land_max_square and isValInList(cfg.manager.operator,xuid)==-1 then
-		sendText(player,_tr('title.createorder.toobig')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		NewData.step=0
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toobig'))
 		return
 	end
 	if squ<cfg.land.land_min_square and isValInList(cfg.manager.operator,xuid)==-1 then
-		sendText(player,_tr('title.createorder.toosmall')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		NewData.step=0
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toosmall'))
 		return
 	end
 	if height<2 then
-		sendText(player,_tr('title.createorder.toolow')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-		NewData.step=0
+		KeepTitle_break()
+		sendText(player,_tr('title.createorder.toolow'))
 		return
 	end
 
@@ -1068,8 +1082,9 @@ function BoughtProg_CreateOrder(player)
 		edge[i].dimid=NewData.dimid
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand ~= -1 then
-			sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i]))..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-			NewData.step=0;return
+			KeepTitle_break()
+			sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',tryLand,'<b>',vec2text(edge[i])))
+			return
 		end
 	end
 	for landId, val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
@@ -1077,14 +1092,16 @@ function BoughtProg_CreateOrder(player)
 			edge=EdgeMap[landId].D3D
 			for i=1,#edge do
 				if isPosInCube(edge[i],NewData.posA,NewData.posB)==true then
-					sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',vec2text(edge[i]))..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
-					NewData.step=0;return
+					KeepTitle_break()
+					sendText(player,gsubEx(_tr('title.createorder.collision'),'<a>',landId,'<b>',vec2text(edge[i])))
+					return
 				end
 			end
 		end
 	end
 
 	--- 购买
+	KeepingTitle[xuid] = nil
     NewData.landprice = calculation_price(length,width,height,NewData.dimension)
 	local dis_info = ''
 	local dim_info = ''
@@ -1121,6 +1138,7 @@ function BoughtProg_GiveUp(player)
     end
 	newLand[xuid]=nil
 	ArrayParticles[xuid]=nil
+	KeepingTitle[xuid]=nil
 	sendText(player,_tr('title.giveup.succeed'))
 end
 function GUI_LMgr(player,realMgrLOwn)
@@ -1936,12 +1954,17 @@ function money_get(player)
 	end
 	ERROR(gsubEx(_tr('console.error.money.protocol'),'<a>',ptc))
 end
-function sendTitle(player,title,subtitle)
+function sendTitle(player,title,subtitle,times)
 	local name = player.realName
-	mc.runcmdEx('title "' .. name .. '" times 20 25 20')
+	if times == nil then
+		mc.runcmdEx('titleraw "' .. name .. '" times 20 25 20')
+	else
+		mc.runcmdEx('titleraw "' .. name .. '" times '..times[1]..' '..times[2]..' '..times[3])
+	end
 	if subtitle~=nil then
-	mc.runcmdEx('title "' .. name .. '" subtitle '..subtitle) end
-	mc.runcmdEx('title "' .. name .. '" title '..title)
+		mc.runcmdEx('titleraw "'..name..'" subtitle {"rawtext": [{"text":"'..subtitle..'"}]}')
+	end
+	mc.runcmdEx('titleraw "'..name..'" title {"rawtext": [{"text":"'..title..'"}]}')
 end
 function sendText(player,text,mode)
 	-- [mode] 0 = FORCE USE TALK
@@ -2025,7 +2048,7 @@ function formatGuid(guid)
     )
 end
 function FixBp(pos)
-	pos.y=pos.y-1
+	-- pos.y=pos.y-1
 	return pos
 end
 function did2dim(a)
@@ -2295,6 +2318,7 @@ function Eventing_onLeft(player)
 	local xuid = player.xuid
 	TRS_Form[xuid]=nil
 	ArrayParticles[xuid]=nil
+	KeepingTitle[xuid]=nil
 	if newLand[xuid]~=nil then
 		newLand[xuid]=nil
 	end
@@ -2334,7 +2358,11 @@ function Eventing_onPlayerCmd(player,cmd)
 	-- [new] Create newLand
 	if opt[2] == 'new' then
 		if newLand[xuid]~=nil then
-			sendText(player,_tr('title.getlicense.alreadyexists')..gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name))
+			KeepingTitle[xuid] = {
+				_tr('title.selectrange.mode'),
+				gsubEx(_tr('title.selectrange.spointa'),'<a>',cfg.features.selection_tool_name)
+			}
+			sendText(player,_tr('title.getlicense.alreadyexists'))
 			return false
 		end
 		if isValInList(cfg.manager.operator,xuid)==-1 then
@@ -2433,7 +2461,7 @@ function Eventing_onPlayerCmd(player,cmd)
 	end
 
 	-- [mgr] OP-LandMgr GUI
-	if opt[2] == 'mgr' and opt[3] == nil then
+	if opt[2] == 'mgr' then
 		if opt[3] == nil then -- no child-command.
 			if not(ILAPI.IsLandOperator(xuid)) then
 				sendText(player,gsubEx(_tr('command.land_mgr.noperm'),'<a>',player.realName),0)
@@ -2683,13 +2711,13 @@ function Eventing_onDestroyBlock(player,block)
 	return false
 end
 function Eventing_onStartDestroyBlock(player,block)
-	
+
 	if isNull(player) then
 		return
 	end
 
 	local xuid = player.xuid
-	
+
 	if newLand[xuid]~=nil then
 		local HandItem = player:getHand()
 		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
@@ -3084,7 +3112,7 @@ end
 function Tcb_LandSign()
 	for xuid,data in pairs(TRS_Form) do
 		local player=mc.getPlayer(xuid)
-		
+
 		if isNull(player) then
 			goto JUMPOUT_SIGN
 		end
@@ -3165,6 +3193,15 @@ function Tcb_SelectionParticles()
 				posY = pos.y + 1.6
 			end
 			mc.runcmdEx('execute @a[name="'..GetIdFromXuid(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..posY..' '..pos.z)
+		end
+	end
+end
+function Tcb_KeepingTitle()
+	for xuid,content in pairs(KeepingTitle) do
+		if type(content)=='table' then
+			sendTitle(mc.getPlayer(xuid),content[1],content[2],{0,40,20})
+		else
+			sendTitle(mc.getPlayer(xuid),content,{0,100,0})
 		end
 	end
 end
@@ -3479,6 +3516,7 @@ mc.listen('onServerStarted',function()
 	buildAnyMap()
 
 	-- Make timer
+	setInterval(Tcb_KeepingTitle,1500)
 	if cfg.features.landSign then
 		enableLandSign()
 	end
