@@ -3423,10 +3423,11 @@ function Tcb_LandSign()
 		if landId==-1 then TRS_Form[xuid].inland='null';goto JUMPOUT_SIGN end -- no land here
 		if landId==TRS_Form[xuid].inland then goto JUMPOUT_SIGN end -- signed
 
-		local owner=ILAPI.GetOwner(landId)
-		if owner~='?' then owner=GetIdFromXuid(owner) end
+		local ownerXuid=ILAPI.GetOwner(landId)
+		local ownerId = '?'
+		if ownerXuid~='?' then ownerId=GetIdFromXuid(ownerXuid) end
 		
-		if xuid==owner then 
+		if xuid==ownerXuid then 
 			-- land owner in land.
 			if not(land_data[landId].settings.signtome) then
 				goto JUMPOUT_SIGN
@@ -3443,7 +3444,7 @@ function Tcb_LandSign()
 			end
 			sendTitle(player,_tr('sign.listener.visitortitle'),gsubEx(
 				_tr('sign.listener.visitorsubtitle'),
-				'<a>',owner
+				'<a>',ownerId
 			))
 			if land_data[landId].settings.describe~='' then
 				sendText(player,gsubEx(
