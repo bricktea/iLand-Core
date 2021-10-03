@@ -1329,10 +1329,25 @@ function ReselectLand_Complete(player)
 						pA.y = minY
 						pB.y = maxY
 					end
+
+					updateEdgeMap(landId,'del') -- rebuild maps.
+					updateChunk(landId,'del')
+					updateVecMap(landId,'del')
+
 					land_data[landId].range.start_position = {pA.x,pA.y,pA.z}
 					land_data[landId].range.end_position = {pB.x,pB.y,pB.z}
 					land_data[landId].range.dimid = ReData.dimid
+					land_data[landId].settings.tpoint = {
+						pA.x,
+						pA.y+1,
+						pA.z
+					}
 					reselectLand[xuid]=nil
+					
+					updateEdgeMap(landId,'add')
+					updateChunk(landId,'add')
+					updateVecMap(landId,'add')
+
 					ILAPI.save({0,1,0})
 					sendText(player,_tr('title.reselectland.succeed'))
 				end
@@ -2665,56 +2680,79 @@ function Eventing_onPlayerCmd(player,cmd)
 		return false
 	end
 
-	-- [point] Set land tp point
-	if opt[2] == 'point' and cfg.features.landtp then
-		local landId=ILAPI.PosGetLand(pos)
-		if landId==-1 then
-			sendText(player,_tr('title.landtp.fail.noland'))
-			return false
-		end
-		if ILAPI.GetOwner(landId)~=xuid then
-			sendText(player,_tr('title.landtp.fail.notowner'))
-			return false
-		end
-		local landname = ILAPI.GetNickname(landId,true)
-		land_data[landId].settings.tpoint = {
-			pos.x,
-			pos.y+1,
-			pos.z
-		}
-		ILAPI.save({0,1,0})
-		player:sendModalForm(
-			_tr('gui.general.complete'),
-			gsubEx(_tr('gui.landtp.point'),'<a>',vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
-			_tr('gui.general.iknow'),
-			_tr('gui.general.close'),
-			F_NULL
-		)
-		return false
-	end
-
 	-- [tp] LandTp GUI
 	if opt[2] == 'tp' and cfg.features.landtp then
-		local tplands = {}
-		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]=did2dim(xpos.dimid)..' ('..vec2text(xpos)..') '..name
+		if opt[3]==nil then
+			local tplands = {}
+			for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
+				local name = ILAPI.GetNickname(landId)
+				local xpos = ILAPI.GetPoint(landId)
+				tplands[#tplands+1]=did2dim(xpos.dimid)..' ('..vec2text(xpos)..') '..name
+			end
+			for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+				local name = ILAPI.GetNickname(landId)
+				local xpos = ILAPI.GetPoint(landId)
+				tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..'§r '..did2dim(xpos.dimid)..'('..vec2text(xpos)..') '..name
+			end
+			local Form = mc.newSimpleForm()
+			Form:setTitle(_tr('gui.landtp.title'))
+			Form:setContent(_tr('gui.landtp.tip'))
+			Form:addButton(_tr('gui.general.close'))
+			for i,land in pairs(tplands) do
+				Form:addButton(land,'textures/ui/world_glyph_color')
+			end
+			player:sendForm(Form,FORM_landtp)
+			return false
 		end
-		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]='§l'.._tr('gui.landtp.trusted')..'§r '..did2dim(xpos.dimid)..'('..vec2text(xpos)..') '..name
+		if opt[3]=='set' then
+			local landId=ILAPI.PosGetLand(pos)
+			if landId==-1 then
+				sendText(player,_tr('title.landtp.fail.noland'))
+				return false
+			end
+			if ILAPI.GetOwner(landId)~=xuid then
+				sendText(player,_tr('title.landtp.fail.notowner'))
+				return false
+			end
+			if not(IsPosSafe(pos)) then
+				sendText(player,_tr('title.landtp.safeset'))
+				return false
+			end
+			local landname = ILAPI.GetNickname(landId,true)
+			land_data[landId].settings.tpoint = {
+				pos.x,
+				pos.y+1,
+				pos.z
+			}
+			ILAPI.save({0,1,0})
+			player:sendModalForm(
+				_tr('gui.general.complete'),
+				gsubEx(_tr('gui.landtp.point'),'<a>',vec2text({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+				_tr('gui.general.iknow'),
+				_tr('gui.general.close'),
+				F_NULL
+			)
+			return false
 		end
-		local Form = mc.newSimpleForm()
-		Form:setTitle(_tr('gui.landtp.title'))
-		Form:setContent(_tr('gui.landtp.tip'))
-		Form:addButton(_tr('gui.general.close'))
-		for i,land in pairs(tplands) do
-			Form:addButton(land,'textures/ui/world_glyph_color')
+		if opt[3]=='rm' then
+			local landId=ILAPI.PosGetLand(pos)
+			if landId==-1 then
+				sendText(player,_tr('title.landtp.fail.noland'))
+				return false
+			end
+			if ILAPI.GetOwner(landId)~=xuid then
+				sendText(player,_tr('title.landtp.fail.notowner'))
+				return false
+			end
+			local def = VecMap[landId].a
+			land_data[landId].settings.tpoint = {
+				def.x,
+				def.y+1,
+				def.z
+			}
+			sendText(player,_tr('title.landtp.removed'))
+			return false
 		end
-		player:sendForm(Form,FORM_landtp)
-		return false
 	end
 
 	-- [mgr] OP-LandMgr GUI
@@ -3722,7 +3760,7 @@ mc.listen('onServerStarted',function()
 			cfg.verison=nil -- sb..
 			for landId,data in pairs(land_data) do
 				local perm = land_data[landId].permissions
-				if #perm~=49 then
+				if #perm~=50 then
 					INFO('AutoRepair','Land <'..landId..'> Has wrong perm cfg, resetting...')
 					perm.allow_destroy=false
 					perm.allow_place=false
@@ -3778,6 +3816,10 @@ mc.listen('onServerStarted',function()
 			end
 			ILAPI.save({1,1,0})
 		end
+		if cfg.version==231 then
+			cfg.version=240
+			-- ILAPI.save({1,0,0})
+		end
 	end
 	
 	-- Build maps
@@ -3815,13 +3857,10 @@ mc.listen('onServerStarted',function()
 		mc.regPlayerCmd(MainCmd..' mgr selectool',_tr('command.land_mgr_selectool'),F_NULL)
 		if cfg.features.landtp then
 			mc.regPlayerCmd(MainCmd..' tp',_tr('command.land_tp'),F_NULL)
-			mc.regPlayerCmd(MainCmd..' point',_tr('command.land_point'),F_NULL)
+			mc.regPlayerCmd(MainCmd..' tp set',_tr('command.land_tp_set'),F_NULL)
+			mc.regPlayerCmd(MainCmd..' tp rm',_tr('command.land_tp_rm'),F_NULL)
 		end
 		mc.regConsoleCmd(MainCmd,_tr('command.console.land'),F_NULL)
-		mc.regConsoleCmd(MainCmd..' op',_tr('command.console.land_op'),F_NULL)
-		mc.regConsoleCmd(MainCmd..' deop',_tr('command.console.land_deop'),F_NULL)
-		mc.regConsoleCmd(MainCmd..' test',_tr('command.console.land_test'),F_NULL)
-		mc.regConsoleCmd(MainCmd..' update',_tr('command.console.land_update'),F_NULL)
 	end
 
 end)
