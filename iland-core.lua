@@ -348,56 +348,60 @@ function FORM_land_gui_perm(player,data)
 
 	perm.allow_place = data[1]
 	perm.allow_destroy = data[2]
-	perm.allow_dropitem = data[3]
-	perm.allow_pickupitem = data[4]
-	perm.allow_ride_entity = data[5]
-	perm.allow_ride_trans = data[6]
-	perm.allow_shoot = data[7]
-	perm.allow_attack_player = data[8]
-	perm.allow_attack_animal = data[9]
-	perm.allow_attack_mobs = data[10]
+	perm.allow_entity_destroy = data[3]
+	perm.allow_dropitem = data[4]
+	perm.allow_pickupitem = data[5]
+	perm.allow_ride_entity = data[6]
+	perm.allow_ride_trans = data[7]
+	perm.allow_shoot = data[8]
+	perm.allow_attack_player = data[9]
+	perm.allow_attack_animal = data[10]
+	perm.allow_attack_mobs = data[11]
 
-	perm.use_crafting_table = data[11]
-	perm.use_furnace = data[12]
-	perm.use_blast_furnace = data[13]
-	perm.use_smoker = data[14]
-	perm.use_brewing_stand = data[15]
-	perm.use_cauldron = data[16]
-	perm.use_anvil = data[17]
-	perm.use_grindstone = data[18]
-	perm.use_enchanting_table = data[19]
-	perm.use_cartography_table = data[20]
-	perm.use_smithing_table = data[21]
-	perm.use_loom = data[22]
-	perm.use_stonecutter = data[23]
-	perm.use_beacon = data[24]
+	perm.use_crafting_table = data[12]
+	perm.use_furnace = data[13]
+	perm.use_blast_furnace = data[14]
+	perm.use_smoker = data[15]
+	perm.use_brewing_stand = data[16]
+	perm.use_cauldron = data[17]
+	perm.use_anvil = data[18]
+	perm.use_grindstone = data[19]
+	perm.use_enchanting_table = data[20]
+	perm.use_cartography_table = data[21]
+	perm.use_smithing_table = data[22]
+	perm.use_loom = data[23]
+	perm.use_stonecutter = data[24]
+	perm.use_lectern = data[25]
+	perm.use_beacon = data[26]
 	
-	perm.use_barrel = data[25]
-	perm.use_hopper = data[26]
-	perm.use_dropper = data[27]
-	perm.use_dispenser = data[28]
-	perm.use_shulker_box = data[29]
-	perm.allow_open_chest = data[30]
+	perm.use_barrel = data[27]
+	perm.use_hopper = data[28]
+	perm.use_dropper = data[29]
+	perm.use_dispenser = data[30]
+	perm.use_shulker_box = data[31]
+	perm.allow_open_chest = data[32]
 	
-	perm.use_campfire = data[31]
-	perm.use_firegen = data[32]
-	perm.use_door = data[33]
-	perm.use_trapdoor = data[34]
-	perm.use_fence_gate = data[35]
-	perm.use_bell = data[36]
-	perm.use_jukebox = data[37]
-	perm.use_noteblock = data[38]
-	perm.use_composter = data[39]
-	perm.use_bed = data[40]
-	perm.use_item_frame = data[41]
-	perm.use_daylight_detector = data[42]
-	perm.use_lever = data[43]
-	perm.use_button = data[44]
-	perm.use_pressure_plate = data[45]
-	perm.allow_throw_potion = data[46]
-	perm.use_respawn_anchor = data[47]
-	perm.use_fishing_hook = data[48]
-	perm.use_bucket = data[49]
+	perm.use_campfire = data[33]
+	perm.use_firegen = data[34]
+	perm.use_door = data[35]
+	perm.use_trapdoor = data[36]
+	perm.use_fence_gate = data[37]
+	perm.use_bell = data[38]
+	perm.use_jukebox = data[39]
+	perm.use_noteblock = data[40]
+	perm.use_composter = data[41]
+	perm.use_bed = data[42]
+	perm.use_item_frame = data[43]
+	perm.use_daylight_detector = data[44]
+	perm.use_lever = data[45]
+	perm.use_button = data[46]
+	perm.use_pressure_plate = data[47]
+	perm.allow_throw_potion = data[48]
+	perm.use_respawn_anchor = data[49]
+	perm.use_fishing_hook = data[50]
+	perm.use_bucket = data[51]
+
+	perm.useitem = data[52]
 
 	ILAPI.save({0,1,0})
 	player:sendModalForm(
@@ -518,6 +522,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addLabel(_tr('gui.landmgr.landperm.basic_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.place'),perm.allow_place)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.destroy'),perm.allow_destroy)
+		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.entity_destroy'),perm.allow_entity_destroy)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.dropitem'),perm.allow_dropitem)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.pickupitem'),perm.allow_pickupitem)
 		Form:addSwitch(_tr('gui.landmgr.landperm.basic_options.ride_entity'),perm.allow_ride_entity)
@@ -540,6 +545,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.smithing_table'),perm.use_smithing_table)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.loom'),perm.use_loom)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.stonecutter'),perm.use_stonecutter)
+		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.lectern'),perm.use_lectern)
 		Form:addSwitch(_tr('gui.landmgr.landperm.funcblock_options.beacon'),perm.use_beacon)
 		Form:addLabel(_tr('gui.landmgr.landperm.contblock_options'))
 		Form:addSwitch(_tr('gui.landmgr.landperm.contblock_options.barrel'),perm.use_barrel)
@@ -568,6 +574,7 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
 		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.bucket'),perm.use_bucket)
+		Form:addSwitch(_tr('gui.landmgr.landperm.other_options.useitem'),perm.useitem)
 		Form:addLabel(_tr('gui.landmgr.landperm.editevent'))
 		player:sendForm(Form,FORM_land_gui_perm)
 	end
@@ -1781,45 +1788,46 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 		if land_data[landId]==nil then break end
 	end
 
-	-- Set newLand cfg template
-	land_data[landId]={}
-	land_data[landId].settings={}
-	land_data[landId].range={}
-	land_data[landId].settings.share={}
-	land_data[landId].settings.tpoint={}
-	land_data[landId].range.start_position={}
-	land_data[landId].range.end_position={}
-	land_data[landId].permissions={}
-	
-	-- Land settings
-	local settings=land_data[landId].settings
-	settings.nickname=""
-	settings.describe=""
-	settings.tpoint[1]=startpos.x
-	settings.tpoint[2]=startpos.y+1
-	settings.tpoint[3]=startpos.z
-	settings.signtome=true
-	settings.signtother=true
-	settings.signbuttom=true
-	settings.ev_explode=false
-	settings.ev_farmland_decay=false
-	settings.ev_piston_push=false
-	settings.ev_fire_spread=false
-
-	-- Land ranges
 	local posA,posB = fmCube(startpos,endpos)
-	table.insert(land_data[landId].range.start_position,1,posA.x)
-	table.insert(land_data[landId].range.start_position,2,posA.y)
-	table.insert(land_data[landId].range.start_position,3,posA.z)
-	table.insert(land_data[landId].range.end_position,1,posB.x)
-	table.insert(land_data[landId].range.end_position,2,posB.y)
-	table.insert(land_data[landId].range.end_position,3,posB.z)
-	land_data[landId].range.dimid=dimid
+
+	-- LandData Templete
+	land_data[landId]={
+		settings = {
+			share = {},
+			tpoint = {
+				startpos.x,
+				startpos.y+1,
+				startpos.z
+			},
+			nickname = '',
+			describe = '',
+			signtome = true,
+			signtother = true,
+			signbuttom = true,
+			ev_explode = false,
+			ev_farmland_decay = false,
+			ev_piston_push = false,
+			ev_fire_spread = false
+		},
+		range = {
+			start_position = {
+				posA.x,
+				posA.y,
+				posA.z
+			},
+			end_position = {
+				posB.x,
+				posB.y,
+				posB.z
+			},
+			dimid = dimid
+		},
+		permissions = {}
+	}
 
 	local perm = land_data[landId].permissions
-
-	-- Land permission
 	perm.allow_destroy=false
+	perm.allow_entity_destroy=false
 	perm.allow_place=false
 	perm.allow_attack_player=false
 	perm.allow_attack_animal=false
@@ -1869,6 +1877,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.allow_ride_entity=false
 	perm.allow_ride_trans=false
 	perm.allow_shoot=false
+	perm.useitem=false
 
 	-- Write data
 	if land_owners[xuid]==nil then -- ilapi
@@ -3050,6 +3059,17 @@ function Eventing_onUseItemOn(player,item,block)
 		return
 	end
 
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	local perm = land_data[landId].permissions -- Temp perm.
+	if perm.useitem then return false end
+
 	local IsConPlus=false
 	if not(ILAPI.CanControl(0,block.type)) then 
 		if not(ILAPI.CanControl(2,item.type)) then
@@ -3058,16 +3078,7 @@ function Eventing_onUseItemOn(player,item,block)
 			IsConPlus=true
 		end
 	end
-
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 	
-	local perm = land_data[landId].permissions
 	if IsConPlus then
 		local it = item.type
 		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
@@ -3336,7 +3347,7 @@ function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
 	local dimid = witherBoss.pos.dimid
 	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
 		landId=ILAPI.PosGetLand(pos)
-		if landId~=-1 and not(land_data[landId].permissions.allow_destroy) then 
+		if landId~=-1 and not(land_data[landId].permissions.allow_entity_destroy) then 
 			break
 		end
 	end
@@ -3819,7 +3830,12 @@ mc.listen('onServerStarted',function()
 		end
 		if cfg.version==231 then
 			cfg.version=240
-			-- ILAPI.save({1,0,0})
+			for landId,data in pairs(land_data) do
+				local perm = land_data[landId].permissions
+				perm.allow_entity_destroy=false
+				perm.useitem=false
+			end
+			-- ILAPI.save({1,1,0})
 		end
 	end
 	

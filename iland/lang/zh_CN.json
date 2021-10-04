@@ -47,6 +47,7 @@
     "gui.landmgr.landperm.other_options": "§l其他行为",
     "gui.landmgr.landperm.basic_options.place": "允许放置方块",
     "gui.landmgr.landperm.basic_options.destroy": "允许破坏方块",
+    "gui.landmgr.landperm.basic_options.entity_destroy": "允许生物破坏方块（凋灵）",
     "gui.landmgr.landperm.basic_options.dropitem": "允许丢物品",
     "gui.landmgr.landperm.basic_options.attack_player": "允许攻击玩家",
     "gui.landmgr.landperm.basic_options.attack_animal": "允许攻击和平型生物",
@@ -69,6 +70,7 @@
     "gui.landmgr.landperm.funcblock_options.loom": "允许使用织布机",
     "gui.landmgr.landperm.funcblock_options.beacon": "允许操作信标",
     "gui.landmgr.landperm.funcblock_options.stonecutter": "允许使用切石机",
+    "gui.landmgr.landperm.funcblock_options.lectern": "允许操作讲台",
     "gui.landmgr.landperm.contblock_options.barrel": "允许开桶",
     "gui.landmgr.landperm.contblock_options.hopper": "允许打开漏斗",
     "gui.landmgr.landperm.contblock_options.dropper": "允许打开投掷器",
@@ -94,6 +96,7 @@
     "gui.landmgr.landperm.other_options.respawn_anchor": "允许使用重生锚",
     "gui.landmgr.landperm.other_options.fishing": "允许使用钓竿",
     "gui.landmgr.landperm.other_options.bucket": "允许使用桶",
+    "gui.landmgr.landperm.other_options.useitem": "§l特殊§r 禁止所有UseItem行为，一定程度上解决放置权限不完善的问题，但也会导致部分容器控制失效，同时到导致大部分容器类/使用类权限直接关闭，慎重开启，当Place问题有更好解决办法时此权限将移除。",
     "gui.landmgr.landperm.editevent": "控制领地内（附近）可发生的事件, 请移步领地设定选项卡。",
     
     "gui.fastlmgr.title": "Fast LMgr",
