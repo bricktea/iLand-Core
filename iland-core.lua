@@ -12,10 +12,10 @@
 	  
 --]] ------------------------------------------------------
 
-plugin_version = '2.31'
+plugin_version = '2.40'
 DEV_MODE = true
 
-langVer = 231
+langVer = 240
 minLXLVer = {0,5,6}
 
 json = require('dkjson')
@@ -3835,7 +3835,7 @@ mc.listen('onServerStarted',function()
 				perm.allow_entity_destroy=false
 				perm.useitem=false
 			end
-			-- ILAPI.save({1,1,0})
+			ILAPI.save({1,1,0})
 		end
 	end
 	

@@ -1,5 +1,6 @@
 > Version **2.40**
  - [x] 添加语言包各种功能`land language ~`
+ - [x] 移除OPLMgr中的语言功能
  - [x] 修改选点提示方式，改为Title持续提示
  - [x] 修复Place相关问题（useitem..
  - [x] 拆分凋零破坏与玩家破坏
