@@ -1,22 +1,14 @@
-> Version **2.40**
- - [x] 添加语言包各种功能`land language ~`
- - [x] 移除OPLMgr中的语言功能
- - [x] 修改选点提示方式，改为Title持续提示
- - [x] 修复Place相关问题（useitem..
- - [x] 拆分凋零破坏与玩家破坏
- - [x] 添加开服XUID可用性验证
- - [x] 使用船新的Cloud更新检测
- - [x] 领地传送支持删除传送点 !LTP改进
- - [x] 修复y轴偏差
- - [x] `land mgr selectool`问题
- - [x]  `UpdateChunk` code cleanup
- - [x] 移除传统领地管理器，全部改用FastLMgr
- - [x] 修复若未开启更新检测可能导致的一处报错
- - [x] 添加保存数据重新圈地功能
- - [x] Button限制LandID显示长度
- - [x] 修复PSR中搜索与选择共用Bug
- - [x] 修复某些情况下PSR中搜索后无法选中玩家的Bug
- - [x] 移除AirLibs依赖
+> Version **2.41**
+ - [ ] 修复自动更新校验失败
+ - [ ] 修复盔甲架交互问题
+ - [ ] 修复XuidWrong玩家进入服务器后主从关系表没刷新的问题
+ - [ ] 被信任的领地成员现在有和主人相同的LandSign
+ - [ ] 添加领地主人DisplayName
+ - [ ] 禁止同时框选新领地与重选领地
+ - [ ] `reselectland` code cleanup
+ - [ ] 修复部分ILAPI使用save出错
+ - [ ] 使用uniqueId跟踪箭矢
+ - [ ] 修复load数据出错时某些情况可能不会中止服务器运行
 
 > ILAPI Examples 计划
  - [ ] 领地边框显示
