@@ -2017,7 +2017,7 @@ function ILAPI.UpdatePermission(landId,perm,value)
 		return false
 	end
 	land_data[landId].permissions[perm]=value
-	ILAPI.save(0,1,0)
+	ILAPI.save({0,1,0})
 	return true
 end
 function ILAPI.UpdateSetting(landId,cfgname,value)
@@ -2028,7 +2028,7 @@ function ILAPI.UpdateSetting(landId,cfgname,value)
 		return false
 	end
 	land_data[landId].settings[cfgname]=value
-	ILAPI.save(0,1,0)
+	ILAPI.save({0,1,0})
 	return true
 end
 function ILAPI.AddTrust(landId,xuid)
@@ -2038,14 +2038,14 @@ function ILAPI.AddTrust(landId,xuid)
 	end
 	shareList[#shareList+1]=xuid
 	updateLandTrustMap(landId)
-	ILAPI.save(0,1,0)
+	ILAPI.save({0,1,0})
 	return true
 end
 function ILAPI.RemoveTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
 	table.remove(shareList,isValInList(shareList,xuid))
 	updateLandTrustMap(landId)
-	ILAPI.save(0,1,0)
+	ILAPI.save({0,1,0})
 	return true
 end
 function ILAPI.SetOwner(landId,xuid)
@@ -2053,7 +2053,7 @@ function ILAPI.SetOwner(landId,xuid)
 	table.remove(land_owners[ownerXuid],isValInList(land_owners[ownerXuid],landId))
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	updateLandOwnersMap(landId)
-	ILAPI.save(0,0,1)
+	ILAPI.save({0,0,1})
 	return true
 end
 -- [[ PLUGIN ]]
