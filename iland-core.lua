@@ -287,7 +287,7 @@ function BuildAnyMap()
 	BuildListenerMap()
 end
 
--- form -> callback
+-- Plugin funcs
 function F_NULL(...) end
 function FORM_BACK_LandOPMgr(player,id)
 	if not(id) then return end
@@ -301,179 +301,12 @@ function FORM_BACK_LandMgr(player,id)
 	end
 	GUI_LMgr(player)
 end
-function FORM_land_buy(player,id)
-	if not(id) then
-		SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
-	end
-
+function Handler_LandCfg(player,landId,option)
+	
 	local xuid = player.xuid
-	local NewData = MEM[xuid].newLand
-	local player_credits = Money_Get(player)
-	if NewData.landprice > player_credits then
-		SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
-	else
-		Money_Del(player,NewData.landprice)
-	end
-	SendText(player,_Tr('title.buyland.succeed'))
-	ILAPI.CreateLand(xuid,NewData.posA,NewData.posB,NewData.dimid)
-	MEM[xuid].newLand = nil
-	player:sendModalForm(
-		'Complete.',
-		_Tr('gui.buyland.succeed'),
-		_Tr('gui.general.looklook'),
-		_Tr('gui.general.cancel'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_cfg(player,data)
-	if data==nil then return end
-	
-	local landId = MEM[player.xuid].landId
-	local settings = land_data[landId].settings
-	settings.signtome=data[1]
-	settings.signtother=data[2]
-	settings.signbuttom=data[3]
-	settings.ev_explode=data[4]
-	settings.ev_farmland_decay=data[5]
-	settings.ev_piston_push=data[6]
-	settings.ev_fire_spread=data[7]
-	ILAPI.save({0,1,0})
-
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_perm(player,data)
-	if data==nil then return end
-	
-	local perm = land_data[MEM[player.xuid].landId].permissions
-
-	perm.allow_place = data[1]
-	perm.allow_destroy = data[2]
-	perm.allow_entity_destroy = data[3]
-	perm.allow_dropitem = data[4]
-	perm.allow_pickupitem = data[5]
-	perm.allow_ride_entity = data[6]
-	perm.allow_ride_trans = data[7]
-	perm.allow_shoot = data[8]
-	perm.allow_attack_player = data[9]
-	perm.allow_attack_animal = data[10]
-	perm.allow_attack_mobs = data[11]
-
-	perm.use_crafting_table = data[12]
-	perm.use_furnace = data[13]
-	perm.use_blast_furnace = data[14]
-	perm.use_smoker = data[15]
-	perm.use_brewing_stand = data[16]
-	perm.use_cauldron = data[17]
-	perm.use_anvil = data[18]
-	perm.use_grindstone = data[19]
-	perm.use_enchanting_table = data[20]
-	perm.use_cartography_table = data[21]
-	perm.use_smithing_table = data[22]
-	perm.use_loom = data[23]
-	perm.use_stonecutter = data[24]
-	perm.use_lectern = data[25]
-	perm.use_beacon = data[26]
-	
-	perm.use_barrel = data[27]
-	perm.use_hopper = data[28]
-	perm.use_dropper = data[29]
-	perm.use_dispenser = data[30]
-	perm.use_shulker_box = data[31]
-	perm.allow_open_chest = data[32]
-	
-	perm.use_campfire = data[33]
-	perm.use_firegen = data[34]
-	perm.use_door = data[35]
-	perm.use_trapdoor = data[36]
-	perm.use_fence_gate = data[37]
-	perm.use_bell = data[38]
-	perm.use_jukebox = data[39]
-	perm.use_noteblock = data[40]
-	perm.use_composter = data[41]
-	perm.use_bed = data[42]
-	perm.use_item_frame = data[43]
-	perm.use_daylight_detector = data[44]
-	perm.use_lever = data[45]
-	perm.use_button = data[46]
-	perm.use_pressure_plate = data[47]
-	perm.allow_throw_potion = data[48]
-	perm.use_respawn_anchor = data[49]
-	perm.use_fishing_hook = data[50]
-	perm.use_bucket = data[51]
-
-	perm.useitem = data[52]
-
-	ILAPI.save({0,1,0})
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_name(player,data)
-	if data==nil then return end
-	
-	local landId=MEM[player.xuid].landId
-	land_data[landId].settings.nickname=data[1]
-	ILAPI.save({0,1,0})
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_describe(player,data)
-	if data==nil then return end
-	
-	local landId=MEM[player.xuid].landId
-	land_data[landId].settings.describe=data[1]
-	ILAPI.save({0,1,0})
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui_delete(player,id)
-	if not(id) then return end
-	local xuid=player.xuid
-	local landId=MEM[xuid].landId
-	ILAPI.DeleteLand(landId)
-	Money_Add(player,MEM[xuid].landvalue)
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function FORM_land_gui(player,data,lid)
-	if data==nil then return end
-	
-	local xuid=player.xuid
-
-	local landId
-	if lid==nil or lid=='' then
-		landId = land_owners[xuid][data[1]+1]
-	else
-		landId = lid
-	end
 
 	MEM[xuid].landId=landId
-	if data[2]==0 then --查看领地信息
+	if option==0 then --查看领地信息
 		local dpos = land_data[landId].range
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1 
 		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
@@ -499,8 +332,9 @@ function FORM_land_gui(player,data,lid)
 			_Tr('gui.general.close'),
 			FORM_BACK_LandMgr
 		)
+		return
 	end
-	if data[2]==1 then --编辑领地选项
+	if option==1 then --编辑领地选项
 		local IsSignDisabled = ''
 		if not(cfg.features.landSign) then
 			IsSignDisabled=' ('.._Tr('talk.features.closed')..')'
@@ -518,10 +352,33 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_Tr('gui.landcfg.inside.farmland_decay'),settings.ev_farmland_decay)
 		Form:addSwitch(_Tr('gui.landcfg.inside.piston_push'),settings.ev_piston_push)
 		Form:addSwitch(_Tr('gui.landcfg.inside.fire_spread'),settings.ev_fire_spread)
-		player:sendForm(Form,FORM_land_gui_cfg)
+		player:sendForm(
+			Form,
+			function (player,res)
+				if res==nil then return end
+
+				local settings = land_data[landId].settings
+				settings.signtome=res[1]
+				settings.signtother=res[2]
+				settings.signbuttom=res[3]
+				settings.ev_explode=res[4]
+				settings.ev_farmland_decay=res[5]
+				settings.ev_piston_push=res[6]
+				settings.ev_fire_spread=res[7]
+				ILAPI.save({0,1,0})
+
+				player:sendModalForm(
+					_Tr('gui.general.complete'),
+					'Complete.',
+					_Tr('gui.general.back'),
+					_Tr('gui.general.close'),
+					FORM_BACK_LandMgr
+				)
+			end
+		)
 		return
 	end
-	if data[2]==2 then --编辑领地权限
+	if option==2 then --编辑领地权限
 		local perm = land_data[landId].permissions
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.landmgr.landperm.title'))
@@ -583,9 +440,83 @@ function FORM_land_gui(player,data,lid)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.bucket'),perm.use_bucket)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.useitem'),perm.useitem)
 		Form:addLabel(_Tr('gui.landmgr.landperm.editevent'))
-		player:sendForm(Form,FORM_land_gui_perm)
+		player:sendForm(
+			Form,
+			function (player,res)
+				if res==nil then return end
+				
+				local perm = land_data[landId].permissions
+			
+				perm.allow_place = res[1]
+				perm.allow_destroy = res[2]
+				perm.allow_entity_destroy = res[3]
+				perm.allow_dropitem = res[4]
+				perm.allow_pickupitem = res[5]
+				perm.allow_ride_entity = res[6]
+				perm.allow_ride_trans = res[7]
+				perm.allow_shoot = res[8]
+				perm.allow_attack_player = res[9]
+				perm.allow_attack_animal = res[10]
+				perm.allow_attack_mobs = res[11]
+			
+				perm.use_crafting_table = res[12]
+				perm.use_furnace = res[13]
+				perm.use_blast_furnace = res[14]
+				perm.use_smoker = res[15]
+				perm.use_brewing_stand = res[16]
+				perm.use_cauldron = res[17]
+				perm.use_anvil = res[18]
+				perm.use_grindstone = res[19]
+				perm.use_enchanting_table = res[20]
+				perm.use_cartography_table = res[21]
+				perm.use_smithing_table = res[22]
+				perm.use_loom = res[23]
+				perm.use_stonecutter = res[24]
+				perm.use_lectern = res[25]
+				perm.use_beacon = res[26]
+				
+				perm.use_barrel = res[27]
+				perm.use_hopper = res[28]
+				perm.use_dropper = res[29]
+				perm.use_dispenser = res[30]
+				perm.use_shulker_box = res[31]
+				perm.allow_open_chest = res[32]
+				
+				perm.use_campfire = res[33]
+				perm.use_firegen = res[34]
+				perm.use_door = res[35]
+				perm.use_trapdoor = res[36]
+				perm.use_fence_gate = res[37]
+				perm.use_bell = res[38]
+				perm.use_jukebox = res[39]
+				perm.use_noteblock = res[40]
+				perm.use_composter = res[41]
+				perm.use_bed = res[42]
+				perm.use_item_frame = res[43]
+				perm.use_daylight_detector = res[44]
+				perm.use_lever = res[45]
+				perm.use_button = res[46]
+				perm.use_pressure_plate = res[47]
+				perm.allow_throw_potion = res[48]
+				perm.use_respawn_anchor = res[49]
+				perm.use_fishing_hook = res[50]
+				perm.use_bucket = res[51]
+			
+				perm.useitem = res[52]
+			
+				ILAPI.save({0,1,0})
+				player:sendModalForm(
+					_Tr('gui.general.complete'),
+					'Complete.',
+					_Tr('gui.general.back'),
+					_Tr('gui.general.close'),
+					FORM_BACK_LandMgr
+				)
+			end
+		)
+		return
 	end
-	if data[2]==3 then --编辑信任名单
+	if option==3 then --编辑信任名单
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_Tr('gui.landtrust.title'))
 		Form:setContent(_Tr('gui.landtrust.tip'))
@@ -608,26 +539,55 @@ function FORM_land_gui(player,data,lid)
 		end)
 		return
 	end
-	if data[2]==4 then --领地nickname
+	if option==4 then --领地nickname
 		local nickn=ILAPI.GetNickname(landId,false)
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.landtag.title'))
 		Form:addLabel(_Tr('gui.landtag.tip'))
 		Form:addInput("",nickn)
-		player:sendForm(Form,FORM_land_gui_name)
+		player:sendForm(
+			Form,
+			function(player,res)
+				if res==nil then return end
+				land_data[landId].settings.nickname=res[1]
+				ILAPI.save({0,1,0})
+				player:sendModalForm(
+					_Tr('gui.general.complete'),
+					'Complete.',
+					_Tr('gui.general.back'),
+					_Tr('gui.general.close'),
+					FORM_BACK_LandMgr
+				)
+			end
+		)
 		return
 	end
-	if data[2]==5 then --领地describe
+	if option==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._Tr('gui.landmgr.unmodified')..']' end
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.landdescribe.title'))
 		Form:addLabel(_Tr('gui.landdescribe.tip'))
 		Form:addInput("",desc)
-		player:sendForm(Form,FORM_land_gui_describe)
+		player:sendForm(
+			Form,
+			function(player,res)
+				if res==nil then return end
+				
+				land_data[landId].settings.describe=res[1]
+				ILAPI.save({0,1,0})
+				player:sendModalForm(
+					_Tr('gui.general.complete'),
+					'Complete.',
+					_Tr('gui.general.back'),
+					_Tr('gui.general.close'),
+					FORM_BACK_LandMgr
+				)
+			end
+		)
 		return
 	end
-	if data[2]==6 then --领地过户
+	if option==6 then --领地过户
 		player:sendModalForm(
 			_Tr('gui.landtransfer.title'),
 			_Tr('gui.landtransfer.tip'),
@@ -635,12 +595,35 @@ function FORM_land_gui(player,data,lid)
 			_Tr('gui.general.close'),
 			function(pl,ids)
 				if not(ids) then return end
-				PSR_New(pl,SRCB_land_transfer)
+				PSR_New(
+					pl,
+					function (player,selected)
+						if #selected > 1 then
+							SendText(player,_Tr('title.landtransfer.toomanyids'))
+							return
+						end
+					
+						local targetXuid=data.name2xuid(selected[1])
+						if ILAPI.IsLandOwner(landId,targetXuid) then 
+							SendText(player,_Tr('title.landtransfer.canttoown'))
+							return
+						end
+						ILAPI.SetOwner(landId,targetXuid)
+					
+						player:sendModalForm(
+							_Tr('gui.general.complete'),
+							_Tr('title.landtransfer.complete','<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
+							_Tr('gui.general.back'),
+							_Tr('gui.general.close'),
+							FORM_BACK_LandMgr
+						)
+					end
+				)
 			end
 		)
 		return
 	end
-	if data[2]==7 then --重新圈地
+	if option==7 then --重新圈地
 		player:sendModalForm(
 			_Tr('gui.reselectland.title'),
 			_Tr('gui.reselectland.tip'),
@@ -661,196 +644,35 @@ function FORM_land_gui(player,data,lid)
 				}
 			end
 		)
+		return
 	end
-	if data[2]==8 then --删除领地
+	if option==8 then --删除领地
 		local dpos = land_data[landId].range
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
 		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
-		MEM[xuid].landvalue=math.modf(CalculatePrice(length,width,height,ILAPI.GetDimension(landId))*cfg.land_buy.refund_rate)
+		local value = math.modf(CalculatePrice(length,width,height,ILAPI.GetDimension(landId))*cfg.land_buy.refund_rate)
 		player:sendModalForm(
 			_Tr('gui.delland.title'),
-			_Tr('gui.delland.content','<a>',MEM[xuid].landvalue,'<b>',cfg.money.credit_name),
+			_Tr('gui.delland.content','<a>',value,'<b>',cfg.money.credit_name),
 			_Tr('gui.general.yes'),
 			_Tr('gui.general.cancel'),
-			FORM_land_gui_delete
-		);return
-	end
-end
-function FORM_land_mgr(player,data)
-
-	if data==nil then return end
-	local xuid=player.xuid
-	if data[1]~='' then
-		cfg.land.player_max_lands = tonumber(data[1])
-	end
-	if data[2]~='' then
-		cfg.land.land_max_square = tonumber(data[2])
-	end
-	if data[3]~='' then
-		cfg.land.land_min_square = tonumber(data[3])
-	end
-	cfg.land_buy.refund_rate = data[4]/100
-	if data[5]==0 then
-		cfg.money.protocol='llmoney'
-	else
-		cfg.money.protocol='scoreboard'
-	end
-	if data[6]~='' then
-		cfg.money.scoreboard_objname=data[6]
-	end
-	if data[7]~='' then
-		cfg.money.credit_name=data[7]
-	end
-	cfg.money.discount=data[8]
-	if data[9]==0 then
-		cfg.land_buy.calculation_3D='m-1'
-	end
-	if data[9]==1 then
-		cfg.land_buy.calculation_3D='m-2'
-	end
-	if data[9]==2 then
-		cfg.land_buy.calculation_3D='m-3'
-	end
-	if data[10]~='' then
-		cfg.land_buy.price_3D[1]=tonumber(data[10])
-	end
-	if data[11]~='' then
-		cfg.land_buy.price_3D[2]=tonumber(data[11])
-	end
-	if data[12]==0 then
-		cfg.land_buy.calculation_2D='d-1'
-	end
-	if data[13]~='' then
-		cfg.land_buy.price_2D[1]=tonumber(data[13])
-	end
-	cfg.features.landSign = data[14]
-	cfg.features.particles = data[15]
-	cfg.features.force_talk = data[16]
-	-- 18~20 (3) BlockLandDims
-	cfg.features.nearby_protection.enabled = data[20]
-	cfg.features.nearby_protection.blockselectland = data[21]
-	cfg.update_check = data[22]
-	cfg.features.auto_update = data[23]
-	cfg.features.offlinePlayerInList = data[24]
-	cfg.features.land_2D = data[25]
-	cfg.features.land_3D = data[26]
-	if data[27]~='' then
-		cfg.features.playersPerPage=tonumber(data[27])
-	end
-	if data[28]~='' then
-		cfg.features.nearby_protection.side=tonumber(data[28])
-	end
-	if data[29]~='' then
-		cfg.features.selection_tool_name=data[29]
-	end
-	if data[30]~='' then
-		cfg.features.sign_frequency=tonumber(data[30])
-	end
-	if data[31]~='' then
-		cfg.features.chunk_side=tonumber(data[31])
-	end
-	if data[32]~='' then
-		cfg.features.player_max_ple=tonumber(data[32])
-	end
-
-	-- BlockLandDims
-	local bldims = cfg.features.blockLandDims
-	if not(data[17]) then
-		bldims[#bldims+1]=0
-	end
-	if not(data[18]) then
-		bldims[#bldims+1]=1
-	end
-	if not(data[19]) then
-		bldims[#bldims+1]=2
-	end
-
-	ILAPI.save({1,0,0})
-	
-	-- Do Realtime
-
-	if cfg.features.landSign and CLOCK_LANDSIGN==nil then
-		EnableLandsign()
-	end
-	if not(cfg.features.landSign) and CLOCK_LANDSIGN~=nil then
-		clearInterval(CLOCK_LANDSIGN)
-		clearInterval(BUTTOM_SIGN)
-		CLOCK_LANDSIGN=nil
-		BUTTOM_SIGN=nil
-	end
-
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		"Complete.",
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandOPMgr
-	)
-
-end
-function FORM_land_listener(player,data)
-	if data==nil then return end
-
-	cfg.features.disabled_listener = {}
-	local dbl = cfg.features.disabled_listener
-	if not(data[1]) then dbl[#dbl+1] = "onDestroyBlock" end
-	if not(data[2]) then dbl[#dbl+1] = "onPlaceBlock" end
-	if not(data[3]) then dbl[#dbl+1] = "onUseItemOn" end
-	if not(data[4]) then dbl[#dbl+1] = "onAttack" end
-	if not(data[5]) then dbl[#dbl+1] = "onExplode" end
-	if not(data[6]) then dbl[#dbl+1] = "onBedExplode" end
-	if not(data[7]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
-	if not(data[8]) then dbl[#dbl+1] = "onTakeItem" end
-	if not(data[9]) then dbl[#dbl+1] = "onDropItem" end
-	if not(data[10]) then dbl[#dbl+1] = "onBlockInteracted" end
-	if not(data[11]) then dbl[#dbl+1] = "onUseFrameBlock" end
-	if not(data[12]) then dbl[#dbl+1] = "onSpawnProjectile" end
-	if not(data[13]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
-	if not(data[14]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
-	if not(data[15]) then dbl[#dbl+1] = "onRide" end
-	if not(data[16]) then dbl[#dbl+1] = "onWitherBossDestroy" end
-	if not(data[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
-	if not(data[18]) then dbl[#dbl+1] = "onPistonPush" end
-	if not(data[19]) then dbl[#dbl+1] = "onFireSpread" end
-	
-	BuildListenerMap()
-	ILAPI.save({1,0,0})
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		"Complete.",
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandOPMgr
-	)
-
-end
-function FORM_land_choseDim(player,id)
-	if id==true and not(cfg.features.land_3D) then
-		SendText(player,_Tr('gui.buyland.unsupport','<a>','3D'))
+			function (player,id)
+				if not(id) then return end
+				ILAPI.DeleteLand(landId)
+				if ILAPI.GetOwner(landId)==xuid then
+					Money_Add(player,value)
+				end
+				player:sendModalForm(
+					_Tr('gui.general.complete'),
+					'Complete.',
+					_Tr('gui.general.back'),
+					_Tr('gui.general.close'),
+					FORM_BACK_LandMgr
+				)
+			end
+		)
 		return
-	end
-	if id==false and not(cfg.features.land_2D) then
-		SendText(player,_Tr('gui.buyland.unsupport','<a>','2D'))
-		return
-	end
-
-	local xuid=player.xuid
-
-	MEM[xuid].keepingTitle = {
-		_Tr('title.selectrange.mode'),
-		_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
-	}
-	SendText(player,_Tr('title.getlicense.succeed'))
-	
-	MEM[xuid].newLand={
-		dimension = '2D',
-		posA = {},
-		posB = {},
-		step = 0
-	}
-	if id then
-		MEM[xuid].newLand.dimension = '3D'
 	end
 end
 function FORM_landtp(player,id,customID)
@@ -895,28 +717,6 @@ function FORM_landtp(player,id,customID)
 		F_NULL
 	)
 end
-function FORM_land_fast(player,id)
-	if id==nil then return end
-	local xuid=player.xuid
-	MEM[xuid].backpo = 1
-	FakeData = {}
-	FakeData[2] = id
-	if id~=9 then
-		FORM_land_gui(player,FakeData,MEM[xuid].landId)
-	end
-end
-function FORM_land_gde(player,id)
-	if id==nil then return end
-	if id==0 then
-		Eventing_onPlayerCmd(player,MainCmd..' new')
-	end
-	if id==1 then
-		Eventing_onPlayerCmd(player,MainCmd..' gui')
-	end
-	if id==2 then
-		Eventing_onPlayerCmd(player,MainCmd..' tp')
-	end
-end
 function SRCB_land_trust(player,selected)
 	
 	local xuid = player.xuid
@@ -956,30 +756,6 @@ function SRCB_land_trust(player,selected)
 	player:sendModalForm(
 		_Tr('gui.general.complete'),
 		text,
-		_Tr('gui.general.back'),
-		_Tr('gui.general.close'),
-		FORM_BACK_LandMgr
-	)
-end
-function SRCB_land_transfer(player,selected)
-	if #selected > 1 then
-		SendText(player,_Tr('title.landtransfer.toomanyids'))
-		return
-	end
-
-	local xuid=player.xuid
-	local landId=MEM[xuid].landId
-	local targetXuid=data.name2xuid(selected[1])
-
-	if ILAPI.IsLandOwner(landId,targetXuid) then 
-		SendText(player,_Tr('title.landtransfer.canttoown'))
-		return
-	end
-	ILAPI.SetOwner(landId,targetXuid)
-
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		_Tr('title.landtransfer.complete','<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
 		_Tr('gui.general.back'),
 		_Tr('gui.general.close'),
 		FORM_BACK_LandMgr
@@ -1141,7 +917,30 @@ function BoughtProg_CreateOrder(player)
 		),
 		_Tr('gui.general.buy'),
 		_Tr('gui.general.close'),
-		FORM_land_buy
+		function (player,id)
+			if not(id) then
+				SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
+			end
+		
+			local xuid = player.xuid
+			local NewData = MEM[xuid].newLand
+			local player_credits = Money_Get(player)
+			if NewData.landprice > player_credits then
+				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
+			else
+				Money_Del(player,NewData.landprice)
+			end
+			SendText(player,_Tr('title.buyland.succeed'))
+			ILAPI.CreateLand(xuid,NewData.posA,NewData.posB,NewData.dimid)
+			MEM[xuid].newLand = nil
+			player:sendModalForm(
+				'Complete.',
+				_Tr('gui.buyland.succeed'),
+				_Tr('gui.general.looklook'),
+				_Tr('gui.general.cancel'),
+				FORM_BACK_LandMgr
+			)
+		end
 	)
 end
 function BoughtProg_GiveUp(player)
@@ -1407,7 +1206,7 @@ function GUI_OPLMgr(player)
 	Form:addButton(_Tr('gui.general.close'))
 	player:sendForm(Form,function(player,id)
 		if id==nil then return end
-		if id==0 then
+		if id==0 then -- Manage lands
 			local Form = mc.newSimpleForm()
 			Form:setTitle(_Tr('gui.oplandmgr.title'))
 			Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
@@ -1415,182 +1214,321 @@ function GUI_OPLMgr(player)
 			Form:addButton(_Tr('gui.oplandmgr.landmgr.teleport'),'textures/ui/icon_blackfriday')
 			Form:addButton(_Tr('gui.oplandmgr.landmgr.byfeet'),'textures/ui/icon_sign')
 			Form:addButton(_Tr('gui.general.back'))
-			player:sendForm(Form,GUI_OPLMgr_land)
+			player:sendForm(
+				Form,
+				function(player,mode)
+					if mode==nil then return end
+				
+					local xuid = player.xuid
+					if mode==0 then -- 按玩家
+						PSR_New(player,function(pl,selected) 
+							if #selected>1 then
+								SendText(pl,_Tr('talk.tomany'))
+								return
+							end
+							local thisXid = data.name2xuid(selected[1])
+							GUI_LMgr(pl,thisXid)
+						end)
+					end
+					if mode==1 then -- 传送
+						local Form = mc.newSimpleForm()
+						Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
+						Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
+						local landlst = ILAPI.GetAllLands()
+						for num,landId in pairs(landlst) do
+							local ownerId = ILAPI.GetOwner(landId)
+							if ownerId~='?' then ownerId=data.xuid2name(ownerId) end
+							Form:addButton(
+								_Tr('gui.oplandmgr.landmgr.button',
+									'<a>',ILAPI.GetNickname(landId,true),
+									'<b>',ownerId
+								),
+								'textures/ui/worldsIcon'
+							)
+						end
+						player:sendForm(Form,function(pl,id) -- callback
+							if id==nil then return end
+							local landId = landlst[id+1]
+							FORM_landtp(pl,1,landId)
+						end)
+					end
+					if mode==2 then -- 脚下
+						local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+						if landId==-1 then
+							SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
+							return
+						end
+						MEM[xuid].landId = landId
+						GUI_FastMgr(player,true)
+					end
+					if mode==3 then -- 返回
+						FORM_BACK_LandOPMgr(player,true)
+					end
+				
+				end
+			)
 		end
-		if id==1 then
-			GUI_OPLMgr_plugin(player)
+		if id==1 then -- Manage Plugin
+			-- Set Money Protocol
+			local money_protocols = { 'LLMoney', _Tr('talk.scoreboard') }
+			local money_default = 0
+			if cfg.money.protocol == 'scoreboard' then
+				money_default = 1
+			end
+
+			-- Land Calculation
+			local calculation_3D = { 'm-1', 'm-2', 'm-3' }
+			local c3d_default=0
+			if cfg.land_buy.calculation_3D == 'm-1' then
+				c3d_default=0
+			end
+			if cfg.land_buy.calculation_3D == 'm-2' then
+				c3d_default=1
+			end
+			if cfg.land_buy.calculation_3D == 'm-3' then
+				c3d_default=2
+			end
+			local calculation_2D = { 'd-1' }
+			local aprice = CloneTable(cfg.land_buy.price_3D)
+			if aprice[2]==nil then
+				aprice[2]=''
+			end
+			local bprice = CloneTable(cfg.land_buy.price_2D)
+			
+			-- Blockland Dims
+			local enableDims = { true,true,true }
+			local bldims = cfg.features.blockLandDims
+			if FoundValueInList(bldims,0)~=-1 then
+				enableDims[1] = false
+			end
+			if FoundValueInList(bldims,1)~=-1 then
+				enableDims[2] = false
+			end
+			if FoundValueInList(bldims,2)~=-1 then
+				enableDims[3] = false
+			end
+
+			-- Build Form
+			local Form = mc.newCustomForm()
+			Form:setTitle(_Tr('gui.oplandmgr.title'))
+			Form:addLabel(_Tr('gui.oplandmgr.tip'))
+			Form:addLabel(_Tr('gui.oplandmgr.landcfg'))
+			Form:addInput(_Tr('gui.oplandmgr.landcfg.maxland'),tostring(cfg.land.player_max_lands))
+			Form:addInput(_Tr('gui.oplandmgr.landcfg.maxsqu'),tostring(cfg.land.land_max_square))
+			Form:addInput(_Tr('gui.oplandmgr.landcfg.minsqu'),tostring(cfg.land.land_min_square))
+			Form:addSlider(_Tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,cfg.land_buy.refund_rate*100)
+			Form:addLabel(_Tr('gui.oplandmgr.economy'))
+			Form:addDropdown(_Tr('gui.oplandmgr.economy.protocol'),money_protocols,money_default)
+			Form:addInput(_Tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
+			Form:addInput(_Tr('gui.oplandmgr.economy.credit_name'),cfg.money.credit_name)
+			Form:addSlider(_Tr('gui.oplandmgr.economy.discount'),0,100,1,cfg.money.discount)
+			Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_3D'),calculation_3D,c3d_default)
+			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(aprice[1]))
+			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[2]',tostring(aprice[2]))
+			Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_2D'),calculation_2D)
+			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(bprice[1]))
+			Form:addLabel(_Tr('gui.oplandmgr.features'))
+			Form:addSwitch(_Tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.particles'),cfg.features.particles)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.dim0'),enableDims[1])
+			Form:addSwitch(_Tr('gui.oplandmgr.features.dim1'),enableDims[2])
+			Form:addSwitch(_Tr('gui.oplandmgr.features.dim2'),enableDims[3])
+			Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyprotection'),cfg.features.nearby_protection.enabled)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyblockselectland'),cfg.features.nearby_protection.blockselectland)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.offlinepls'),cfg.features.offlinePlayerInList)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
+			Form:addSwitch(_Tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
+			Form:addInput(_Tr('gui.oplandmgr.features.playersperpage'),tostring(cfg.features.playersPerPage))
+			Form:addInput(_Tr('gui.oplandmgr.features.nearbyside'),tostring(cfg.features.nearby_protection.side))
+			Form:addInput(_Tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
+			Form:addInput(_Tr('gui.oplandmgr.features.frequency'),tostring(cfg.features.sign_frequency))
+			Form:addInput(_Tr('gui.oplandmgr.features.chunksize'),tostring(cfg.features.chunk_side))
+			Form:addInput(_Tr('gui.oplandmgr.features.maxple'),tostring(cfg.features.player_max_ple))
+				
+			player:sendForm(
+				Form,
+				function(player,res)
+					if res==nil then return end
+				
+					if res[1]~='' then
+						cfg.land.player_max_lands = tonumber(res[1])
+					end
+					if res[2]~='' then
+						cfg.land.land_max_square = tonumber(res[2])
+					end
+					if res[3]~='' then
+						cfg.land.land_min_square = tonumber(res[3])
+					end
+					cfg.land_buy.refund_rate = res[4]/100
+					if res[5]==0 then
+						cfg.money.protocol='llmoney'
+					else
+						cfg.money.protocol='scoreboard'
+					end
+					if res[6]~='' then
+						cfg.money.scoreboard_objname=res[6]
+					end
+					if res[7]~='' then
+						cfg.money.credit_name=res[7]
+					end
+					cfg.money.discount=res[8]
+					if res[9]==0 then
+						cfg.land_buy.calculation_3D='m-1'
+					end
+					if res[9]==1 then
+						cfg.land_buy.calculation_3D='m-2'
+					end
+					if res[9]==2 then
+						cfg.land_buy.calculation_3D='m-3'
+					end
+					if res[10]~='' then
+						cfg.land_buy.price_3D[1]=tonumber(res[10])
+					end
+					if res[11]~='' then
+						cfg.land_buy.price_3D[2]=tonumber(res[11])
+					end
+					if res[12]==0 then
+						cfg.land_buy.calculation_2D='d-1'
+					end
+					if res[13]~='' then
+						cfg.land_buy.price_2D[1]=tonumber(res[13])
+					end
+					cfg.features.landSign = res[14]
+					cfg.features.particles = res[15]
+					cfg.features.force_talk = res[16]
+					-- 18~20 (3) BlockLandDims
+					cfg.features.nearby_protection.enabled = res[20]
+					cfg.features.nearby_protection.blockselectland = res[21]
+					cfg.update_check = res[22]
+					cfg.features.auto_update = res[23]
+					cfg.features.offlinePlayerInList = res[24]
+					cfg.features.land_2D = res[25]
+					cfg.features.land_3D = res[26]
+					if res[27]~='' then
+						cfg.features.playersPerPage=tonumber(res[27])
+					end
+					if res[28]~='' then
+						cfg.features.nearby_protection.side=tonumber(res[28])
+					end
+					if res[29]~='' then
+						cfg.features.selection_tool_name=res[29]
+					end
+					if res[30]~='' then
+						cfg.features.sign_frequency=tonumber(res[30])
+					end
+					if res[31]~='' then
+						cfg.features.chunk_side=tonumber(res[31])
+					end
+					if res[32]~='' then
+						cfg.features.player_max_ple=tonumber(res[32])
+					end
+				
+					-- BlockLandDims
+					local bldims = cfg.features.blockLandDims
+					if not(res[17]) then
+						bldims[#bldims+1]=0
+					end
+					if not(res[18]) then
+						bldims[#bldims+1]=1
+					end
+					if not(res[19]) then
+						bldims[#bldims+1]=2
+					end
+				
+					ILAPI.save({1,0,0})
+					
+					-- Do Realtime
+				
+					if cfg.features.landSign and CLOCK_LANDSIGN==nil then
+						EnableLandsign()
+					end
+					if not(cfg.features.landSign) and CLOCK_LANDSIGN~=nil then
+						clearInterval(CLOCK_LANDSIGN)
+						clearInterval(BUTTOM_SIGN)
+						CLOCK_LANDSIGN=nil
+						BUTTOM_SIGN=nil
+					end
+				
+					player:sendModalForm(
+						_Tr('gui.general.complete'),
+						"Complete.",
+						_Tr('gui.general.back'),
+						_Tr('gui.general.close'),
+						FORM_BACK_LandOPMgr
+					)
+				
+				end
+			)
 		end
-		if id==2 then
-			GUI_OPLMgr_listener(player)
+		if id==2 then -- Manage Listener
+			local Form = mc.newCustomForm()
+			Form:setTitle(_Tr('gui.listenmgr.title'))
+			Form:addLabel(_Tr('gui.listenmgr.tip'))
+			Form:addSwitch('onDestroyBlock',not(ILAPI.IsDisabled('onDestroyBlock')))
+			Form:addSwitch('onPlaceBlock',not(ILAPI.IsDisabled('onPlaceBlock')))
+			Form:addSwitch('onUseItemOn',not(ILAPI.IsDisabled('onUseItemOn')))
+			Form:addSwitch('onAttack',not(ILAPI.IsDisabled('onAttack')))
+			Form:addSwitch('onExplode',not(ILAPI.IsDisabled('onExplode')))
+			Form:addSwitch('onBedExplode',not(ILAPI.IsDisabled('onBedExplode')))
+			Form:addSwitch('onRespawnAnchorExplode',not(ILAPI.IsDisabled('onRespawnAnchorExplode')))
+			Form:addSwitch('onTakeItem',not(ILAPI.IsDisabled('onTakeItem')))
+			Form:addSwitch('onDropItem',not(ILAPI.IsDisabled('onDropItem')))
+			Form:addSwitch('onBlockInteracted',not(ILAPI.IsDisabled('onBlockInteracted')))
+			Form:addSwitch('onUseFrameBlock',not(ILAPI.IsDisabled('onUseFrameBlock')))
+			Form:addSwitch('onSpawnProjectile',not(ILAPI.IsDisabled('onSpawnProjectile')))
+			Form:addSwitch('onFireworkShootWithCrossbow',not(ILAPI.IsDisabled('onFireworkShootWithCrossbow')))
+			Form:addSwitch('onStepOnPressurePlate',not(ILAPI.IsDisabled('onStepOnPressurePlate')))
+			Form:addSwitch('onRide',not(ILAPI.IsDisabled('onRide')))
+			Form:addSwitch('onWitherBossDestroy',not(ILAPI.IsDisabled('onWitherBossDestroy')))
+			Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
+			Form:addSwitch('onPistonPush',not(ILAPI.IsDisabled('onPistonPush')))
+			Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
+
+			player:sendForm(
+				Form,
+				function(player,res)
+					if res==nil then return end
+				
+					cfg.features.disabled_listener = {}
+					local dbl = cfg.features.disabled_listener
+					if not(res[1]) then dbl[#dbl+1] = "onDestroyBlock" end
+					if not(res[2]) then dbl[#dbl+1] = "onPlaceBlock" end
+					if not(res[3]) then dbl[#dbl+1] = "onUseItemOn" end
+					if not(res[4]) then dbl[#dbl+1] = "onAttack" end
+					if not(res[5]) then dbl[#dbl+1] = "onExplode" end
+					if not(res[6]) then dbl[#dbl+1] = "onBedExplode" end
+					if not(res[7]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
+					if not(res[8]) then dbl[#dbl+1] = "onTakeItem" end
+					if not(res[9]) then dbl[#dbl+1] = "onDropItem" end
+					if not(res[10]) then dbl[#dbl+1] = "onBlockInteracted" end
+					if not(res[11]) then dbl[#dbl+1] = "onUseFrameBlock" end
+					if not(res[12]) then dbl[#dbl+1] = "onSpawnProjectile" end
+					if not(res[13]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
+					if not(res[14]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
+					if not(res[15]) then dbl[#dbl+1] = "onRide" end
+					if not(res[16]) then dbl[#dbl+1] = "onWitherBossDestroy" end
+					if not(res[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
+					if not(res[18]) then dbl[#dbl+1] = "onPistonPush" end
+					if not(res[19]) then dbl[#dbl+1] = "onFireSpread" end
+					
+					BuildListenerMap()
+					ILAPI.save({1,0,0})
+					player:sendModalForm(
+						_Tr('gui.general.complete'),
+						"Complete.",
+						_Tr('gui.general.back'),
+						_Tr('gui.general.close'),
+						FORM_BACK_LandOPMgr
+					)
+				
+				end
+			)
 		end
 	end)
 
-end
-function GUI_OPLMgr_land(player,mode)
-	if mode==nil then return end
-
-	local xuid = player.xuid
-	if mode==0 then -- 按玩家
-		PSR_New(player,function(pl,selected) 
-			local landlst = {}
-			if #selected>1 then
-				SendText(pl,_Tr('talk.tomany'))
-				return
-			end
-			local thisXid = data.name2xuid(selected[1])
-			GUI_LMgr(pl,thisXid)
-		end)
-	end
-	if mode==1 then -- 传送
-		local Form = mc.newSimpleForm()
-		Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
-		Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
-		local landlst = ILAPI.GetAllLands()
-		for num,landId in pairs(landlst) do
-			local ownerId = ILAPI.GetOwner(landId)
-			if ownerId~='?' then ownerId=data.xuid2name(ownerId) end
-			Form:addButton(
-				_Tr('gui.oplandmgr.landmgr.button',
-					'<a>',ILAPI.GetNickname(landId,true),
-					'<b>',ownerId
-				),
-				'textures/ui/worldsIcon'
-			)
-		end
-		MEM[xuid].landlst = landlst
-		player:sendForm(Form,function(pl,id) -- callback
-			if id==nil then return end
-			local xuid = pl.xuid
-			local landId = MEM[xuid].landlst[id+1]
-			FORM_landtp(pl,1,landId)
-		end)
-	end
-	if mode==2 then -- 脚下
-		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
-		if landId==-1 then
-			SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
-			return
-		end
-		MEM[xuid].landId = landId
-		GUI_FastMgr(player,true)
-	end
-	if mode==3 then -- 返回
-		FORM_BACK_LandOPMgr(player,true)
-	end
-
-end
-function GUI_OPLMgr_plugin(player)
-
-	local xuid  = player.xuid
-
-	-- Set Money Protocol
-	local money_protocols = { 'LLMoney', _Tr('talk.scoreboard') }
-	local money_default = 0
-	if cfg.money.protocol == 'scoreboard' then
-		money_default = 1
-	end
-
-	-- Land Calculation
-	local calculation_3D = { 'm-1', 'm-2', 'm-3' }
-	local c3d_default=0
-	if cfg.land_buy.calculation_3D == 'm-1' then
-		c3d_default=0
-	end
-	if cfg.land_buy.calculation_3D == 'm-2' then
-		c3d_default=1
-	end
-	if cfg.land_buy.calculation_3D == 'm-3' then
-		c3d_default=2
-	end
-	local calculation_2D = { 'd-1' }
-	local aprice = CloneTable(cfg.land_buy.price_3D)
-	if aprice[2]==nil then
-		aprice[2]=''
-	end
-	local bprice = CloneTable(cfg.land_buy.price_2D)
-	
-	-- Blockland Dims
-	local enableDims = { true,true,true }
-	local bldims = cfg.features.blockLandDims
-	if FoundValueInList(bldims,0)~=-1 then
-		enableDims[1] = false
-	end
-	if FoundValueInList(bldims,1)~=-1 then
-		enableDims[2] = false
-	end
-	if FoundValueInList(bldims,2)~=-1 then
-		enableDims[3] = false
-	end
-
-	-- Build Form
-	local Form = mc.newCustomForm()
-	Form:setTitle(_Tr('gui.oplandmgr.title'))
-	Form:addLabel(_Tr('gui.oplandmgr.tip'))
-	Form:addLabel(_Tr('gui.oplandmgr.landcfg'))
-	Form:addInput(_Tr('gui.oplandmgr.landcfg.maxland'),tostring(cfg.land.player_max_lands))
-	Form:addInput(_Tr('gui.oplandmgr.landcfg.maxsqu'),tostring(cfg.land.land_max_square))
-	Form:addInput(_Tr('gui.oplandmgr.landcfg.minsqu'),tostring(cfg.land.land_min_square))
-	Form:addSlider(_Tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,cfg.land_buy.refund_rate*100)
-	Form:addLabel(_Tr('gui.oplandmgr.economy'))
-	Form:addDropdown(_Tr('gui.oplandmgr.economy.protocol'),money_protocols,money_default)
-	Form:addInput(_Tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
-	Form:addInput(_Tr('gui.oplandmgr.economy.credit_name'),cfg.money.credit_name)
-	Form:addSlider(_Tr('gui.oplandmgr.economy.discount'),0,100,1,cfg.money.discount)
-	Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_3D'),calculation_3D,c3d_default)
-	Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(aprice[1]))
-	Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[2]',tostring(aprice[2]))
-	Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_2D'),calculation_2D)
-	Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(bprice[1]))
-	Form:addLabel(_Tr('gui.oplandmgr.features'))
-	Form:addSwitch(_Tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.particles'),cfg.features.particles)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.dim0'),enableDims[1])
-	Form:addSwitch(_Tr('gui.oplandmgr.features.dim1'),enableDims[2])
-	Form:addSwitch(_Tr('gui.oplandmgr.features.dim2'),enableDims[3])
-	Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyprotection'),cfg.features.nearby_protection.enabled)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyblockselectland'),cfg.features.nearby_protection.blockselectland)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.offlinepls'),cfg.features.offlinePlayerInList)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
-	Form:addSwitch(_Tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
-	Form:addInput(_Tr('gui.oplandmgr.features.playersperpage'),tostring(cfg.features.playersPerPage))
-	Form:addInput(_Tr('gui.oplandmgr.features.nearbyside'),tostring(cfg.features.nearby_protection.side))
-	Form:addInput(_Tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
-	Form:addInput(_Tr('gui.oplandmgr.features.frequency'),tostring(cfg.features.sign_frequency))
-	Form:addInput(_Tr('gui.oplandmgr.features.chunksize'),tostring(cfg.features.chunk_side))
-	Form:addInput(_Tr('gui.oplandmgr.features.maxple'),tostring(cfg.features.player_max_ple))
-		
-	player:sendForm(Form,FORM_land_mgr)
-
-end
-function GUI_OPLMgr_listener(player)
-
-	local Form = mc.newCustomForm()
-	Form:setTitle(_Tr('gui.listenmgr.title'))
-	Form:addLabel(_Tr('gui.listenmgr.tip'))
-	Form:addSwitch('onDestroyBlock',not(ILAPI.IsDisabled('onDestroyBlock')))
-	Form:addSwitch('onPlaceBlock',not(ILAPI.IsDisabled('onPlaceBlock')))
-	Form:addSwitch('onUseItemOn',not(ILAPI.IsDisabled('onUseItemOn')))
-	Form:addSwitch('onAttack',not(ILAPI.IsDisabled('onAttack')))
-	Form:addSwitch('onExplode',not(ILAPI.IsDisabled('onExplode')))
-	Form:addSwitch('onBedExplode',not(ILAPI.IsDisabled('onBedExplode')))
-	Form:addSwitch('onRespawnAnchorExplode',not(ILAPI.IsDisabled('onRespawnAnchorExplode')))
-	Form:addSwitch('onTakeItem',not(ILAPI.IsDisabled('onTakeItem')))
-	Form:addSwitch('onDropItem',not(ILAPI.IsDisabled('onDropItem')))
-	Form:addSwitch('onBlockInteracted',not(ILAPI.IsDisabled('onBlockInteracted')))
-	Form:addSwitch('onUseFrameBlock',not(ILAPI.IsDisabled('onUseFrameBlock')))
-	Form:addSwitch('onSpawnProjectile',not(ILAPI.IsDisabled('onSpawnProjectile')))
-	Form:addSwitch('onFireworkShootWithCrossbow',not(ILAPI.IsDisabled('onFireworkShootWithCrossbow')))
-	Form:addSwitch('onStepOnPressurePlate',not(ILAPI.IsDisabled('onStepOnPressurePlate')))
-	Form:addSwitch('onRide',not(ILAPI.IsDisabled('onRide')))
-	Form:addSwitch('onWitherBossDestroy',not(ILAPI.IsDisabled('onWitherBossDestroy')))
-	Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
-	Form:addSwitch('onPistonPush',not(ILAPI.IsDisabled('onPistonPush')))
-	Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
-
-	player:sendForm(Form,FORM_land_listener)
 end
 function GUI_FastMgr(player,isOP)
 	local xuid=player.xuid
@@ -1621,7 +1559,17 @@ function GUI_FastMgr(player,isOP)
 	Form:addButton(_Tr('gui.landmgr.options.reselectrange'))
 	Form:addButton(_Tr('gui.landmgr.options.delland'))
 	Form:addButton(_Tr('gui.general.close'),'textures/ui/icon_import')
-	player:sendForm(Form,FORM_land_fast)
+	player:sendForm(
+		Form,
+		function(player,id)
+			if id==nil then return end
+			local xuid=player.xuid
+			MEM[xuid].backpo = 1
+			if id~=9 then
+				Handler_LandCfg(player,id,landId)
+			end
+		end
+	)
 end
 
 -- Selector
@@ -2341,91 +2289,6 @@ function TraverseAABB(AAbb,aaBB,did)
 	end
 	return result
 end
-function Upgrade(rawInfo)
-
-	local function recoverBackup(dt)
-		INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
-		for n,backupfilename in pairs(dt) do
-			file.rename(backupfilename..'.bak',backupfilename)
-		end
-	end
-
-	--  Check Data
-	local updata
-	if rawInfo.FILE_Version==202 then
-		updata = rawInfo.Updates[1]
-	else
-		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
-		return
-	end
-	if  rawInfo.DisableClientUpdate then
-		ERROR(_Tr('console.update.disabled'))
-		return
-	end
-	
-	-- Check Plugin version
-	if updata.NumVer<=Plugin.numver then
-		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
-		return
-	end
-	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
-	
-	-- Set Resource
-	local RawPath = {}
-	local BackupEd = {}
-	local server = GetLink()
-	local source
-	if server ~= false then
-		source = server..'/'..updata.NumVer..'/'
-	else
-		ERROR(_Tr('console.getonline.failed'))
-		return false
-	end
-	
-	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
-	RawPath['$plugin_path'] = 'plugins\\'
-	RawPath['$data_path'] = DATA_PATH
-	
-	-- Get it, update.
-	for n,thefile in pairs(updata.FileChanged) do
-		local raw = StrSplit(thefile,'::')
-		local path = RawPath[raw[1]]..raw[2]
-		INFO('Network',_Tr('console.autoupdate.download')..raw[2])
-		
-		if file.exists(path) then -- create backup
-			file.rename(path,path..'.bak')
-			BackupEd[#BackupEd+1]=path
-		end
-
-		local tmp = network.httpGetSync(source..raw[2])
-		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
-		if tmp.status~=200 or tmp2.status then -- download check
-			ERROR(
-				_Tr('console.autoupdate.errorbydown',
-					'<a>',raw[2],
-					'<b>',tmp.status..','..tmp2.status
-				)
-			)
-			recoverBackup(BackupEd)
-			return
-		end
-
-		local raw = string.gsub(tmp.data,'\n','\r\n')
-		if data.toMD5(raw)~=tmp2.data then -- MD5 check
-			ERROR(
-				_Tr('console.autoupdate.errorbyverify',
-					'<a>',raw[2]
-				)
-			)
-			recoverBackup(BackupEd)
-			return
-		end
-
-		file.writeTo(path,raw)
-	end
-
-	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
-end
 function ChkNil(val)
 	return (val == nil)
 end
@@ -2496,6 +2359,24 @@ end
 function PosToText(vec3)
 	return vec3.x..','..vec3.y..','..vec3.z
 end
+function SplicingArray(array,st,ed)
+	local result
+	if st==nil then
+		st = 1
+	end
+	if ed==nil then
+		ed = #array
+	end
+	for n,res in pairs(array) do
+		if n > ed then
+			break
+		end
+		if n >= st then
+			result = result + res
+		end
+	end
+	return result
+end
 function GetLink()
 	local tokenRaw = network.httpGetSync('https://lxl-cloud.amd.rocks/id.json')
 	if tokenRaw.status~=200 then
@@ -2517,7 +2398,407 @@ function ERROR(content)
 	print('[ILand] |ERROR| '..content)
 end
 
--- command helper
+-- [Client] Command Registry
+mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
+	if #args~=0 then
+		SendText(player,_Tr('command.error','<a>',args[1]),0)
+		return
+	end
+	local pos = FixBp(player.blockPos)
+	local xuid = player.xuid
+	local landId = ILAPI.PosGetLand(pos)
+	if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
+		MEM[xuid].landId=landId
+		GUI_FastMgr(player)
+	else
+		local land_count = tostring(#land_owners[xuid])
+		local Form = mc.newSimpleForm()
+		Form:setTitle(_Tr('gui.fastgde.title'))
+		Form:setContent(_Tr('gui.fastgde.content','<a>',land_count))
+		Form:addButton(_Tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
+		Form:addButton(_Tr('gui.fastgde.manage'),'textures/ui/confirm')
+		Form:addButton(_Tr('gui.fastgde.landtp'),'textures/ui/World')
+		Form:addButton(_Tr('gui.general.close'))
+		player:sendForm(
+			Form,
+			function(player,id)
+				if id==nil then return end
+				if id==0 then
+					player:runcmd(MainCmd..' new')
+				end
+				if id==1 then
+					player:runcmd(MainCmd..' gui')
+				end
+				if id==2 then
+					player:runcmd(MainCmd..' tp')
+				end
+			end
+		)
+	end
+end)
+mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
+	local xuid = player.xuid
+
+	if MEM[xuid].newLand~=nil then
+		MEM[xuid].keepingTitle = {
+			_Tr('title.selectrange.mode'),
+			_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+		}
+		SendText(player,_Tr('title.getlicense.alreadyexists'))
+		return false
+	end
+	if FoundValueInList(cfg.manager.operator,xuid)==-1 then
+		if #land_owners[xuid]>=cfg.land.player_max_lands then
+			SendText(player,_Tr('title.getlicense.limit'))
+			return false
+		end
+	end
+	player:sendModalForm(
+		'DimChosen',
+		_Tr('gui.buyland.chosedim'),
+		_Tr('gui.buyland.3d'),
+		_Tr('gui.buyland.2d'),
+		function(player,id)
+			if id==true and not(cfg.features.land_3D) then
+				SendText(player,_Tr('gui.buyland.unsupport','<a>','3D'))
+				return
+			end
+			if id==false and not(cfg.features.land_2D) then
+				SendText(player,_Tr('gui.buyland.unsupport','<a>','2D'))
+				return
+			end
+		
+			local xuid=player.xuid
+		
+			MEM[xuid].keepingTitle = {
+				_Tr('title.selectrange.mode'),
+				_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+			}
+			SendText(player,_Tr('title.getlicense.succeed'))
+			
+			MEM[xuid].newLand={
+				dimension = '2D',
+				posA = {},
+				posB = {},
+				step = 0
+			}
+			if id then
+				MEM[xuid].newLand.dimension = '3D'
+			end
+		end
+	)
+end)
+mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,args)
+	local xuid = player.xuid
+	if MEM[xuid].newLand~=nil then
+		BoughtProg_GiveUp(player)
+	end
+	if MEM[xuid].reselectLand~=nil then
+		ReselectLand_GiveUp(player)
+	end
+end)
+mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),function (player,args)
+	local xuid = player.xuid
+	MEM[xuid].backpo = 0
+	GUI_LMgr(player)
+end)
+mc.regPlayerCmd(MainCmd..' a',_Tr('command.land_a'),function (player,args)
+	OnCMD_A_B_BUY(player,'a')
+end)
+mc.regPlayerCmd(MainCmd..' b',_Tr('command.land_b'),function (player,args)
+	OnCMD_A_B_BUY(player,'b')
+end)
+mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
+	OnCMD_A_B_BUY(player,'buy')
+end)
+mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
+	local xuid = player.xuid
+	if not(ILAPI.IsLandOperator(xuid)) then
+		SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
+		return false
+	end
+	GUI_OPLMgr(player)
+end)
+mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
+	local xuid = player.xuid
+	if FoundValueInList(cfg.manager.operator,xuid)==-1 then
+		SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
+		return false
+	end
+	SendText(player,_Tr('title.oplandmgr.setselectool'))
+	MEM[xuid].selectool=0
+end)
+if cfg.features.landtp then
+	mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
+		local xuid = player.xuid
+		local tplands = {}
+		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1]=ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
+		end
+		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..PosToText(xpos)..') '..name
+		end
+		local Form = mc.newSimpleForm()
+		Form:setTitle(_Tr('gui.landtp.title'))
+		Form:setContent(_Tr('gui.landtp.tip'))
+		Form:addButton(_Tr('gui.general.close'))
+		for i,land in pairs(tplands) do
+			Form:addButton(land,'textures/ui/world_glyph_color')
+		end
+		player:sendForm(Form,FORM_landtp)
+	end)
+	mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
+		local xuid = player.xuid
+		local pos = FixBp(player.blockPos)
+
+		local landId=ILAPI.PosGetLand(pos)
+		if landId==-1 then
+			SendText(player,_Tr('title.landtp.fail.noland'))
+			return false
+		end
+		if ILAPI.GetOwner(landId)~=xuid then
+			SendText(player,_Tr('title.landtp.fail.notowner'))
+			return false
+		end
+		if not(IsPosSafe(pos)) then
+			SendText(player,_Tr('title.landtp.safeset'))
+			return false
+		end
+		local landname = ILAPI.GetNickname(landId,true)
+		land_data[landId].settings.tpoint = {
+			pos.x,
+			pos.y+1,
+			pos.z
+		}
+		ILAPI.save({0,1,0})
+		player:sendModalForm(
+			_Tr('gui.general.complete'),
+			_Tr('gui.landtp.point','<a>',PosToText({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+			_Tr('gui.general.iknow'),
+			_Tr('gui.general.close'),
+			F_NULL
+		)
+	end)
+	mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
+		local xuid = player.xuid
+		local pos = FixBp(player.blockPos)
+
+		local landId=ILAPI.PosGetLand(pos)
+		if landId==-1 then
+			SendText(player,_Tr('title.landtp.fail.noland'))
+			return false
+		end
+		if ILAPI.GetOwner(landId)~=xuid then
+			SendText(player,_Tr('title.landtp.fail.notowner'))
+			return false
+		end
+		local def = VecMap[landId].a
+		land_data[landId].settings.tpoint = {
+			def.x,
+			def.y+1,
+			def.z
+		}
+		SendText(player,_Tr('title.landtp.removed'))
+	end)
+end
+
+-- [Server] Command Registry
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
+	if #args~=0 then
+		ERROR('Unknown parameter: "'..args[1]..'", plugin wiki: https://myland.amd.rocks/')
+		return
+	end
+	INFO('The server is running iLand v'..Plugin.version)
+	INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_op'),function(args)
+	local name = SplicingArray(args,2,#args)
+	local xuid = data.name2xuid(name)
+	if xuid == "" then
+		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
+		return
+	end
+	if ILAPI.IsLandOperator(xuid) then
+		ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
+		return
+	end
+	table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
+	UpdateLandOperatorsMap()
+	ILAPI.save({1,0,0})
+	INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_deop'),function(args)
+	local name = SplicingArray(args,2)
+	local xuid = data.name2xuid(name)
+	if xuid == "" then
+		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
+		return
+	end
+	if not(ILAPI.IsLandOperator(xuid)) then
+		ERROR(_Tr('console.landop.del.failbynull','<a>',name))
+		return
+	end
+	table.remove(cfg.manager.operator,FoundValueInList(cfg.manager.operator,xuid))
+	UpdateLandOperatorsMap()
+	ILAPI.save({1,0,0})
+	INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_update'),function(args)
+	if cfg.update_check then
+		Upgrade(Server.memInfo)
+	else
+		ERROR(_Tr('console.update.nodata'))
+	end
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language'),function(args)
+	INFO('I18N',_Tr('console.languages.sign','<a>',cfg.manager.default_language,'<b>',_Tr('VERSION')))
+	local isNone = false
+	local count = 1
+	while(not(isNone)) do
+		if LangPack['#'..count] ~= nil then
+			INFO('I18N',_Tr('#'..count))
+		else
+			isNone = true
+		end
+		count = count + 1
+	end
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_set'),function(args)
+	local langpath = DATA_PATH..'lang\\'
+	if args[1] == nil then
+		ERROR(_Tr('console.languages.set.misspara'))
+		return false;
+	end
+	local path = langpath..args[1]..'.json'
+	if File.exists(path) then
+		cfg.manager.default_language = args[1]
+		LangPack = JSON.decode(file.readFrom(path))
+		ILAPI.save({1,0,0})
+		INFO(_Tr('console.languages.set.succeed','<a>',cfg.manager.default_language))
+	else
+		ERROR(_Tr('console.languages.set.nofile','<a>',args[1]))
+	end
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list'),function(args)
+	local langlist = ILAPI.GetLanguageList(0)
+	for i,lang in pairs(langlist) do
+		if lang==cfg.manager.default_language then
+			INFO('I18N',lang..' <- Using.')
+		else
+			INFO('I18N',lang)
+		end
+	end
+	INFO('I18N',_Tr('console.languages.list.count','<a>',#langlist))
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list-online'),function(args)
+	INFO('Network',_Tr('console.languages.list-online.wait'))
+	local rawdata = ILAPI.GetLanguageList(1)
+	if rawdata == false then
+		return false
+	end
+	INFO('I18N',_Tr('console.languages.official'))
+	for i,lang in pairs(rawdata.official) do
+		INFO('I18N',lang)
+	end
+	INFO('I18N',_Tr('console.languages.3rd'))
+	for i,lang in pairs(rawdata['3-rd']) do
+		INFO('I18N',lang)
+	end
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_install'),function(args)
+	if args[1] == nil then
+		ERROR(_Tr('console.languages.install.misspara'))
+		return false
+	end
+	INFO('Network',_Tr('console.languages.list-online.wait'))
+	local rawdata = ILAPI.GetLanguageList(1)
+	if rawdata == false then
+		return false
+	end
+	if FoundValueInList(ILAPI.GetLanguageList(0),args[1])~=-1 then
+		ERROR(_Tr('console.languages.install.existed'))
+		return false
+	end
+	if FoundValueInList(rawdata.official,args[1])==-1 and FoundValueInList(rawdata['3-rd'],args[1])==-1 then
+		ERROR(_Tr('console.languages.install.notfound','<a>',args[1]))
+		return false
+	end
+	INFO(_Tr('console.autoupdate.download'))
+	if DownloadLanguage(args[1]) then
+		INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
+	end
+end)
+mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_update'),function(args)
+	local langpath = DATA_PATH..'lang\\'
+	local langlist = ILAPI.GetLanguageList(0)
+	local langlist_o = ILAPI.GetLanguageList(1)
+	local function updateLang(lang)
+		local langdata
+		if File.exists(langpath..lang..'.json') then
+			langdata = JSON.decode(file.readFrom(langpath..lang..'.json'))
+		else
+			ERROR(_Tr('console.languages.update.notfound','<a>',lang))
+			return false -- this false like 'fail'
+		end
+		if langdata.VERSION == Plugin.numver then
+			ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
+			return true -- continue
+		end
+		if FoundValueInList(langlist,lang)==-1 then
+			ERROR(_Tr('console.languages.update.notfound','<a>',lang))
+			return false
+		end
+		if FoundValueInList(langlist_o.official,lang)==-1 and FoundValueInList(langlist_o['3-rd'],lang)==-1 then
+			ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
+			return false
+		end
+		if DownloadLanguage(lang) then
+			INFO(_Tr('console.languages.update.succeed','<a>',lang))
+		end
+	end
+	if args[1] == nil then
+		INFO(_Tr('console.languages.update.all'))
+		for i,lang in pairs(langlist) do
+			if not(updateLang(lang)) then
+				return false
+			end
+		end
+	else
+		INFO(_Tr('console.languages.update.single','<a>',args[1]))
+		updateLang(args[1])
+	end
+end)
+
+-- CmdUtils
+function OnCMD_A_B_BUY(player,arg)
+	local xuid = player.xuid
+	local pos = FixBp(player.blockPos)
+	local new = (MEM[xuid].newLand~=nil)
+	local res = (MEM[xuid].reselectLand~=nil)
+	if not(new) and not(res) then
+		SendText(player,_Tr('title.land.nolicense'))
+		return false
+	end
+	if new then
+		if (arg=='a' and MEM[xuid].newLand.step~=0) or (arg=='b' and MEM[xuid].newLand.step~=1) or (arg=='buy' and MEM[xuid].newLand.step~=2) then
+			SendText(player,_Tr('title.selectrange.failbystep'))
+			return false
+		end
+		BoughtProg_SelectRange(player,pos,MEM[xuid].newLand.step)
+	else
+		if (arg=='a' and MEM[xuid].reselectLand.step~=0) or (arg=='b' and MEM[xuid].reselectLand.step~=1) then
+			SendText(player,_Tr('title.selectrange.failbystep'))
+			return false
+		end
+		if arg~='buy' then
+			ReselectLand_Do(player,pos,MEM[xuid].reselectLand.step)
+		end
+	end
+end
 function DownloadLanguage(name)
 	local lang_n = network.httpGetSync(GetLink()..'/languages/'..name..'.json')
 	local lang_v = network.httpGetSync(GetLink()..'/languages/'..name..'.json.md5.verify')
@@ -2539,868 +2820,7 @@ function DownloadLanguage(name)
 	return true
 end
 
--- Minecraft -> Eventing
-function Eventing_onJoin(player)
-	local xuid = player.xuid
-	MEM[xuid] = { inland='null',inlandv2='null' }
-
-	if wrong_landowners[xuid]~=nil then
-		land_owners[xuid] = CloneTable(wrong_landowners[xuid])
-		wrong_landowners[xuid] = nil
-	end
-	if land_owners[xuid]==nil then
-		land_owners[xuid] = {}
-		ILAPI.save({0,0,1})
-	end
-
-	if player.gameMode==1 then
-		ERROR(_Tr('talk.gametype.creative','<a>',player.realName))
-	end
-end
-function Eventing_onPreJoin(player)
-	if player.xuid=='' then -- no xuid
-		player:kick(_Tr('talk.prejoin.noxuid'))
-	end
-end
-function Eventing_onLeft(player)
-
-	if ChkNil(player) then
-		return
-	end
-
-	local xuid = player.xuid
-	MEM[xuid]=nil
-end
-function Eventing_onPlayerCmd(player,cmd)
-
-	local opt = StrSplit(cmd,' ')
-	if opt[1] ~= MainCmd then return end
-
-	local xuid = player.xuid
-	local pos = FixBp(player.blockPos)
-
-	-- [ ] Main Command
-	if opt[1] == MainCmd and opt[2]==nil then
-		local landId = ILAPI.PosGetLand(pos)
-		if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
-			MEM[xuid].landId=landId
-			GUI_FastMgr(player)
-		else
-			local land_count = tostring(#land_owners[xuid])
-			local Form = mc.newSimpleForm()
-			Form:setTitle(_Tr('gui.fastgde.title'))
-			Form:setContent(_Tr('gui.fastgde.content','<a>',land_count))
-			Form:addButton(_Tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
-			Form:addButton(_Tr('gui.fastgde.manage'),'textures/ui/confirm')
-			Form:addButton(_Tr('gui.fastgde.landtp'),'textures/ui/World')
-			Form:addButton(_Tr('gui.general.close'))
-			player:sendForm(Form,FORM_land_gde)
-		end
-		return false
-	end
-
-	-- [new] Create newLand
-	if opt[2] == 'new' then
-		if MEM[xuid].newLand~=nil then
-			MEM[xuid].keepingTitle = {
-				_Tr('title.selectrange.mode'),
-				_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
-			}
-			SendText(player,_Tr('title.getlicense.alreadyexists'))
-			return false
-		end
-		if FoundValueInList(cfg.manager.operator,xuid)==-1 then
-			if #land_owners[xuid]>=cfg.land.player_max_lands then
-				SendText(player,_Tr('title.getlicense.limit'))
-				return false
-			end
-		end
-		player:sendModalForm(
-			'DimChosen',
-			_Tr('gui.buyland.chosedim'),
-			_Tr('gui.buyland.3d'),
-			_Tr('gui.buyland.2d'),
-			FORM_land_choseDim
-		)
-		return false
-	end
-
-	-- [a|b|buy] Select Range
-	if opt[2] == 'a' or opt[2] == 'b' or opt[2] == 'buy' then
-		local new = (MEM[xuid].newLand~=nil)
-		local res = (MEM[xuid].reselectLand~=nil)
-		if not(new) and not(res) then
-			SendText(player,_Tr('title.land.nolicense'))
-			return false
-		end
-		if new then
-			if (opt[2]=='a' and MEM[xuid].newLand.step~=0) or (opt[2]=='b' and MEM[xuid].newLand.step~=1) or (opt[2]=='buy' and MEM[xuid].newLand.step~=2) then
-				SendText(player,_Tr('title.selectrange.failbystep'))
-				return false
-			end
-			BoughtProg_SelectRange(player,pos,MEM[xuid].newLand.step)
-		else
-			if (opt[2]=='a' and MEM[xuid].reselectLand.step~=0) or (opt[2]=='b' and MEM[xuid].reselectLand.step~=1) then
-				SendText(player,_Tr('title.selectrange.failbystep'))
-				return false
-			end
-			if opt[2]~='buy' then
-				ReselectLand_Do(player,pos,MEM[xuid].reselectLand.step)
-			end
-		end
-		return false
-	end
-
-	-- [giveup] Give up incp land
-	if opt[2] == 'giveup' then
-		if MEM[xuid].newLand~=nil then
-			BoughtProg_GiveUp(player)
-		end
-		if MEM[xuid].reselectLand~=nil then
-			ReselectLand_GiveUp(player)
-		end
-		return false
-	end
-
-	-- [gui] LandMgr GUI
-	if opt[2] == 'gui' then
-		MEM[xuid].backpo = 0
-		GUI_LMgr(player)
-		return false
-	end
-
-	-- [tp] LandTp GUI
-	if opt[2] == 'tp' and cfg.features.landtp then
-		if opt[3]==nil then
-			local tplands = {}
-			for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-				local name = ILAPI.GetNickname(landId)
-				local xpos = ILAPI.GetPoint(landId)
-				tplands[#tplands+1]=ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
-			end
-			for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-				local name = ILAPI.GetNickname(landId)
-				local xpos = ILAPI.GetPoint(landId)
-				tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..PosToText(xpos)..') '..name
-			end
-			local Form = mc.newSimpleForm()
-			Form:setTitle(_Tr('gui.landtp.title'))
-			Form:setContent(_Tr('gui.landtp.tip'))
-			Form:addButton(_Tr('gui.general.close'))
-			for i,land in pairs(tplands) do
-				Form:addButton(land,'textures/ui/world_glyph_color')
-			end
-			player:sendForm(Form,FORM_landtp)
-			return false
-		end
-		if opt[3]=='set' then
-			local landId=ILAPI.PosGetLand(pos)
-			if landId==-1 then
-				SendText(player,_Tr('title.landtp.fail.noland'))
-				return false
-			end
-			if ILAPI.GetOwner(landId)~=xuid then
-				SendText(player,_Tr('title.landtp.fail.notowner'))
-				return false
-			end
-			if not(IsPosSafe(pos)) then
-				SendText(player,_Tr('title.landtp.safeset'))
-				return false
-			end
-			local landname = ILAPI.GetNickname(landId,true)
-			land_data[landId].settings.tpoint = {
-				pos.x,
-				pos.y+1,
-				pos.z
-			}
-			ILAPI.save({0,1,0})
-			player:sendModalForm(
-				_Tr('gui.general.complete'),
-				_Tr('gui.landtp.point','<a>',PosToText({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
-				_Tr('gui.general.iknow'),
-				_Tr('gui.general.close'),
-				F_NULL
-			)
-			return false
-		end
-		if opt[3]=='rm' then
-			local landId=ILAPI.PosGetLand(pos)
-			if landId==-1 then
-				SendText(player,_Tr('title.landtp.fail.noland'))
-				return false
-			end
-			if ILAPI.GetOwner(landId)~=xuid then
-				SendText(player,_Tr('title.landtp.fail.notowner'))
-				return false
-			end
-			local def = VecMap[landId].a
-			land_data[landId].settings.tpoint = {
-				def.x,
-				def.y+1,
-				def.z
-			}
-			SendText(player,_Tr('title.landtp.removed'))
-			return false
-		end
-	end
-
-	-- [mgr] OP-LandMgr GUI
-	if opt[2] == 'mgr' then
-		if opt[3] == nil then -- no child-command.
-			if not(ILAPI.IsLandOperator(xuid)) then
-				SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
-				return false
-			end
-			GUI_OPLMgr(player)
-		end
-		if opt[3] == 'selectool' then -- set land select_tool.
-			if FoundValueInList(cfg.manager.operator,xuid)==-1 then
-				SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
-				return false
-			end
-			SendText(player,_Tr('title.oplandmgr.setselectool'))
-			MEM[xuid].selectool=0
-		end
-		return false
-	end
-
-	-- [X] Unknown key
-	SendText(player,_Tr('command.error','<a>',opt[2]),0)
-	return false
-
-end
-function Eventing_onConsoleCmd(cmd)
-
-	-- INFO('Debug','call event -> onConsoleCmd')
-
-	local opt = StrSplit(cmd,' ')
-	if opt[1] ~= MainCmd then return end
-
-	-- [ ] main cmd.
-	if opt[2] == nil then
-		INFO('The server is running iLand v'..Plugin.version)
-		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
-
-		return false
-	end
-
-	-- [op] add land operator.
-	if opt[2] == 'op' then
-		local name = StrSplit(string.sub(cmd,string.len(MainCmd.." op ")+1),'"')[1]
-		local xuid = data.name2xuid(name)
-		if xuid == "" then
-			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-			return
-		end
-		if ILAPI.IsLandOperator(xuid) then
-			ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
-			return
-		end
-		table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
-		UpdateLandOperatorsMap()
-		ILAPI.save({1,0,0})
-		INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
-		return false
-	end
-
-	-- [deop] delete land operator.
-	if opt[2] == 'deop' then
-		local name = StrSplit(string.sub(cmd,string.len(MainCmd.." deop ")+1),'"')[1]
-		local xuid = data.name2xuid(name)
-		if xuid == "" then
-			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-			return
-		end
-		if not(ILAPI.IsLandOperator(xuid)) then
-			ERROR(_Tr('console.landop.del.failbynull','<a>',name))
-			return
-		end
-		table.remove(cfg.manager.operator,FoundValueInList(cfg.manager.operator,xuid))
-		UpdateLandOperatorsMap()
-		ILAPI.save({1,0,0})
-		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
-		return false
-	end
-
-	-- [update] Upgrade iLand
-	if opt[2] == 'update' then
-		if cfg.update_check then
-			Upgrade(Server.memInfo)
-		else
-			ERROR(_Tr('console.update.nodata'))
-		end
-		return false
-	end
-
-	-- [language] Manager for i18n.
-	if opt[2] == 'language' then
-		local langpath = DATA_PATH..'lang\\'
-		if opt[3] == nil then -- no child-command.
-			INFO('I18N',_Tr('console.languages.sign','<a>',cfg.manager.default_language,'<b>',_Tr('VERSION')))
-			local isNone = false
-			local count = 1
-			while(not(isNone)) do
-				if LangPack['#'..count] ~= nil then
-					INFO('I18N',_Tr('#'..count))
-				else
-					isNone = true
-				end
-				count = count + 1
-			end
-		end
-		if opt[3] == 'set' then -- set language
-			if opt[4] == nil then
-				ERROR(_Tr('console.languages.set.misspara'))
-				return false;
-			end
-			local path = langpath..opt[4]..'.json'
-			if File.exists(path) then
-				cfg.manager.default_language = opt[4]
-				LangPack = JSON.decode(file.readFrom(path))
-				ILAPI.save({1,0,0})
-				INFO(_Tr('console.languages.set.succeed','<a>',cfg.manager.default_language))
-			else
-				ERROR(_Tr('console.languages.set.nofile','<a>',opt[4]))
-			end
-		end
-		if opt[3] == 'list' then
-			local langlist = ILAPI.GetLanguageList(0)
-			for i,lang in pairs(langlist) do
-				if lang==cfg.manager.default_language then
-					INFO('I18N',lang..' <- Using.')
-				else
-					INFO('I18N',lang)
-				end
-			end
-			INFO('I18N',_Tr('console.languages.list.count','<a>',#langlist))
-		end
-		if opt[3] == 'list-online' then
-			INFO('Network',_Tr('console.languages.list-online.wait'))
-			local rawdata = ILAPI.GetLanguageList(1)
-			if rawdata == false then
-				return false
-			end
-			INFO('I18N',_Tr('console.languages.official'))
-			for i,lang in pairs(rawdata.official) do
-				INFO('I18N',lang)
-			end
-			INFO('I18N',_Tr('console.languages.3rd'))
-			for i,lang in pairs(rawdata['3-rd']) do
-				INFO('I18N',lang)
-			end
-		end
-		if opt[3] == 'install' then
-			if opt[4] == nil then
-				ERROR(_Tr('console.languages.install.misspara'))
-				return false
-			end
-			INFO('Network',_Tr('console.languages.list-online.wait'))
-			local rawdata = ILAPI.GetLanguageList(1)
-			if rawdata == false then
-				return false
-			end
-			if FoundValueInList(ILAPI.GetLanguageList(0),opt[4])~=-1 then
-				ERROR(_Tr('console.languages.install.existed'))
-				return false
-			end
-			if FoundValueInList(rawdata.official,opt[4])==-1 and FoundValueInList(rawdata['3-rd'],opt[4])==-1 then
-				ERROR(_Tr('console.languages.install.notfound','<a>',opt[4]))
-				return false
-			end
-			INFO(_Tr('console.autoupdate.download'))
-			if DownloadLanguage(opt[4]) then
-				INFO(_Tr('console.languages.install.succeed','<a>',opt[4]))
-			end
-		end
-		if opt[3] == 'update' then
-			local langlist = ILAPI.GetLanguageList(0)
-			local langlist_o = ILAPI.GetLanguageList(1)
-			local function updateLang(lang)
-				local langdata
-				if File.exists(langpath..lang..'.json') then
-					langdata = JSON.decode(file.readFrom(langpath..lang..'.json'))
-				else
-					ERROR(_Tr('console.languages.update.notfound','<a>',lang))
-					return false -- this false like 'fail'
-				end
-				if langdata.VERSION == Plugin.numver then
-					ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
-					return true -- continue
-				end
-				if FoundValueInList(langlist,lang)==-1 then
-					ERROR(_Tr('console.languages.update.notfound','<a>',lang))
-					return false
-				end
-				if FoundValueInList(langlist_o.official,lang)==-1 and FoundValueInList(langlist_o['3-rd'],lang)==-1 then
-					ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
-					return false
-				end
-				if DownloadLanguage(lang) then
-					INFO(_Tr('console.languages.update.succeed','<a>',lang))
-				end
-			end
-			if opt[4] == nil then
-				INFO(_Tr('console.languages.update.all'))
-				for i,lang in pairs(langlist) do
-					if not(updateLang(lang)) then
-						return false
-					end
-				end
-			else
-				INFO(_Tr('console.languages.update.single','<a>',opt[4]))
-				updateLang(opt[4])
-			end
-
-		end
-		return false
-	end
-
-	-- [repair] Repairing tools for iland
-	-- [repair checkall] Check iland
-	-- [repair apply <N>] Try repair the problem
-
-	-- [X] Unknown key
-	ERROR('Unknown parameter: "'..opt[2]..'", plugin wiki: https://git.io/JcvIw')
-	return false
-
-end
-function Eventing_onDestroyBlock(player,block)
-
-	if ChkNil(player) or ILAPI.IsDisabled('onDestroyBlock') then
-		return
-	end
-
-	local xuid=player.xuid
-
-	if MEM[xuid].selectool==0 then
-		local HandItem = player:getHand()
-		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
-		SendText(player,_Tr('title.oplandmgr.setsuccess','<a>',HandItem.name))
-		cfg.features.selection_tool=HandItem.type
-		ILAPI.save({1,0,0})
-		MEM[xuid].selectool=-1
-		return false
-	end
-
-	:: PROCESS_1 ::
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	if land_data[landId].permissions.allow_destroy then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onStartDestroyBlock(player,block)
-
-	if ChkNil(player) then
-		return
-	end
-
-	local xuid = player.xuid
-	local new = (MEM[xuid].newLand~=nil)
-	local res = (MEM[xuid].reselectLand~=nil)
-
-	if new or res then
-		local HandItem = player:getHand()
-		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
-		if new then
-			BoughtProg_SelectRange(player,block.pos,MEM[xuid].newLand.step)
-		else
-			ReselectLand_Do(player,block.pos,MEM[xuid].reselectLand.step)
-		end
-	end
-
-end
-function Eventing_onPlaceBlock(player,block)
-
-	if ChkNil(player) or ILAPI.IsDisabled('onPlaceBlock') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_place then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onUseItemOn(player,item,block)
-
-	if ChkNil(player) or ILAPI.IsDisabled('onUseItemOn') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	local perm = land_data[landId].permissions -- Temp perm.
-	if perm.useitem then return false end
-
-	local IsConPlus=false
-	if not(ILAPI.CanControl(0,block.type)) then 
-		if not(ILAPI.CanControl(2,item.type)) then
-			return
-		else
-			IsConPlus=true
-		end
-	end
-	
-	if IsConPlus then
-		local it = item.type
-		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
-		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
-		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
-		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
-		if it == 'minecraft:flint_and_steel' and perm.use_firegen then return end -- 使用打火石
-	else
-		local bn = block.type
-		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
-		if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
-		if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
-		if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
-		if (bn == 'minecraft:campfire' or bn == 'minecraft:soul_campfire') and perm.use_campfire then return end -- 营火（烧烤）
-		if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
-		if (bn == 'minecraft:undyed_shulker_box' or bn == 'minecraft:shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
-		if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
-		if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
-		if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
-		if (bn == 'minecraft:daylight_detector_inverted' or bn == 'minecraft:daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
-		if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
-		if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
-		if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
-		if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
-		if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
-		if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
-		if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
-	end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onAttack(player,entity)
-	
-	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttack') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	local perm=land_data[landId].permissions
-	local en=entity.type
-	local IsConPlus = false
-	if ILAPI.CanControl(3,en) then IsConPlus=true end
-	local entityType = EntityGetType(en)
-	if IsConPlus then
-		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
-		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
-	else
-		if perm.allow_attack_player and entityType==0 then return end -- Perm Allow
-		if perm.allow_attack_animal and entityType==1 then return end
-		if perm.allow_attack_mobs and entityType==2 then return end
-	end
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onTakeItem(player,entity)
-
-	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onTakeItem') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_pickupitem then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onDropItem(player,item)
-
-	if ChkNil(player) or ILAPI.IsDisabled('onDropItem') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_dropitem then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onBlockInteracted(player,block)
-
-	if ChkNil(player) or ILAPI.IsDisabled('onBlockInteracted') then
-		return
-	end
-
-	if not(ILAPI.CanControl(1,block.type)) then return end
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-
-	local perm = land_data[landId].permissions
-	local bn = block.type
-	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
-	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
-	if bn == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
-	if bn == 'minecraft:blast_furnace' and perm.use_blast_furnace then return end -- 高炉
-	if bn == 'minecraft:smoker' and perm.use_smoker then return end -- 烟熏炉
-	if bn == 'minecraft:brewing_stand' and perm.use_brewing_stand then return end -- 酿造台
-	if bn == 'minecraft:anvil' and perm.use_anvil then return end -- 铁砧
-	if bn == 'minecraft:grindstone' and perm.use_grindstone then return end -- 磨石
-	if bn == 'minecraft:enchanting_table' and perm.use_enchanting_table then return end -- 附魔台
-	if bn == 'minecraft:barrel' and perm.use_barrel then return end -- 桶
-	if bn == 'minecraft:beacon' and perm.use_beacon then return end -- 信标
-	if bn == 'minecraft:hopper' and perm.use_hopper then return end -- 漏斗
-	if bn == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
-	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
-	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
-	if bn == 'minecraft:stonecutter_block' and perm.use_stonecutter then return end -- 切石机
-	
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onUseFrameBlock(player,block)
-		
-	if ChkNil(player) or ILAPI.IsDisabled('onUseFrameBlock') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.use_item_frame then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onSpawnProjectile(splasher,type)
-			
-	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
-		return
-	end
-
-	if splasher:toPlayer()==nil then return end
-	local landId=ILAPI.PosGetLand(FixBp(splasher.blockPos))
-	if landId==-1 then return end -- No Land
-
-	local player=splasher:toPlayer()
-	local xuid=player.xuid
-	local perm=land_data[landId].permissions
-
-	if type == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
-	if type == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
-	if type == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
-	if type == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
-	if type == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
-	if type == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
-	if type == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
-	if type == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
-
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onFireworkShootWithCrossbow(player)
-			
-	if ChkNil(player) or ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
-	if landId==-1 then return end -- No Land
-
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onStepOnPressurePlate(entity,block)
-				
-	if ChkNil(entity) or ILAPI.IsDisabled('onStepOnPressurePlate') then
-		return
-	end
-
-	local ispl=false
-	local player
-	if entity:toPlayer()~=nil then
-		ispl=true
-		player=entity:toPlayer()
-	end
-
-	if entity.pos==nil then -- what a silly mojang?
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-	
-	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
-	if ispl then
-		local xuid=player.xuid
-		if ILAPI.IsLandOperator(xuid) then return end
-		if ILAPI.IsLandOwner(landId,xuid) then return end
-		if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-		SendText(player,_Tr('title.landlimit.noperm'))
-	end
-	return false
-end
-function Eventing_onRide(rider,entity)
-				
-	if ChkNil_X2(rider,entity) or ILAPI.IsDisabled('onRide') then
-		return
-	end
-
-	if rider:toPlayer()==nil then return end
-
-	local landId=ILAPI.PosGetLand(FixBp(rider.blockPos))
-	if landId==-1 then return end -- No Land 
-
-	local player=rider:toPlayer()
-	local xuid=player.xuid
-	local en=entity.type
-	if en=='minecraft:minecart' or en=='minecraft:boat' then
-		if land_data[landId].permissions.allow_ride_trans then return end
-	else
-		if land_data[landId].permissions.allow_ride_entity then return end
-	end
-
-	 -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end
-function Eventing_onWitherBossDestroy(witherBoss,AAbb,aaBB)
-
-	if ILAPI.IsDisabled('onWitherBossDestroy') then
-		return
-	end
-
-	local dimid = witherBoss.pos.dimid
-	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
-		local landId=ILAPI.PosGetLand(pos)
-		if landId~=-1 and not(land_data[landId].permissions.allow_entity_destroy) then 
-			break
-		end
-	end
-	return false
-end
-function Eventing_onExplode(entity,pos)
-
-	if ChkNil(entity) or ILAPI.IsDisabled('onExplode') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
-	return false
-end
-function Eventing_onBedExplode(pos)
-
-	if ILAPI.IsDisabled('onBedExplode') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
-	return false
-end
-function Eventing_onRespawnAnchorExplode(pos,player)
-
-	if ILAPI.IsDisabled('onRespawnAnchorExplode') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
-	return false
-end
-function Eventing_onFarmLandDecay(pos,entity)
-	
-	if ChkNil(entity) or ILAPI.IsDisabled('onFarmLandDecay') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
-	return false
-end
-function Eventing_onPistonPush(pos,block)
-
-	if ILAPI.IsDisabled('onPistonPush') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
-	return false
-end
-function Eventing_onFireSpread(pos)
-
-	if ILAPI.IsDisabled('onFireSpread') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
-	return false
-end
-
--- Lua -> Timer Callback
+-- Timer Works
 function Tcb_LandSign()
 	for xuid,data in pairs(MEM) do
 		local player=mc.getPlayer(xuid)
@@ -3503,41 +2923,565 @@ function Timer_MEM()
 		end
 	end
 end
-
--- listen events,
-mc.listen('onPlayerCmd',Eventing_onPlayerCmd)
-mc.listen('onConsoleCmd',Eventing_onConsoleCmd)
-mc.listen('onJoin',Eventing_onJoin)
-mc.listen('onPreJoin',Eventing_onPreJoin)
-mc.listen('onLeft',Eventing_onLeft)
-mc.listen('onDestroyBlock',Eventing_onDestroyBlock)
-mc.listen('onPlaceBlock',Eventing_onPlaceBlock)
-mc.listen('onUseItemOn',Eventing_onUseItemOn)
-mc.listen('onAttack',Eventing_onAttack)
-mc.listen('onExplode',Eventing_onExplode)
-mc.listen('onBedExplode',Eventing_onBedExplode)
-mc.listen('onRespawnAnchorExplode',Eventing_onRespawnAnchorExplode)
-mc.listen('onTakeItem',Eventing_onTakeItem)
-mc.listen('onDropItem',Eventing_onDropItem)
-mc.listen('onBlockInteracted',Eventing_onBlockInteracted)
-mc.listen('onUseFrameBlock',Eventing_onUseFrameBlock)
-mc.listen('onSpawnProjectile',Eventing_onSpawnProjectile)
-mc.listen('onFireworkShootWithCrossbow',Eventing_onFireworkShootWithCrossbow)
-mc.listen('onStepOnPressurePlate',Eventing_onStepOnPressurePlate)
-mc.listen('onRide',Eventing_onRide)
-mc.listen('onWitherBossDestroy',Eventing_onWitherBossDestroy)
-mc.listen('onFarmLandDecay',Eventing_onFarmLandDecay)
-mc.listen('onPistonPush',Eventing_onPistonPush)
-mc.listen('onFireSpread',Eventing_onFireSpread)
-mc.listen('onStartDestroyBlock',Eventing_onStartDestroyBlock)
-
--- timer -> landsign|particles|debugger
 function EnableLandsign()
 	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
 	BUTTOM_SIGN = setInterval(Tcb_ButtomSign,cfg.features.sign_frequency*500)
 end
 
--- check update
+-- Minecraft Eventing
+mc.listen('onJoin',function(player)
+	local xuid = player.xuid
+	MEM[xuid] = { inland='null',inlandv2='null' }
+
+	if wrong_landowners[xuid]~=nil then
+		land_owners[xuid] = CloneTable(wrong_landowners[xuid])
+		wrong_landowners[xuid] = nil
+	end
+	if land_owners[xuid]==nil then
+		land_owners[xuid] = {}
+		ILAPI.save({0,0,1})
+	end
+
+	if player.gameMode==1 then
+		ERROR(_Tr('talk.gametype.creative','<a>',player.realName))
+	end
+end)
+mc.listen('onPreJoin',function(player)
+	if player.xuid=='' then -- no xuid
+		player:kick(_Tr('talk.prejoin.noxuid'))
+	end
+end)
+mc.listen('onLeft',function(player)
+
+	if ChkNil(player) then
+		return
+	end
+
+	local xuid = player.xuid
+	MEM[xuid]=nil
+end)
+mc.listen('onDestroyBlock',function(player,block)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onDestroyBlock') then
+		return
+	end
+
+	local xuid=player.xuid
+
+	if MEM[xuid].selectool==0 then
+		local HandItem = player:getHand()
+		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
+		SendText(player,_Tr('title.oplandmgr.setsuccess','<a>',HandItem.name))
+		cfg.features.selection_tool=HandItem.type
+		ILAPI.save({1,0,0})
+		MEM[xuid].selectool=-1
+		return false
+	end
+
+	:: PROCESS_1 ::
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	if land_data[landId].permissions.allow_destroy then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onPlaceBlock',function(player,block)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onPlaceBlock') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_place then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onUseItemOn',function(player,item,block)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onUseItemOn') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	local perm = land_data[landId].permissions -- Temp perm.
+	if perm.useitem then return false end
+
+	local IsConPlus=false
+	if not(ILAPI.CanControl(0,block.type)) then 
+		if not(ILAPI.CanControl(2,item.type)) then
+			return
+		else
+			IsConPlus=true
+		end
+	end
+	
+	if IsConPlus then
+		local it = item.type
+		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
+		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
+		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
+		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
+		if it == 'minecraft:flint_and_steel' and perm.use_firegen then return end -- 使用打火石
+	else
+		local bn = block.type
+		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
+		if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
+		if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
+		if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
+		if (bn == 'minecraft:campfire' or bn == 'minecraft:soul_campfire') and perm.use_campfire then return end -- 营火（烧烤）
+		if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
+		if (bn == 'minecraft:undyed_shulker_box' or bn == 'minecraft:shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
+		if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
+		if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
+		if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
+		if (bn == 'minecraft:daylight_detector_inverted' or bn == 'minecraft:daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
+		if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
+		if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
+		if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
+		if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
+		if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+		if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
+		if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
+	end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onAttack',function(player,entity)
+	
+	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttack') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	local perm=land_data[landId].permissions
+	local en=entity.type
+	local IsConPlus = false
+	if ILAPI.CanControl(3,en) then IsConPlus=true end
+	local entityType = EntityGetType(en)
+	if IsConPlus then
+		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
+		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
+	else
+		if perm.allow_attack_player and entityType==0 then return end -- Perm Allow
+		if perm.allow_attack_animal and entityType==1 then return end
+		if perm.allow_attack_mobs and entityType==2 then return end
+	end
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onExplode',function(entity,pos)
+
+	if ChkNil(entity) or ILAPI.IsDisabled('onExplode') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	return false
+end)
+mc.listen('onBedExplode',function(pos)
+
+	if ILAPI.IsDisabled('onBedExplode') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	return false
+end)
+mc.listen('onRespawnAnchorExplode',function(pos,player)
+
+	if ILAPI.IsDisabled('onRespawnAnchorExplode') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	return false
+end)
+mc.listen('onTakeItem',function(player,entity)
+
+	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onTakeItem') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_pickupitem then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onDropItem',function(player,item)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onDropItem') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_dropitem then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onBlockInteracted',function(player,block)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onBlockInteracted') then
+		return
+	end
+
+	if not(ILAPI.CanControl(1,block.type)) then return end
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	local perm = land_data[landId].permissions
+	local bn = block.type
+	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
+	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
+	if bn == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
+	if bn == 'minecraft:blast_furnace' and perm.use_blast_furnace then return end -- 高炉
+	if bn == 'minecraft:smoker' and perm.use_smoker then return end -- 烟熏炉
+	if bn == 'minecraft:brewing_stand' and perm.use_brewing_stand then return end -- 酿造台
+	if bn == 'minecraft:anvil' and perm.use_anvil then return end -- 铁砧
+	if bn == 'minecraft:grindstone' and perm.use_grindstone then return end -- 磨石
+	if bn == 'minecraft:enchanting_table' and perm.use_enchanting_table then return end -- 附魔台
+	if bn == 'minecraft:barrel' and perm.use_barrel then return end -- 桶
+	if bn == 'minecraft:beacon' and perm.use_beacon then return end -- 信标
+	if bn == 'minecraft:hopper' and perm.use_hopper then return end -- 漏斗
+	if bn == 'minecraft:dropper' and perm.use_dropper then return end -- 投掷器
+	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
+	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
+	if bn == 'minecraft:stonecutter_block' and perm.use_stonecutter then return end -- 切石机
+	
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onUseFrameBlock',function(player,block)
+		
+	if ChkNil(player) or ILAPI.IsDisabled('onUseFrameBlock') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.use_item_frame then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onSpawnProjectile',function(splasher,type)
+			
+	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
+		return
+	end
+
+	if splasher:toPlayer()==nil then return end
+	local landId=ILAPI.PosGetLand(FixBp(splasher.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local player=splasher:toPlayer()
+	local xuid=player.xuid
+	local perm=land_data[landId].permissions
+
+	if type == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
+	if type == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
+	if type == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
+	if type == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
+	if type == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
+	if type == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
+	if type == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
+	if type == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
+
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onFireworkShootWithCrossbow',function(player)
+			
+	if ChkNil(player) or ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local xuid=player.xuid
+	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onStepOnPressurePlate',function(entity,block)
+				
+	if ChkNil(entity) or ILAPI.IsDisabled('onStepOnPressurePlate') then
+		return
+	end
+
+	local ispl=false
+	local player
+	if entity:toPlayer()~=nil then
+		ispl=true
+		player=entity:toPlayer()
+	end
+
+	if entity.pos==nil then -- what a silly mojang?
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+	
+	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
+	if ispl then
+		local xuid=player.xuid
+		if ILAPI.IsLandOperator(xuid) then return end
+		if ILAPI.IsLandOwner(landId,xuid) then return end
+		if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+		SendText(player,_Tr('title.landlimit.noperm'))
+	end
+	return false
+end)
+mc.listen('onRide',function(rider,entity)
+				
+	if ChkNil_X2(rider,entity) or ILAPI.IsDisabled('onRide') then
+		return
+	end
+
+	if rider:toPlayer()==nil then return end
+
+	local landId=ILAPI.PosGetLand(FixBp(rider.blockPos))
+	if landId==-1 then return end -- No Land 
+
+	local player=rider:toPlayer()
+	local xuid=player.xuid
+	local en=entity.type
+	if en=='minecraft:minecart' or en=='minecraft:boat' then
+		if land_data[landId].permissions.allow_ride_trans then return end
+	else
+		if land_data[landId].permissions.allow_ride_entity then return end
+	end
+
+	 -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
+mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
+
+	if ILAPI.IsDisabled('onWitherBossDestroy') then
+		return
+	end
+
+	local dimid = witherBoss.pos.dimid
+	for n,pos in pairs(TraverseAABB(AAbb,aaBB,dimid)) do
+		local landId=ILAPI.PosGetLand(pos)
+		if landId~=-1 and not(land_data[landId].permissions.allow_entity_destroy) then 
+			break
+		end
+	end
+	return false
+end)
+mc.listen('onFarmLandDecay',function(pos,entity)
+	
+	if ChkNil(entity) or ILAPI.IsDisabled('onFarmLandDecay') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
+	return false
+end)
+mc.listen('onPistonPush',function(pos,block)
+
+	if ILAPI.IsDisabled('onPistonPush') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
+	return false
+end)
+mc.listen('onFireSpread',function(pos)
+
+	if ILAPI.IsDisabled('onFireSpread') then
+		return
+	end
+
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then return end -- No Land
+	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
+	return false
+end)
+mc.listen('onStartDestroyBlock',function(player,block)
+
+	if ChkNil(player) then
+		return
+	end
+
+	local xuid = player.xuid
+	local new = (MEM[xuid].newLand~=nil)
+	local res = (MEM[xuid].reselectLand~=nil)
+
+	if new or res then
+		local HandItem = player:getHand()
+		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
+		if new then
+			BoughtProg_SelectRange(player,block.pos,MEM[xuid].newLand.step)
+		else
+			ReselectLand_Do(player,block.pos,MEM[xuid].reselectLand.step)
+		end
+	end
+
+end)
+
+-- Network Handler
+function Upgrade(rawInfo)
+
+	local function recoverBackup(dt)
+		INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
+		for n,backupfilename in pairs(dt) do
+			file.rename(backupfilename..'.bak',backupfilename)
+		end
+	end
+
+	--  Check Data
+	local updata
+	if rawInfo.FILE_Version==202 then
+		updata = rawInfo.Updates[1]
+	else
+		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
+		return
+	end
+	if  rawInfo.DisableClientUpdate then
+		ERROR(_Tr('console.update.disabled'))
+		return
+	end
+	
+	-- Check Plugin version
+	if updata.NumVer<=Plugin.numver then
+		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
+		return
+	end
+	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
+	
+	-- Set Resource
+	local RawPath = {}
+	local BackupEd = {}
+	local server = GetLink()
+	local source
+	if server ~= false then
+		source = server..'/'..updata.NumVer..'/'
+	else
+		ERROR(_Tr('console.getonline.failed'))
+		return false
+	end
+	
+	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
+	RawPath['$plugin_path'] = 'plugins\\'
+	RawPath['$data_path'] = DATA_PATH
+	
+	-- Get it, update.
+	for n,thefile in pairs(updata.FileChanged) do
+		local raw = StrSplit(thefile,'::')
+		local path = RawPath[raw[1]]..raw[2]
+		INFO('Network',_Tr('console.autoupdate.download')..raw[2])
+		
+		if file.exists(path) then -- create backup
+			file.rename(path,path..'.bak')
+			BackupEd[#BackupEd+1]=path
+		end
+
+		local tmp = network.httpGetSync(source..raw[2])
+		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
+		if tmp.status~=200 or tmp2.status then -- download check
+			ERROR(
+				_Tr('console.autoupdate.errorbydown',
+					'<a>',raw[2],
+					'<b>',tmp.status..','..tmp2.status
+				)
+			)
+			recoverBackup(BackupEd)
+			return
+		end
+
+		local raw = string.gsub(tmp.data,'\n','\r\n')
+		if data.toMD5(raw)~=tmp2.data then -- MD5 check
+			ERROR(
+				_Tr('console.autoupdate.errorbyverify',
+					'<a>',raw[2]
+				)
+			)
+			recoverBackup(BackupEd)
+			return
+		end
+
+		file.writeTo(path,raw)
+	end
+
+	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
+end
 function Ncb_online(code,result)
 	if code==200 then
 		local data = JSON.decode(result)
@@ -3817,25 +3761,6 @@ mc.listen('onServerStarted',function()
 		else
 			ERROR(_Tr('console.getonline.failed'))
 		end
-	end
-
-	-- register cmd.
-	if cfg.features.regFakeCmd then
-		mc.regPlayerCmd(MainCmd,_Tr('command.land'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' a',_Tr('command.land_a'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' b',_Tr('command.land_b'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),F_NULL)
-		mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),F_NULL)
-		if cfg.features.landtp then
-			mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),F_NULL)
-			mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),F_NULL)
-			mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),F_NULL)
-		end
-		mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),F_NULL)
 	end
 
 end)
