@@ -28,7 +28,68 @@ ILAPI={};MEM={}
 
 MainCmd = 'land'
 DATA_PATH = 'plugins\\iland\\'
-local cfg,land_data,land_owners,wrong_landowners
+local land_data,land_owners,wrong_landowners
+
+-- [Raw] config.json
+local cfg = {
+	version = Plugin.numver,
+	plugin = {
+		network = true,
+		language = "zh_CN"
+	},
+	land = {
+		operator = {},
+		max_lands = 5,
+		bought = {
+			three_dimension = {
+				enable = true,
+				calculate_method = "m-1",
+				price = {20,4}
+			},
+			two_dimension = {
+				enable = true,
+				calculate_method = "d-1",
+				price = {35}
+			},
+			square_range = {4,50000},
+			discount = 1 -- need modify!
+		},
+		refund_rate = 0.9
+	},
+	economic = {
+		protocol = "llmoney",
+		scoreboard_objname = "",
+		currency_name = "Coin"
+	},
+	features = {
+		landsign = {
+			enable = true,
+			frequency = 2000
+		},
+		buttomsign = {
+			enable = true,
+			frequency = 1000
+		},
+		particles = {
+			enable = true,
+			name = "minecraft:villager_happy",
+			max_amount = 600
+		},
+		player_selector = {
+			include_offline_players = true,
+			items_perpage = 20,
+		},
+		selection = {
+			disable_dimension = {},
+			tool_type = "minecraft:wooden_axe",
+			tool_name = "Wooden Axe"
+		},
+		landtp = true,
+		force_talk = false,
+		disabled_listener = {},
+        chunk_side = 16
+	}
+}
 
 DEV_MODE = false
 if File.exists("EnableILandDevMode") then
@@ -39,7 +100,7 @@ end
 local minY = -64
 local maxY = 320
 
--- something preload
+-- Preload Functions
 function CubeToEdge(spos,epos)
 	local edge={}
 	local posB,posA = SortPos(spos,epos)
@@ -75,6 +136,19 @@ function CubeToEdge_2D(spos,epos)
 		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
 	end
 	return edge
+end
+function INFO(type,content)
+	if content==nil then
+		print('[ILand] |INFO| '..type)
+		return
+	end
+	print('[ILand] |'..type..'| '..content)
+end
+function ERROR(content)
+	INFO('ERROR',content)
+end
+function WARN(content)
+	INFO('WARN',content)
 end
 
 -- map builder
@@ -287,6 +361,56 @@ function BuildAnyMap()
 	BuildListenerMap()
 end
 
+--------- Plugin Load <ST> ---------
+
+function LoadData()
+	-- load land data ## todo!
+	-- load cfg
+	-- load owners data
+	local wrongXuidFounded = false
+	for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
+		if data.xuid2name(ownerXuid) == '' then
+			ERROR(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
+			wrong_landowners[ownerXuid] = landIds
+			wrongXuidFounded = true
+		else
+			land_owners[ownerXuid] = landIds
+		end
+	end
+	if wrongXuidFounded then
+		INFO('TIP',_Tr('console.error.readowner.tipxid'))
+	end
+end
+
+if not(file.exists(DATA_PATH..'data.json')) then
+	WARN('Data file (data.json) does not exist, creating...')
+	file.writeTo(DATA_PATH..'data.json','{}')
+end
+if not(file.exists(DATA_PATH..'owners.json')) then
+	WARN('Data file (owners.json) does not exist, creating...')
+	file.writeTo(DATA_PATH..'owners.json','{}')
+end
+if not(lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3])) then
+	ERROR('LiteXLoader is too old, plugin loading aborted.')
+	return
+end
+
+LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.manager.default_language..'.json'))
+if LangPack.VERSION ~= Plugin.numver then
+	ERROR('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
+	return
+end
+if LoadData() == nil then
+	ERROR('Fail to load data, plugin loading aborted.')
+	return
+end 
+
+INFO('Load','Building tables needed to run...')
+BuildAnyMap()
+INFO('Load','Completed.')
+
+--------- Plugin Load <ED> ---------
+
 -- Plugin funcs
 function F_NULL(...) end
 function FORM_BACK_LandOPMgr(player,id)
@@ -302,7 +426,6 @@ function FORM_BACK_LandMgr(player,id)
 	GUI_LMgr(player)
 end
 function Handler_LandCfg(player,landId,option)
-	
 	local xuid = player.xuid
 
 	MEM[xuid].landId=landId
@@ -2386,18 +2509,6 @@ function GetLink()
 	return Server.link..id..'/iLand'
 end
 
--- log system
-function INFO(type,content)
-	if content==nil then
-		print('[ILand] |INFO| '..type)
-		return
-	end
-	print('[ILand] |'..type..'| '..content)
-end
-function ERROR(content)
-	print('[ILand] |ERROR| '..content)
-end
-
 -- [Client] Command Registry
 mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
 	if #args~=0 then
@@ -3519,234 +3630,7 @@ function Ncb_online(code,result)
 end
 
 mc.listen('onServerStarted',function()
-	local function throwErr(x)
-		if x==-1 then
-			ERROR('Configure file not found.')
-		end
-		if x==-2 then
-			ERROR('LiteXLoader too old, please use latest version, here ↓')
-			ERROR('https://www.minebbs.com/')
-		end
-		if x==-4 then
-			ERROR('Language file does not match version. (!='..Plugin.numver..')')
-		end
-		ERROR('Plugin closing...')
-		mc.runcmd('stop')
-	end
-
-	-- Check file
-	if not(file.exists(DATA_PATH..'config.json')) then
-		throwErr(-1)
-	end
-	if not(file.exists(DATA_PATH..'data.json')) then
-		file.writeTo(DATA_PATH..'data.json','{}')
-	end
-	if not(file.exists(DATA_PATH..'owners.json')) then
-		file.writeTo(DATA_PATH..'owners.json','{}')
-	end
 	
-	-- Check depends version
-	if not(lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3])) then
-		throwErr(-2)
-	end
-
-	-- Load data file
-	cfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
-	LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.manager.default_language..'.json'))
-	if LangPack.VERSION ~= Plugin.numver then
-		throwErr(-4)
-	end
-	land_data = JSON.decode(file.readFrom(DATA_PATH..'data.json'))
-	land_owners = {}
-	wrong_landowners = {}
-	local itHasWrongXuid = false
-	for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
-		if data.xuid2name(ownerXuid) == '' then
-			ERROR(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
-			wrong_landowners[ownerXuid] = landIds
-			itHasWrongXuid = true
-		else
-			land_owners[ownerXuid] = landIds
-		end
-	end
-
-	if itHasWrongXuid then
-		INFO('TIP',_Tr('console.error.readowner.tipxid'))
-	end
-
-	-- Configure Updater
-	do
-		if cfg.version==nil or cfg.version<200 then
-			ERROR('Configure file too old, you must rebuild it.')
-			return
-		end
-		if cfg.version==200 then
-			cfg.version=210
-			cfg.money.credit_name='Gold-Coins'
-			cfg.money.discount=100
-			cfg.features.land_2D=true
-			cfg.features.land_3D=true
-			cfg.features.auto_update=true
-			for landId,data in pairs(land_data) do
-				land_data[landId].range.dimid = CloneTable(land_data[landId].range.dim)
-				land_data[landId].range.dim=nil
-				for n,xuid in pairs(land_data[landId].settings.share) do
-					if type(xuid)~='string' then
-						land_data[landId].settings.share[n]=tostring(land_data[landId].settings.share[n])
-					end
-				end
-			end
-			ILAPI.save({1,1,0})
-		end
-		if cfg.version==210 then
-			cfg.version=211
-			local landbuy=cfg.land_buy
-			landbuy.calculation_3D='m-1'
-			landbuy.calculation_2D='d-1'
-			landbuy.price_3D={20,4}
-			landbuy.price_2D={35}
-			landbuy.price=nil
-			landbuy.calculation=nil
-			ILAPI.save({1,0,0})
-		end
-		if cfg.version==211 then
-			cfg.version=220
-			cfg.features.offlinePlayerInList=true
-			for landId,data in pairs(land_data) do
-				local perm=land_data[landId].permissions
-				perm.use_lever=false
-				perm.use_button=false
-				perm.use_respawn_anchor=false
-				perm.use_item_frame=false
-				perm.use_fishing_hook=false
-				perm.use_pressure_plate=false
-				perm.allow_throw_potion=false
-				perm.allow_ride_entity=false
-				perm.allow_ride_trans=false
-				perm.allow_shoot=false
-				local settings=land_data[landId].settings
-				settings.ev_explode=CloneTable(perm.allow_exploding)
-				settings.ev_farmland_decay=false
-				settings.ev_piston_push=false
-				settings.ev_fire_spread=false
-				settings.signbuttom=true
-				perm.use_door=false
-				perm.use_stonecutter=false
-				perm.allow_exploding=nil
-			end
-			ILAPI.save({1,1,0})
-		end
-		if cfg.version==220 or cfg.version==221 then
-			cfg.version=223
-			ILAPI.save({1,0,0})
-		end
-		if cfg.version==223 then
-			cfg.version=224
-			for landId,data in pairs(land_data) do
-				land_data[landId].permissions.use_bucket=false
-			end
-			ILAPI.save({1,1,0})
-		end
-		if cfg.version==224 then
-			cfg.version=230
-			cfg.features.disabled_listener = {}
-			cfg.features.blockLandDims = {}
-			cfg.features.nearby_protection = {
-				side = 10,
-				enabled = true,
-				blockselectland = true
-			}
-			cfg.features.regFakeCmd=true
-			cfg.features.playersPerPage=20
-			for landId,data in pairs(land_data) do
-				local perm = land_data[landId].permissions
-				if data.range.start_position.y==0 and data.range.end_position.y==255 then
-					land_data[landId].range.start_position.y=minY
-					land_data[landId].range.start_position.y=maxY
-				end
-				perm.use_firegen=false
-				perm.allow_attack=nil
-				perm.allow_attack_player=false
-				perm.allow_attack_animal=false
-				perm.allow_attack_mobs=true
-			end
-			ILAPI.save({1,1,0})
-		end
-		if cfg.version==230 then
-			cfg.version=231
-			cfg.verison=nil -- sb..
-			for landId,data in pairs(land_data) do
-				local perm = land_data[landId].permissions
-				if #perm~=50 then
-					INFO('AutoRepair','Land <'..landId..'> Has wrong perm cfg, resetting...')
-					perm.allow_destroy=false
-					perm.allow_place=false
-					perm.allow_attack_player=false
-					perm.allow_attack_animal=false
-					perm.allow_attack_mobs=true
-					perm.allow_open_chest=false
-					perm.allow_pickupitem=false
-					perm.allow_dropitem=true
-					perm.use_anvil = false
-					perm.use_barrel = false
-					perm.use_beacon = false
-					perm.use_bed = false
-					perm.use_bell = false
-					perm.use_blast_furnace = false
-					perm.use_brewing_stand = false
-					perm.use_campfire = false
-					perm.use_firegen = false
-					perm.use_cartography_table = false
-					perm.use_composter = false
-					perm.use_crafting_table = false
-					perm.use_daylight_detector = false
-					perm.use_dispenser = false
-					perm.use_dropper = false
-					perm.use_enchanting_table = false
-					perm.use_door=false
-					perm.use_fence_gate = false
-					perm.use_furnace = false
-					perm.use_grindstone = false
-					perm.use_hopper = false
-					perm.use_jukebox = false
-					perm.use_loom = false
-					perm.use_stonecutter = false
-					perm.use_noteblock = false
-					perm.use_shulker_box = false
-					perm.use_smithing_table = false
-					perm.use_smoker = false
-					perm.use_trapdoor = false
-					perm.use_lectern = false
-					perm.use_cauldron = false
-					perm.use_lever=false
-					perm.use_button=false
-					perm.use_respawn_anchor=false
-					perm.use_item_frame=false
-					perm.use_fishing_hook=false
-					perm.use_bucket=false
-					perm.use_pressure_plate=false
-					perm.allow_throw_potion=false
-					perm.allow_ride_entity=false
-					perm.allow_ride_trans=false
-					perm.allow_shoot=false
-				end
-			end
-			ILAPI.save({1,1,0})
-		end
-		if cfg.version==231 then
-			cfg.version=240
-			for landId,data in pairs(land_data) do
-				local perm = land_data[landId].permissions
-				perm.allow_entity_destroy=false
-				perm.useitem=false
-			end
-			ILAPI.save({1,1,0})
-		end
-	end
-	
-	-- Build maps
-	BuildAnyMap()
-
 	-- Make timer
 	if cfg.features.landSign then
 		EnableLandsign()
