@@ -28,7 +28,7 @@ ILAPI={};MEM={}
 
 MainCmd = 'land'
 DATA_PATH = 'plugins\\iland\\'
-local land_data,land_owners,wrong_landowners
+local land_data;local land_owners={};local wrong_landowners={}
 
 -- [Raw] config.json
 local cfg = {
@@ -52,7 +52,7 @@ local cfg = {
 				price = {35}
 			},
 			square_range = {4,50000},
-			discount = 1 -- need modify!
+			discount = 1
 		},
 		refund_rate = 0.9
 	},
@@ -137,6 +137,20 @@ function CubeToEdge_2D(spos,epos)
 	end
 	return edge
 end
+function CloneTable(orig) -- [NOTICE] This function from: lua-users.org
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[CloneTable(orig_key)] = CloneTable(orig_value)
+        end
+        setmetatable(copy, CloneTable(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 function INFO(type,content)
 	if content==nil then
 		print('[ILand] |INFO| '..type)
@@ -159,7 +173,7 @@ function UpdateChunk(landId,mode)
 	local TxTz={} -- ChunkData(position)
 	local ThisRange = land_data[landId].range
 	local dimid = ThisRange.dimid
-	function ChkNil(table,a,b)
+	local function chkNil(table,a,b)
 		if table[a]==nil then
 			table[a] = {}
 		end
@@ -174,11 +188,11 @@ function UpdateChunk(landId,mode)
 	local count = 0
 	while (sX+size*count<=ThisRange.end_position[1]+size) do
 		local Cx,Cz = ToChunkPos({x=sX+size*count,z=sZ+size*count})
-		ChkNil(TxTz,Cx,Cz)
+		chkNil(TxTz,Cx,Cz)
 		local count2 = 0
 		while (sZ+size*count2<=ThisRange.end_position[3]+size) do
 			local Cx,Cz = ToChunkPos({x=sX+size*count,z=sZ+size*count2})
-			ChkNil(TxTz,Cx,Cz)
+			chkNil(TxTz,Cx,Cz)
 			count2 = count2 + 1
 		end
 		count = count +1
@@ -190,7 +204,7 @@ function UpdateChunk(landId,mode)
 		for Tz,b in pairs(a) do
 			-- Tx Tz
 			if mode=='add' then
-				ChkNil(ChunkMap[dimid],Tx,Tz)
+				chkNil(ChunkMap[dimid],Tx,Tz)
 				if FoundValueInList(ChunkMap[dimid][Tx][Tz],landId) == -1 then
 					table.insert(ChunkMap[dimid][Tx][Tz],#ChunkMap[dimid][Tx][Tz]+1,landId)
 				end
@@ -243,7 +257,7 @@ function UpdateLandOwnersMap(landId)
 end
 function UpdateLandOperatorsMap()
 	LandOperatorsMap = {}
-	for n,xuid in pairs(cfg.manager.operator) do
+	for n,xuid in pairs(cfg.land.operator) do
 		LandOperatorsMap[xuid]={}
 	end
 end
@@ -363,51 +377,146 @@ end
 
 --------- Plugin Load <ST> ---------
 
-function LoadData()
-	-- load land data ## todo!
+function UpdateConfig(cfg_t)
+	local this = CloneTable(cfg_t)
+	if this.version==nil or this.version<231 then
+        ERROR('Configure file too old, you must rebuild it.')
+        return false
+    end
+	if this.version==240 then -- OLD STRUCTURE
+		cfg_t = CloneTable(cfg)
+		cfg_t.plugin.language = this.manager.default_language
+		cfg_t.plugin.network = this.update_check
+		cfg_t.land.operator = this.manager.operator
+		cfg_t.land.max_lands = this.land.player_max_lands
+		cfg_t.land.bought.three_dimension.enable = this.features.land_3D
+		cfg_t.land.bought.three_dimension.calculate_method = this.land_buy.calculation_3D
+		cfg_t.land.bought.three_dimension.price = this.land_buy.price_3D
+		cfg_t.land.bought.two_dimension.enable = this.features.land_2D
+		cfg_t.land.bought.two_dimension.calculate_method = this.land_buy.calculation_2D
+		cfg_t.land.bought.two_dimension.price = this.land_buy.price_2D
+		cfg_t.land.bought.square_range = {this.land.land_max_square,this.land.land_min_square}
+		cfg_t.land.bought.discount = this.money.discount/100
+		cfg_t.land.refund_rate = this.land_buy.refund_rate
+		cfg_t.economic.protocol = this.money.protocol
+		cfg_t.economic.scoreboard_objname = this.money.scoreboard_objname
+		cfg_t.economic.currency_name = this.money.credit_name
+		cfg_t.features.landsign.enable = this.features.landSign
+		cfg_t.features.landsign.frequency = this.features.sign_frequency
+		cfg_t.features.buttomsign.enable = this.features.landSign
+		cfg_t.features.buttomsign.frequency = this.features.sign_frequency
+		cfg_t.features.particles.enable = this.features.particles
+		cfg_t.features.particles.name = this.features.particle_effects
+		cfg_t.features.particles.max_amount = this.features.player_max_ple
+		cfg_t.features.player_selector.include_offline_players = this.features.offlinePlayerInList
+		cfg_t.features.player_selector.items_perpage = this.features.playersPerPage
+		cfg_t.features.selection.disable_dimension = this.features.blockLandDims
+		cfg_t.features.selection.tool_type = this.features.selection_tool
+		cfg_t.features.selection.tool_name = this.features.selection_tool_name
+		cfg_t.features.landtp = this.features.landtp
+		cfg_t.features.force_talk = this.features.force_talk
+		cfg_t.features.disabled_listener = this.features.disabled_listener
+		cfg_t.features.chunk_side = this.features.chunk_side
+	end
+	return true
+end
+function load(para) -- { cfg, land, owner }
 	-- load cfg
+	if para[1]==1 then
+		if not(file.exists(DATA_PATH..'config.json')) then
+			WARN('Data file (config.json) does not exist, creating...')
+			file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg,{indent=true}))
+		end
+		local function apply(val,typ)
+			local tpe = type(val)
+			if tpe ~= typ then
+				error('Wrong type in data, "'..typ..'" is required but "'..tpe..'" is provided!')
+			end
+			return val
+		end
+		local loadcfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
+		if cfg.version ~= loadcfg.version then -- need update
+			UpdateConfig(cfg)
+		end
+
+		-- cfg -> plugin
+		cfg.plugin.language = apply(loadcfg.plugin.language,'string')
+		cfg.plugin.network = apply(loadcfg.plugin.network,'boolean')
+		-- cfg -> land
+		cfg.land.operator = apply(loadcfg.land.operator,'table')
+		cfg.land.max_lands = apply(loadcfg.land.max_lands,'number')
+		cfg.land.bought.three_dimension.enable = apply(loadcfg.land.bought.three_dimension.enable,'boolean')
+		cfg.land.bought.three_dimension.calculate_method = apply(loadcfg.land.bought.three_dimension.calculate_method,'string')
+		cfg.land.bought.three_dimension.price = apply(loadcfg.land.bought.three_dimension.price,'table')
+		cfg.land.bought.two_dimension.enable = apply(loadcfg.land.bought.two_dimension.enable,'boolean')
+		cfg.land.bought.two_dimension.calculate_method = apply(loadcfg.land.bought.two_dimension.calculate_method,'string')
+		cfg.land.bought.two_dimension.price = apply(loadcfg.land.bought.two_dimension.price,'table')
+		cfg.land.bought.square_range = apply(loadcfg.land.bought.square_range,'table')
+		cfg.land.bought.discount = apply(loadcfg.land.bought.discount,'number')
+		cfg.land.refund_rate = apply(loadcfg.land.refund_rate,'number')
+		-- cfg -> economic
+		cfg.economic.protocol = apply(loadcfg.economic.protocol,'string')
+		cfg.economic.scoreboard_objname = apply(loadcfg.economic.scoreboard_objname,'string')
+		cfg.economic.currency_name = apply(loadcfg.economic.currency_name,'string')
+		-- cfg -> features
+		cfg.features.landsign.enable = apply(loadcfg.features.landsign.enable,'boolean')
+		cfg.features.landsign.frequency = apply(loadcfg.features.landsign.frequency,'number')
+		cfg.features.buttomsign.enable = apply(loadcfg.features.buttomsign.enable,'boolean')
+		cfg.features.buttomsign.frequency = apply(loadcfg.features.buttomsign.frequency,'number')
+		cfg.features.particles.enable = apply(loadcfg.features.particles.enable,'boolean')
+		cfg.features.particles.name = apply(loadcfg.features.particles.name,'string')
+		cfg.features.particles.max_amount = apply(loadcfg.features.particles.max_amount,'number')
+		cfg.features.player_selector.include_offline_players = apply(loadcfg.features.player_selector.include_offline_players,'boolean')
+		cfg.features.player_selector.items_perpage = apply(loadcfg.features.player_selector.items_perpage,'number')
+		cfg.features.selection.disable_dimension = apply(loadcfg.features.selection.disable_dimension,'table')
+		cfg.features.selection.tool_type = apply(loadcfg.features.selection.tool_type,'string')
+		cfg.features.selection.tool_name = apply(loadcfg.features.selection.tool_name,'string')
+		cfg.features.landtp = apply(loadcfg.features.landtp,'boolean')
+		cfg.features.force_talk = apply(loadcfg.features.force_talk,'boolean')
+		cfg.features.disabled_listener = apply(loadcfg.features.disabled_listener,'table')
+		cfg.features.chunk_side = apply(loadcfg.features.chunk_side,'number')
+
+	end
+	-- load land data
+	if para[2]==1 then
+		if not(file.exists(DATA_PATH..'data.json')) then
+			WARN('Data file (data.json) does not exist, creating...')
+			file.writeTo(DATA_PATH..'data.json','{}')
+		end
+		land_data = JSON.decode(file.readFrom(DATA_PATH..'data.json'))
+	end
 	-- load owners data
-	local wrongXuidFounded = false
-	for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
-		if data.xuid2name(ownerXuid) == '' then
-			ERROR(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
-			wrong_landowners[ownerXuid] = landIds
-			wrongXuidFounded = true
-		else
-			land_owners[ownerXuid] = landIds
+	if para[3]==1 then
+		if not(file.exists(DATA_PATH..'owners.json')) then
+			WARN('Data file (owners.json) does not exist, creating...')
+			file.writeTo(DATA_PATH..'owners.json','{}')
+		end
+		local wrongXuidFounded = false
+		for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
+			if data.xuid2name(ownerXuid) == '' then
+				ERROR(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
+				wrong_landowners[ownerXuid] = landIds
+				wrongXuidFounded = true
+			else
+				land_owners[ownerXuid] = landIds
+			end
+		end
+		if wrongXuidFounded then
+			WARN(_Tr('console.error.readowner.tipxid'))
 		end
 	end
-	if wrongXuidFounded then
-		INFO('TIP',_Tr('console.error.readowner.tipxid'))
-	end
-end
-
-if not(file.exists(DATA_PATH..'data.json')) then
-	WARN('Data file (data.json) does not exist, creating...')
-	file.writeTo(DATA_PATH..'data.json','{}')
-end
-if not(file.exists(DATA_PATH..'owners.json')) then
-	WARN('Data file (owners.json) does not exist, creating...')
-	file.writeTo(DATA_PATH..'owners.json','{}')
+	return true
 end
 if not(lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3])) then
 	ERROR('LiteXLoader is too old, plugin loading aborted.')
 	return
 end
 
-LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.manager.default_language..'.json'))
+LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.plugin.language..'.json'))
 if LangPack.VERSION ~= Plugin.numver then
 	ERROR('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
 	return
 end
-if LoadData() == nil then
-	ERROR('Fail to load data, plugin loading aborted.')
-	return
-end 
-
-INFO('Load','Building tables needed to run...')
-BuildAnyMap()
-INFO('Load','Completed.')
 
 --------- Plugin Load <ED> ---------
 
@@ -458,15 +567,18 @@ function Handler_LandCfg(player,landId,option)
 		return
 	end
 	if option==1 then --编辑领地选项
-		local IsSignDisabled = ''
-		if not(cfg.features.landSign) then
-			IsSignDisabled=' ('.._Tr('talk.features.closed')..')'
+		local function isThisDisabled(feature)
+			if cfg.features[feature]~=nil and cfg.features[feature] then
+				return ''
+			end
+			return ' ('.._Tr('talk.features.closed')..')'
 		end
 		local Form = mc.newCustomForm()
 		local settings=land_data[landId].settings
 		Form:setTitle(_Tr('gui.landcfg.title'))
 		Form:addLabel(_Tr('gui.landcfg.tip'))
-		Form:addLabel(_Tr('gui.landcfg.landsign')..IsSignDisabled)
+		Form:addLabel(_Tr('gui.landcfg.landsign')..isThisDisabled('landsign'))
+		Form:addLabel(_Tr('gui.landcfg.buttomsign')..isThisDisabled('buttomsign'))
 		Form:addSwitch(_Tr('gui.landcfg.landsign.tome'),settings.signtome)
 		Form:addSwitch(_Tr('gui.landcfg.landsign.tother'),settings.signtother)
 		Form:addSwitch(_Tr('gui.landcfg.landsign.bottom'),settings.signbuttom)
@@ -763,7 +875,7 @@ function Handler_LandCfg(player,landId,option)
 				}
 				MEM[xuid].keepingTitle = {
 					_Tr('title.selectrange.mode'),
-					_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+					_Tr('title.selectrange.spointa','<a>',cfg.features.selection.tool_name)
 				}
 			end
 		)
@@ -774,10 +886,10 @@ function Handler_LandCfg(player,landId,option)
 		local height = math.abs(dpos.start_position[2] - dpos.end_position[2]) + 1
 		local length = math.abs(dpos.start_position[1] - dpos.end_position[1]) + 1
 		local width = math.abs(dpos.start_position[3] - dpos.end_position[3]) + 1
-		local value = math.modf(CalculatePrice(length,width,height,ILAPI.GetDimension(landId))*cfg.land_buy.refund_rate)
+		local value = math.modf(CalculatePrice(length,width,height,ILAPI.GetDimension(landId))*cfg.land.refund_rate)
 		player:sendModalForm(
 			_Tr('gui.delland.title'),
-			_Tr('gui.delland.content','<a>',value,'<b>',cfg.money.credit_name),
+			_Tr('gui.delland.content','<a>',value,'<b>',cfg.economic.currency_name),
 			_Tr('gui.general.yes'),
 			_Tr('gui.general.cancel'),
 			function (player,id)
@@ -895,7 +1007,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 			return
         end
 		NewData.posA = vec4
-		if FoundValueInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
+		if FoundValueInList(cfg.features.selection.disable_dimension,vec4.dimid)~=-1 then
 			SendText(player,_Tr('title.selectrange.failbydim'))
 			MEM[xuid].newLand = nil
 			return
@@ -908,7 +1020,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		end
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.spointb','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.spointb','<a>',cfg.features.selection.tool_name)
 		}
 		SendText(
 			player,
@@ -934,7 +1046,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		end
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.bebuy','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.bebuy','<a>',cfg.features.selection.tool_name)
 		}
         SendText(
 			player,
@@ -954,7 +1066,7 @@ function BoughtProg_SelectRange(player,vec4,mode)
 		else
 			edges = CubeToEdge_2D(NewData.posA,NewData.posB)
 		end
-		if #edges>cfg.features.player_max_ple then
+		if #edges>cfg.features.particles.max_amount then
 			SendText(player,_Tr('title.selectrange.nople'),0)
 		else
 			MEM[xuid].particles = edges
@@ -983,7 +1095,7 @@ function BoughtProg_CreateOrder(player)
 	function KeepTitle_break()
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.spointa','<a>',cfg.features.selection.tool_name)
 		}
 		NewData.step=0
 	end
@@ -1019,8 +1131,8 @@ function BoughtProg_CreateOrder(player)
     NewData.landprice = CalculatePrice(length,width,height,NewData.dimension)
 	local dis_info = ''
 	local dim_info = ''
-	if cfg.money.discount<100 then
-		dis_info=_Tr('gui.buyland.discount','<a>',tostring(100-cfg.money.discount))
+	if cfg.land.bought.discount<1 then
+		dis_info=_Tr('gui.buyland.discount','<a>',tostring(1-cfg.land.bought.discount))
 	end
 	if NewData.dimension=='3D' then
 		dim_info = '§l3D-Land §r'
@@ -1035,21 +1147,21 @@ function BoughtProg_CreateOrder(player)
 			'<c>',height,
 			'<d>',vol,
 			'<e>',NewData.landprice,
-			'<f>',cfg.money.credit_name,
+			'<f>',cfg.economic.currency_name,
 			'<g>',Money_Get(player)
 		),
 		_Tr('gui.general.buy'),
 		_Tr('gui.general.close'),
 		function (player,id)
 			if not(id) then
-				SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
+				SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name));return
 			end
 		
 			local xuid = player.xuid
 			local NewData = MEM[xuid].newLand
 			local player_credits = Money_Get(player)
 			if NewData.landprice > player_credits then
-				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection_tool_name));return
+				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name));return
 			else
 				Money_Del(player,NewData.landprice)
 			end
@@ -1084,7 +1196,7 @@ function ReselectLand_Do(player,vec4,mode)
 			return
         end
 		ReData.posA = vec4
-		if FoundValueInList(cfg.features.blockLandDims,vec4.dimid)~=-1 then
+		if FoundValueInList(cfg.features.selection.disable_dimension,vec4.dimid)~=-1 then
 			SendText(player,_Tr('title.selectrange.failbydim'))
 			MEM[xuid].reselectLand = nil
 			return
@@ -1092,7 +1204,7 @@ function ReselectLand_Do(player,vec4,mode)
 		ReData.dimid = vec4.dimid
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.spointb','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.spointb','<a>',cfg.features.selection.tool_name)
 		}
 		SendText(
 			player,
@@ -1113,7 +1225,7 @@ function ReselectLand_Do(player,vec4,mode)
 		ReData.posB = vec4
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.reselectland.complete','<a>',cfg.features.selection_tool_name)
+			_Tr('title.reselectland.complete','<a>',cfg.features.selection.tool_name)
 		}
         SendText(
 			player,
@@ -1128,7 +1240,7 @@ function ReselectLand_Do(player,vec4,mode)
 		ReData.step = 2
 
 		local edges = CubeToEdge(ReData.posA,ReData.posB)
-		if #edges>cfg.features.player_max_ple then
+		if #edges>cfg.features.particles.max_amount then
 			SendText(player,_Tr('title.selectrange.nople'),0)
 		else
 			MEM[xuid].particles = edges
@@ -1164,7 +1276,7 @@ function ReselectLand_Complete(player)
 	function KeepTitle_break()
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.spointa','<a>',cfg.features.selection.tool_name)
 		}
 		ReData.step=0
 	end
@@ -1234,7 +1346,7 @@ function ReselectLand_Complete(player)
 					'<d>',nr_price,
 					'<e>',mode,
 					'<f>',needto,
-					'<g>',cfg.money.credit_name
+					'<g>',cfg.economic.currency_name
 				),
 				_Tr('gui.general.yes'),
 				_Tr('gui.general.cancel'),
@@ -1324,7 +1436,6 @@ function GUI_OPLMgr(player)
 	Form:setTitle(_Tr('gui.oplandmgr.landmgr.title'))
 	Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
 	Form:addButton(_Tr('gui.oplandmgr.mgrtype.land'),'textures/ui/icon_book_writable')
-	Form:addButton(_Tr('gui.oplandmgr.mgrtype.plugin'),'textures/ui/icon_setting')
 	Form:addButton(_Tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
 	Form:addButton(_Tr('gui.general.close'))
 	player:sendForm(Form,function(player,id)
@@ -1391,202 +1502,7 @@ function GUI_OPLMgr(player)
 				end
 			)
 		end
-		if id==1 then -- Manage Plugin
-			-- Set Money Protocol
-			local money_protocols = { 'LLMoney', _Tr('talk.scoreboard') }
-			local money_default = 0
-			if cfg.money.protocol == 'scoreboard' then
-				money_default = 1
-			end
-
-			-- Land Calculation
-			local calculation_3D = { 'm-1', 'm-2', 'm-3' }
-			local c3d_default=0
-			if cfg.land_buy.calculation_3D == 'm-1' then
-				c3d_default=0
-			end
-			if cfg.land_buy.calculation_3D == 'm-2' then
-				c3d_default=1
-			end
-			if cfg.land_buy.calculation_3D == 'm-3' then
-				c3d_default=2
-			end
-			local calculation_2D = { 'd-1' }
-			local aprice = CloneTable(cfg.land_buy.price_3D)
-			if aprice[2]==nil then
-				aprice[2]=''
-			end
-			local bprice = CloneTable(cfg.land_buy.price_2D)
-			
-			-- Blockland Dims
-			local enableDims = { true,true,true }
-			local bldims = cfg.features.blockLandDims
-			if FoundValueInList(bldims,0)~=-1 then
-				enableDims[1] = false
-			end
-			if FoundValueInList(bldims,1)~=-1 then
-				enableDims[2] = false
-			end
-			if FoundValueInList(bldims,2)~=-1 then
-				enableDims[3] = false
-			end
-
-			-- Build Form
-			local Form = mc.newCustomForm()
-			Form:setTitle(_Tr('gui.oplandmgr.title'))
-			Form:addLabel(_Tr('gui.oplandmgr.tip'))
-			Form:addLabel(_Tr('gui.oplandmgr.landcfg'))
-			Form:addInput(_Tr('gui.oplandmgr.landcfg.maxland'),tostring(cfg.land.player_max_lands))
-			Form:addInput(_Tr('gui.oplandmgr.landcfg.maxsqu'),tostring(cfg.land.land_max_square))
-			Form:addInput(_Tr('gui.oplandmgr.landcfg.minsqu'),tostring(cfg.land.land_min_square))
-			Form:addSlider(_Tr('gui.oplandmgr.landcfg.refundrate'),0,100,1,cfg.land_buy.refund_rate*100)
-			Form:addLabel(_Tr('gui.oplandmgr.economy'))
-			Form:addDropdown(_Tr('gui.oplandmgr.economy.protocol'),money_protocols,money_default)
-			Form:addInput(_Tr('gui.oplandmgr.economy.sbname'),cfg.money.scoreboard_objname)
-			Form:addInput(_Tr('gui.oplandmgr.economy.credit_name'),cfg.money.credit_name)
-			Form:addSlider(_Tr('gui.oplandmgr.economy.discount'),0,100,1,cfg.money.discount)
-			Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_3D'),calculation_3D,c3d_default)
-			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(aprice[1]))
-			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[2]',tostring(aprice[2]))
-			Form:addDropdown(_Tr('gui.oplandmgr.economy.calculation_2D'),calculation_2D)
-			Form:addInput(_Tr('gui.oplandmgr.economy.price')..'[1]',tostring(bprice[1]))
-			Form:addLabel(_Tr('gui.oplandmgr.features'))
-			Form:addSwitch(_Tr('gui.oplandmgr.features.landsign'),cfg.features.landSign)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.particles'),cfg.features.particles)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.forcetalk'),cfg.features.force_talk)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.dim0'),enableDims[1])
-			Form:addSwitch(_Tr('gui.oplandmgr.features.dim1'),enableDims[2])
-			Form:addSwitch(_Tr('gui.oplandmgr.features.dim2'),enableDims[3])
-			Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyprotection'),cfg.features.nearby_protection.enabled)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.nearbyblockselectland'),cfg.features.nearby_protection.blockselectland)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.autochkupd'),cfg.update_check)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.autoupdate'),cfg.features.auto_update)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.offlinepls'),cfg.features.offlinePlayerInList)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.2dland'),cfg.features.land_2D)
-			Form:addSwitch(_Tr('gui.oplandmgr.features.3dland'),cfg.features.land_3D)
-			Form:addInput(_Tr('gui.oplandmgr.features.playersperpage'),tostring(cfg.features.playersPerPage))
-			Form:addInput(_Tr('gui.oplandmgr.features.nearbyside'),tostring(cfg.features.nearby_protection.side))
-			Form:addInput(_Tr('gui.oplandmgr.features.seltolname'),cfg.features.selection_tool_name)
-			Form:addInput(_Tr('gui.oplandmgr.features.frequency'),tostring(cfg.features.sign_frequency))
-			Form:addInput(_Tr('gui.oplandmgr.features.chunksize'),tostring(cfg.features.chunk_side))
-			Form:addInput(_Tr('gui.oplandmgr.features.maxple'),tostring(cfg.features.player_max_ple))
-				
-			player:sendForm(
-				Form,
-				function(player,res)
-					if res==nil then return end
-				
-					if res[1]~='' then
-						cfg.land.player_max_lands = tonumber(res[1])
-					end
-					if res[2]~='' then
-						cfg.land.land_max_square = tonumber(res[2])
-					end
-					if res[3]~='' then
-						cfg.land.land_min_square = tonumber(res[3])
-					end
-					cfg.land_buy.refund_rate = res[4]/100
-					if res[5]==0 then
-						cfg.money.protocol='llmoney'
-					else
-						cfg.money.protocol='scoreboard'
-					end
-					if res[6]~='' then
-						cfg.money.scoreboard_objname=res[6]
-					end
-					if res[7]~='' then
-						cfg.money.credit_name=res[7]
-					end
-					cfg.money.discount=res[8]
-					if res[9]==0 then
-						cfg.land_buy.calculation_3D='m-1'
-					end
-					if res[9]==1 then
-						cfg.land_buy.calculation_3D='m-2'
-					end
-					if res[9]==2 then
-						cfg.land_buy.calculation_3D='m-3'
-					end
-					if res[10]~='' then
-						cfg.land_buy.price_3D[1]=tonumber(res[10])
-					end
-					if res[11]~='' then
-						cfg.land_buy.price_3D[2]=tonumber(res[11])
-					end
-					if res[12]==0 then
-						cfg.land_buy.calculation_2D='d-1'
-					end
-					if res[13]~='' then
-						cfg.land_buy.price_2D[1]=tonumber(res[13])
-					end
-					cfg.features.landSign = res[14]
-					cfg.features.particles = res[15]
-					cfg.features.force_talk = res[16]
-					-- 18~20 (3) BlockLandDims
-					cfg.features.nearby_protection.enabled = res[20]
-					cfg.features.nearby_protection.blockselectland = res[21]
-					cfg.update_check = res[22]
-					cfg.features.auto_update = res[23]
-					cfg.features.offlinePlayerInList = res[24]
-					cfg.features.land_2D = res[25]
-					cfg.features.land_3D = res[26]
-					if res[27]~='' then
-						cfg.features.playersPerPage=tonumber(res[27])
-					end
-					if res[28]~='' then
-						cfg.features.nearby_protection.side=tonumber(res[28])
-					end
-					if res[29]~='' then
-						cfg.features.selection_tool_name=res[29]
-					end
-					if res[30]~='' then
-						cfg.features.sign_frequency=tonumber(res[30])
-					end
-					if res[31]~='' then
-						cfg.features.chunk_side=tonumber(res[31])
-					end
-					if res[32]~='' then
-						cfg.features.player_max_ple=tonumber(res[32])
-					end
-				
-					-- BlockLandDims
-					local bldims = cfg.features.blockLandDims
-					if not(res[17]) then
-						bldims[#bldims+1]=0
-					end
-					if not(res[18]) then
-						bldims[#bldims+1]=1
-					end
-					if not(res[19]) then
-						bldims[#bldims+1]=2
-					end
-				
-					ILAPI.save({1,0,0})
-					
-					-- Do Realtime
-				
-					if cfg.features.landSign and CLOCK_LANDSIGN==nil then
-						EnableLandsign()
-					end
-					if not(cfg.features.landSign) and CLOCK_LANDSIGN~=nil then
-						clearInterval(CLOCK_LANDSIGN)
-						clearInterval(BUTTOM_SIGN)
-						CLOCK_LANDSIGN=nil
-						BUTTOM_SIGN=nil
-					end
-				
-					player:sendModalForm(
-						_Tr('gui.general.complete'),
-						"Complete.",
-						_Tr('gui.general.back'),
-						_Tr('gui.general.close'),
-						FORM_BACK_LandOPMgr
-					)
-				
-				end
-			)
-		end
-		if id==2 then -- Manage Listener
+		if id==1 then -- Manage Listener
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.listenmgr.title'))
 			Form:addLabel(_Tr('gui.listenmgr.tip'))
@@ -1701,7 +1617,7 @@ function PSR_New(player,callback,customlist)
 	-- get player list
 	local pl_list = {}
 	local forTol
-	if cfg.features.offlinePlayerInList then
+	if cfg.features.player_selector.include_offline_players then
 		forTol = land_owners
 	else
 		forTol = MEM
@@ -1719,7 +1635,7 @@ function PSR_New(player,callback,customlist)
 		filter = ""
 	}
 
-	local perpage = cfg.features.playersPerPage
+	local perpage = cfg.features.player_selector.items_perpage
 	if customlist~=nil then
 		MEM[xuid].psr.playerList = ToPages(customlist,perpage)
 	else
@@ -1748,7 +1664,7 @@ function PSR_Callback(player,data,isFirstCall)
 		return tmp
 	end
 
-	local perpage = cfg.features.playersPerPage
+	local perpage = cfg.features.player_selector.items_perpage
 	local maxpage = #psrdata.playerList
 	local rawList = CloneTable(psrdata.playerList[psrdata.nowpage])
 
@@ -2124,14 +2040,14 @@ function ILAPI.SetOwner(landId,xuid)
 end
 -- [[ PLUGIN ]]
 function ILAPI.GetMoneyProtocol()
-	local m = cfg.money.protocol
+	local m = cfg.economic.protocol
 	if m~="llmoney" and m~="scoreboard" then
 		return nil
 	end
 	return m
 end
 function ILAPI.GetLanguage()
-	return cfg.manager.default_language
+	return cfg.plugin.language
 end
 function ILAPI.GetChunkSide()
 	return cfg.features.chunk_side
@@ -2209,10 +2125,10 @@ function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 	end
 end
 function ILAPI.IsLandViolation(square,height,xuid) -- 违规圈地判断
-	if square>cfg.land.land_max_square and FoundValueInList(cfg.manager.operator,xuid)==-1 then
+	if square>cfg.land.bought.square_range[1] and FoundValueInList(cfg.land.operator,xuid)==-1 then
 		return -1 -- 太大
 	end
-	if square<cfg.land.land_min_square and FoundValueInList(cfg.manager.operator,xuid)==-1 then
+	if square<cfg.land.bought.square_range[2] and FoundValueInList(cfg.land.operator,xuid)==-1 then
 		return -2 -- 太小
 	end
 	if height<2 then
@@ -2271,9 +2187,9 @@ function _Tr(a,...)
 	return result
 end
 function Money_Add(player,value)
-	local ptc = cfg.money.protocol
+	local ptc = cfg.economic.protocol
 	if ptc=='scoreboard' then
-		player:addScore(cfg.money.scoreboard_objname,value);return
+		player:addScore(cfg.economic.scoreboard_objname,value);return
 	end
 	if ptc=='llmoney' then
 		money.add(player.xuid,value);return
@@ -2281,9 +2197,9 @@ function Money_Add(player,value)
 	ERROR(_Tr('console.error.money.protocol','<a>',ptc))
 end
 function Money_Del(player,value)
-	local ptc = cfg.money.protocol
+	local ptc = cfg.economic.protocol
 	if ptc=='scoreboard' then
-		player:setScore(cfg.money.scoreboard_objname,player:getScore(cfg.money.scoreboard_objname)-value)
+		player:setScore(cfg.economic.scoreboard_objname,player:getScore(cfg.economic.scoreboard_objname)-value)
 		return
 	end
 	if ptc=='llmoney' then
@@ -2293,9 +2209,9 @@ function Money_Del(player,value)
 	ERROR(_Tr('console.error.money.protocol','<a>',ptc))
 end
 function Money_Get(player)
-	local ptc = cfg.money.protocol
+	local ptc = cfg.economic.protocol
 	if ptc=='scoreboard' then
-		return player:getScore(cfg.money.scoreboard_objname)
+		return player:getScore(cfg.economic.scoreboard_objname)
 	end
 	if ptc=='llmoney' then
 		return money.get(player.xuid)
@@ -2349,24 +2265,24 @@ end
 function CalculatePrice(length,width,height,dimension)
 	local price=0
 	if dimension=='3D' then
-		local t=cfg.land_buy.price_3D
-		if cfg.land_buy.calculation_3D == 'm-1' then
+		local t=cfg.land.bought.three_dimension.price
+		if cfg.land.bought.three_dimension.calculate_method == 'm-1' then
 			price=length*width*t[1]+height*t[2]
 		end
-		if cfg.land_buy.calculation_3D == 'm-2' then
+		if cfg.land.bought.three_dimension.calculate_method == 'm-2' then
 			price=length*width*height*t[1]
 		end
-		if cfg.land_buy.calculation_3D == 'm-3' then
+		if cfg.land.bought.three_dimension.calculate_method == 'm-3' then
 			price=length*width*t[1]
 		end
 	end
 	if dimension=='2D' then
-		local t=cfg.land_buy.price_2D
-		if cfg.land_buy.calculation_2D == 'd-1' then
+		local t=cfg.land.bought.two_dimension.price
+		if cfg.land.bought.two_dimension.calculate_method == 'd-1' then
 			price=length*width*t[1]
 		end
 	end
-	return math.modf(price*(cfg.money.discount/100))
+	return math.modf(price*(cfg.land.bought.discount))
 end
 function ToChunkPos(pos)
 	local p = cfg.features.chunk_side
@@ -2448,20 +2364,6 @@ function FoundValueInList(list, value)
     end
     return -1
 end
-function CloneTable(orig) -- [NOTICE] This function from: lua-users.org
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[CloneTable(orig_key)] = CloneTable(orig_value)
-        end
-        setmetatable(copy, CloneTable(getmetatable(orig)))
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 function StrSplit(str,reps) -- [NOTICE] This function from: blog.csdn.net
     local resultStrList = {}
     string.gsub(str,'[^'..reps..']+',function (w)
@@ -2481,6 +2383,16 @@ function ArrayToPos(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 end
 function PosToText(vec3)
 	return vec3.x..','..vec3.y..','..vec3.z
+end
+local function try(func)
+	local stat, res = pcall(func[1])
+	if not(stat) then
+		func[2](res)
+	end
+	return res
+ end
+local function catch(err)
+	return err[1]
 end
 function SplicingArray(array,st,ed)
 	local result
@@ -2553,13 +2465,13 @@ mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
 	if MEM[xuid].newLand~=nil then
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectrange.mode'),
-			_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+			_Tr('title.selectrange.spointa','<a>',cfg.features.selection.tool_name)
 		}
 		SendText(player,_Tr('title.getlicense.alreadyexists'))
 		return false
 	end
-	if FoundValueInList(cfg.manager.operator,xuid)==-1 then
-		if #land_owners[xuid]>=cfg.land.player_max_lands then
+	if FoundValueInList(cfg.land.operator,xuid)==-1 then
+		if #land_owners[xuid]>=cfg.land.max_lands then
 			SendText(player,_Tr('title.getlicense.limit'))
 			return false
 		end
@@ -2570,11 +2482,11 @@ mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
 		_Tr('gui.buyland.3d'),
 		_Tr('gui.buyland.2d'),
 		function(player,id)
-			if id==true and not(cfg.features.land_3D) then
+			if id==true and not(cfg.land.bought.three_dimension.enable) then
 				SendText(player,_Tr('gui.buyland.unsupport','<a>','3D'))
 				return
 			end
-			if id==false and not(cfg.features.land_2D) then
+			if id==false and not(cfg.land.bought.two_dimension.enable) then
 				SendText(player,_Tr('gui.buyland.unsupport','<a>','2D'))
 				return
 			end
@@ -2583,7 +2495,7 @@ mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
 		
 			MEM[xuid].keepingTitle = {
 				_Tr('title.selectrange.mode'),
-				_Tr('title.selectrange.spointa','<a>',cfg.features.selection_tool_name)
+				_Tr('title.selectrange.spointa','<a>',cfg.features.selection.tool_name)
 			}
 			SendText(player,_Tr('title.getlicense.succeed'))
 			
@@ -2632,7 +2544,7 @@ mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
 end)
 mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
 	local xuid = player.xuid
-	if FoundValueInList(cfg.manager.operator,xuid)==-1 then
+	if FoundValueInList(cfg.land.operator,xuid)==-1 then
 		SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
 		return false
 	end
@@ -2737,7 +2649,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_op'),function(args)
 		ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
 		return
 	end
-	table.insert(cfg.manager.operator,#cfg.manager.operator+1,xuid)
+	table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
 	UpdateLandOperatorsMap()
 	ILAPI.save({1,0,0})
 	INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
@@ -2753,20 +2665,20 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_deop'),function(args)
 		ERROR(_Tr('console.landop.del.failbynull','<a>',name))
 		return
 	end
-	table.remove(cfg.manager.operator,FoundValueInList(cfg.manager.operator,xuid))
+	table.remove(cfg.land.operator,FoundValueInList(cfg.land.operator,xuid))
 	UpdateLandOperatorsMap()
 	ILAPI.save({1,0,0})
 	INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
 end)
 mc.regConsoleCmd(MainCmd,_Tr('command.console.land_update'),function(args)
-	if cfg.update_check then
+	if cfg.plugin.network then
 		Upgrade(Server.memInfo)
 	else
 		ERROR(_Tr('console.update.nodata'))
 	end
 end)
 mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language'),function(args)
-	INFO('I18N',_Tr('console.languages.sign','<a>',cfg.manager.default_language,'<b>',_Tr('VERSION')))
+	INFO('I18N',_Tr('console.languages.sign','<a>',cfg.plugin.language,'<b>',_Tr('VERSION')))
 	local isNone = false
 	local count = 1
 	while(not(isNone)) do
@@ -2786,10 +2698,10 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_set'),function(args)
 	end
 	local path = langpath..args[1]..'.json'
 	if File.exists(path) then
-		cfg.manager.default_language = args[1]
+		cfg.plugin.language = args[1]
 		LangPack = JSON.decode(file.readFrom(path))
 		ILAPI.save({1,0,0})
-		INFO(_Tr('console.languages.set.succeed','<a>',cfg.manager.default_language))
+		INFO(_Tr('console.languages.set.succeed','<a>',cfg.plugin.language))
 	else
 		ERROR(_Tr('console.languages.set.nofile','<a>',args[1]))
 	end
@@ -2797,7 +2709,7 @@ end)
 mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list'),function(args)
 	local langlist = ILAPI.GetLanguageList(0)
 	for i,lang in pairs(langlist) do
-		if lang==cfg.manager.default_language then
+		if lang==cfg.plugin.language then
 			INFO('I18N',lang..' <- Using.')
 		else
 			INFO('I18N',lang)
@@ -2932,7 +2844,7 @@ function DownloadLanguage(name)
 end
 
 -- Timer Works
-function Tcb_LandSign()
+function Timer_LandSign()
 	for xuid,data in pairs(MEM) do
 		local player=mc.getPlayer(xuid)
 
@@ -2978,7 +2890,7 @@ function Tcb_LandSign()
 		:: JUMPOUT_SIGN ::
 	end
 end
-function Tcb_ButtomSign()
+function Timer_ButtomSign()
 	for xuid,data in pairs(MEM) do
 		local player=mc.getPlayer(xuid)
 
@@ -3007,7 +2919,7 @@ function Tcb_ButtomSign()
 end
 function Timer_MEM()
 	for xuid,res in pairs(MEM) do
-		if cfg.features.particles and res.particles ~= nil then -- Keeping Particles
+		if cfg.features.particles.enable and res.particles ~= nil then -- Keeping Particles
 			local Tpos = mc.getPlayer(xuid).blockPos
 			for n,pos in pairs(res.particles) do
 				local posY
@@ -3021,7 +2933,7 @@ function Timer_MEM()
 				if MEM[xuid].reselectLand~=nil then
 					posY = pos.y
 				end
-				mc.runcmdEx('execute @a[name="'..data.xuid2name(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particle_effects..'" '..pos.x..' '..posY..' '..pos.z)
+				mc.runcmdEx('execute @a[name="'..data.xuid2name(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particles.name..'" '..pos.x..' '..posY..' '..pos.z)
 			end
 		end
 		if res.keepingTitle ~= nil then -- Keeping Title
@@ -3033,10 +2945,6 @@ function Timer_MEM()
 			end
 		end
 	end
-end
-function EnableLandsign()
-	CLOCK_LANDSIGN = setInterval(Tcb_LandSign,cfg.features.sign_frequency*1000)
-	BUTTOM_SIGN = setInterval(Tcb_ButtomSign,cfg.features.sign_frequency*500)
 end
 
 -- Minecraft Eventing
@@ -3083,7 +2991,7 @@ mc.listen('onDestroyBlock',function(player,block)
 		local HandItem = player:getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
 		SendText(player,_Tr('title.oplandmgr.setsuccess','<a>',HandItem.name))
-		cfg.features.selection_tool=HandItem.type
+		cfg.features.selection.tool_type=HandItem.type
 		ILAPI.save({1,0,0})
 		MEM[xuid].selectool=-1
 		return false
@@ -3497,7 +3405,7 @@ mc.listen('onStartDestroyBlock',function(player,block)
 
 	if new or res then
 		local HandItem = player:getHand()
-		if HandItem:isNull() or HandItem.type~=cfg.features.selection_tool then return end
+		if HandItem:isNull() or HandItem.type~=cfg.features.selection.tool_type then return end
 		if new then
 			BoughtProg_SelectRange(player,block.pos,MEM[xuid].newLand.step)
 		else
@@ -3632,13 +3540,37 @@ end
 mc.listen('onServerStarted',function()
 	
 	-- Make timer
-	if cfg.features.landSign then
-		EnableLandsign()
+	if cfg.features.landsign.enable then
+		setInterval(Timer_LandSign,cfg.features.landsign.frequency*1000)
+	end
+	if cfg.features.buttomsign.enable then
+		setInterval(Timer_ButtomSign,cfg.features.buttomsign.frequency*1000)
 	end
 	setInterval(Timer_MEM,1000)
 
+	-- load owners data
+	try
+	{
+		function ()
+			if load({1,1,1}) ~= true then
+				error('wrong!')
+			end
+			INFO('Load','Building tables needed to run...')
+			BuildAnyMap()
+			INFO('Load','Completed.')
+		end,
+		catch
+		{
+			function (errors)
+				log(errors)
+				ERROR('Something wrong when load data, plugin closed.')
+				mc.runcmdEx('lxl unload iland-core.lua')
+			end
+		}
+	}
+
 	-- Check Update
-	if cfg.update_check then
+	if cfg.plugin.network then
 		local server = GetLink()
 		if server ~=  false then
 			network.httpGet(server..'/server.json',Ncb_online)
