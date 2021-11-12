@@ -101,56 +101,6 @@ local minY = -64
 local maxY = 320
 
 -- Preload Functions
-function CubeToEdge(spos,epos)
-	local edge={}
-	local posB,posA = SortPos(spos,epos)
-	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
-	end
-	for i=1,math.abs(posA.y-posB.y)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posA.z }
-		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posB.z }
-		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posB.z }
-		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posA.z }
-	end
-	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
-	end
-	return edge
-end
-function CubeToEdge_2D(spos,epos)
-	local edge={}
-	local posB,posA = SortPos(spos,epos)
-	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
-	end
-	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
-	end
-	return edge
-end
-function CloneTable(orig) -- [NOTICE] This function from: lua-users.org
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[CloneTable(orig_key)] = CloneTable(orig_value)
-        end
-        setmetatable(copy, CloneTable(getmetatable(orig)))
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 function INFO(type,content)
 	if content==nil then
 		print('[ILand] |INFO| '..type)
@@ -2381,6 +2331,56 @@ function ArrayToPos(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 	end
 		return t
 end
+function CubeToEdge(spos,epos)
+	local edge={}
+	local posB,posA = SortPos(spos,epos)
+	for i=1,math.abs(posA.x-posB.x)+1 do
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posB.y-1, z=posB.z }
+	end
+	for i=1,math.abs(posA.y-posB.y)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posA.z }
+		edge[#edge+1] = { x=posA.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posB.z }
+		edge[#edge+1] = { x=posB.x, y=posA.y-i, z=posA.z }
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posA.x, y=posB.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posB.y-1, z=posA.z-i+1 }
+	end
+	return edge
+end
+function CubeToEdge_2D(spos,epos)
+	local edge={}
+	local posB,posA = SortPos(spos,epos)
+	for i=1,math.abs(posA.x-posB.x)+1 do
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+	end
+	for i=1,math.abs(posA.z-posB.z)+1 do
+		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+	end
+	return edge
+end
+function CloneTable(orig) -- [NOTICE] This function from: lua-users.org
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[CloneTable(orig_key)] = CloneTable(orig_value)
+        end
+        setmetatable(copy, CloneTable(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 function PosToText(vec3)
 	return vec3.x..','..vec3.y..','..vec3.z
 end
@@ -3552,12 +3552,13 @@ mc.listen('onServerStarted',function()
 	try
 	{
 		function ()
+			-- load : data
 			if load({1,1,1}) ~= true then
 				error('wrong!')
 			end
+			-- load : maps
 			INFO('Load','Building tables needed to run...')
 			BuildAnyMap()
-			INFO('Load','Completed.')
 		end,
 		catch
 		{
@@ -3578,6 +3579,8 @@ mc.listen('onServerStarted',function()
 			ERROR(_Tr('console.getonline.failed'))
 		end
 	end
+
+	INFO('Load','Completed, use memory: '..string.format("%.2f",collectgarbage('count')/1024)..'MB.')
 
 end)
 
