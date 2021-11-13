@@ -64,11 +64,11 @@ local cfg = {
 	features = {
 		landsign = {
 			enable = true,
-			frequency = 2000
+			frequency = 2
 		},
 		buttomsign = {
 			enable = true,
-			frequency = 1000
+			frequency = 1
 		},
 		particles = {
 			enable = true,
@@ -1824,8 +1824,10 @@ end
 function ILAPI.IsLandCollision(newposA,newposB,newDimid,ignoreList) -- 领地冲突判断
 	local edge = CubeToEdge(newposA,newposB)
 	local ignores = {} -- 建立反表提升查询性能
-	for key, value in pairs(ignoreList) do
-		ignores[value] = 1
+	if ignoreList~=nil then
+		for key, value in pairs(ignoreList) do
+			ignores[value] = 1
+		end
 	end
 	for i=1,#edge do
 		edge[i].dimid=newDimid
@@ -2681,7 +2683,7 @@ end
 
 -- Timer Works
 function Timer_LandSign()
-	for xuid,data in pairs(MEM) do
+	for xuid,res in pairs(MEM) do
 		local player=mc.getPlayer(xuid)
 
 		if ChkNil(player) then
@@ -2727,7 +2729,7 @@ function Timer_LandSign()
 	end
 end
 function Timer_ButtomSign()
-	for xuid,data in pairs(MEM) do
+	for xuid,res in pairs(MEM) do
 		local player=mc.getPlayer(xuid)
 
 		if ChkNil(player) then
