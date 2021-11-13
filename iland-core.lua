@@ -861,48 +861,6 @@ function Handler_LandCfg(player,landId,option)
 		return
 	end
 end
-function FORM_landtp(player,id,customID)
-	if id==nil or id==0 then return end
-
-	local xuid=player.xuid
-	local landId
-	if customID~=nil then
-		landId = customID
-	else
-		local lands = ILAPI.GetPlayerLands(xuid)
-		for n,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-			lands[#lands+1]=landId
-		end
-	
-		landId = lands[id]
-	end
-
-	local pos = ILAPI.GetPoint(landId)
-	local srt = VecMap[landId].a
-
-	if pos.x==srt.x and (pos.y-1)==srt.y and pos.z==srt.z then
-		local msg = _Tr('title.landtp.failbysame')
-		if ILAPI.GetOwner(landId)==xuid then
-			msg = msg.._Tr('title.landtp.plzset')
-		end
-		SendText(player,msg)
-		return
-	end
-
-	if not(IsPosSafe(pos)) then
-		SendText(player,_Tr('title.landtp.safetp'))
-		return
-	end
-	
-	player:teleport(pos.x,pos.y,pos.z,pos.dimid)
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		'Complete.',
-		_Tr('gui.general.yes'),
-		_Tr('gui.general.close'),
-		F_NULL
-	)
-end
 function SRCB_land_trust(player,selected)
 	
 	local xuid = player.xuid
@@ -1029,7 +987,11 @@ function GUI_OPLMgr(player)
 						player:sendForm(Form,function(pl,id) -- callback
 							if id==nil then return end
 							local landId = landlst[id+1]
-							FORM_landtp(pl,1,landId)
+							if ILAPI.Teleport(pl,landId) then
+								SendText(pl,_Tr('title.landtp.success'))
+							else
+								SendText(pl,_Tr('title.landtp.fail.danger'))
+							end
 						end)
 					end
 					if mode==2 then -- 脚下
@@ -1655,6 +1617,50 @@ function ILAPI.GetPoint(landId)
 	local i = CloneTable(land_data[landId].settings.tpoint)
 	i[4] = land_data[landId].range.dimid
 	return ArrayToPos(i)
+end
+function ILAPI.Teleport(player,landId) -- can given xuid to `player`
+	local pl
+	if type(player)=='string' then
+		pl = mc.getPlayer(player)
+	else
+		pl = player
+	end
+	if land_data[landId]==nil then
+		return false
+	end
+	local pos = ILAPI.GetPoint(landId)
+	local finalPos
+	if pl.gameMode==1 then
+		pl:teleport(pos.x,pos.y,pos.z,pos.dimid)
+		return true
+	end
+	local bltypelist = {}
+	local footholds = {}
+	for i=minY,maxY do -- get all type
+		local bl = mc.getBlock(pos.x,i,pos.z,pos.dimid)
+		bltypelist[i] = bl.type
+	end
+	local ct_block = {'minecraft:air','minecraft:lava','minecraft:flowing_lava'}
+	for i,type in pairs(bltypelist) do
+		if FoundValueInList(ct_block,type)==-1 and bltypelist[i+1]==ct_block[1] and bltypelist[i+2]==ct_block[1] then
+			footholds[#footholds+1] = i
+		end
+	end
+	if #footholds==0 then
+		return false
+	end
+	local recentY = footholds[1]
+	for i,y in pairs(footholds) do
+		if math.abs(pos.y-y)<math.abs(pos.y-recentY) then
+			recentY = y
+		end
+	end
+	finalPos = { x=pos.x,y=recentY,z=pos.z,dimid=pos.dimid }
+	if ILAPI.PosGetLand(finalPos)~=landId then
+		return false
+	end
+	pl:teleport(finalPos.x,finalPos.y,finalPos.z,finalPos.dimid)
+	return true
 end
 -- [[ INFORMATION => PLAYER ]]
 function ILAPI.GetPlayerLands(xuid)
@@ -2417,16 +2423,19 @@ end)
 if cfg.features.landtp then
 	mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
 		local xuid = player.xuid
+		local landlst = {}
 		local tplands = {}
 		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
 			local name = ILAPI.GetNickname(landId)
 			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]=ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
+			tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
+			landlst[#landlst+1] = landId
 		end
 		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
 			local name = ILAPI.GetNickname(landId)
 			local xpos = ILAPI.GetPoint(landId)
 			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..PosToText(xpos)..') '..name
+			landlst[#landlst+1] = landId
 		end
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_Tr('gui.landtp.title'))
@@ -2435,7 +2444,16 @@ if cfg.features.landtp then
 		for i,land in pairs(tplands) do
 			Form:addButton(land,'textures/ui/world_glyph_color')
 		end
-		player:sendForm(Form,FORM_landtp)
+		player:sendForm(Form,function(player,id)
+			if id==nil or id==0 then return end
+			local landId = landlst[id]
+			if ILAPI.Teleport(player,landId) then
+				SendText(player,_Tr('title.landtp.success'))
+			else
+				SendText(player,_Tr('title.landtp.fail.danger'))
+			end
+		end
+		)
 	end)
 	mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
 		local xuid = player.xuid
@@ -2448,10 +2466,6 @@ if cfg.features.landtp then
 		end
 		if ILAPI.GetOwner(landId)~=xuid then
 			SendText(player,_Tr('title.landtp.fail.notowner'))
-			return false
-		end
-		if not(IsPosSafe(pos)) then
-			SendText(player,_Tr('title.landtp.safeset'))
 			return false
 		end
 		local landname = ILAPI.GetNickname(landId,true)
