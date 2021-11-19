@@ -1,29 +1,19 @@
 中文：
 
-安装：
+安装或更新：
 1. 将压缩包解包
-2. 复制所有文件到 \plugins 目录
+2. 复制/覆盖所有文件到 \plugins 目录
 3. 检查iland-core.lua 是否在 \plugins 目录下
 4. 开服测试
-
-更新：
-1. 将压缩包解包
-2. 删除解压结果中 \plugins\iland 目录中的 config.json
-3. 重复“安装”2-4步
 
 捐赠：https://afdian.net/@kbs007
 
 English:
 
-Install:
+Install or Update:
 1. Unpack the compressed package
-2. Copy all files to the \plugins directory
+2. Copy/overwrite all files to the \plugins directory
 3. Check if iland-core.lua is in the \plugins directory
-4. Open server test
-
-Update:
-1. Unpack the compressed package
-2. Delete the config.json in the \plugins\iland directory in the decompression result
-3. Repeat the "Install" step 2-4
+4. Start server
 
 Donate: https://www.paypal.com/paypalme/zhangrab

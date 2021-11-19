@@ -2816,12 +2816,12 @@ end
 function Timer_MEM()
 	for xuid,res in pairs(MEM) do
 		if cfg.features.particles.enable and res.particles ~= nil then -- Keeping Particles
-			local Tpos = mc.getPlayer(xuid).blockPos
+			local player = mc.getPlayer(xuid)
 			for n,pos in pairs(res.particles) do
 				local posY
 				if MEM[xuid].newLand~=nil then
 					if MEM[xuid].newLand.dimension=='2D' then
-						posY = Tpos.y + 2
+						posY = player.blockPos.y + 2
 					else
 						posY = pos.y + 1.6
 					end
@@ -2829,7 +2829,7 @@ function Timer_MEM()
 				if MEM[xuid].reselectLand~=nil then
 					posY = pos.y
 				end
-				mc.runcmdEx('execute @a[name="'..data.xuid2name(xuid)..'"] ~ ~ ~ particle "'..cfg.features.particles.name..'" '..pos.x..' '..posY..' '..pos.z)
+				mc.spawnParticle(pos.x,posY,pos.z,player.pos.dimid,cfg.features.particles.name)
 			end
 		end
 		if res.keepingTitle ~= nil then -- Keeping Title
