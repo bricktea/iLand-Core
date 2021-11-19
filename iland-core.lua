@@ -371,9 +371,11 @@ function UpdateConfig(cfg_t)
 	return cfg_t
 end
 function UpdateLand(start_ver)
-	if start_ver == 240 then
+	if start_ver==240 then
 		for landId,res in pairs(land_data) do
-			land_data[landId].permissions.use_armor_stand = false
+			local perm = land_data[landId].permissions
+			perm.use_armor_stand = false
+			perm.eat = false
 		end
 	end
 	ILAPI.save({0,1,0})
@@ -462,7 +464,6 @@ function load(para) -- { cfg, land, owner }
 	end
 	-- load owners data
 	if para[3]==1 then
-		log('loaded')
 		if not(file.exists(DATA_PATH..'owners.json')) then
 			WARN('Data file (owners.json) does not exist, creating...')
 			file.writeTo(DATA_PATH..'owners.json','{}')
@@ -636,6 +637,7 @@ function Handler_LandCfg(player,landId,option)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.button'),perm.use_button)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.pressure_plate'),perm.use_pressure_plate)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.armor_stand'),perm.use_armor_stand)
+		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.eat'),perm.eat)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.throw_potion'),perm.allow_throw_potion)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
@@ -700,12 +702,13 @@ function Handler_LandCfg(player,landId,option)
 				perm.use_button = res[46]
 				perm.use_pressure_plate = res[47]
 				perm.use_armor_stand = res[48]
-				perm.allow_throw_potion = res[49]
-				perm.use_respawn_anchor = res[50]
-				perm.use_fishing_hook = res[51]
-				perm.use_bucket = res[52]
+				perm.eat = res[49]
+				perm.allow_throw_potion = res[50]
+				perm.use_respawn_anchor = res[51]
+				perm.use_fishing_hook = res[52]
+				perm.use_bucket = res[53]
 			
-				perm.useitem = res[53]
+				perm.useitem = res[54]
 			
 				ILAPI.save({0,1,0})
 				player:sendModalForm(
@@ -1059,6 +1062,8 @@ function GUI_OPLMgr(player)
 			Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
 			Form:addSwitch('onPistonPush',not(ILAPI.IsDisabled('onPistonPush')))
 			Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
+			Form:addSwitch('onChangeArmorStand',not(ILAPI.IsDisabled('onChangeArmorStand')))
+			Form:addSwitch('onEat',not(ILAPI.IsDisabled('onEat')))
 
 			player:sendForm(
 				Form,
@@ -1086,6 +1091,8 @@ function GUI_OPLMgr(player)
 					if not(res[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
 					if not(res[18]) then dbl[#dbl+1] = "onPistonPush" end
 					if not(res[19]) then dbl[#dbl+1] = "onFireSpread" end
+					if not(res[20]) then dbl[#dbl+1] = "onChangeArmorStand" end
+					if not(res[21]) then dbl[#dbl+1] = "onEat" end
 					
 					BuildListenerMap()
 					ILAPI.save({1,0,0})
@@ -1541,6 +1548,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_bucket=false
 	perm.use_pressure_plate=false
 	perm.use_armor_stand=false
+	perm.eat=false
 	perm.allow_throw_potion=false
 	perm.allow_ride_entity=false
 	perm.allow_ride_trans=false
@@ -3286,6 +3294,24 @@ mc.listen('onFireSpread',function(pos)
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
+	return false
+end)
+mc.listen('onEat',function(player,item)
+
+	if ChkNil(player) or ILAPI.IsDisabled('onEat') then
+		return
+	end
+
+	local xuid = player.xuid
+	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	if landId==-1 then return end -- No Land
+
+	if land_data[landId].permissions.eat then return end -- Perm Allow
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onStartDestroyBlock',function(player,block)
