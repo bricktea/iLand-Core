@@ -20,6 +20,7 @@ Plugin = {
 
 Server = {
 	link = "https://cdn.jsdelivr.net/gh/LiteLDev-LXL/Cloud/",
+	version = 203,
 	memInfo = {}
 }
 
@@ -334,7 +335,6 @@ function UpdateConfig(cfg_t)
     end
 	if this.version==240 then -- OLD STRUCTURE
 		cfg_t = CloneTable(cfg)
-		cfg_t.version = 241
 		cfg_t.plugin.language = this.manager.default_language
 		cfg_t.plugin.network = this.update_check
 		cfg_t.land.operator = this.manager.operator
@@ -2290,7 +2290,6 @@ mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,a
 	end
 end)
 mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),function (player,args)
-	local xuid = player.xuid
 	GUI_LMgr(player)
 end)
 mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
@@ -3350,17 +3349,34 @@ function Upgrade(rawInfo)
 			file.rename(backupfilename..'.bak',backupfilename)
 		end
 	end
+	local function isLXLSupported(list)
+		local version = lxl.version()
+		for n,ver in pairs(list) do
+			if ver[1]==version[1] and ver[2]==version[2] and ver[3]==version[3] then
+				return true
+			end
+		end
+		return false
+	end
 
 	--  Check Data
 	local updata
-	if rawInfo.FILE_Version==202 then
+	if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
+		ERROR('console.update.vacancy')
+		return
+	end
+	if rawInfo.FILE_Version==Server.version then
 		updata = rawInfo.Updates[1]
 	else
 		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
 		return
 	end
-	if  rawInfo.DisableClientUpdate then
+	if rawInfo.DisableClientUpdate then
 		ERROR(_Tr('console.update.disabled'))
+		return
+	end
+	if not isLXLSupported(updata.LXL) then
+		ERROR(_Tr('console.update.unsupport'))
 		return
 	end
 	
@@ -3427,41 +3443,6 @@ function Upgrade(rawInfo)
 
 	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
 end
-function Ncb_online(code,result)
-	if code==200 then
-		local data = JSON.decode(result)
-
-		Server.memInfo = data
-
-		-- Check File Version
-		if data.FILE_Version~=202 then
-			INFO('Network',_Tr('console.getonline.failbyver','<a>',data.FILE_Version))
-			return
-		end
-
-		-- Check Update
-		if Plugin.numver<data.Updates[1].NumVer then
-			INFO('Network',_Tr('console.update.newversion','<a>',data.Updates[1].Version))
-			INFO('Update',_Tr('console.update.newcontent'))
-			for n,text in pairs(data.Updates[1].Description) do
-				INFO('Update',n..'. '..text)
-			end
-			if data.Force_Update then
-				INFO('Update',_Tr('console.update.force'))
-				Upgrade(data)
-			end
-			if cfg.features.auto_update then
-				INFO('Update',_Tr('console.update.auto'))
-				Upgrade(data)
-			end
-		end
-		if Plugin.numver>data.Updates[1].NumVer then
-			INFO('Network',_Tr('console.update.preview','<a>',Plugin.version))
-		end
-	else
-		ERROR(_Tr('console.getonline.failbycode','<a>',code))
-	end
-end
 
 mc.listen('onServerStarted',function()
 	
@@ -3500,7 +3481,40 @@ mc.listen('onServerStarted',function()
 	if cfg.plugin.network then
 		local server = GetLink()
 		if server ~=  false then
-			network.httpGet(server..'/server.json',Ncb_online)
+			network.httpGet(server..'/server_203.json',function(code,result)
+				if code~=200 then
+					ERROR(_Tr('console.getonline.failbycode','<a>',code))
+					return
+				end
+				local data = JSON.decode(result)
+				Server.memInfo = data
+		
+				-- Check Server Version
+				if data.FILE_Version~=Server.version then
+					INFO('Network',_Tr('console.getonline.failbyver','<a>',data.FILE_Version))
+					return
+				end
+		
+				-- Check Update
+				if Plugin.numver<data.Updates[1].NumVer then
+					INFO('Network',_Tr('console.update.newversion','<a>',data.Updates[1].Version))
+					INFO('Update',_Tr('console.update.newcontent'))
+					for n,text in pairs(data.Updates[1].Description) do
+						INFO('Update',n..'. '..text)
+					end
+					if data.Force_Update then
+						INFO('Update',_Tr('console.update.force'))
+						Upgrade(data)
+					end
+					if cfg.features.auto_update then
+						INFO('Update',_Tr('console.update.auto'))
+						Upgrade(data)
+					end
+				end
+				if Plugin.numver>data.Updates[1].NumVer then
+					INFO('Network',_Tr('console.update.preview','<a>',Plugin.version))
+				end
+			end)
 		else
 			ERROR(_Tr('console.getonline.failed'))
 		end
