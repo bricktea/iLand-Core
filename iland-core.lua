@@ -329,7 +329,7 @@ end
 
 function UpdateConfig(cfg_t)
 	local this = CloneTable(cfg_t)
-	if this.version==nil or this.version<231 then
+	if this.version==nil or this.version<240 then
         ERROR('Configure file too old, you must rebuild it.')
         return false
     end
@@ -2152,20 +2152,16 @@ local function try(func)
 local function catch(err)
 	return err[1]
 end
-function SplicingArray(array,st,ed)
-	local result
-	if st==nil then
-		st = 1
-	end
-	if ed==nil then
-		ed = #array
+function SplicingArray(array,delimiter)
+	local result = ''
+	local max = #array
+	if delimiter==nil then
+		delimiter = ''
 	end
 	for n,res in pairs(array) do
-		if n > ed then
-			break
-		end
-		if n >= st then
-			result = result + res
+		result = result..res
+		if n~=max then
+			result = result..delimiter
 		end
 	end
 	return result
@@ -2515,8 +2511,8 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
 	INFO('The server is running iLand v'..Plugin.version)
 	INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_op'),function(args)
-	local name = SplicingArray(args,2,#args)
+mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
+	local name = SplicingArray(args,' ')
 	local xuid = data.name2xuid(name)
 	if xuid == "" then
 		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
@@ -2531,8 +2527,8 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_op'),function(args)
 	ILAPI.save({1,0,0})
 	INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_deop'),function(args)
-	local name = SplicingArray(args,2)
+mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
+	local name = SplicingArray(args,' ')
 	local xuid = data.name2xuid(name)
 	if xuid == "" then
 		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
@@ -2547,14 +2543,14 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_deop'),function(args)
 	ILAPI.save({1,0,0})
 	INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_update'),function(args)
+mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
 	if cfg.plugin.network then
 		Upgrade(Server.memInfo)
 	else
 		ERROR(_Tr('console.update.nodata'))
 	end
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language'),function(args)
+mc.regConsoleCmd(MainCmd..' language',_Tr('command.console.land_language'),function(args)
 	INFO('I18N',_Tr('console.languages.sign','<a>',cfg.plugin.language,'<b>',_Tr('VERSION')))
 	local isNone = false
 	local count = 1
@@ -2567,7 +2563,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language'),function(args)
 		count = count + 1
 	end
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_set'),function(args)
+mc.regConsoleCmd(MainCmd..' language set',_Tr('command.console.land_language_set'),function(args)
 	local langpath = DATA_PATH..'lang\\'
 	if args[1] == nil then
 		ERROR(_Tr('console.languages.set.misspara'))
@@ -2583,7 +2579,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_set'),function(args)
 		ERROR(_Tr('console.languages.set.nofile','<a>',args[1]))
 	end
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list'),function(args)
+mc.regConsoleCmd(MainCmd..' language list',_Tr('command.console.land_language_list'),function(args)
 	local langlist = ILAPI.GetLanguageList(0)
 	for i,lang in pairs(langlist) do
 		if lang==cfg.plugin.language then
@@ -2594,7 +2590,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list'),function(args
 	end
 	INFO('I18N',_Tr('console.languages.list.count','<a>',#langlist))
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list-online'),function(args)
+mc.regConsoleCmd(MainCmd..' language list-online',_Tr('command.console.land_language_list-online'),function(args)
 	INFO('Network',_Tr('console.languages.list-online.wait'))
 	local rawdata = ILAPI.GetLanguageList(1)
 	if rawdata == false then
@@ -2609,7 +2605,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_list-online'),functi
 		INFO('I18N',lang)
 	end
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_install'),function(args)
+mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language_install'),function(args)
 	if args[1] == nil then
 		ERROR(_Tr('console.languages.install.misspara'))
 		return false
@@ -2632,7 +2628,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_install'),function(a
 		INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
 	end
 end)
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land_language_update'),function(args)
+mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_update'),function(args)
 	local langpath = DATA_PATH..'lang\\'
 	local langlist = ILAPI.GetLanguageList(0)
 	local langlist_o = ILAPI.GetLanguageList(1)
