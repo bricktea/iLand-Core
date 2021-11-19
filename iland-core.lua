@@ -2835,10 +2835,13 @@ end
 -- Minecraft Eventing
 mc.listen('onJoin',function(player)
 	local xuid = player.xuid
-	MEM[xuid] = { inland='null',inlandv2='null' }
+	MEM[xuid] = { inland='null' }
 
 	if wrong_landowners[xuid]~=nil then
 		land_owners[xuid] = CloneTable(wrong_landowners[xuid])
+		for n,landId in pairs(land_owners[xuid]) do
+			UpdateLandOwnersMap(landId)
+		end
 		wrong_landowners[xuid] = nil
 	end
 	if land_owners[xuid]==nil then
