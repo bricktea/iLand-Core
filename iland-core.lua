@@ -2731,75 +2731,87 @@ end
 -- Timer Works
 function Timer_LandSign()
 	for xuid,res in pairs(MEM) do
-		local player=mc.getPlayer(xuid)
+		local player = mc.getPlayer(xuid)
 
 		if ChkNil(player) then
-			goto JUMPOUT_SIGN
+			goto JUMPOUT_LANDSIGN
 		end
 
 		local xuid = player.xuid
-		local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
-		if landId==-1 then MEM[xuid].inland='null';goto JUMPOUT_SIGN end -- no land here
-		if landId==MEM[xuid].inland then goto JUMPOUT_SIGN end -- signed
+		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+		if landId==-1 then
+			MEM[xuid].inland = 'null'
+			goto JUMPOUT_LANDSIGN
+		end
+		if landId==MEM[xuid].inland then
+			goto JUMPOUT_LANDSIGN
+		end
 
-		local ownerXuid=ILAPI.GetOwner(landId)
+		local ownerXuid = ILAPI.GetOwner(landId)
 		local ownerId = '?'
 		if ownerXuid~='?' then ownerId=data.xuid2name(ownerXuid) end
-		
-		if xuid==ownerXuid then 
-			-- land owner in land.
-			if not(land_data[landId].settings.signtome) then
-				goto JUMPOUT_SIGN
+		local landcfg = land_data[landId].settings
+
+		if (xuid==ownerXuid or ILAPI.IsPlayerTrusted(landId,xuid)) and landcfg.signtome then
+			-- owner/trusted
+			if not(landcfg.signtome) then
+				goto JUMPOUT_LANDSIGN
 			end
 			SendTitle(player,
 				_Tr('sign.listener.ownertitle','<a>',ILAPI.GetNickname(landId,false)),
 				_Tr('sign.listener.ownersubtitle')
 			)
-		else  
-			-- visitor in land
-			if not(land_data[landId].settings.signtother) then
-				goto JUMPOUT_SIGN
+		else
+			-- visitor
+			if not(landcfg.signtother) then
+				goto JUMPOUT_LANDSIGN
 			end
 			SendTitle(player,
 				_Tr('sign.listener.visitortitle'),
 				_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
 			)
-			if land_data[landId].settings.describe~='' then
-				local des = CloneTable(land_data[landId].settings.describe)
-				des = string.gsub(des,'$visitor',player.realName)
+			if landcfg.describe~='' then
+				local des = CloneTable(landcfg.describe)
+				des = string.gsub(des,'$visitor',player.name)
 				des = string.gsub(des,'$n','\n')
 				SendText(player,des,0)
 			end
 		end
+
 		MEM[xuid].inland = landId
-		:: JUMPOUT_SIGN ::
+		:: JUMPOUT_LANDSIGN ::
 	end
 end
 function Timer_ButtomSign()
 	for xuid,res in pairs(MEM) do
-		local player=mc.getPlayer(xuid)
+		local player = mc.getPlayer(xuid)
 
 		if ChkNil(player) then
-			goto JUMPOUT_BUTTOM
+			goto JUMPOUT_BUTTOMSIGN
 		end
 
 		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
 		if landId==-1 then
-			goto JUMPOUT_BUTTOM
+			goto JUMPOUT_BUTTOMSIGN
+		end
+		local landcfg = land_data[landId].settings
+		if not(landcfg.signbuttom) then
+			goto JUMPOUT_BUTTOMSIGN
 		end
 
 		local ownerXuid = ILAPI.GetOwner(landId)
-		local ownerName = '?'
-		if ownerXuid~='?' then ownerName=data.xuid2name(ownerXuid) end
-		local landcfg = land_data[landId].settings
-		if (xuid==ownerXuid) and landcfg.signtome and landcfg.signbuttom then
+		local ownerId = '?'
+		if ownerXuid~='?' then ownerId=data.xuid2name(ownerXuid) end
+		
+		if (xuid==ownerXuid or ILAPI.IsPlayerTrusted(landId,xuid)) and landcfg.signtome then
 			player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',ILAPI.GetNickname(landId)),4)
-		end
-		if (xuid~=ownerXuid) and landcfg.signtother and landcfg.signbuttom then
-			player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerName),4)
+		else
+			if (xuid~=ownerXuid) and landcfg.signtother then
+				player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
+			end
 		end
 
-		:: JUMPOUT_BUTTOM ::
+		:: JUMPOUT_BUTTOMSIGN ::
 	end
 end
 function Timer_MEM()
