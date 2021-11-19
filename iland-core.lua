@@ -13,9 +13,9 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.40",
-	numver = 240,
-	minLXL = {0,5,6},
+	version = "2.41",
+	numver = 241,
+	minLXL = {0,5,8},
 }
 
 Server = {
@@ -330,11 +330,11 @@ end
 function UpdateConfig(cfg_t)
 	local this = CloneTable(cfg_t)
 	if this.version==nil or this.version<240 then
-        ERROR('Configure file too old, you must rebuild it.')
         return false
     end
 	if this.version==240 then -- OLD STRUCTURE
 		cfg_t = CloneTable(cfg)
+		cfg_t.version = 241
 		cfg_t.plugin.language = this.manager.default_language
 		cfg_t.plugin.network = this.update_check
 		cfg_t.land.operator = this.manager.operator
@@ -368,10 +368,22 @@ function UpdateConfig(cfg_t)
 		cfg_t.features.disabled_listener = this.features.disabled_listener
 		cfg_t.features.chunk_side = this.features.chunk_side
 	end
-	return true
+	return cfg_t
+end
+function UpdateLand(start_ver)
+	if start_ver == 240 then
+		for landId,res in pairs(land_data) do
+			land_data[landId].permissions.use_armor_stand = false
+		end
+	end
+	ILAPI.save({0,1,0})
 end
 function load(para) -- { cfg, land, owner }
 	-- load cfg
+	if para==nil then
+		para = {1,1,1}
+	end
+	local need_update = {false,0}
 	if para[1]==1 then
 		if not(file.exists(DATA_PATH..'config.json')) then
 			WARN('Data file (config.json) does not exist, creating...')
@@ -388,7 +400,12 @@ function load(para) -- { cfg, land, owner }
 		end
 		local loadcfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
 		if cfg.version ~= loadcfg.version then -- need update
-			UpdateConfig(cfg)
+			need_update = {true,loadcfg.version}
+			loadcfg = UpdateConfig(cfg)
+			if loadcfg==false then
+				error('Configure file too old, you must rebuild it.')
+				return false
+			end
 		end
 
 		-- cfg -> plugin
@@ -428,6 +445,9 @@ function load(para) -- { cfg, land, owner }
 		cfg.features.disabled_listener = apply(loadcfg.features.disabled_listener,'table')
 		cfg.features.chunk_side = apply(loadcfg.features.chunk_side,'number')
 
+		if need_update[1] then
+			ILAPI.save({1,0,0})
+		end
 	end
 	-- load land data
 	if para[2]==1 then
@@ -436,9 +456,13 @@ function load(para) -- { cfg, land, owner }
 			file.writeTo(DATA_PATH..'data.json','{}')
 		end
 		land_data = JSON.decode(file.readFrom(DATA_PATH..'data.json'))
+		if need_update[1] then
+			UpdateLand(need_update[2])
+		end
 	end
 	-- load owners data
 	if para[3]==1 then
+		log('loaded')
 		if not(file.exists(DATA_PATH..'owners.json')) then
 			WARN('Data file (owners.json) does not exist, creating...')
 			file.writeTo(DATA_PATH..'owners.json','{}')
@@ -466,7 +490,7 @@ end
 
 LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.plugin.language..'.json'))
 if LangPack.VERSION ~= Plugin.numver then
-	ERROR('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
+	error('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
 	return
 end
 
@@ -611,6 +635,7 @@ function Handler_LandCfg(player,landId,option)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.lever'),perm.use_lever)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.button'),perm.use_button)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.pressure_plate'),perm.use_pressure_plate)
+		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.armor_stand'),perm.use_armor_stand)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.throw_potion'),perm.allow_throw_potion)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
@@ -674,12 +699,13 @@ function Handler_LandCfg(player,landId,option)
 				perm.use_lever = res[45]
 				perm.use_button = res[46]
 				perm.use_pressure_plate = res[47]
-				perm.allow_throw_potion = res[48]
-				perm.use_respawn_anchor = res[49]
-				perm.use_fishing_hook = res[50]
-				perm.use_bucket = res[51]
+				perm.use_armor_stand = res[48]
+				perm.allow_throw_potion = res[49]
+				perm.use_respawn_anchor = res[50]
+				perm.use_fishing_hook = res[51]
+				perm.use_bucket = res[52]
 			
-				perm.useitem = res[52]
+				perm.useitem = res[53]
 			
 				ILAPI.save({0,1,0})
 				player:sendModalForm(
@@ -1514,6 +1540,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	perm.use_fishing_hook=false
 	perm.use_bucket=false
 	perm.use_pressure_plate=false
+	perm.use_armor_stand=false
 	perm.allow_throw_potion=false
 	perm.allow_ride_entity=false
 	perm.allow_ride_trans=false
@@ -1735,7 +1762,9 @@ function ILAPI.RemoveTrust(landId,xuid)
 end
 function ILAPI.SetOwner(landId,xuid)
 	local ownerXuid = ILAPI.GetOwner(landId)
-	table.remove(land_owners[ownerXuid],FoundValueInList(land_owners[ownerXuid],landId))
+	if ownerXuid ~= '?' then
+		table.remove(land_owners[ownerXuid],FoundValueInList(land_owners[ownerXuid],landId))
+	end
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	UpdateLandOwnersMap(landId)
 	ILAPI.save({0,0,1})
@@ -2963,6 +2992,24 @@ mc.listen('onAttack',function(player,entity)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
+mc.listen('onChangeArmorStand',function(entity,player,slot)
+
+	if ChkNil_X2(entity,player) or ILAPI.IsDisabled('onChangeArmorStand') then
+		return
+	end
+
+	local landId = ILAPI.PosGetLand(FixBp(entity.blockPos))
+	if landId==-1 then return end -- No Land
+
+	local xuid = player.xuid
+	if land_data[landId].permissions.use_armor_stand then return end
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+end)
 mc.listen('onExplode',function(entity,pos)
 
 	if ChkNil(entity) or ILAPI.IsDisabled('onExplode') then
@@ -3391,7 +3438,7 @@ mc.listen('onServerStarted',function()
 	{
 		function ()
 			-- load : data
-			if load({1,1,1}) ~= true then
+			if load() ~= true then
 				error('wrong!')
 			end
 			-- load : maps
@@ -3402,6 +3449,7 @@ mc.listen('onServerStarted',function()
 		{
 			function (err)
 				ERROR('Something wrong when load data, plugin closed.')
+				log(err)
 				mc.runcmdEx('lxl unload iland-core.lua')
 			end
 		}

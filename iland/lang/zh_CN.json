@@ -1,5 +1,5 @@
 {
-    "VERSION": 240,
+    "VERSION": 241,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -92,6 +92,7 @@
     "gui.landmgr.landperm.other_options.lever": "允许拉动拉杆",
     "gui.landmgr.landperm.other_options.button": "允许按下按钮",
     "gui.landmgr.landperm.other_options.pressure_plate": "允许踩压力板",
+    "gui.landmgr.landperm.other_options.armor_stand": "允许操作盔甲架",
     "gui.landmgr.landperm.other_options.throw_potion": "允许丢药水",
     "gui.landmgr.landperm.other_options.respawn_anchor": "允许使用重生锚",
     "gui.landmgr.landperm.other_options.fishing": "允许使用钓竿",
