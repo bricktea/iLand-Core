@@ -13,8 +13,8 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.41",
-	numver = 241,
+	version = "2.42",
+	numver = 242,
 	minLXL = {0,5,8},
 }
 
@@ -2452,91 +2452,92 @@ mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),func
 	SendText(player,_Tr('title.oplandmgr.setselectool'))
 	MEM[xuid].selectool=0
 end)
-if cfg.features.landtp then
-	mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
-		local xuid = player.xuid
-		local landlst = {}
-		local tplands = {}
-		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
-			landlst[#landlst+1] = landId
+mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
+	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+	local xuid = player.xuid
+	local landlst = {}
+	local tplands = {}
+	for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
+		local name = ILAPI.GetNickname(landId)
+		local xpos = ILAPI.GetPoint(landId)
+		tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..PosToText(xpos)..') '..name
+		landlst[#landlst+1] = landId
+	end
+	for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+		local name = ILAPI.GetNickname(landId)
+		local xpos = ILAPI.GetPoint(landId)
+		tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..PosToText(xpos)..') '..name
+		landlst[#landlst+1] = landId
+	end
+	local Form = mc.newSimpleForm()
+	Form:setTitle(_Tr('gui.landtp.title'))
+	Form:setContent(_Tr('gui.landtp.tip'))
+	Form:addButton(_Tr('gui.general.close'))
+	for i,land in pairs(tplands) do
+		Form:addButton(land,'textures/ui/world_glyph_color')
+	end
+	player:sendForm(Form,function(player,id)
+		if id==nil or id==0 then return end
+		local landId = landlst[id]
+		if ILAPI.Teleport(player,landId) then
+			SendText(player,_Tr('title.landtp.success'))
+		else
+			SendText(player,_Tr('title.landtp.fail.danger'))
 		end
-		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
-			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..PosToText(xpos)..') '..name
-			landlst[#landlst+1] = landId
-		end
-		local Form = mc.newSimpleForm()
-		Form:setTitle(_Tr('gui.landtp.title'))
-		Form:setContent(_Tr('gui.landtp.tip'))
-		Form:addButton(_Tr('gui.general.close'))
-		for i,land in pairs(tplands) do
-			Form:addButton(land,'textures/ui/world_glyph_color')
-		end
-		player:sendForm(Form,function(player,id)
-			if id==nil or id==0 then return end
-			local landId = landlst[id]
-			if ILAPI.Teleport(player,landId) then
-				SendText(player,_Tr('title.landtp.success'))
-			else
-				SendText(player,_Tr('title.landtp.fail.danger'))
-			end
-		end
-		)
-	end)
-	mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
-		local xuid = player.xuid
-		local pos = FixBp(player.blockPos)
+	end
+	)
+end)
+mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
+	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+	local xuid = player.xuid
+	local pos = FixBp(player.blockPos)
 
-		local landId=ILAPI.PosGetLand(pos)
-		if landId==-1 then
-			SendText(player,_Tr('title.landtp.fail.noland'))
-			return false
-		end
-		if ILAPI.GetOwner(landId)~=xuid then
-			SendText(player,_Tr('title.landtp.fail.notowner'))
-			return false
-		end
-		local landname = ILAPI.GetNickname(landId,true)
-		land_data[landId].settings.tpoint = {
-			pos.x,
-			pos.y+1,
-			pos.z
-		}
-		ILAPI.save({0,1,0})
-		player:sendModalForm(
-			_Tr('gui.general.complete'),
-			_Tr('gui.landtp.point','<a>',PosToText({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
-			_Tr('gui.general.iknow'),
-			_Tr('gui.general.close'),
-			F_NULL
-		)
-	end)
-	mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
-		local xuid = player.xuid
-		local pos = FixBp(player.blockPos)
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then
+		SendText(player,_Tr('title.landtp.fail.noland'))
+		return false
+	end
+	if ILAPI.GetOwner(landId)~=xuid then
+		SendText(player,_Tr('title.landtp.fail.notowner'))
+		return false
+	end
+	local landname = ILAPI.GetNickname(landId,true)
+	land_data[landId].settings.tpoint = {
+		pos.x,
+		pos.y+1,
+		pos.z
+	}
+	ILAPI.save({0,1,0})
+	player:sendModalForm(
+		_Tr('gui.general.complete'),
+		_Tr('gui.landtp.point','<a>',PosToText({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+		_Tr('gui.general.iknow'),
+		_Tr('gui.general.close'),
+		F_NULL
+	)
+end)
+mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
+	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+	local xuid = player.xuid
+	local pos = FixBp(player.blockPos)
 
-		local landId=ILAPI.PosGetLand(pos)
-		if landId==-1 then
-			SendText(player,_Tr('title.landtp.fail.noland'))
-			return false
-		end
-		if ILAPI.GetOwner(landId)~=xuid then
-			SendText(player,_Tr('title.landtp.fail.notowner'))
-			return false
-		end
-		local def = VecMap[landId].a
-		land_data[landId].settings.tpoint = {
-			def.x,
-			def.y+1,
-			def.z
-		}
-		SendText(player,_Tr('title.landtp.removed'))
-	end)
-end
+	local landId=ILAPI.PosGetLand(pos)
+	if landId==-1 then
+		SendText(player,_Tr('title.landtp.fail.noland'))
+		return false
+	end
+	if ILAPI.GetOwner(landId)~=xuid then
+		SendText(player,_Tr('title.landtp.fail.notowner'))
+		return false
+	end
+	local def = VecMap[landId].a
+	land_data[landId].settings.tpoint = {
+		def.x,
+		def.y+1,
+		def.z
+	}
+	SendText(player,_Tr('title.landtp.removed'))
+end)
 
 -- [Server] Command Registry
 mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
