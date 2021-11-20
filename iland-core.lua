@@ -1380,6 +1380,7 @@ function RSR_Do(player,pos)
 		end
 		if not isOk then
 			MEM[xuid].rsr.step = 1
+			MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 			return
 		end
 		--- Range Check <E>
@@ -2347,7 +2348,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 				Money_Del(player,price)
 			end
 			SendText(player,_Tr('title.buyland.succeed'))
-			ILAPI.CreateLand(xuid,res.posA,res.posB,res.dimid)
+			local landId = ILAPI.CreateLand(xuid,res.posA,res.posB,res.dimid)
 			RSR_Delete(player)
 			MEM[xuid].newLand = nil
 			player:sendModalForm(
@@ -2355,7 +2356,12 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 				_Tr('gui.buyland.succeed'),
 				_Tr('gui.general.looklook'),
 				_Tr('gui.general.cancel'),
-				FORM_BACK_LandMgr
+				function(player,res)
+					if res then
+						MEM[xuid].landId = landId
+						GUI_FastMgr(player)
+					end
+				end
 			)
 		end
 	)
