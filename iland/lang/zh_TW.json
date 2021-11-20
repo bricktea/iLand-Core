@@ -1,5 +1,5 @@
 {
-    "VERSION": 241,
+    "VERSION": 242,
     "#1": "",
     
     "gui.land.title": "Land v<a>",
@@ -141,7 +141,7 @@
     "gui.buyland.content": "圈地成功！\\n長\\\\寬\\\\高: <a>\\\\<b>\\\\<c>格\\n體積: <d>塊\\n價格: <e><f> \\n錢包: <g><f>",
     "gui.buyland.succeed": "領地購買成功！是否現在打開領地管理器？",
     "gui.buyland.discount": " （已折扣<a>%%%%）",
-    "gui.delland.content": "您確定要刪除您的領地嗎？\\n如果確定，您將得到<a><b>退款。然後您的領地將失去保護，配置文件將立刻刪除。",
+    "gui.delland.content": "您確定要刪除您的領地嗎？\\n如果確定，您將得到<a><b>退款。然後您的領地將失去保護，數據將立刻被刪除。",
     "gui.landdescribe.tip": "領地備註會在其他訪客來到您的領地時發送給他們。\n\n支持變量：\n$visitor = 造訪者名稱\n$n = 換行符",
     "gui.landtrust.tip": "選擇操作模式",
     "gui.landtrust.addtrust": "添加受信任玩家",
@@ -245,6 +245,7 @@
     "talk.dim.one": "地獄",
     "talk.dim.two": "末地",
     "talk.dim.other": "其他維度",
+    "talk.feature.disabled": "管理員關閉了此功能",
     "talk.tomany": "不支持同時操作多人",
     "talk.invalidaction": "無效操作",
 
@@ -299,8 +300,8 @@
     "console.autoupdate.download": "正在下載... ",
     "console.autoupdate.errorbydown": "下載文件 <a> 失敗，錯誤代碼：<b>。請檢查您的網絡或反饋問題，更新已中斷。",
     "console.autoupdate.recoverbackup": "已經恢復備份，正在使用舊版本iLand。",
-    "console.autoupdate.errorbyverify": "文件 <a> 校驗失敗，請檢查您的網絡或反饋問題，更新已中斷。",
-    "console.autoupdate.success": "自動更新已完成，重啟服務器即可生效。 ",
+    "console.autoupdate.errorbyverify": "文件 <a> 校驗失敗，請檢查您的網絡或反饋問題，更新已中斷。 ",
+    "console.autoupdate.success": "自動更新已完成，重啟服務器即可生效。",
 
     "console.getonline.failbycode": "獲取聯網信息失敗，錯誤代碼：<a>。",
     "console.getonline.failed": "聯網信息獲取失敗。",
