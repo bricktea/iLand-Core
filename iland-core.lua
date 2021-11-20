@@ -329,7 +329,8 @@ end
 --------- Plugin Load <ST> ---------
 
 function UpdateConfig(cfg_o)
-	local this,cfg_t = CloneTable(cfg_o)
+	local this = CloneTable(cfg_o)
+	local cfg_t = CloneTable(cfg_o)
 	if this.version==nil or this.version<240 then
         return false
     end
