@@ -328,8 +328,8 @@ end
 
 --------- Plugin Load <ST> ---------
 
-function UpdateConfig(cfg_t)
-	local this = CloneTable(cfg_t)
+function UpdateConfig(cfg_o)
+	local this,cfg_t = CloneTable(cfg_o)
 	if this.version==nil or this.version<240 then
         return false
     end
@@ -368,6 +368,9 @@ function UpdateConfig(cfg_t)
 		cfg_t.features.disabled_listener = this.features.disabled_listener
 		cfg_t.features.chunk_side = this.features.chunk_side
 	end
+	if this.version==241 then
+		cfg_t.version = 242
+	end
 	return cfg_t
 end
 function UpdateLand(start_ver)
@@ -403,8 +406,8 @@ function load(para) -- { cfg, land, owner }
 		local loadcfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
 		if cfg.version ~= loadcfg.version then -- need update
 			need_update = {true,loadcfg.version}
-			loadcfg = UpdateConfig(cfg)
-			if loadcfg==false then
+			loadcfg = UpdateConfig(loadcfg)
+			if loadcfg==nil or loadcfg==false then
 				error('Configure file too old, you must rebuild it.')
 				return false
 			end
@@ -1308,11 +1311,14 @@ function RSR_Do(player,pos)
 			'3D',
 			'2D',
 			function (player,res)
-				if res == nil then
-					MEM[xuid].rsr = nil
+				MEM[xuid].rsr.step = 1
+				if (res and not(cfg.land.bought.three_dimension.enable)) or (not(res) and not(cfg.land.bought.two_dimension.enable)) then
+					SendText(player,_Tr('title.rangeselector.dimension.blocked'))
+					RSR_Delete(player)
+					if MEM[xuid].newLand~=nil then MEM[xuid].newLand=nil end
+					if MEM[xuid].reselectLand~=nil then MEM[xuid].reselectLand=nil end
 					return
 				end
-				MEM[xuid].rsr.step = 1
 				if res then
 					SendText(player,_Tr('title.rangeselector.dimension.chosed','<a>','3D'))
 					MEM[xuid].rsr.dimension = '3D'
