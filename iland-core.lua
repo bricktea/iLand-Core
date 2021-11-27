@@ -2108,12 +2108,13 @@ function FoundValueInList(list, value)
     end
     return -1
 end
-function StrSplit(str,reps) -- [NOTICE] This function from: blog.csdn.net
-    local resultStrList = {}
-    string.gsub(str,'[^'..reps..']+',function (w)
-        table.insert(resultStrList,w)
+function StrSplit(str,reps)
+    local result = {}
+---@diagnostic disable-next-line: discard-returns
+    string.gsub(str,'[^'..reps..']+',function (n)
+        table.insert(result,n)
     end)
-    return resultStrList
+    return result
 end
 function ArrayToPos(table) -- [x,y,z,d] => {x:x,y:y,z:z,d:d}
 	local t={}
@@ -3532,6 +3533,10 @@ mc.listen('onServerStarted',function()
 		else
 			ERROR(_Tr('console.getonline.failed'))
 		end
+	end
+
+	if not(collectgarbage('isrunning')) then
+		collectgarbage("restart")
 	end
 
 	INFO('Load','Completed, use memory: '..string.format("%.2f",collectgarbage('count')/1024)..'MB.')
