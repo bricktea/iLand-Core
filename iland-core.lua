@@ -2220,6 +2220,9 @@ function GetLink()
 	local id = JSON.decode(tokenRaw.data).token
 	return Server.link..id..'/iLand'
 end
+function Unload()
+	mc.runcmdEx('lxl unload iland-core.lua')
+end
 
 -- [Client] Command Registry
 mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
@@ -3486,8 +3489,7 @@ mc.listen('onServerStarted',function()
 		{
 			function (err)
 				ERROR('Something wrong when load data, plugin closed.')
-				log(err)
-				mc.runcmdEx('lxl unload iland-core.lua')
+				Unload()
 			end
 		}
 	}
@@ -3543,7 +3545,7 @@ mc.listen('onServerStarted',function()
 
 end)
 
--- export function
+-- Exported ILAPIs
 lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
 lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
 lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')

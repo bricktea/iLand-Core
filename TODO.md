@@ -1,12 +1,11 @@
-> Version **2.42**
- - [x] 领地传送无法关闭
- - [x] 一次圈地未成功再圈地仍显示选择点B
- - [x] 购买领地后打开的领地错误
- - [x] 修复升级旧版数据可能导致丢失的bug
- - [x] 修复二维/三维圈地开关失效
-
 > Version **2.43**
+ - [ ] LandMgr/OPLMgr删除领地退款问题
+ - [ ] Explode Auto
  - [ ] OPLMgr新方案
+
+> Version **2.44**
+ - [ ] SubLand
+ - [ ] OOP化代码
  - [ ] LandTp未加载区块问题
 
 > ILAPI Examples 计划
