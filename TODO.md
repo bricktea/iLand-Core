@@ -1,7 +1,9 @@
 > Version **2.43**
  - [ ] LandMgr/OPLMgr删除领地退款问题
- - [ ] Explode Auto
+ - [ ] Auto handle explode
+ - [ ] RangeSelector最后一步，y轴调整与一键取消
  - [ ] OPLMgr新方案
+ - [x] 适应LL2.0新Logger
 
 > Version **2.44**
  - [ ] SubLand

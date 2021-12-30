@@ -102,18 +102,20 @@ local minY <const> = -64
 local maxY <const> = 320
 
 -- Preload Functions
+logger.setConsole(true)
+logger.setTitle("ILand")
 function INFO(type,content)
 	if content==nil then
-		print('[ILand] |INFO| '..type)
+		logger.info(type)
 		return
 	end
-	print('[ILand] |'..type..'| '..content)
+	logger.info(type..' >> '..content)
 end
 function ERROR(content)
-	INFO('ERROR',content)
+	logger.error(content)
 end
 function WARN(content)
-	INFO('WARN',content)
+	logger.warn(content)
 end
 
 -- map builder
@@ -475,7 +477,7 @@ function load(para) -- { cfg, land, owner }
 		local wrongXuidFounded = false
 		for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
 			if data.xuid2name(ownerXuid) == '' then
-				ERROR(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
+				WARN(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
 				wrong_landowners[ownerXuid] = landIds
 				wrongXuidFounded = true
 			else
@@ -483,7 +485,7 @@ function load(para) -- { cfg, land, owner }
 			end
 		end
 		if wrongXuidFounded then
-			WARN(_Tr('console.error.readowner.tipxid'))
+			INFO(_Tr('console.error.readowner.tipxid'))
 		end
 	end
 	return true
@@ -878,10 +880,10 @@ function Handler_LandCfg(player,landId,option)
 			_Tr('gui.general.cancel'),
 			function (player,id)
 				if not(id) then return end
-				ILAPI.DeleteLand(landId)
 				if ILAPI.GetOwner(landId)==xuid then
 					Money_Add(player,value)
 				end
+				ILAPI.DeleteLand(landId)
 				player:sendModalForm(
 					_Tr('gui.general.complete'),
 					'Complete.',
@@ -1867,7 +1869,7 @@ function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 				return false
 			end
 		else
-			ERROR(_Tr('console.getonline.failed'))
+			WARN(_Tr('console.getonline.failed'))
 			return false
 		end
 	end
@@ -1917,7 +1919,7 @@ end
 -- feature function
 function _Tr(a,...)
 	if DEV_MODE and LangPack[a]==nil then
-		ERROR('Translation not found: '..a)
+		WARN('Translation not found: '..a)
 	end
 	local result = CloneTable(LangPack[a])
 	local args = {...}
@@ -3413,7 +3415,7 @@ function Upgrade(rawInfo)
 	if server ~= false then
 		source = server..'/'..updata.NumVer..'/'
 	else
-		ERROR(_Tr('console.getonline.failed'))
+		WARN(_Tr('console.getonline.failed'))
 		return false
 	end
 	
@@ -3533,7 +3535,7 @@ mc.listen('onServerStarted',function()
 				end
 			end)
 		else
-			ERROR(_Tr('console.getonline.failed'))
+			WARN(_Tr('console.getonline.failed'))
 		end
 	end
 
