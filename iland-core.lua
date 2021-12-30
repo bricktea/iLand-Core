@@ -101,7 +101,7 @@ end
 local minY <const> = -64
 local maxY <const> = 320
 
--- Preload Functions
+-- Init log system
 logger.setConsole(true)
 logger.setTitle("ILand")
 function INFO(type,content)
@@ -245,6 +245,7 @@ function BuildUIBITable()
 		'minecraft:dark_oak_fence_gate','minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
 		'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door','minecraft:jungle_door',
 		'minecraft:acacia_door','minecraft:dark_oak_door','minecraft:crimson_door','minecraft:warped_door',
+		'minecraft:dragon_egg'
 	}
 	local blockInterTmp = {
 		'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
@@ -3008,7 +3009,7 @@ mc.listen('onPlaceBlock',function(player,block)
 	return false
 end)
 mc.listen('onUseItemOn',function(player,item,block)
-
+	
 	if ChkNil(player) or ILAPI.IsDisabled('onUseItemOn') then
 		return
 	end
@@ -3043,6 +3044,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 	else
 		local bn = block.type
 		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
+		if bn == 'minecraft:dragon_egg' and perm.allow_destroy then return end -- 右键龙蛋（拓充）
 		if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
 		if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
 		if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
@@ -3066,7 +3068,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 	return false
 end)
 mc.listen('onAttack',function(player,entity)
-	
+
 	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttack') then
 		return
 	end
@@ -3140,7 +3142,7 @@ mc.listen('onExplode',function(entity,pos,radius,range,isDestroy,isFire)
 
 	return false
 end)
-mc.listen('onBedExplode',function(pos)
+mc.listen('onBedExplode',function(pos) -- Recently removed.
 
 	if ILAPI.IsDisabled('onBedExplode') then
 		return
@@ -3151,7 +3153,7 @@ mc.listen('onBedExplode',function(pos)
 	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end)
-mc.listen('onRespawnAnchorExplode',function(pos,player)
+mc.listen('onRespawnAnchorExplode',function(pos,player) -- Recently removed.
 
 	if ILAPI.IsDisabled('onRespawnAnchorExplode') then
 		return
