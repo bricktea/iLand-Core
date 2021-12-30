@@ -1030,7 +1030,7 @@ function GUI_OPLMgr(player)
 						end)
 					end
 					if mode==2 then -- 脚下
-						local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+						local landId = ILAPI.PosGetLand(player.blockPos)
 						if landId==-1 then
 							SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
 							return
@@ -1609,7 +1609,50 @@ function ILAPI.GetChunk(vec2,dimid)
 		return CloneTable(ChunkMap[dimid][Cx][Cz])
 	end
 	return -1
-end 
+end
+function ILAPI.GetDistence(landId,vec4)
+	local function pow(num)
+		return num*num
+	end
+	local function EucM(A,B) -- 2D
+		return math.sqrt(pow(B.x-A.x)+pow(B.z-A.z))
+	end
+
+	local edge = EdgeMap[landId].D2D
+	local depos = { edge[1],EucM(edge[1],vec4) }
+	for i,pos in pairs(edge) do
+		local euc = EucM(pos,vec4)
+		if euc<depos[2] then
+			depos = { pos,euc }
+		end
+	end
+	if ILAPI.GetLandDimension(landId)=='2D' then
+		return depos[2]
+	end
+	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-VecMap[landId].a.y),math.abs(vec4.y-VecMap[landId].b.y))))
+end
+function ILAPI.GetLandInRange(startpos,endpos,dimid)
+	local edge = CubeToEdge(startpos,endpos)
+	local result = {}
+	for i=1,#edge do
+		edge[i].dimid=dimid
+		local landId = ILAPI.PosGetLand(edge[i])
+		if landId~=-1 then
+			result[#result+1] = landId
+		end
+	end
+	for landId,val in pairs(land_data) do
+		if land_data[landId].range.dimid==dimid then
+			edge = EdgeMap[landId].D3D
+			for i=1,#edge do
+				if CubeHadPos(edge[i],startpos,endpos)==true then
+					result[#result+1] = landId
+				end
+			end
+		end
+	end
+	return NonRepeatedArray(result)
+end
 function ILAPI.GetAllLands()
 	local lst = {}
 	for id,v in pairs(land_data) do
@@ -2052,10 +2095,6 @@ function GenGUID()
         string.sub(guid,21,32)
     )
 end
-function FixBp(pos)
-	-- pos.y=pos.y-1
-	return pos
-end
 function ToStrDim(a)
 	if a==0 then return _Tr('talk.dim.zero') end
 	if a==1 then return _Tr('talk.dim.one') end
@@ -2190,6 +2229,17 @@ end
 function PosToText(vec3)
 	return vec3.x..','..vec3.y..','..vec3.z
 end
+function MakeIntPos(pos)
+	local result = {
+		x = math.floor(pos.x),
+		y = math.floor(pos.y),
+		z = math.floor(pos.z)
+	}
+	if pos.dimid ~= nil then
+		result.dimid = pos.dimid
+	end
+	return result
+end
 local function try(func)
 	local stat, res = pcall(func[1])
 	if not(stat) then
@@ -2214,6 +2264,17 @@ function SplicingArray(array,delimiter)
 	end
 	return result
 end
+function NonRepeatedArray(array)
+	local tmp = {}
+	local result = {}
+	for i,v in pairs(array) do
+	   tmp[v] = 0
+	end
+	for i,v in pairs(tmp) do
+		result[#result+1] = i
+	end
+	return result  
+end
 function GetLink()
 	local tokenRaw = network.httpGetSync('https://lxl-cloud.amd.rocks/id.json')
 	if tokenRaw.status~=200 then
@@ -2232,7 +2293,7 @@ mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
 		SendText(player,_Tr('command.error','<a>',args[1]),0)
 		return
 	end
-	local pos = FixBp(player.blockPos)
+	local pos = player.blockPos
 	local xuid = player.xuid
 	local landId = ILAPI.PosGetLand(pos)
 	if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
@@ -2509,7 +2570,7 @@ end)
 mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
 	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
 	local xuid = player.xuid
-	local pos = FixBp(player.blockPos)
+	local pos = player.blockPos
 
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then
@@ -2538,7 +2599,7 @@ end)
 mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
 	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
 	local xuid = player.xuid
-	local pos = FixBp(player.blockPos)
+	local pos = player.blockPos
 
 	local landId=ILAPI.PosGetLand(pos)
 	if landId==-1 then
@@ -2757,7 +2818,7 @@ function Timer_LandSign()
 		end
 
 		local xuid = player.xuid
-		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+		local landId = ILAPI.PosGetLand(player.blockPos)
 		if landId==-1 then
 			MEM[xuid].inland = 'null'
 			goto JUMPOUT_LANDSIGN
@@ -2809,7 +2870,7 @@ function Timer_ButtomSign()
 			goto JUMPOUT_BUTTOMSIGN
 		end
 
-		local landId = ILAPI.PosGetLand(FixBp(player.blockPos))
+		local landId = ILAPI.PosGetLand(player.blockPos)
 		if landId==-1 then
 			goto JUMPOUT_BUTTOMSIGN
 		end
@@ -3010,7 +3071,7 @@ mc.listen('onAttack',function(player,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	local landId=ILAPI.PosGetLand(entity.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -3040,7 +3101,7 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(FixBp(entity.blockPos))
+	local landId = ILAPI.PosGetLand(entity.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local xuid = player.xuid
@@ -3052,15 +3113,31 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
-mc.listen('onExplode',function(entity,pos)
+mc.listen('onExplode',function(entity,pos,radius,range,isDestroy,isFire)
 
-	if ChkNil(entity) or ILAPI.IsDisabled('onExplode') then
+	if ILAPI.IsDisabled('onExplode') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
+	local bp = MakeIntPos(pos)
+	local landId = ILAPI.PosGetLand(bp)
+	if landId==-1 then
+		local r = math.floor(radius) + 1
+		local lands = ILAPI.GetLandInRange({x=bp.x+r,y=bp.y+r,z=bp.z+r},{x=bp.x-r,y=bp.y-r,z=bp.z-r},pos.dimid)
+		if #lands==0 then
+			return
+		end
+		for i,landId in pairs(lands) do
+			if not land_data[landId].settings.ev_explode then
+				return false
+			end 
+		end
+	else
+		if land_data[landId].settings.ev_explode then
+			return
+		end 
+	end
+
 	return false
 end)
 mc.listen('onBedExplode',function(pos)
@@ -3091,7 +3168,7 @@ mc.listen('onTakeItem',function(player,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	local landId=ILAPI.PosGetLand(entity.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -3109,7 +3186,7 @@ mc.listen('onDropItem',function(player,item)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	local landId=ILAPI.PosGetLand(player.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -3183,7 +3260,7 @@ mc.listen('onSpawnProjectile',function(splasher,type)
 	end
 
 	if splasher:toPlayer()==nil then return end
-	local landId=ILAPI.PosGetLand(FixBp(splasher.blockPos))
+	local landId=ILAPI.PosGetLand(splasher.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local player=splasher:toPlayer()
@@ -3212,7 +3289,7 @@ mc.listen('onFireworkShootWithCrossbow',function(player)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	local landId=ILAPI.PosGetLand(player.blockPos)
 	if landId==-1 then return end -- No Land
 
 	local xuid=player.xuid
@@ -3241,7 +3318,7 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	local landId=ILAPI.PosGetLand(entity.blockPos)
 	if landId==-1 then return end -- No Land
 	
 	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
@@ -3262,7 +3339,7 @@ mc.listen('onRide',function(rider,entity)
 
 	if rider:toPlayer()==nil then return end
 
-	local landId=ILAPI.PosGetLand(FixBp(rider.blockPos))
+	local landId=ILAPI.PosGetLand(rider.blockPos)
 	if landId==-1 then return end -- No Land 
 
 	local player=rider:toPlayer()
@@ -3303,7 +3380,7 @@ mc.listen('onFarmLandDecay',function(pos,entity)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(FixBp(entity.blockPos))
+	local landId=ILAPI.PosGetLand(entity.blockPos)
 	if landId==-1 then return end -- No Land
 	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
@@ -3337,7 +3414,7 @@ mc.listen('onEat',function(player,item)
 	end
 
 	local xuid = player.xuid
-	local landId=ILAPI.PosGetLand(FixBp(player.blockPos))
+	local landId=ILAPI.PosGetLand(player.blockPos)
 	if landId==-1 then return end -- No Land
 
 	if land_data[landId].permissions.eat then return end -- Perm Allow
@@ -3552,6 +3629,8 @@ lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
 lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
 lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
 lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
+lxl.export(ILAPI.GetDistence,'ILAPI_GetDistance')
+lxl.export(ILAPI.GetLandInRange,'ILAPI_GetLandInRange')
 lxl.export(ILAPI.GetAllLands,'ILAPI_GetAllLands')
 lxl.export(ILAPI.CheckPerm,'ILAPI_CheckPerm')
 lxl.export(ILAPI.CheckSetting,'ILAPI_CheckSetting')

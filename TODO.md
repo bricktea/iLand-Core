@@ -1,7 +1,8 @@
 > Version **2.43**
- - [ ] LandMgr/OPLMgr删除领地退款问题
- - [ ] Auto handle explode
+ - [x] 领地管理器删除领地不退款
+ - [x] 增强爆炸事件处理
  - [ ] RangeSelector最后一步，y轴调整与一键取消
+ - [ ] 领地内点龙蛋...
  - [ ] OPLMgr新方案
  - [x] 适应LL2.0新Logger
 

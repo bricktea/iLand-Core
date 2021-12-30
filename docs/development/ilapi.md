@@ -36,6 +36,14 @@
  - 返回值
    - `number` 距离
 
+##### `ILAPI_GetLandInRange` - 获取一个长方体内所有领地
+ - 传入参数
+   - startpos - `Vec3` 任意坐标
+   - endpos - `Vec3` 任意坐标
+   - dimid - `number` 维度ID
+ - 返回值
+   - `table` 一个数组，包含所有符合条件的领地ID
+
 ### 信息获取类 - 领地
 
 ##### `ILAPI_CheckPerm` - 检查领地某权限开启状态
