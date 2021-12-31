@@ -769,10 +769,10 @@ function Handler_LandCfg(player,landId,option)
 				for i,v in pairs(shareList) do
 					ids[#ids+1] = data.xuid2name(v)
 				end
-				PSR_New(pl,SRCB_land_trust,ids)
+				PlayerSelector.Create(pl,SRCB_land_trust,ids)
 				return
 			end
-			PSR_New(pl,SRCB_land_trust)
+			PlayerSelector.Create(pl,SRCB_land_trust)
 		end)
 		return
 	end
@@ -832,7 +832,7 @@ function Handler_LandCfg(player,landId,option)
 			_Tr('gui.general.close'),
 			function(pl,ids)
 				if not(ids) then return end
-				PSR_New(
+				PlayerSelector.Create(
 					pl,
 					function (player,selected)
 						if #selected > 1 then
@@ -871,7 +871,7 @@ function Handler_LandCfg(player,landId,option)
 				local xuid = player.xuid
 
 				MEM[xuid].reselectLand = { id = landId }
-				RSR_New(player,function(player,res)
+				RangeSelector.Create(player,function(player,res)
 					MEM[xuid].keepingTitle = {
 						_Tr('title.selectland.complete1'),
 						_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land ok')
@@ -987,6 +987,7 @@ function GUI_OPLMgr(player)
 	Form:setTitle(_Tr('gui.oplandmgr.landmgr.title'))
 	Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
 	Form:addButton(_Tr('gui.oplandmgr.mgrtype.land'),'textures/ui/icon_book_writable')
+	-- Form:addButton(_Tr('gui.oplandmgr.mgrtype.plugin'),'textures/ui/icon_setting')
 	Form:addButton(_Tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
 	Form:addButton(_Tr('gui.general.close'))
 	player:sendForm(Form,function(player,id)
@@ -1006,7 +1007,7 @@ function GUI_OPLMgr(player)
 				
 					local xuid = player.xuid
 					if mode==0 then -- 按玩家
-						PSR_New(player,function(pl,selected) 
+						PlayerSelector.Create(player,function(pl,selected) 
 							if #selected>1 then
 								SendText(pl,_Tr('talk.tomany'))
 								return
@@ -1057,7 +1058,16 @@ function GUI_OPLMgr(player)
 				end
 			)
 		end
-		if id==1 then -- Manage Listener
+		--[[
+		if id==1 then
+			CfgHelper.Create(player)
+			CfgHelper.RegType(player,'经济')
+			CfgHelper.AddItem(player,cfg.economic.currency_name,'经济','货币名称')
+			CfgHelper.Send(player)
+		end
+		]]
+		if id==1 then
+		-- if id==2 then -- Manage Listener
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.listenmgr.title'))
 			Form:addLabel(_Tr('gui.listenmgr.tip'))
@@ -1169,8 +1179,77 @@ function GUI_FastMgr(player,isOP)
 	)
 end
 
--- Selector
-function PSR_New(player,callback,customlist) -- player selector
+-- Useful Helpers
+
+CfgHelper = {}
+function CfgHelper.Create(player)
+	local xuid = player.xuid
+	MEM[xuid].cfghelper = {
+		info = {
+			title = _Tr('gui.oplandmgr.plugin.title'),
+			describe = _Tr('gui.oplandmgr.plugin.tip')
+		},
+		pointers = {},
+		items = {}
+	}
+	return true
+end
+function CfgHelper.RegType(player,class)
+	local xuid = player.xuid
+	MEM[xuid].cfghelper.pointers[class] = {}
+	MEM[xuid].cfghelper.items[class] = {}
+	return true
+end
+function CfgHelper.AddItem(player,cfgpointer,class,name)
+	local xuid = player.xuid
+	if MEM[xuid].cfghelper.items[class]==nil then
+		return false
+	end
+	MEM[xuid].cfghelper.pointers[class][#MEM[xuid].cfghelper.pointers[class]+1] = cfgpointer
+	MEM[xuid].cfghelper.items[class][#MEM[xuid].cfghelper.items[class]+1] = {
+		name = name
+	}
+	return true
+end
+function CfgHelper.Send(player)
+	local xuid = player.xuid
+	local read = MEM[xuid].cfghelper
+	local Form = mc.newCustomForm()
+	Form:setTitle(read.info.title)
+	Form:addLabel(read.info.describe)
+	for class,items in pairs(read.items) do
+		Form:addLabel('§l'..class)
+		for i,item in pairs(items) do
+			local T = type(read.pointers[class][i])
+			if T=='string' or T=='number' then
+				Form:addInput(item.name,'',read.pointers[class][i])
+			end
+			if T=='boolean' then
+				Form:addSwitch(item.name,read.pointers[class][i])
+			end
+ 		end
+	end
+	player:sendForm(Form,function(player,res)
+		if res==nil then
+			MEM[xuid].cfghelper = nil
+			return
+		end
+		local pointer_pool = {}
+		for class,items in pairs(MEM[xuid].cfghelper.items) do
+			for i,item in pairs(items) do
+				pointer_pool[#pointer_pool+1] = item
+			 end
+		end
+		for i,result in pairs(res) do
+			pointer_pool[i] = result
+		end
+		ILAPI.save({1,0,0})
+		MEM[xuid].cfghelper = nil
+	end)
+end
+
+PlayerSelector = {}
+function PlayerSelector.Create(player,callback,customlist) -- player selector
 	
 	-- get player list
 	local pl_list = {}
@@ -1201,10 +1280,10 @@ function PSR_New(player,callback,customlist) -- player selector
 	end
 
 	-- call
-	PSR_Callback(player,'#')
+	PlayerSelector.Callback(player,'#')
 
 end
-function PSR_Callback(player,data)
+function PlayerSelector.Callback(player,data)
 	if data==nil then
 		MEM[player.xuid].psr=nil
 		return
@@ -1298,9 +1377,11 @@ function PSR_Callback(player,data)
 		Form:addSwitch(plname,false)
 	end
 	Form:addStepSlider(_Tr('gui.playerselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
-	player:sendForm(Form,PSR_Callback)
+	player:sendForm(Form,PlayerSelector.Callback)
 end
-function RSR_New(player,callback) -- world range selector
+
+RangeSelector = {}
+function RangeSelector.Create(player,callback) -- world range selector
 	local xuid = player.xuid
 	MEM[xuid].rsr = {
 		step = 0,
@@ -1314,9 +1395,9 @@ function RSR_New(player,callback) -- world range selector
 		_Tr('title.rangeselector.inmode'),
 		_Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 	}
-	RSR_Do(player)
+	RangeSelector.Push(player)
 end
-function RSR_Do(player,pos)
+function RangeSelector.Push(player,pos)
 	--[[ ENUM: setps
 		(0) -> Chose dimension.
 		(1) -> Select posA.
@@ -1336,7 +1417,7 @@ function RSR_Do(player,pos)
 				MEM[xuid].rsr.step = 1
 				if (res and not(cfg.land.bought.three_dimension.enable)) or (not(res) and not(cfg.land.bought.two_dimension.enable)) then
 					SendText(player,_Tr('title.rangeselector.dimension.blocked'))
-					RSR_Delete(player)
+					RangeSelector.Clear(player)
 					if MEM[xuid].newLand~=nil then MEM[xuid].newLand=nil end
 					if MEM[xuid].reselectLand~=nil then MEM[xuid].reselectLand=nil end
 					return
@@ -1377,7 +1458,7 @@ function RSR_Do(player,pos)
 	if MEM[xuid].rsr.step == 2 then
 		if MEM[xuid].rsr.dimension ~= '3D' then
 			MEM[xuid].rsr.step = 3
-			RSR_Do(player,pos)
+			RangeSelector.Push(player,pos)
 			return
 		end
 
@@ -1393,7 +1474,7 @@ function RSR_Do(player,pos)
 			MEM[xuid].rsr.posA.y = res[1]
 			pos.y = res[2]
 			MEM[xuid].rsr.step = 3
-			RSR_Do(player,pos)
+			RangeSelector.Push(player,pos)
 		end)
 		return
 	end
@@ -1479,7 +1560,7 @@ function RSR_Do(player,pos)
 		return
 	end
 end
-function RSR_Delete(player)
+function RangeSelector.Clear(player)
 	local xuid = player.xuid
 	MEM[xuid].rsr = nil
 	MEM[xuid].keepingTitle = nil
@@ -2388,7 +2469,7 @@ mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
 	end
 
 	MEM[xuid].newLand = {}
-	RSR_New(player,function(player,res)
+	RangeSelector.Create(player,function(player,res)
 		MEM[xuid].keepingTitle = {
 			_Tr('title.selectland.complete1'),
 			_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
@@ -2401,12 +2482,12 @@ mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,a
 	local xuid = player.xuid
 	if MEM[xuid].newLand~=nil then
 		MEM[xuid].newLand = nil
-		RSR_Delete(player)
+		RangeSelector.Clear(player)
 		SendText(player,_Tr('title.giveup.succeed'))
 	end
 	if MEM[xuid].reselectLand~=nil then
 		MEM[xuid].reselectLand = nil
-		RSR_Delete(player)
+		RangeSelector.Clear(player)
 		SendText(player,_Tr('title.reselectland.giveup.succeed'))
 	end
 end)
@@ -2416,7 +2497,7 @@ end)
 mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
 	local xuid = player.xuid
 	if MEM[xuid].rsr ~= nil then
-		RSR_Do(player,player.blockPos)
+		RangeSelector.Push(player,player.blockPos)
 	else
 		SendText(player,_Tr('title.rangeselector.fail.outmode'))
 	end
@@ -2476,7 +2557,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 			end
 			SendText(player,_Tr('title.buyland.succeed'))
 			local landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
-			RSR_Delete(player)
+			RangeSelector.Clear(player)
 			MEM[xuid].newLand = nil
 			player:sendModalForm(
 				'Complete.',
@@ -2563,7 +2644,7 @@ mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 
 			ILAPI.save({0,1,0})
 			SendText(player,_Tr('title.reselectland.succeed'))
-			RSR_Delete(player)
+			RangeSelector.Clear(player)
 		end
 	)
 end)
@@ -3484,7 +3565,7 @@ mc.listen('onStartDestroyBlock',function(player,block)
 	if MEM[xuid].rsr ~= nil and (MEM[xuid].rsr.sleep==nil or MEM[xuid].rsr.sleep<os.time()) then
 		local HandItem = player:getHand()
 		if HandItem:isNull() or HandItem.type~=cfg.features.selection.tool_type then return end
-		RSR_Do(player,block.pos)
+		RangeSelector.Push(player,block.pos)
 		MEM[xuid].rsr.sleep = os.time() + 2
 	end
 
