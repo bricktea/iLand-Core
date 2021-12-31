@@ -341,5 +341,5 @@
     "console.error.money.protocol": "正在使用未知的经济组件 '<a>'。",
     "console.error.money.scorenull": "无法访问计分板对象，可能对应的经济计分板不存在。请使用/land mgr更改为正确计分板或尝试重启服务器。",
     "console.error.readowner.xuid": "无法识别 XUID（<a>），玩家不存在于XUID数据库，跳过读入。",
-    "console.error.readowner.tipxid": "尝试使用 \"land repair 1\" 删除无效的玩家，或令玩家重新进入服务器以使XUID数据库记录。"
+    "console.error.readowner.tipxid": "以上提示暂不影响插件运行，请让对应XUID的玩家重新进入服务器以使数据库记录。"
 }
