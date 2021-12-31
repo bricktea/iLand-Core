@@ -13,8 +13,8 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.42",
-	numver = 242,
+	version = "2.43",
+	numver = 243,
 	minLXL = {0,5,8},
 }
 
@@ -2078,6 +2078,9 @@ function ILAPI.IsLandCollision(newposA,newposB,newDimid,ignoreList) -- 领地冲
 	end
 	return { status = true }
 end
+function ILAPI.GetMemoryCount()
+	return tonumber(string.format("%.2f",collectgarbage('count')/1024))
+end
 
 -- +-+ +-+ +-+   +-+ +-+ +-+
 -- |T| |H| |E|   |E| |N| |D|
@@ -2760,6 +2763,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
 	end
 	INFO('The server is running iLand v'..Plugin.version)
 	INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
+	INFO('Memory Used: '..ILAPI.GetMemoryCount()..'MB')
 end)
 mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
 	local name = SplicingArray(args,' ')
@@ -3754,7 +3758,7 @@ mc.listen('onServerStarted',function()
 		collectgarbage("restart")
 	end
 
-	INFO('Load','Completed, use memory: '..string.format("%.2f",collectgarbage('count')/1024)..'MB.')
+	INFO('Load','Completed, use memory: '..ILAPI.GetMemoryCount()..'MB.')
 
 end)
 
