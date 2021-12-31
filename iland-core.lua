@@ -386,6 +386,9 @@ function UpdateConfig(cfg_o)
 	if this.version==241 then
 		cfg_t.version = 242
 	end
+	if this.version==242 then
+		cfg_t.version = 243
+	end
 	return cfg_t
 end
 function UpdateLand(start_ver)
@@ -3587,7 +3590,7 @@ function Upgrade(rawInfo)
 	local function isLXLSupported(list)
 		local version = lxl.version()
 		for n,ver in pairs(list) do
-			if ver[1]==version[1] and ver[2]==version[2] and ver[3]==version[3] then
+			if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
 				return true
 			end
 		end
