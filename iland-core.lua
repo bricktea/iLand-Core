@@ -2429,27 +2429,34 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 	else
 		dimension_info = '§l2D-Land §r'
 	end
-	player:sendModalForm(
-		dimension_info.._Tr('gui.buyland.title')..discount_info,
+	local Form = mc.newSimpleForm()
+	Form:setTitle(dimension_info.._Tr('gui.buyland.title')..discount_info)
+	Form:setContent(
 		_Tr('gui.buyland.content',
-			'<a>',cubeInfo.length,
-			'<b>',cubeInfo.width,
-			'<c>',cubeInfo.height,
-			'<d>',cubeInfo.volume,
-			'<e>',price,
-			'<f>',cfg.economic.currency_name,
-			'<g>',Money_Get(player)
-		),
-		_Tr('gui.general.buy'),
-		_Tr('gui.general.close'),
-		function (player,id)
-			if not(id) then
+		'<a>',cubeInfo.length,
+		'<b>',cubeInfo.width,
+		'<c>',cubeInfo.height,
+		'<d>',cubeInfo.volume,
+		'<e>',price,
+		'<f>',cfg.economic.currency_name,
+		'<g>',Money_Get(player)
+	))
+	Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/check')
+	Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
+	Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/cancel')
+	player:sendForm(Form,
+		function (player,res)
+			if res==nil or res==1 then
 				SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
+				return
+			end
+			if res==2 then
+				player:runcmd('land giveup')
 				return
 			end
 		
 			local xuid = player.xuid
-			local res = MEM[xuid].newLand.range
+			local range = MEM[xuid].newLand.range
 			local player_credits = Money_Get(player)
 			if price > player_credits then
 				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name));return
@@ -2457,7 +2464,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 				Money_Del(player,price)
 			end
 			SendText(player,_Tr('title.buyland.succeed'))
-			local landId = ILAPI.CreateLand(xuid,res.posA,res.posB,res.dimid)
+			local landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
 			RSR_Delete(player)
 			MEM[xuid].newLand = nil
 			player:sendModalForm(
@@ -2472,8 +2479,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 					end
 				end
 			)
-		end
-	)
+		end)
 end)
 mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 	local xuid = player.xuid
