@@ -1306,6 +1306,13 @@ function RSR_New(player,callback) -- world range selector
 	RSR_Do(player)
 end
 function RSR_Do(player,pos)
+	--[[ ENUM: setps
+		(0) -> Chose dimension.
+		(1) -> Select posA.
+		(2) -> Select posB.
+		(3) -> [3D-Only] Move Y.
+		(4) -> Complete.
+	]]
 	local xuid = player.xuid
 	local dimid = player.pos.dimid
 	if MEM[xuid].rsr.step == 0 then
@@ -1357,12 +1364,36 @@ function RSR_Do(player,pos)
 		return
 	end
 	if MEM[xuid].rsr.step == 2 then
+		if MEM[xuid].rsr.dimension ~= '3D' then
+			MEM[xuid].rsr.step = 3
+			RSR_Do(player,pos)
+			return
+		end
+
+		local posA = MEM[xuid].rsr.posA
+		local Form = mc.newCustomForm()
+		Form:setTitle(_Tr('gui.rangeselector.title'))
+		Form:addLabel(_Tr('gui.rangeselector.tip'))
+		Form:addLabel(_Tr('gui.rangeselector.selectedpos','<a>',posA.x,'<b>',posA.y,'<c>',posA.z,'<d>',pos.x,'<e>',pos.y,'<f>',pos.z))
+		Form:addSlider(_Tr('gui.rangeselector.movestarty'),minY,maxY,1,posA.y)
+		Form:addSlider(_Tr('gui.rangeselector.moveendy'),minY,maxY,1,pos.y)
+		player:sendForm(Form,function(player,res)
+			if res==nil then return end
+			MEM[xuid].rsr.posA.y = res[1]
+			pos.y = res[2]
+			MEM[xuid].rsr.step = 3
+			RSR_Do(player,pos)
+		end)
+		return
+	end
+	if MEM[xuid].rsr.step == 3 then
 		if MEM[xuid].rsr.dimid ~= dimid then
 			SendText(player,_Tr('title.rangeselector.fail.dimdiff'))
 			return
 		end
 
-		local cubeInfo = CubeGetInfo(MEM[xuid].rsr.posA,pos)
+		local posA = MEM[xuid].rsr.posA
+		local cubeInfo = CubeGetInfo(posA,pos)
 
 		--- Range Check <S>
 		local isOk = true
@@ -1380,9 +1411,9 @@ function RSR_Do(player,pos)
 		end
 		local chk
 		if MEM[xuid].reselectLand~=nil then -- can collision own if reselecting.
-			chk = ILAPI.IsLandCollision(MEM[xuid].rsr.posA,pos,dimid,{MEM[xuid].reselectLand.id})
+			chk = ILAPI.IsLandCollision(posA,pos,dimid,{MEM[xuid].reselectLand.id})
 		else
-			chk = ILAPI.IsLandCollision(MEM[xuid].rsr.posA,pos,dimid)
+			chk = ILAPI.IsLandCollision(posA,pos,dimid)
 		end
 		if not(chk.status) and isOk then
 			isOk = false
@@ -1399,14 +1430,14 @@ function RSR_Do(player,pos)
 		if MEM[xuid].rsr.dimension=='2D' then
 			MEM[xuid].rsr.posB.y = maxY
 		end
-		MEM[xuid].rsr.posA,MEM[xuid].rsr.posB = SortPos(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB)
-		MEM[xuid].rsr.step = 3
+		MEM[xuid].rsr.posA,MEM[xuid].rsr.posB = SortPos(posA,MEM[xuid].rsr.posB)
+		MEM[xuid].rsr.step = 4
 		MEM[xuid].keepingTitle = nil
 		local edge
 		if MEM[xuid].rsr.dimension == '3D' then
 			edge = CubeToEdge(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB)
 		else
-			edge = CubeToEdge_2D(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB)
+			edge = CubeToEdge_2D(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB,player.pos.y+1)
 		end
 		if #edge < cfg.features.particles.max_amount then
 			MEM[xuid].particles = edge
@@ -1426,7 +1457,7 @@ function RSR_Do(player,pos)
 		cb(player,{posA=MEM[xuid].rsr.posA,posB=MEM[xuid].rsr.posB,dimid=MEM[xuid].rsr.dimid,dimension=MEM[xuid].rsr.dimension})
 		return
 	end
-	if MEM[xuid].rsr.step == 3 then
+	if MEM[xuid].rsr.step == 4 then
 		-- what the fxxk handle...
 		if MEM[xuid].newLand~=nil then
 			player:runcmd("land buy")
@@ -2191,16 +2222,19 @@ function CubeToEdge(spos,epos)
 	end
 	return edge
 end
-function CubeToEdge_2D(spos,epos)
+function CubeToEdge_2D(spos,epos,customY)
 	local edge={}
 	local posB,posA = SortPos(spos,epos)
+	if customY==nil then
+		customY = posA.y - 1
+	end
 	for i=1,math.abs(posA.x-posB.x)+1 do
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
-		edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=customY, z=posA.z }
+		edge[#edge+1] = { x=posA.x-i+1, y=customY, z=posB.z }
 	end
 	for i=1,math.abs(posA.z-posB.z)+1 do
-		edge[#edge+1] = { x=posA.x, y=posA.y-1, z=posA.z-i+1 }
-		edge[#edge+1] = { x=posB.x, y=posA.y-1, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posA.x, y=customY, z=posA.z-i+1 }
+		edge[#edge+1] = { x=posB.x, y=customY, z=posA.z-i+1 }
 	end
 	return edge
 end
@@ -3009,7 +3043,7 @@ mc.listen('onPlaceBlock',function(player,block)
 	return false
 end)
 mc.listen('onUseItemOn',function(player,item,block)
-	
+
 	if ChkNil(player) or ILAPI.IsDisabled('onUseItemOn') then
 		return
 	end

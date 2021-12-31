@@ -185,6 +185,12 @@
     "gui.playerselector.back": "上一页",
     "gui.playerselector.num": "第<a>页",
 
+    "gui.rangeselector.title": "Y轴调整",
+    "gui.rangeselector.tip": "你可以在这里调整现有的起点与终点的高度，如果不需要调整直接提交即可。",
+    "gui.rangeselector.selectedpos": "已选定: <a>,§l<b>§r,<c> >> <d>,§l<e>§r,<f>",
+    "gui.rangeselector.movestarty": "起点Y轴",
+    "gui.rangeselector.moveendy": "终点Y轴",
+
     "title.rangeselector.inmode": "[ 圈地模式 ]",
     "title.rangeselector.selectpoint": "请手持 <a>, 点击方块或使用 /land set 选定 <b> 点。",
     "title.rangeselector.dimension.chose": "选择领地维度",
