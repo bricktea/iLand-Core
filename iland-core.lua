@@ -13,8 +13,8 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.43",
-	numver = 243,
+	version = "2.44",
+	numver = 244,
 	minLXL = {0,5,8},
 }
 
@@ -24,18 +24,7 @@ Server = {
 	memInfo = {}
 }
 
-JSON = {}
-function JSON.encode(tab,space)
-	if space==nil then
-		return data.toJson(tab)
-	else
-		return data.toJson(tab,space)
-	end
-	
-end
-function JSON.decode(str)
-	return data.parseJson(str)
-end
+JSON = require('dkjson')
 
 ILAPI={};MEM={}
 MainCmd = 'land'
@@ -410,7 +399,7 @@ function load(para) -- { cfg, land, owner }
 	if para[1]==1 then
 		if not(file.exists(DATA_PATH..'config.json')) then
 			WARN('Data file (config.json) does not exist, creating...')
-			file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg,4))
+			file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 		end
 		local count = 0
 		local function apply(val,typ)
@@ -1978,7 +1967,7 @@ end
 -- [[ UNEXPORT FUNCTIONS ]]
 function ILAPI.save(mode) -- {config,data,owners}
 	if mode[1] == 1 then
-		file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg,4))
+		file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 	end
 	if mode[2] == 1 then
 		file.writeTo(DATA_PATH..'data.json',JSON.encode(land_data))
@@ -1988,7 +1977,7 @@ function ILAPI.save(mode) -- {config,data,owners}
 		for xuid,landIds in pairs(wrong_landowners) do
 			tmpowners[xuid] = landIds
 		end
-		file.writeTo(DATA_PATH..'owners.json',JSON.encode(tmpowners,4))
+		file.writeTo(DATA_PATH..'owners.json',JSON.encode(tmpowners))
 	end
 end
 function ILAPI.CanControl(mode,name)
