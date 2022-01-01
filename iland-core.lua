@@ -372,12 +372,6 @@ function UpdateConfig(cfg_o)
 		cfg_t.features.disabled_listener = this.features.disabled_listener
 		cfg_t.features.chunk_side = this.features.chunk_side
 	end
-	if this.version==241 then
-		cfg_t.version = 242
-	end
-	if this.version==242 then
-		cfg_t.version = 243
-	end
 	return cfg_t
 end
 function UpdateLand(start_ver)
