@@ -349,7 +349,7 @@ function UpdateConfig(cfg_o)
 		cfg_t.land.bought.two_dimension.enable = this.features.land_2D
 		cfg_t.land.bought.two_dimension.calculate_method = this.land_buy.calculation_2D
 		cfg_t.land.bought.two_dimension.price = this.land_buy.price_2D
-		cfg_t.land.bought.square_range = {this.land.land_max_square,this.land.land_min_square}
+		cfg_t.land.bought.square_range = {this.land.land_min_square,this.land.land_max_square}
 		cfg_t.land.bought.discount = this.money.discount/100
 		cfg_t.land.refund_rate = this.land_buy.refund_rate
 		cfg_t.economic.protocol = this.money.protocol
@@ -451,6 +451,19 @@ function load(para) -- { cfg, land, owner }
 		cfg.features.disabled_listener = apply(loadcfg.features.disabled_listener,'table')
 		cfg.features.chunk_side = apply(loadcfg.features.chunk_side,'number')
 
+		-- Automatically correct cfg.
+		if cfg.land.bought.square_range[1]>cfg.land.bought.square_range[2] then
+			WARN('cfg.land.bought.square_range has an error, which has been corrected.')
+			table.sort(cfg.land.bought.square_range)
+			need_update[1] = true
+		end
+		if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
+			WARN('cfg.economic.protocol has an error, which has been corrected.')
+			cfg.economic.protocol = 'scoreboard'
+			need_update[1] = true
+		end
+
+		-- Save if need update.
 		if need_update[1] then
 			ILAPI.save({1,0,0})
 		end
