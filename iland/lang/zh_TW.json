@@ -1,5 +1,5 @@
 {
-    "VERSION": 244,
+    "VERSION": 245,
     "#1": "",
     
     "gui.land.title": "Land v<a>",
@@ -213,6 +213,7 @@
     "title.getlicense.succeed": "已請求新建領地\n",
     "title.getlicense.limit": "你想當地主是吧，無產階級是不能有這麼多地的。",
     "title.buyland.moneynotenough": "餘額不足！\n",
+    "title.buyland.fail.apirefuse": "付款過程中止，因為API拒絕創建此領地。",
 	"title.buyland.ordersaved": "您的領地購買訂單已暫存，可手持 <a> 再次單擊地面呼出訂單\n放棄此次購買請使用\"/land giveup\"",
     "title.buyland.succeed": "購買成功！\n正在為您註冊領地...",
     "title.land.deleted": "<a> 已刪除",
@@ -227,6 +228,7 @@
     "title.giveup.succeed": "許可已被放棄",
     "title.giveup.failed": "沒有可以放棄的圈地許可",
     "title.reselectland.giveup.succeed": "已取消重新圈地",
+    "title.reselectland.fail.apirefuse": "付款過程中止，因為API拒絕修改此領地。",
     "title.reselectland.succeed": "選定成功！新的領地範圍已生效。",
     "title.landlimit.noperm": "這裡是領地，你無權操作",
     "title.landlimit.nearby": "距離他人領地太近，操作被撤銷",
@@ -299,10 +301,11 @@
     "console.update.vacancy": "抱歉，當前版本與雲端版本相差不止一個版本，請手動更新。",
     "console.update.disabled": "雲端設定關閉了自動更新，請及時手動更新。",
     "console.update.auto": "由於您開啟了自動更新，正在開始更新您的iLand到新版本...",
-    "console.update.restart": "更新完畢需要重啟服務器以生效。",
+    "console.update.restart": "更新完畢需要重啟服務器以生效。 ",
     
     "console.autoupdate.start": "正在開始自動更新...",
-    "console.autoupdate.alreadylatest": "更新停止，因為已經是最新版本（<a>）。","console.autoupdate.download": "正在下載... ",
+    "console.autoupdate.alreadylatest": "更新停止，因為已經是最新版本（<a>）。",
+    "console.autoupdate.download": "正在下載... ",
     "console.autoupdate.errorbydown": "下載文件 <a> 失敗，錯誤代碼：<b>。請檢查您的網絡或反饋問題，更新已中斷。",
     "console.autoupdate.recoverbackup": "已經恢復備份，正在使用舊版本iLand。",
     "console.autoupdate.errorbyverify": "文件 <a> 校驗失敗，請檢查您的網絡或反饋問題，更新已中斷。",
