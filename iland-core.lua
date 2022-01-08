@@ -1601,6 +1601,9 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	end
 
 	local posA,posB = SortPos(startpos,endpos)
+	if not ILAPI.IsLandCollision(posA,posB,dimid).status then
+		return -1
+	end
 
 	-- LandData Templete
 	land_data[landId]={
@@ -1754,7 +1757,7 @@ function ILAPI.GetDistence(landId,vec4)
 			depos = { pos,euc }
 		end
 	end
-	if ILAPI.GetLandDimension(landId)=='2D' then
+	if ILAPI.GetDimension(landId)=='2D' then
 		return depos[2]
 	end
 	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-VecMap[landId].a.y),math.abs(vec4.y-VecMap[landId].b.y))))
@@ -2085,6 +2088,31 @@ end
 function ILAPI.GetMemoryCount()
 	return tonumber(string.format("%.2f",collectgarbage('count')/1024))
 end
+function ILAPI.SetRange(landId,newposA,newposB,newDimid)
+
+	if ILAPI.GetDimension(landId) == '2D' then
+		newposA.y = minY
+		newposB.y = maxY
+	end
+	if not ILAPI.IsLandCollision(newposA,newposB,newDimid,{landId}).status then
+		return false
+	end
+	local posA,posB = SortPos(newposA,newposB)
+
+	UpdateLandEdgeMap(landId,'del')
+	UpdateChunk(landId,'del')
+	UpdateLandPosMap(landId,'del')
+	land_data[landId].range.start_position = {posA.x,posA.y,posA.z}
+	land_data[landId].range.end_position = {posB.x,posB.y,posB.z}
+	land_data[landId].range.dimid = newDimid
+	land_data[landId].settings.tpoint = {posA.x,posA.y+1,posA.z}
+	UpdateLandEdgeMap(landId,'add')
+	UpdateChunk(landId,'add')
+	UpdateLandPosMap(landId,'add')
+
+	ILAPI.save({0,1,0})
+	return true
+end
 
 -- +-+ +-+ +-+   +-+ +-+ +-+
 -- |T| |H| |E|   |E| |N| |D|
@@ -2094,6 +2122,7 @@ end
 function _Tr(a,...)
 	if DEV_MODE and LangPack[a]==nil then
 		WARN('Translation not found: '..a)
+		return
 	end
 	local result = CloneTable(LangPack[a])
 	local args = {...}
@@ -2557,27 +2586,33 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 			local xuid = player.xuid
 			local range = MEM[xuid].newLand.range
 			local player_credits = Money_Get(player)
+			local landId
 			if price > player_credits then
-				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name));return
+				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
+				return
 			else
-				Money_Del(player,price)
-			end
-			SendText(player,_Tr('title.buyland.succeed'))
-			local landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
-			RangeSelector.Clear(player)
-			MEM[xuid].newLand = nil
-			player:sendModalForm(
-				'Complete.',
-				_Tr('gui.buyland.succeed'),
-				_Tr('gui.general.looklook'),
-				_Tr('gui.general.cancel'),
-				function(player,res)
-					if res then
-						MEM[xuid].landId = landId
-						GUI_FastMgr(player)
-					end
+				landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
+				if landId~=-1 then
+					Money_Del(player,price)
+					SendText(player,_Tr('title.buyland.succeed'))
+					player:sendModalForm(
+						'Complete.',
+						_Tr('gui.buyland.succeed'),
+						_Tr('gui.general.looklook'),
+						_Tr('gui.general.cancel'),
+						function(player,res)
+							if res then
+								MEM[xuid].landId = landId
+								GUI_FastMgr(player)
+							end
+						end
+					)
+				else
+					SendText(player,_Tr('title.buyland.fail.apirefuse'))
 				end
-			)
+				RangeSelector.Clear(player)
+				MEM[xuid].newLand = nil
+			end
 		end)
 end)
 mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
@@ -2619,37 +2654,22 @@ mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 		_Tr('gui.general.cancel'),
 		function(player,result)
 			if result==nil or not(result) then return end
-			if payT==0 then
-				if Money_Get(player)<needto then
-					SendText(player,_Tr('title.buyland.moneynotenough'))
-					return
+			local status
+			if payT==0 and Money_Get(player)<needto then
+				SendText(player,_Tr('title.buyland.moneynotenough'))
+				return
+			end
+			status = ILAPI.SetRange(landId,res.posA,res.posB)
+			if status then
+				if payT==0 then
+					Money_Del(player,needto)
+				else
+					Money_Add(player,needto)
 				end
-				Money_Del(player,needto)
 			else
-				Money_Add(player,needto)
+				SendText(player,_Tr('title.reselectland.fail.apirefuse'))
 			end
-			local pA = res.posA
-			local pB = res.posB
-			if res.dimension == '2D' then
-				pA.y = minY
-				pB.y = maxY
-			end
-
-			UpdateLandEdgeMap(landId,'del') -- rebuild maps.
-			UpdateChunk(landId,'del')
-			UpdateLandPosMap(landId,'del')
-
-			land_data[landId].range.start_position = {pA.x,pA.y,pA.z}
-			land_data[landId].range.end_position = {pB.x,pB.y,pB.z}
-			land_data[landId].range.dimid = res.dimid
-			land_data[landId].settings.tpoint = {pA.x,pA.y+1,pA.z}
 			MEM[xuid].reselectLand = nil
-			
-			UpdateLandEdgeMap(landId,'add')
-			UpdateChunk(landId,'add')
-			UpdateLandPosMap(landId,'add')
-
-			ILAPI.save({0,1,0})
 			SendText(player,_Tr('title.reselectland.succeed'))
 			RangeSelector.Clear(player)
 		end
