@@ -297,7 +297,7 @@
     "console.update.preview": "正在使用未公开版本 <a> 。",
     "console.update.newversion": "获取到到新版本 <a> ,可以使用 /land update 自动更新！",
     "console.update.newcontent": "更新内容：",
-    "console.update.force": "抱歉，由于云端设定，您的iLand必须更新倒 <a> 才可使用，强制更新大多在旧版本存在严重问题时才会启用。",
+    "console.update.force": "抱歉，由于云端设定，您的iLand必须更新到 <a> 才可使用，强制更新大多在旧版本存在严重问题时才会启用。",
     "console.update.unsupport": "抱歉，当前LXL版本与云端版本不匹配，因此自动更新停止。",
     "console.update.vacancy": "抱歉，当前版本与云端版本相差不止一个版本，请手动更新。",
     "console.update.disabled": "云端设定关闭了自动更新，请及时手动更新。",

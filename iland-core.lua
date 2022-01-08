@@ -3602,6 +3602,17 @@ end)
 -- Network Handler
 function Upgrade(rawInfo)
 
+	--[[
+		The directory structure for server:
+		# source = .../iLand/{numver}/...
+		Vars:
+		$plugin_path	plugins/
+		$data_path		plugins/iland/
+		Example(numver=245):
+		$plugin_path::iland-core.lua	=>	H://server.link/abc/iLand/245/iland-core.lua
+		$data_path::lang/zh_CN.json		=>	H://server.link/abc/iLand/245/lang/zh_CN.json
+	]]
+
 	local function recoverBackup(dt)
 		INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
 		for n,backupfilename in pairs(dt) do
@@ -3675,7 +3686,7 @@ function Upgrade(rawInfo)
 
 		local tmp = network.httpGetSync(source..raw[2])
 		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
-		if tmp.status~=200 or tmp2.status then -- download check
+		if tmp.status~=200 or tmp2.status~=200 then -- download check
 			ERROR(
 				_Tr('console.autoupdate.errorbydown',
 					'<a>',raw[2],
@@ -3761,7 +3772,7 @@ mc.listen('onServerStarted',function()
 						INFO('Update',n..'. '..text)
 					end
 					if data.Force_Update then
-						INFO('Update',_Tr('console.update.force'))
+						INFO('Update',_Tr('console.update.force',data.Updates[1].Version))
 						Upgrade(data)
 					end
 					if cfg.features.auto_update then
