@@ -1437,10 +1437,10 @@ function RangeSelector.Push(player,pos)
 			SendText(player,_Tr('title.rangeselector.fail.dimblocked'))
 			return
 		end
-		MEM[xuid].rsr.posA = pos
 		if MEM[xuid].rsr.dimension=='2D' then
-			MEM[xuid].rsr.posA.y = minY
+			pos.y = minY
 		end
+		MEM[xuid].rsr.posA = pos
 		MEM[xuid].rsr.dimid = dimid
 		MEM[xuid].rsr.step = 2
 		MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','B')
@@ -1484,9 +1484,12 @@ function RangeSelector.Push(player,pos)
 		end
 
 		local posA = MEM[xuid].rsr.posA
+		if MEM[xuid].rsr.dimension=='2D' then
+			pos.y = maxY
+		end
 		local cubeInfo = CubeGetInfo(posA,pos)
 
-		--- Range Check <S>
+		--- Check land square.
 		local isOk = true
 		if cubeInfo.square<cfg.land.bought.square_range[1] and not(ILAPI.IsLandOperator(xuid)) and isOk then
 			isOk = false
@@ -1500,29 +1503,29 @@ function RangeSelector.Push(player,pos)
 			isOk = false
 			SendText(player,_Tr('title.rangeselector.fail.toolow'))
 		end
-		local chk
+		
+		--- Check land collision.
+		local collcheck
 		if MEM[xuid].reselectLand~=nil then -- can collision own if reselecting.
-			chk = ILAPI.IsLandCollision(posA,pos,dimid,{MEM[xuid].reselectLand.id})
+			collcheck = ILAPI.IsLandCollision(posA,pos,dimid,{MEM[xuid].reselectLand.id})
 		else
-			chk = ILAPI.IsLandCollision(posA,pos,dimid)
+			collcheck = ILAPI.IsLandCollision(posA,pos,dimid)
 		end
-		if not(chk.status) and isOk then
+		if not(collcheck.status) and isOk then
 			isOk = false
-			SendText(player,_Tr('title.rangeselector.fail.collision','<a>',chk.id,'<b>',PosToText(chk.pos)))
+			SendText(player,_Tr('title.rangeselector.fail.collision','<a>',collcheck.id,'<b>',PosToText(collcheck.pos)))
 		end
+
+		--- Check result.
 		if not isOk then
 			MEM[xuid].rsr.step = 1
 			MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 			return
 		end
-		--- Range Check <E>
 
+		--- Apply.
 		MEM[xuid].rsr.posB = pos
-		if MEM[xuid].rsr.dimension=='2D' then
-			MEM[xuid].rsr.posB.y = maxY
-		end
 		MEM[xuid].rsr.posA,MEM[xuid].rsr.posB = SortPos(posA,MEM[xuid].rsr.posB)
-		MEM[xuid].rsr.step = 4
 		MEM[xuid].keepingTitle = nil
 		local edge
 		if MEM[xuid].rsr.dimension == '3D' then
@@ -1544,6 +1547,8 @@ function RangeSelector.Push(player,pos)
 				'<c>',pos.x,'<d>',pos.y,'<e>',pos.z
 			)
 		)
+
+		MEM[xuid].rsr.step = 4
 		local cb = MEM[xuid].rsr.cbfunc
 		cb(player,{posA=MEM[xuid].rsr.posA,posB=MEM[xuid].rsr.posB,dimid=MEM[xuid].rsr.dimid,dimension=MEM[xuid].rsr.dimension})
 		return
