@@ -29,9 +29,24 @@ jobs:
           cp -a iland/* D:/out/iland/
           cp -a install_upgrade_guide.txt D:/out/
         shell: bash
+
+      - name: Download depending libs
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          curl -L -o D:/out/lib/dkjson.lua "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3"
       
+      - name: Create iLand Document shortcut
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          cat>"D:/out/iLand Document.url"<<EOF
+          [InternetShortcut]
+          IDList=
+          URL=https://myland.amd.rocks/
+          EOF
+        shell: bash
+
       - name: Upload DevPack
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: iland-preview
+          name: iLand-Preview
           path: D:/out/
