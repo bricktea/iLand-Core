@@ -552,7 +552,7 @@ function Handler_LandCfg(player,landId,option)
 			_Tr('gui.landmgr.landinfo.title'),
 			_Tr('gui.landmgr.landinfo.content',
 				'<a>',owner,
-				'<b>',landId,
+				'<b>',MakeShortILD(landId),
 				'<c>',ILAPI.GetNickname(landId,false),
 				'<d>',ILAPI.GetDimension(landId),
 				'<e>',ToStrDim(land_data[landId].range.dimid),
