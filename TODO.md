@@ -1,16 +1,19 @@
 > Version **2.60**
- - [x] 部分配置项自动修复
- - [ ] 合并Explode
+ - [x] 现在领地信息查看里只能看到部分LandID
+ - [x] 活塞推动限制现在仅作用于附近，而非领地内
+ - [x] 合并Explode
  - [ ] 重选领地范围有Bug
  - [ ] 按玩家来管理领地，选中领地似乎没反应
  - [ ] 一些权限/配置项Nearby化
  - [ ] 加入流水控制
- - [ ] 领地内左键龙蛋（Block::attack）
  - [ ] LandTp Fix
  - [ ] OPLMgr新方案
  - [ ] ILAPI: IsListened, SetListener
  - [ ] Addons破坏方块保护（如果可）
  - [ ] 整理文档站
+
+> Version **2.61**
+ - [ ] 领地内左键龙蛋（lxl0.5.12）
 
 > Version **3.0**
  - [ ] SubLand

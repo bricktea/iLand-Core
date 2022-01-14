@@ -3182,6 +3182,36 @@ FormCallbacks = {
 	}
 }
 
+EventCallbacks = {
+	onExplode = function(source,pos,radius,range,isDestroy,isFire)
+
+		if ILAPI.IsDisabled('onExplode') then
+			return
+		end
+	
+		local bp = Pos.ToIntPos(pos)
+		local landId = ILAPI.PosGetLand(bp)
+		if landId==-1 then
+			local r = math.floor(radius) + 1
+			local lands = ILAPI.GetLandInRange({x=bp.x+r,y=bp.y+r,z=bp.z+r},{x=bp.x-r,y=bp.y-r,z=bp.z-r},pos.dimid)
+			if #lands==0 then
+				return
+			end
+			for i,landId in pairs(lands) do
+				if not land_data[landId].settings.ev_explode then
+					return false
+				end 
+			end
+		else
+			if land_data[landId].settings.ev_explode then
+				return
+			end 
+		end
+	
+		return false
+	end
+}
+
 -- Minecraft Eventing
 
 mc.listen('onJoin',function(player)
@@ -3371,55 +3401,6 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
-end)
-mc.listen('onExplode',function(entity,pos,radius,range,isDestroy,isFire)
-
-	if ILAPI.IsDisabled('onExplode') then
-		return
-	end
-
-	local bp = Pos.ToIntPos(pos)
-	local landId = ILAPI.PosGetLand(bp)
-	if landId==-1 then
-		local r = math.floor(radius) + 1
-		local lands = ILAPI.GetLandInRange({x=bp.x+r,y=bp.y+r,z=bp.z+r},{x=bp.x-r,y=bp.y-r,z=bp.z-r},pos.dimid)
-		if #lands==0 then
-			return
-		end
-		for i,landId in pairs(lands) do
-			if not land_data[landId].settings.ev_explode then
-				return false
-			end 
-		end
-	else
-		if land_data[landId].settings.ev_explode then
-			return
-		end 
-	end
-
-	return false
-end)
-mc.listen('onBedExplode',function(pos) -- Recently removed.
-
-	if ILAPI.IsDisabled('onBedExplode') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
-	return false
-end)
-mc.listen('onRespawnAnchorExplode',function(pos,player) -- Recently removed.
-
-	if ILAPI.IsDisabled('onRespawnAnchorExplode') then
-		return
-	end
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_explode then return end -- EV Allow
 	return false
 end)
 mc.listen('onTakeItem',function(player,entity)
@@ -3778,6 +3759,8 @@ mc.listen('onServerStarted',function()
 	INFO('Load','Completed, use memory: '..ILAPI.GetMemoryCount()..'MB.')
 
 end)
+mc.listen('onBlockExplode',EventCallbacks.onExplode)
+mc.listen('onEntityExplode',EventCallbacks.onExplode)
 
 -- Exported ILAPIs
 
