@@ -8,6 +8,8 @@
  - [ ] 领地内左键龙蛋（Block::attack）
  - [ ] LandTp Fix
  - [ ] OPLMgr新方案
+ - [ ] ILAPI: IsListened, SetListener
+ - [ ] Addons破坏方块保护（如果可）
  - [ ] 整理文档站
 
 > Version **3.0**
