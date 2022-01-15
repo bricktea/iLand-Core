@@ -205,6 +205,16 @@
  - 返回值
    - `number` 区块边长
 
+##### `ILAPI_IsListenerDisabled` - 获取指定监听器是否被关闭
+ - 传入参数 `无`
+ - 返回值
+   - `boolean` 开启/关闭
+
+##### `ILAPI_GetApiVersion` - 获取ILAPI版本号
+ - 传入参数 `无`
+ - 返回值
+   - `number` 版本号
+
 ##### `ILAPI_GetVersion` - 获取iLand版本号
  - 传入参数 `无`
  - 返回值

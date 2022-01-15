@@ -15,6 +15,7 @@
 Plugin = {
 	version = "2.60",
 	numver = 260,
+	apiver = 200,
 	minLXL = {0,5,11},
 }
 
@@ -26,10 +27,10 @@ Server = {
 
 JSON = require('dkjson')
 
-ILAPI={};MEM={}
+ILAPI = {}; MEM = {}
 MainCmd = 'land'
 DATA_PATH = 'plugins\\iland\\'
-local land_data;local land_owners={};local wrong_landowners={}
+local land_data; local land_owners = {}; local wrong_landowners = {}
 
 -- [Raw] config.json
 local cfg = {
@@ -1928,6 +1929,15 @@ end
 function ILAPI.GetChunkSide()
 	return cfg.features.chunk_side
 end
+function ILAPI.IsDisabled(listener)
+	if Map.Listener.data[listener]~=nil then
+		return true
+	end
+	return false
+end
+function ILAPI.GetApiVersion()
+	return Plugin.apiver
+end
 function ILAPI.GetVersion()
 	return Plugin.numver
 end
@@ -1964,12 +1974,6 @@ function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 		end
 	end
 	return n
-end
-function ILAPI.IsDisabled(listener)
-	if Map.Listener.data[listener]~=nil then
-		return true
-	end
-	return false
 end
 function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 	-- [0] return list (0:zh_CN....)
@@ -3827,6 +3831,8 @@ lxl.export(ILAPI.Teleport,'ILAPI_Teleport')
 lxl.export(ILAPI.GetMoneyProtocol,'ILAPI_GetMoneyProtocol')
 lxl.export(ILAPI.GetLanguage,'ILAPI_GetLanguage')
 lxl.export(ILAPI.GetChunkSide,'ILAPI_GetChunkSide')
+lxl.export(ILAPI.IsDisabled,'ILAPI_IsListenerDisabled')
+lxl.export(ILAPI.GetApiVersion,'ILAPI_GetApiVersion')
 lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 
 -- Signs.

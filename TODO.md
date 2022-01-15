@@ -4,10 +4,9 @@
  - [x] 合并Explode
  - [x] 领地外红石更新
  - [x] 重选领地范围有Bug
- - [ ] 按玩家来管理领地，选中领地似乎没反应
  - [ ] LandTp Fix
  - [ ] OPLMgr新方案
- - [ ] ILAPI: IsListened, SetListener
+ - [x] ILAPI: IsListenerDisabled, GetApiVersion
  - [ ] Addons破坏方块保护（如果可）
  - [ ] 整理文档站
 
