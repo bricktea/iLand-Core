@@ -13,9 +13,9 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.45",
-	numver = 245,
-	minLXL = {0,5,10},
+	version = "2.60",
+	numver = 260,
+	minLXL = {0,5,11},
 }
 
 Server = {
@@ -121,16 +121,6 @@ end
 -- Init map system
 Map = {
 	Init = function()
-		Map.Land.Edge.data = {}
-		Map.Land.Position.data = {}
-		Map.Land.Trusted.data = {}
-		Map.Land.Owner.data = {}
-		Map.Land.Operator.data = {}
-		Map.Chunk.data = {
-			[0] = {},	-- 主世界
-			[1] = {},	-- 地狱
-			[2] = {}	-- 末地
-		}
 		for landId,data in pairs(land_data) do
 			Map.Land.Edge.update(landId,'add')
 			Map.Land.Position.update(landId,'add')
@@ -143,7 +133,11 @@ Map = {
 		Map.Listener.build()
 	end,
 	Chunk = {
-		data = {},
+		data = {
+			[0] = {},	-- 主世界
+			[1] = {},	-- 地狱
+			[2] = {}	-- 末地
+		},
 		update = function(landId,mode)
 			local TxTz={} -- ChunkData(position)
 			local ThisRange = land_data[landId].range
@@ -403,14 +397,22 @@ function UpdateConfig(cfg_o)
 	return cfg_t
 end
 function UpdateLand(start_ver)
-	if start_ver==240 then
+	if start_ver<=240 then
 		for landId,res in pairs(land_data) do
 			local perm = land_data[landId].permissions
 			perm.use_armor_stand = false
 			perm.eat = false
 		end
 	end
-	ILAPI.save({0,1,0})
+	if start_ver<=245 then
+		for landId,res in pairs(land_data) do
+			local setting = land_data[landId].settings
+			setting.ev_redstone_update = false
+		end
+	end
+	if not DEV_MODE then
+		ILAPI.save({0,1,0})
+	end
 end
 function load(para) -- { cfg, land, owner }
 	-- load cfg
@@ -492,7 +494,7 @@ function load(para) -- { cfg, land, owner }
 		end
 
 		-- Save if need update.
-		if need_update[1] then
+		if need_update[1] and not DEV_MODE then
 			ILAPI.save({1,0,0})
 		end
 	end
@@ -1570,7 +1572,8 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 			ev_explode = false,
 			ev_farmland_decay = false,
 			ev_piston_push = false,
-			ev_fire_spread = false
+			ev_fire_spread = false,
+			ev_redstone_update = false
 		},
 		range = {
 			start_position = {
@@ -1585,64 +1588,63 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 			},
 			dimid = dimid
 		},
-		permissions = {}
+		permissions = {
+			allow_destroy = false,
+			allow_entity_destroy = false,
+			allow_place = false,
+			allow_attack_player = false,
+			allow_attack_animal = false,
+			allow_attack_mobs = true,
+			allow_open_chest = false,
+			allow_pickupitem = false,
+			allow_dropitem = true,
+			use_anvil = false,
+			use_barrel = false,
+			use_beacon = false,
+			use_bed = false,
+			use_bell = false,
+			use_blast_furnace = false,
+			use_brewing_stand = false,
+			use_campfire = false,
+			use_firegen = false,
+			use_cartography_table = false,
+			use_composter = false,
+			use_crafting_table = false,
+			use_daylight_detector = false,
+			use_dispenser = false,
+			use_dropper = false,
+			use_enchanting_table = false,
+			use_door = false,
+			use_fence_gate = false,
+			use_furnace = false,
+			use_grindstone = false,
+			use_hopper = false,
+			use_jukebox = false,
+			use_loom = false,
+			use_stonecutter = false,
+			use_noteblock = false,
+			use_shulker_box = false,
+			use_smithing_table = false,
+			use_smoker = false,
+			use_trapdoor = false,
+			use_lectern = false,
+			use_cauldron = false,
+			use_lever = false,
+			use_button = false,
+			use_respawn_anchor = false,
+			use_item_frame = false,
+			use_fishing_hook = false,
+			use_bucket = false,
+			use_pressure_plate = false,
+			use_armor_stand = false,
+			eat = false,
+			allow_throw_potion = false,
+			allow_ride_entity = false,
+			allow_ride_trans = false,
+			allow_shoot = false,
+			useitem = false
+		}
 	}
-
-	local perm = land_data[landId].permissions
-	perm.allow_destroy=false
-	perm.allow_entity_destroy=false
-	perm.allow_place=false
-	perm.allow_attack_player=false
-	perm.allow_attack_animal=false
-	perm.allow_attack_mobs=true
-	perm.allow_open_chest=false
-	perm.allow_pickupitem=false
-	perm.allow_dropitem=true
-	perm.use_anvil = false
-	perm.use_barrel = false
-	perm.use_beacon = false
-	perm.use_bed = false
-	perm.use_bell = false
-	perm.use_blast_furnace = false
-	perm.use_brewing_stand = false
-	perm.use_campfire = false
-	perm.use_firegen = false
-	perm.use_cartography_table = false
-	perm.use_composter = false
-	perm.use_crafting_table = false
-	perm.use_daylight_detector = false
-	perm.use_dispenser = false
-	perm.use_dropper = false
-	perm.use_enchanting_table = false
-	perm.use_door=false
-	perm.use_fence_gate = false
-	perm.use_furnace = false
-	perm.use_grindstone = false
-	perm.use_hopper = false
-	perm.use_jukebox = false
-	perm.use_loom = false
-	perm.use_stonecutter = false
-	perm.use_noteblock = false
-	perm.use_shulker_box = false
-	perm.use_smithing_table = false
-	perm.use_smoker = false
-	perm.use_trapdoor = false
-	perm.use_lectern = false
-	perm.use_cauldron = false
-	perm.use_lever=false
-	perm.use_button=false
-	perm.use_respawn_anchor=false
-	perm.use_item_frame=false
-	perm.use_fishing_hook=false
-	perm.use_bucket=false
-	perm.use_pressure_plate=false
-	perm.use_armor_stand=false
-	perm.eat=false
-	perm.allow_throw_potion=false
-	perm.allow_ride_entity=false
-	perm.allow_ride_trans=false
-	perm.allow_shoot=false
-	perm.useitem=false
 
 	-- Write data
 	if land_owners[xuid]==nil then -- ilapi
@@ -3636,13 +3638,14 @@ mc.listen('onPistonPush',function(pos,block)
 	if landId~=-1 then
 		return
 	end
-	local lands = ILAPI.GetLandInRange({x=pos.x+2,y=pos.y+2,z=pos.z+2},{x=pos.x-2,y=pos.y-2,z=pos.z-2},pos.dimid)
+	local r = 2
+	local lands = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
 	for i,Id in pairs(lands) do
 		if not land_data[Id].settings.ev_piston_push then
 			return false
 		end 
 	end
-	
+
 end)
 mc.listen('onFireSpread',function(pos)
 
@@ -3672,6 +3675,26 @@ mc.listen('onEat',function(player,item)
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
+end)
+mc.listen('onRedStoneUpdate',function(block,level,isActive)
+
+	if ILAPI.IsDisabled('onRedStoneUpdate') then
+		return
+	end
+
+	local pos = block.pos
+	local landId = ILAPI.PosGetLand(pos)
+	if landId~=-1 then
+		return
+	end
+	local r = 2
+	local lands = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
+	for i,Id in pairs(lands) do
+		if not land_data[Id].settings.ev_redstone_update then
+			return false
+		end 
+	end
+
 end)
 mc.listen('onStartDestroyBlock',function(player,block)
 
