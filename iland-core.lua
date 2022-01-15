@@ -3632,10 +3632,17 @@ mc.listen('onPistonPush',function(pos,block)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_piston_push then return end -- Perm Allow
-	return false
+	local landId = ILAPI.PosGetLand(pos)
+	if landId~=-1 then
+		return
+	end
+	local lands = ILAPI.GetLandInRange({x=pos.x+2,y=pos.y+2,z=pos.z+2},{x=pos.x-2,y=pos.y-2,z=pos.z-2},pos.dimid)
+	for i,Id in pairs(lands) do
+		if not land_data[Id].settings.ev_piston_push then
+			return false
+		end 
+	end
+	
 end)
 mc.listen('onFireSpread',function(pos)
 

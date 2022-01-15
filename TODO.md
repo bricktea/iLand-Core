@@ -2,10 +2,9 @@
  - [x] 现在领地信息查看里只能看到部分LandID
  - [x] 活塞推动限制现在仅作用于附近，而非领地内
  - [x] 合并Explode
+ - [ ] 加入流水控制
  - [ ] 重选领地范围有Bug
  - [ ] 按玩家来管理领地，选中领地似乎没反应
- - [ ] 一些权限/配置项Nearby化
- - [ ] 加入流水控制
  - [ ] LandTp Fix
  - [ ] OPLMgr新方案
  - [ ] ILAPI: IsListened, SetListener
