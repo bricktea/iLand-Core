@@ -22,7 +22,7 @@ Plugin = {
 Server = {
 	link = "https://cdn.jsdelivr.net/gh/LiteLDev-LXL/Cloud/",
 	version = 203,
-	memInfo = {}
+	memData = {}
 }
 
 JSON = require('dkjson')
@@ -1543,6 +1543,13 @@ RangeSelector = {
 	end
 }
 
+SafeTeleport = {
+	Do = function(player,vec3,dimid)
+		local height = 1200
+		SendText(player,_Tr('api.safetp.tping'))
+	end
+}
+
 --#region ILAPI
 
 -- [[ KERNEL ]]
@@ -2197,16 +2204,6 @@ Pos = {
 		if A.y>B.y then A.y,B.y = B.y,A.y end
 		if A.z>B.z then A.z,B.z = B.z,A.z end
 		return A,B
-	end,
-	IsSafe = function(pos)
-		local posA = {x=pos.x+1,y=pos.y+1,z=pos.z+1,dimid=pos.dimid}
-		local posB = {x=pos.x-1,y=pos.y-1,z=pos.z-1,dimid=pos.dimid}
-		for n,sta in pairs(AABB.Traverse(posA,posB,pos.dimid)) do
-			if sta.y~=pos.y-1 and mc.getBlock(sta.x,sta.y,sta.z,sta.dimid).type~='minecraft:air' then
-				return false
-			end
-		end
-		return true
 	end
 }
 
@@ -2299,6 +2296,146 @@ String = {
 	end
 }
 
+Server.Repo = {
+	I18N = {
+		Install = 	function(name)
+			local lang_n = network.httpGetSync(Server.GetLink()..'/languages/'..name..'.json')
+			local lang_v = network.httpGetSync(Server.GetLink()..'/languages/'..name..'.json.md5.verify')
+			if lang_n.status~=200 or lang_v.status~=200 then
+				ERROR(_Tr('console.languages.install.statfail','<a>',name,'<b>',lang_n.status..','..lang_v.status))
+				return false
+			end
+			local raw = string.gsub(lang_n.data,'\n','\r\n')
+			if data.toMD5(raw)~=lang_v.data then
+				ERROR(_Tr('console.languages.install.verifyfail','<a>',name))
+				return false
+			end
+			local THISVER = JSON.decode(raw).VERSION
+			if THISVER~=Plugin.numver then
+				ERROR(_Tr('console.languages.install.versionfail','<a>',name,'<b>',THISVER,'<c>',Plugin.numver))
+				return false
+			end
+			file.writeTo(DATA_PATH..'lang\\'..name..'.json',raw)
+			return true
+		end
+	},
+	Plugin = {
+		Update = function(rawInfo)
+	
+			--[[
+				The directory structure for server:
+				# source = .../iLand/{numver}/...
+				Vars:
+				$plugin_path	plugins/
+				$data_path		plugins/iland/
+				Example(numver=245):
+				$plugin_path::iland-core.lua	=>	H://server.link/abc/iLand/245/iland-core.lua
+				$data_path::lang/zh_CN.json		=>	H://server.link/abc/iLand/245/lang/zh_CN.json
+			]]
+		
+			local function recoverBackup(dt)
+				INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
+				for n,backupfilename in pairs(dt) do
+					file.rename(backupfilename..'.bak',backupfilename)
+				end
+			end
+			local function isLXLSupported(list)
+				local version = lxl.version()
+				for n,ver in pairs(list) do
+					if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
+						return true
+					end
+				end
+				return false
+			end
+		
+			--  Check Data
+			local updata
+			if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
+				ERROR('console.update.vacancy')
+				return
+			end
+			if rawInfo.FILE_Version==Server.version then
+				updata = rawInfo.Updates[1]
+			else
+				ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
+				return
+			end
+			if rawInfo.DisableClientUpdate then
+				ERROR(_Tr('console.update.disabled'))
+				return
+			end
+			if not isLXLSupported(updata.LXL) then
+				ERROR(_Tr('console.update.unsupport'))
+				return
+			end
+			
+			-- Check Plugin version
+			if updata.NumVer<=Plugin.numver then
+				ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
+				return
+			end
+			INFO('AutoUpdate',_Tr('console.autoupdate.start'))
+			
+			-- Set Resource
+			local RawPath = {}
+			local BackupEd = {}
+			local server = Server.GetLink()
+			local source
+			if server ~= false then
+				source = server..'/'..updata.NumVer..'/'
+			else
+				WARN(_Tr('console.getonline.failed'))
+				return false
+			end
+			
+			INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
+			RawPath['$plugin_path'] = 'plugins\\'
+			RawPath['$data_path'] = DATA_PATH
+			
+			-- Get it, update.
+			for n,thefile in pairs(updata.FileChanged) do
+				local raw = String.Split(thefile,'::')
+				local path = RawPath[raw[1]]..raw[2]
+				INFO('Network',_Tr('console.autoupdate.download')..raw[2])
+				
+				if file.exists(path) then -- create backup
+					file.rename(path,path..'.bak')
+					BackupEd[#BackupEd+1]=path
+				end
+		
+				local tmp = network.httpGetSync(source..raw[2])
+				local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
+				if tmp.status~=200 or tmp2.status~=200 then -- download check
+					ERROR(
+						_Tr('console.autoupdate.errorbydown',
+							'<a>',raw[2],
+							'<b>',tmp.status..','..tmp2.status
+						)
+					)
+					recoverBackup(BackupEd)
+					return
+				end
+		
+				local raw = string.gsub(tmp.data,'\n','\r\n')
+				if data.toMD5(raw)~=tmp2.data then -- MD5 check
+					ERROR(
+						_Tr('console.autoupdate.errorbyverify',
+							'<a>',raw[2]
+						)
+					)
+					recoverBackup(BackupEd)
+					return
+				end
+		
+				file.writeTo(path,raw)
+			end
+		
+			INFO('AutoUpdate',_Tr('console.autoupdate.success'))
+		end
+	}
+}
+
 function Server.GetLink()
 	local tokenRaw = network.httpGetSync('https://lxl-cloud.amd.rocks/id.json')
 	if tokenRaw.status~=200 then
@@ -2310,6 +2447,10 @@ end
 
 function Plugin.Unload()
 	mc.runcmdEx('lxl unload iland-core.lua')
+end
+
+function Plugin.Reload()
+	mc.runcmdEx('lxl reload iland-core.lua')
 end
 
 -- Tools & Feature functions.
@@ -2414,139 +2555,6 @@ function EntityGetType(type)
 end
 function MakeShortILD(landId)
 	return string.sub(landId,0,16) .. '....'
-end
-function DownloadLanguage(name)
-	local lang_n = network.httpGetSync(Server.GetLink()..'/languages/'..name..'.json')
-	local lang_v = network.httpGetSync(Server.GetLink()..'/languages/'..name..'.json.md5.verify')
-	if lang_n.status~=200 or lang_v.status~=200 then
-		ERROR(_Tr('console.languages.install.statfail','<a>',name,'<b>',lang_n.status..','..lang_v.status))
-		return false
-	end
-	local raw = string.gsub(lang_n.data,'\n','\r\n')
-	if data.toMD5(raw)~=lang_v.data then
-		ERROR(_Tr('console.languages.install.verifyfail','<a>',name))
-		return false
-	end
-	local THISVER = JSON.decode(raw).VERSION
-	if THISVER~=Plugin.numver then
-		ERROR(_Tr('console.languages.install.versionfail','<a>',name,'<b>',THISVER,'<c>',Plugin.numver))
-		return false
-	end
-	file.writeTo(DATA_PATH..'lang\\'..name..'.json',raw)
-	return true
-end
-function Upgrade(rawInfo)
-
-	--[[
-		The directory structure for server:
-		# source = .../iLand/{numver}/...
-		Vars:
-		$plugin_path	plugins/
-		$data_path		plugins/iland/
-		Example(numver=245):
-		$plugin_path::iland-core.lua	=>	H://server.link/abc/iLand/245/iland-core.lua
-		$data_path::lang/zh_CN.json		=>	H://server.link/abc/iLand/245/lang/zh_CN.json
-	]]
-
-	local function recoverBackup(dt)
-		INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
-		for n,backupfilename in pairs(dt) do
-			file.rename(backupfilename..'.bak',backupfilename)
-		end
-	end
-	local function isLXLSupported(list)
-		local version = lxl.version()
-		for n,ver in pairs(list) do
-			if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
-				return true
-			end
-		end
-		return false
-	end
-
-	--  Check Data
-	local updata
-	if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
-		ERROR('console.update.vacancy')
-		return
-	end
-	if rawInfo.FILE_Version==Server.version then
-		updata = rawInfo.Updates[1]
-	else
-		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
-		return
-	end
-	if rawInfo.DisableClientUpdate then
-		ERROR(_Tr('console.update.disabled'))
-		return
-	end
-	if not isLXLSupported(updata.LXL) then
-		ERROR(_Tr('console.update.unsupport'))
-		return
-	end
-	
-	-- Check Plugin version
-	if updata.NumVer<=Plugin.numver then
-		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
-		return
-	end
-	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
-	
-	-- Set Resource
-	local RawPath = {}
-	local BackupEd = {}
-	local server = Server.GetLink()
-	local source
-	if server ~= false then
-		source = server..'/'..updata.NumVer..'/'
-	else
-		WARN(_Tr('console.getonline.failed'))
-		return false
-	end
-	
-	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
-	RawPath['$plugin_path'] = 'plugins\\'
-	RawPath['$data_path'] = DATA_PATH
-	
-	-- Get it, update.
-	for n,thefile in pairs(updata.FileChanged) do
-		local raw = String.Split(thefile,'::')
-		local path = RawPath[raw[1]]..raw[2]
-		INFO('Network',_Tr('console.autoupdate.download')..raw[2])
-		
-		if file.exists(path) then -- create backup
-			file.rename(path,path..'.bak')
-			BackupEd[#BackupEd+1]=path
-		end
-
-		local tmp = network.httpGetSync(source..raw[2])
-		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
-		if tmp.status~=200 or tmp2.status~=200 then -- download check
-			ERROR(
-				_Tr('console.autoupdate.errorbydown',
-					'<a>',raw[2],
-					'<b>',tmp.status..','..tmp2.status
-				)
-			)
-			recoverBackup(BackupEd)
-			return
-		end
-
-		local raw = string.gsub(tmp.data,'\n','\r\n')
-		if data.toMD5(raw)~=tmp2.data then -- MD5 check
-			ERROR(
-				_Tr('console.autoupdate.errorbyverify',
-					'<a>',raw[2]
-				)
-			)
-			recoverBackup(BackupEd)
-			return
-		end
-
-		file.writeTo(path,raw)
-	end
-
-	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
 end
 local function try(func)
 	local stat, res = pcall(func[1])
@@ -2934,7 +2942,7 @@ mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args
 end)
 mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
 	if cfg.plugin.network then
-		Upgrade(Server.memInfo)
+		Server.Repo.Plugin.Update(Server.memData)
 	else
 		ERROR(_Tr('console.update.nodata'))
 	end
@@ -3013,7 +3021,7 @@ mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language
 		return false
 	end
 	INFO(_Tr('console.autoupdate.download'))
-	if DownloadLanguage(args[1]) then
+	if Server.Repo.I18N.Install(args[1]) then
 		INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
 	end
 end)
@@ -3041,7 +3049,7 @@ mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_
 			ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
 			return false
 		end
-		if DownloadLanguage(lang) then
+		if Server.Repo.I18N.Install(lang) then
 			INFO(_Tr('console.languages.update.succeed','<a>',lang))
 		end
 	end
@@ -3503,7 +3511,7 @@ mc.listen('onUseFrameBlock',function(player,block)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
-mc.listen('onSpawnProjectile',function(splasher,type)
+mc.listen('onSpawnProjectile',function(splasher,entype)
 			
 	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
 		return
@@ -3517,14 +3525,14 @@ mc.listen('onSpawnProjectile',function(splasher,type)
 	local xuid=player.xuid
 	local perm=land_data[landId].permissions
 
-	if type == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
-	if type == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
-	if type == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
-	if type == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
-	if type == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
-	if type == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
-	if type == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
-	if type == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
+	if entype == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
+	if entype == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
+	if entype == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
+	if entype == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
+	if entype == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
+	if entype == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
+	if entype == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
+	if entype == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
 
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
@@ -3756,7 +3764,7 @@ mc.listen('onServerStarted',function()
 					return
 				end
 				local data = JSON.decode(result)
-				Server.memInfo = data
+				Server.memData = data
 		
 				-- Check Server Version
 				if data.FILE_Version~=Server.version then
@@ -3773,11 +3781,11 @@ mc.listen('onServerStarted',function()
 					end
 					if data.Force_Update then
 						INFO('Update',_Tr('console.update.force',data.Updates[1].Version))
-						Upgrade(data)
+						Server.Repo.Plugin.Update(data)
 					end
 					if cfg.features.auto_update then
 						INFO('Update',_Tr('console.update.auto'))
-						Upgrade(data)
+						Server.Repo.Plugin.Update(data)
 					end
 				end
 				if Plugin.numver>data.Updates[1].NumVer then
