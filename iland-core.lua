@@ -354,13 +354,13 @@ Map = {
 --#region Plugin load.
 
 function UpdateConfig(cfg_o)
-	local this = Table.Clone(cfg_o)
-	local cfg_t = Table.Clone(cfg_o)
+	local this = TableHelper.Clone(cfg_o)
+	local cfg_t = TableHelper.Clone(cfg_o)
 	if this.version==nil or this.version<240 then
         return false
     end
 	if this.version==240 then -- OLD STRUCTURE
-		cfg_t = Table.Clone(cfg)
+		cfg_t = TableHelper.Clone(cfg)
 		cfg_t.plugin.language = this.manager.default_language
 		cfg_t.plugin.network = this.update_check
 		cfg_t.land.operator = this.manager.operator
@@ -1153,6 +1153,7 @@ OpenGUI = {
 				Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
 				Form:addSwitch('onChangeArmorStand',not(ILAPI.IsDisabled('onChangeArmorStand')))
 				Form:addSwitch('onEat',not(ILAPI.IsDisabled('onEat')))
+				Form:addSwitch('onRedStoneUpdate',not(ILAPI.IsDisabled('onRedStoneUpdate')))
 	
 				player:sendForm(
 					Form,
@@ -1182,6 +1183,7 @@ OpenGUI = {
 						if not(res[19]) then dbl[#dbl+1] = "onFireSpread" end
 						if not(res[20]) then dbl[#dbl+1] = "onChangeArmorStand" end
 						if not(res[21]) then dbl[#dbl+1] = "onEat" end
+						if not(res[22]) then dbl[#dbl+1] = "onRedStoneUpdate" end
 						
 						Map.Listener.build()
 						ILAPI.save({1,0,0})
@@ -1256,7 +1258,7 @@ PlayerSelector = {
 	
 		local perpage = cfg.features.player_selector.items_perpage
 		local maxpage = #psrdata.playerList
-		local rawList = Table.Clone(psrdata.playerList[psrdata.nowpage])
+		local rawList = TableHelper.Clone(psrdata.playerList[psrdata.nowpage])
 	
 		if type(data)=='table' then
 			local selected = {}
@@ -1265,7 +1267,7 @@ PlayerSelector = {
 			local npg = data[#data] + 1 -- custom page
 			if npg~=psrdata.nowpage and npg<=maxpage then
 				psrdata.nowpage = npg
-				rawList = Table.Clone(psrdata.playerList[npg])
+				rawList = TableHelper.Clone(psrdata.playerList[npg])
 				goto JUMPOUT_PSR_OTHER
 			end
 	
@@ -1687,7 +1689,7 @@ end
 function ILAPI.GetChunk(vec2,dimid)
 	local Cx,Cz = Pos.ToChunkPos(vec2)
 	if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
-		return Table.Clone(Map.Chunk.data[dimid][Cx][Cz])
+		return TableHelper.Clone(Map.Chunk.data[dimid][Cx][Cz])
 	end
 	return -1
 end
@@ -1742,23 +1744,23 @@ function ILAPI.GetAllLands()
 	return lst
 end
 function ILAPI.CheckPerm(landId,perm)
-	return Table.Clone(land_data[landId].permissions[perm])
+	return TableHelper.Clone(land_data[landId].permissions[perm])
 end
 function ILAPI.CheckSetting(landId,cfgname)
 	if cfgname=='share' or cfgname=='tpoint' or cfgname=='nickname' or cfgname=='describe' then
 		return nil
 	end
-	return Table.Clone(land_data[landId].settings[cfgname])
+	return TableHelper.Clone(land_data[landId].settings[cfgname])
 end
 function ILAPI.GetRange(landId)
 	return { Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b,land_data[landId].range.dimid }
 end
 function ILAPI.GetEdge(landId,dimtype)
 	if dimtype=='2D' then
-		return Table.Clone(Map.Land.Edge.data[landId].D2D)
+		return TableHelper.Clone(Map.Land.Edge.data[landId].D2D)
 	end
 	if dimtype=='3D' then
-		return Table.Clone(Map.Land.Edge.data[landId].D3D)
+		return TableHelper.Clone(Map.Land.Edge.data[landId].D3D)
 	end
 end
 function ILAPI.GetDimension(landId)
@@ -1769,10 +1771,10 @@ function ILAPI.GetDimension(landId)
 	end
 end
 function ILAPI.GetName(landId)
-	return Table.Clone(land_data[landId].settings.nickname)
+	return TableHelper.Clone(land_data[landId].settings.nickname)
 end
 function ILAPI.GetDescribe(landId)
-	return Table.Clone(land_data[landId].settings.describe)
+	return TableHelper.Clone(land_data[landId].settings.describe)
 end
 function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
@@ -1783,7 +1785,7 @@ function ILAPI.GetOwner(landId)
 	return '?'
 end
 function ILAPI.GetPoint(landId)
-	local i = Table.Clone(land_data[landId].settings.tpoint)
+	local i = TableHelper.Clone(land_data[landId].settings.tpoint)
 	i[4] = land_data[landId].range.dimid
 	return Array.ToPos(i)
 end
@@ -1833,7 +1835,7 @@ function ILAPI.Teleport(player,landId) -- can given xuid to `player`
 end
 -- [[ INFORMATION => PLAYER ]]
 function ILAPI.GetPlayerLands(xuid)
-	return Table.Clone(land_owners[xuid])
+	return TableHelper.Clone(land_owners[xuid])
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if Map.Land.Trusted.data[landId][xuid]==nil then
@@ -1938,7 +1940,7 @@ function ILAPI.save(mode) -- {config,data,owners}
 		file.writeTo(DATA_PATH..'data.json',JSON.encode(land_data))
 	end
 	if mode[3] == 1 then
-		local tmpowners = Table.Clone(land_owners)
+		local tmpowners = TableHelper.Clone(land_owners)
 		for xuid,landIds in pairs(wrong_landowners) do
 			tmpowners[xuid] = landIds
 		end
@@ -2008,6 +2010,7 @@ function ILAPI.IsLandCollision(newposA,newposB,newDimid,ignoreList) -- 领地冲
 	end
 	for i=1,#edge do
 		edge[i].dimid=newDimid
+		
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand~=-1 and ignores[tryLand]==nil then
 			return {
@@ -2264,16 +2267,16 @@ Array = {
 	end
 }
 
-Table = {
+TableHelper = {
 	Clone = function(orig) -- [NOTICE] This function from: lua-users.org
 		local orig_type = type(orig)
 		local copy
 		if orig_type == 'table' then
 			copy = {}
 			for orig_key, orig_value in next, orig, nil do
-				copy[Table.Clone(orig_key)] = Table.Clone(orig_value)
+				copy[TableHelper.Clone(orig_key)] = TableHelper.Clone(orig_value)
 			end
-			setmetatable(copy, Table.Clone(getmetatable(orig)))
+			setmetatable(copy, TableHelper.Clone(getmetatable(orig)))
 		else -- number, string, boolean, etc
 			copy = orig
 		end
@@ -2312,7 +2315,7 @@ function _Tr(a,...)
 		WARN('Translation not found: '..a)
 		return
 	end
-	local result = Table.Clone(LangPack[a])
+	local result = TableHelper.Clone(LangPack[a])
 	local args = {...}
 	local thisWord = false
 	for n,word in pairs(args) do
@@ -2762,7 +2765,7 @@ mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 				SendText(player,_Tr('title.buyland.moneynotenough'))
 				return
 			end
-			status = ILAPI.SetRange(landId,res.posA,res.posB)
+			status = ILAPI.SetRange(landId,res.posA,res.posB,res.dimid)
 			if status then
 				if payT==0 then
 					Money.Del(player,needto)
@@ -3096,7 +3099,7 @@ TimerCallbacks = {
 					_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
 				)
 				if landcfg.describe~='' then
-					local des = Table.Clone(landcfg.describe)
+					local des = TableHelper.Clone(landcfg.describe)
 					des = string.gsub(des,'$visitor',player.name)
 					des = string.gsub(des,'$n','\n')
 					SendText(player,des,0)
@@ -3221,7 +3224,7 @@ mc.listen('onJoin',function(player)
 	MEM[xuid] = { inland='null' }
 
 	if wrong_landowners[xuid]~=nil then
-		land_owners[xuid] = Table.Clone(wrong_landowners[xuid])
+		land_owners[xuid] = TableHelper.Clone(wrong_landowners[xuid])
 		for n,landId in pairs(land_owners[xuid]) do
 			Map.Land.Owner.update(landId)
 		end

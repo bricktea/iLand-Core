@@ -312,9 +312,9 @@
     "console.autoupdate.errorbyverify": "文件 <a> 校验失败，请检查您的网络或反馈问题，更新已中断。",
     "console.autoupdate.success": "自动更新已完成，重启服务器即可生效。",
 
-    "console.getonline.failbycode": "获取联网信息失败，错误代码：<a>。",
-    "console.getonline.failed": "联网信息获取失败。",
-    "console.getonline.failbyver": "无法解析的在线信息文件版本（<a>），您的iLand可能已过时。",
+    "console.getonline.failbycode": "获取云端信息失败，错误代码：<a>。",
+    "console.getonline.failed": "云端信息获取失败。",
+    "console.getonline.failbyver": "无法解析的云端信息文件版本（<a>），您的iLand可能已过时。",
 
     "console.languages.sign": "此服务器正在使用 <a> 语言，版本为：<b>。",
     "console.languages.set.misspara": "缺少参数，示例：\"/land language set zh_CN\"",
