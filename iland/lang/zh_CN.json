@@ -237,7 +237,6 @@
     "title.landsign.visitorbuttom": "这里是 <a> 的领地",
     "title.landtp.fail.noland": "你需要先站在领地上一点",
     "title.landtp.fail.notowner": "你不是这块领地的主人",
-    "title.landtp.fail.danger": "无法开启传送，因为目标传送点不安全",
     "title.landtp.removed": "已移除这块领地的传送点",
     "title.landtp.success": "传送成功",
 
@@ -245,6 +244,13 @@
     "sign.listener.ownersubtitle": "欢迎回来",
     "sign.listener.visitortitle":"Welcome to",
     "sign.listener.visitorsubtitle":"<a> 的领地",
+
+    "api.safetp.tping.talk": "传送中...",
+    "api.safetp.tping.chunkloading": "区块加载中!",
+    "api.safetp.tping.foundfoothold": "寻找方块中!",
+    "api.safetp.succeed": "传送完成!",
+    "api.safetp.fail.timeout": "区块加载超时，传送失败",
+    "api.safetp.fail.nofoothold": "传送点附近没有落脚点，传送失败",
 
     "talk.land.unselected":"未选择任何领地",
     "talk.landmgr.open": "打开领地管理器",
@@ -257,6 +263,7 @@
     "talk.feature.disabled": "管理员关闭了此功能",
     "talk.tomany": "不支持同时操作多人",
     "talk.invalidaction": "无效操作",
+    "talk.pleasewait": "请稍等",
 
     "talk.prejoin.noxuid": "抱歉，加入使用iLand插件的服务器的玩家必须拥有XUID。",
     "talk.gametype.creative": "检测到创造玩家 <a> ，一些控制项将对创造模式玩家失效。",

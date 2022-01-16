@@ -33,5 +33,6 @@ onPistonPush | 关闭后不再干涉活塞推动 | ℹ️
 onFireSpread | 关闭后不再干涉火焰蔓延 | ℹ️
 onChangeArmorStand | 关闭后不再干涉玩家操作盔甲架 | ⛔
 onEat | 关闭后不再干涉玩家吃东西 | ⛔
+onRedStoneUpdate | 关闭后不再干涉红石更新 | ⛔
 
 > ⛔代表不建议关闭  ⚠️代表该事件不完美，可以选择关闭  ℹ️代表此事件影响原版特性，可以选择关闭

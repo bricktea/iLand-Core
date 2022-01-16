@@ -141,8 +141,8 @@ Map = {
 		},
 		update = function(landId,mode)
 			local TxTz={} -- ChunkData(position)
-			local ThisRange = land_data[landId].range
-			local dimid = ThisRange.dimid
+			local thisRange = land_data[landId].range
+			local dimid = thisRange.dimid
 			local function chkNil(table,a,b)
 				if table[a]==nil then
 					table[a] = {}
@@ -153,14 +153,14 @@ Map = {
 			end
 		
 			local size = cfg.features.chunk_side
-			local sX = ThisRange.start_position[1]
-			local sZ = ThisRange.start_position[3]
+			local sX = thisRange.start_position[1]
+			local sZ = thisRange.start_position[3]
 			local count = 0
-			while (sX+size*count<=ThisRange.end_position[1]+size) do
+			while (sX+size*count<=thisRange.end_position[1]+size) do
 				local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count})
 				chkNil(TxTz,Cx,Cz)
 				local count2 = 0
-				while (sZ+size*count2<=ThisRange.end_position[3]+size) do
+				while (sZ+size*count2<=thisRange.end_position[3]+size) do
 					local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count2})
 					chkNil(TxTz,Cx,Cz)
 					count2 = count2 + 1
@@ -1097,11 +1097,7 @@ OpenGUI = {
 							player:sendForm(Form,function(pl,id) -- callback
 								if id==nil then return end
 								local landId = landlst[id+1]
-								if ILAPI.Teleport(pl,landId) then
-									SendText(pl,_Tr('title.landtp.success'))
-								else
-									SendText(pl,_Tr('title.landtp.fail.danger'))
-								end
+								ILAPI.Teleport(pl,landId)
 							end)
 						end
 						if mode==2 then -- 脚下
@@ -1544,9 +1540,106 @@ RangeSelector = {
 }
 
 SafeTeleport = {
-	Do = function(player,vec3,dimid)
-		local height = 1200
-		SendText(player,_Tr('api.safetp.tping'))
+	Cancel = function(player)
+		local xuid = player.xuid
+		if xuid==nil or MEM[xuid]==nil or MEM[xuid].safetp==nil then
+			return
+		end
+		local tpos = MEM[xuid].safetp.from_pos
+		player:teleport(tpos.x,tpos.y,tpos.z,tpos.dimid)
+		MEM[xuid].safetp = nil
+	end,
+	Do = function(player,tpos)
+		local function getHeightRange(dimensionId)
+			local range = {
+				[0] = {-64,320},
+				[1] = {0,128 - 2}, -- because,, top bedrock.
+				[2] = {0,256}
+			}
+			return range[dimensionId]
+		end
+		local xuid = player.xuid
+		local dimid = tpos.dimid
+		if MEM[xuid].safetp ~= nil then -- limited: one request.
+			return false
+		end
+		MEM[xuid].safetp = {
+			from_pos = player.pos,
+			to_pos = tpos
+		}
+		local def_height = 1500
+		local timeout = 60
+		local max_far = 12
+		player:teleport(tpos.x,def_height,tpos.z,dimid)
+		SendText(player,_Tr('api.safetp.tping.talk'))
+		local chunk_loaded = false
+		local cancel_check = false
+		local lock = false
+		local completed = false
+		local id = setInterval(function()
+			if cancel_check or lock or player==nil then
+				return
+			end
+			local plpos = Pos.ToIntPos(player.pos)
+			if plpos==nil or tpos.x~=plpos.x or tpos.z~=plpos.z or dimid~=plpos.dimid then
+				cancel_check = true
+				SafeTeleport.Cancel(player)
+				return
+			end
+			if player:getAbilities().flying==1 then
+				local nbt = player:getNbt()
+				nbt:getTag("abilities"):getTag("flying"):set(0)
+				player:setNbt(nbt)
+			end
+			if plpos.y == def_height and not chunk_loaded then
+				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.chunkloading'),{0,15,15})
+			else
+				chunk_loaded = true
+				lock = true
+				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.foundfoothold'),{0,15,15})
+				local bl_type_list = {}
+				local footholds = {}
+				local y_range = getHeightRange(dimid)
+				for i=y_range[1],y_range[2] do
+					local bl = mc.getBlock(tpos.x,i,tpos.z,dimid)
+					bl_type_list[i] = bl.type
+				end
+				local ct_block = {'minecraft:air','minecraft:lava','minecraft:flowing_lava'}
+				for i,type in pairs(bl_type_list) do
+					if Array.Fetch(ct_block,type)==-1 and bl_type_list[i+1]==ct_block[1] and bl_type_list[i+2]==ct_block[1] then
+						footholds[#footholds+1] = i
+					end
+				end
+				if #footholds==0 then
+					SendText(player,_Tr('api.safetp.fail.nofoothold'))
+					SafeTeleport.Cancel(player)
+					return
+				end
+				local recentY = footholds[1]
+				for i,y in pairs(footholds) do
+					if math.abs(tpos.y-y)<math.abs(tpos.y-recentY) then
+						recentY = y
+					end
+				end
+				if math.abs(recentY-tpos.y) > max_far then
+					SendText(player,_Tr('api.safetp.fail.nofoothold'))
+					SafeTeleport.Cancel(player)
+					return
+				end
+				player:teleport(tpos.x,recentY + 1,tpos.z,dimid)
+				MEM[xuid].safetp = nil
+				completed = true
+			end
+		end,500)
+		setTimeout(function()
+			clearInterval(id)
+			if MEM[xuid]~=nil then
+				if not completed and MEM[xuid].safetp~=nil then
+					SendText(player,_Tr('api.safetp.fail.timeout'))
+				end
+				MEM[xuid].safetp = nil
+			end
+		end,timeout*1000)
 	end
 }
 
@@ -1808,37 +1901,7 @@ function ILAPI.Teleport(player,landId) -- can given xuid to `player`
 		return false
 	end
 	local pos = ILAPI.GetPoint(landId)
-	local finalPos
-	if pl.gameMode==1 then
-		pl:teleport(pos.x,pos.y,pos.z,pos.dimid)
-		return true
-	end
-	local bltypelist = {}
-	local footholds = {}
-	for i=minY,maxY do -- get all type
-		local bl = mc.getBlock(pos.x,i,pos.z,pos.dimid)
-		bltypelist[i] = bl.type
-	end
-	local ct_block = {'minecraft:air','minecraft:lava','minecraft:flowing_lava'}
-	for i,type in pairs(bltypelist) do
-		if Array.Fetch(ct_block,type)==-1 and bltypelist[i+1]==ct_block[1] and bltypelist[i+2]==ct_block[1] then
-			footholds[#footholds+1] = i
-		end
-	end
-	if #footholds==0 then
-		return false
-	end
-	local recentY = footholds[1]
-	for i,y in pairs(footholds) do
-		if math.abs(pos.y-y)<math.abs(pos.y-recentY) then
-			recentY = y
-		end
-	end
-	finalPos = { x=pos.x,y=recentY,z=pos.z,dimid=pos.dimid }
-	if ILAPI.PosGetLand(finalPos)~=landId then
-		return false
-	end
-	pl:teleport(finalPos.x,finalPos.y,finalPos.z,finalPos.dimid)
+	SafeTeleport.Do(player,pos)
 	return true
 end
 -- [[ INFORMATION => PLAYER ]]
@@ -2196,6 +2259,12 @@ Pos = {
 	end,
 	ToString = function(vec3)
 		return vec3.x..','..vec3.y..','..vec3.z
+	end,
+	IsEqual = function(posA,posB)
+		if posA.x==posB.x and posA.y==posB.y and posA.z==posB.z and posA.dimid==posB.dimid then
+			return true
+		end
+		return false
 	end,
 	Sort = function(posA,posB)
 		local A = posA
@@ -2668,7 +2737,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 	local discount_info = ''
 	local dimension_info = ''
 	if cfg.land.bought.discount<1 then
-		discount_info=_Tr('gui.buyland.discount','<a>',tostring(1-cfg.land.bought.discount))
+		discount_info=_Tr('gui.buyland.discount','<a>',tostring((1-cfg.land.bought.discount)*100))
 	end
 	if res.dimension=='3D' then
 		dimension_info = '§l3D-Land §r'
@@ -2837,11 +2906,7 @@ mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
 	player:sendForm(Form,function(player,id)
 		if id==nil or id==0 then return end
 		local landId = landlst[id]
-		if ILAPI.Teleport(player,landId) then
-			SendText(player,_Tr('title.landtp.success'))
-		else
-			SendText(player,_Tr('title.landtp.fail.danger'))
-		end
+		ILAPI.Teleport(player,landId)
 	end
 	)
 end)
@@ -3263,7 +3328,13 @@ mc.listen('onLeft',function(player)
 	end
 
 	local xuid = player.xuid
-	MEM[xuid]=nil
+
+	--- SafeTp
+	if MEM[xuid].safetp ~= nil then
+		SafeTeleport.Cancel(player)
+	end
+	
+	MEM[xuid] = nil
 end)
 mc.listen('onDestroyBlock',function(player,block)
 

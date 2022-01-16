@@ -4,7 +4,7 @@
  - [x] 合并Explode
  - [x] 领地外红石更新
  - [x] 重选领地范围有Bug
- - [ ] LandTp Fix
+ - [x] LandTp Fix
  - [ ] OPLMgr新方案
  - [x] ILAPI: IsListenerDisabled, GetApiVersion
  - [ ] 整理文档站
