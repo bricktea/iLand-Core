@@ -269,7 +269,8 @@ Map = {
 				[4] = {		-- EntityTypeList
 					animals = {},
 					mobs = {}
-				}
+				},
+				[5] = {}	-- AttackBlock
 			}
 			local tmp_useitem = {
 				'minecraft:bed','minecraft:chest','minecraft:trapped_chest','minecraft:crafting_table',
@@ -330,6 +331,9 @@ Map = {
 				'minecraft:zombie','minecraft:zombie_villager_v2','minecraft:piglin_brute','minecraft:ender_dragon',
 				'minecraft:dragon_fireball','minecraft:wither','minecraft:wither_skull','minecraft:wither_skull_dangerous'
 			}
+			local tmp_atkbls = {
+				'minecraft:dragon_egg'
+			}
 			for n,uitem in pairs(tmp_useitem) do
 				Map.Control.data[0][uitem] = 0
 			end
@@ -347,6 +351,9 @@ Map = {
 			end
 			for n,mons in pairs(mobs) do
 				Map.Control.data[4].mobs[mons] = 0
+			end
+			for n,bl in pairs(tmp_atkbls) do
+				Map.Control.data[5][bl] = 0
 			end
 		end
 	}
@@ -1135,7 +1142,8 @@ OpenGUI = {
 				Form:addSwitch('onDestroyBlock',not(ILAPI.IsDisabled('onDestroyBlock')))
 				Form:addSwitch('onPlaceBlock',not(ILAPI.IsDisabled('onPlaceBlock')))
 				Form:addSwitch('onUseItemOn',not(ILAPI.IsDisabled('onUseItemOn')))
-				Form:addSwitch('onAttack',not(ILAPI.IsDisabled('onAttack')))
+				Form:addSwitch('onAttackEntity',not(ILAPI.IsDisabled('onAttackEntity')))
+				Form:addSwitch('onAttackBlock',not(ILAPI.IsDisabled('onAttackBlock')))
 				Form:addSwitch('onExplode',not(ILAPI.IsDisabled('onExplode')))
 				Form:addSwitch('onBedExplode',not(ILAPI.IsDisabled('onBedExplode')))
 				Form:addSwitch('onRespawnAnchorExplode',not(ILAPI.IsDisabled('onRespawnAnchorExplode')))
@@ -1165,25 +1173,26 @@ OpenGUI = {
 						if not(res[1]) then dbl[#dbl+1] = "onDestroyBlock" end
 						if not(res[2]) then dbl[#dbl+1] = "onPlaceBlock" end
 						if not(res[3]) then dbl[#dbl+1] = "onUseItemOn" end
-						if not(res[4]) then dbl[#dbl+1] = "onAttack" end
-						if not(res[5]) then dbl[#dbl+1] = "onExplode" end
-						if not(res[6]) then dbl[#dbl+1] = "onBedExplode" end
-						if not(res[7]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
-						if not(res[8]) then dbl[#dbl+1] = "onTakeItem" end
-						if not(res[9]) then dbl[#dbl+1] = "onDropItem" end
-						if not(res[10]) then dbl[#dbl+1] = "onBlockInteracted" end
-						if not(res[11]) then dbl[#dbl+1] = "onUseFrameBlock" end
-						if not(res[12]) then dbl[#dbl+1] = "onSpawnProjectile" end
-						if not(res[13]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
-						if not(res[14]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
-						if not(res[15]) then dbl[#dbl+1] = "onRide" end
-						if not(res[16]) then dbl[#dbl+1] = "onWitherBossDestroy" end
-						if not(res[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
-						if not(res[18]) then dbl[#dbl+1] = "onPistonTryPush" end
-						if not(res[19]) then dbl[#dbl+1] = "onFireSpread" end
-						if not(res[20]) then dbl[#dbl+1] = "onChangeArmorStand" end
-						if not(res[21]) then dbl[#dbl+1] = "onEat" end
-						if not(res[22]) then dbl[#dbl+1] = "onRedStoneUpdate" end
+						if not(res[4]) then dbl[#dbl+1] = "onAttackEntity" end
+						if not(res[5]) then dbl[#dbl+1] = "onAttackBlock" end
+						if not(res[6]) then dbl[#dbl+1] = "onExplode" end
+						if not(res[7]) then dbl[#dbl+1] = "onBedExplode" end
+						if not(res[8]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
+						if not(res[9]) then dbl[#dbl+1] = "onTakeItem" end
+						if not(res[10]) then dbl[#dbl+1] = "onDropItem" end
+						if not(res[11]) then dbl[#dbl+1] = "onBlockInteracted" end
+						if not(res[12]) then dbl[#dbl+1] = "onUseFrameBlock" end
+						if not(res[13]) then dbl[#dbl+1] = "onSpawnProjectile" end
+						if not(res[14]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
+						if not(res[15]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
+						if not(res[16]) then dbl[#dbl+1] = "onRide" end
+						if not(res[17]) then dbl[#dbl+1] = "onWitherBossDestroy" end
+						if not(res[18]) then dbl[#dbl+1] = "onFarmLandDecay" end
+						if not(res[19]) then dbl[#dbl+1] = "onPistonTryPush" end
+						if not(res[20]) then dbl[#dbl+1] = "onFireSpread" end
+						if not(res[21]) then dbl[#dbl+1] = "onChangeArmorStand" end
+						if not(res[22]) then dbl[#dbl+1] = "onEat" end
+						if not(res[23]) then dbl[#dbl+1] = "onRedStoneUpdate" end
 						
 						Map.Listener.build()
 						ILAPI.save({1,0,0})
@@ -3393,20 +3402,20 @@ mc.listen('onUseItemOn',function(player,item,block)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(block.pos)
+	local landId = ILAPI.PosGetLand(block.pos)
 	if landId==-1 then return end -- No Land
 
-	local xuid=player.xuid
+	local xuid = player.xuid
 	if ILAPI.IsLandOperator(xuid) then return end
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 
-	local IsConPlus=false
+	local IsConPlus = false
 	if not(ILAPI.CanControl(0,block.type)) then 
 		if not(ILAPI.CanControl(2,item.type)) then
 			return
 		else
-			IsConPlus=true
+			IsConPlus = true
 		end
 	end
 	
@@ -3445,9 +3454,34 @@ mc.listen('onUseItemOn',function(player,item,block)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
-mc.listen('onAttack',function(player,entity)
+mc.listen('onAttackBlock',function(player,block,item)
 
-	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttack') then
+	if ChkNil_X2(player,block) or ILAPI.IsDisabled('onAttackBlock') then
+		return
+	end
+
+	local bltype = block.type
+	if not ILAPI.CanControl(5,bltype) then
+		return
+	end
+
+	local landId = ILAPI.PosGetLand(block.pos)
+	if landId==-1 then return end
+
+	local xuid = player.xuid
+	if ILAPI.IsLandOperator(xuid) then return end
+	if ILAPI.IsLandOwner(landId,xuid) then return end
+	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+
+	if bltype == 'minecraft:dragon_egg' and land_data[landId].permissions.allow_destroy then return end -- 左键龙蛋（拓充）
+
+	SendText(player,_Tr('title.landlimit.noperm'))
+	return false
+
+end)
+mc.listen('onAttackEntity',function(player,entity)
+
+	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttackEntity') then
 		return
 	end
 
