@@ -411,6 +411,12 @@ function UpdateLand(start_ver)
 			setting.ev_redstone_update = false
 		end
 	end
+	if start_ver<=260 then
+		for landId,res in pairs(land_data) do
+			local perm = land_data[landId].permissions
+			perm.useitem = nil
+		end
+	end
 	if not DEV_MODE then
 		ILAPI.save({0,1,0})
 	end
@@ -678,7 +684,6 @@ function Handler_LandCfg(player,landId,option)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
 		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.bucket'),perm.use_bucket)
-		Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.useitem'),perm.useitem)
 		Form:addLabel(_Tr('gui.landmgr.landperm.editevent'))
 		player:sendForm(
 			Form,
@@ -743,8 +748,6 @@ function Handler_LandCfg(player,landId,option)
 				perm.use_respawn_anchor = res[51]
 				perm.use_fishing_hook = res[52]
 				perm.use_bucket = res[53]
-			
-				perm.useitem = res[54]
 			
 				ILAPI.save({0,1,0})
 				player:sendModalForm(
@@ -3398,9 +3401,6 @@ mc.listen('onUseItemOn',function(player,item,block)
 	if ILAPI.IsLandOwner(landId,xuid) then return end
 	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
 
-	local perm = land_data[landId].permissions -- Temp perm.
-	if perm.useitem then return false end
-
 	local IsConPlus=false
 	if not(ILAPI.CanControl(0,block.type)) then 
 		if not(ILAPI.CanControl(2,item.type)) then
@@ -3410,6 +3410,8 @@ mc.listen('onUseItemOn',function(player,item,block)
 		end
 	end
 	
+	local perm = land_data[landId].permissions
+
 	if IsConPlus then
 		local it = item.type
 		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
