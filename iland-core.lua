@@ -2063,7 +2063,7 @@ function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 	if type == 0 then
 		local langs = {}
 		for n,file in pairs(file.getFilesList(DATA_PATH..'lang\\')) do
-			local tmp = String.Split(file,'.')
+			local tmp = string.split(file,'.')
 			if tmp[2]=='json' then
 				langs[#langs+1] = tmp[1]
 			end
@@ -2366,17 +2366,6 @@ TableHelper = {
 	end
 }
 
-String = {
-	Split = function(str,reps)
-		local result = {}
-	---@diagnostic disable-next-line: discard-returns
-		string.gsub(str,'[^'..reps..']+',function (n)
-			table.insert(result,n)
-		end)
-		return result
-	end
-}
-
 Server.Repo = {
 	I18N = {
 		Install = 	function(name)
@@ -2476,7 +2465,7 @@ Server.Repo = {
 			
 			-- Get it, update.
 			for n,thefile in pairs(updata.FileChanged) do
-				local raw = String.Split(thefile,'::')
+				local raw = string.split(thefile,'::')
 				local path = RawPath[raw[1]]..raw[2]
 				INFO('Network',_Tr('console.autoupdate.download')..raw[2])
 				
@@ -2525,6 +2514,103 @@ function Server.GetLink()
 	local id = JSON.decode(tokenRaw.data).token
 	return Server.link..id..'/iLand'
 end
+
+--#region Native Types Helper
+
+-- string helper
+
+function string.split(str,reps)
+	local result = {}
+	string.gsub(str,'[^'..reps..']+',function (n)
+		table.insert(result,n)
+	end)
+	return result
+end
+
+-- table helper
+
+function table.getAllPaths(tab,UnNeedThisPrefix)
+	local result = {}
+	local inner_tmp,T
+	for k,v in pairs(tab) do
+		if type(v) ~= 'table' then
+			result[#result+1] = k
+		else
+			inner_tmp = table.getAllPaths(v,true)
+			for a,b in pairs(inner_tmp) do
+				result[#result+1] = k..'.'..b
+			end
+		end
+		if type(k) == 'number' then
+			result[#result] = '(*)'..result[#result]
+		end
+	end
+	if UnNeedThisPrefix==nil or not UnNeedThisPrefix then
+		for i,v in pairs(result) do
+			result[i] = 'this.'..result[i]
+		end
+	end
+	return result
+end
+
+function table.getKey(tab,path)
+
+	--[[
+		What is "path"?
+		[A] the_table: {a=2,b=7,n=42,ok={pap=626}}
+			<path> this.b			=>		7
+			<path> this.ok.pap		=>		626
+		[B] the_table: {2,3,1,ff={8}}
+			<path> this.(*)3		=>		1
+			<path> this.ff.(*)1		=>		8
+	]]
+	
+	if string.sub(path,1,5) == 'this.' then
+		path = string.sub(path,6)
+	end
+
+	local pathes = string.split(path,'.')
+	if #pathes == 0 then
+		return tab
+	end
+	if string.sub(pathes[1],1,3) == '(*)' then
+		pathes[1] = tonumber(string.sub(pathes[1],4))
+	end
+	local lta = tab[pathes[1]]
+
+	if type(lta) ~= 'table' then
+		return lta
+	end
+	
+	return table.getKey(lta,table.concat(pathes,'.',2,#pathes))
+
+end
+
+function table.setKey(tab,path,value)
+
+	if string.sub(path,1,5) == 'this.' then
+		path = string.sub(path,6)
+	end
+
+	local pathes = string.split(path,'.')
+	if string.sub(pathes[1],1,3) == '(*)' then
+		pathes[1] = tonumber(string.sub(pathes[1],4))
+	end
+
+	if tab[pathes[1]] == nil then
+		return
+	end
+	
+	if type(tab[pathes[1]]) ~= 'table' then
+		tab[pathes[1]] = value
+		return
+	end
+	
+	table.setKey(tab[pathes[1]],table.concat(pathes,'.',2,#pathes),value)
+
+end
+
+--#endregion
 
 function Plugin.Unload()
 	mc.runcmdEx('lxl unload iland-core.lua')
@@ -3625,7 +3711,7 @@ mc.listen('onUseFrameBlock',function(player,block)
 	return false
 end)
 mc.listen('onSpawnProjectile',function(splasher,entype)
-			
+
 	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
 		return
 	end
