@@ -220,8 +220,6 @@
     "title.landtransfer.toomanyids": "不可以向多人过户领地",
     "title.landtransfer.canttoown": "不可以向自己过户领地。",
     "title.landtransfer.complete": "<a> 已过户给 <b>",
-    "title.oplandmgr.invalidchar": "修改项存在不合法字符，已中断操作。",
-    "title.oplandmgr.transfered": "已传送到 <a>",
     "title.oplandmgr.setselectool": "请手持欲选定的圈地工具破坏方块",
     "title.oplandmgr.setsuccess": "成功！选定 <a> 作为圈地工具",
     "title.landmgr.failed": "没有可以管理领地，使用\"/land new\"创建一个吧！",
@@ -352,4 +350,5 @@
     "console.error.money.scorenull": "无法访问计分板对象，可能对应的经济计分板不存在。请使用/land mgr更改为正确计分板或尝试重启服务器。",
     "console.error.readowner.xuid": "无法识别玩家（xuid = <a>），因为这个XUID在数据库中找不到，跳过读取...",
     "console.error.readowner.tipxid": "以上警告暂不影响插件运行，请让对应XUID的玩家重新进入服务器以使数据库记录。"
+
 }

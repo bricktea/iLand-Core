@@ -8,8 +8,8 @@
  - [ ] OPLMgr新方案
  - [x] ILAPI: IsListenerDisabled, GetApiVersion
  - [ ] 整理文档站
- - [ ] 领地内三叉戟？
  - [x] 彻底修复点龙蛋
+ - [x] 修改配置项读取方式，自动补全漏项
  - [x] 删除特殊控制项UseItem
  - [x] 适配LXL0.5.12, 修复活塞
  - [x] 插件热管理`land reload`，`land unload`
@@ -32,3 +32,4 @@
  - [ ] 领地内讲台dropBook
  - [ ] 领地内击退、火焰附加有效
  - [ ] 开门问题
+ - [ ] 领地内丢三叉戟直接消失（LL）

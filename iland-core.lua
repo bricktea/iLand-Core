@@ -361,190 +361,174 @@ Map = {
 
 --#region Plugin load.
 
-function UpdateConfig(cfg_o)
-	local this = table.clone(cfg_o)
-	local cfg_t = table.clone(cfg_o)
-	if this.version==nil or this.version<240 then
-        return false
-    end
-	if this.version==240 then -- OLD STRUCTURE
-		cfg_t = table.clone(cfg)
-		cfg_t.plugin.language = this.manager.default_language
-		cfg_t.plugin.network = this.update_check
-		cfg_t.land.operator = this.manager.operator
-		cfg_t.land.max_lands = this.land.player_max_lands
-		cfg_t.land.bought.three_dimension.enable = this.features.land_3D
-		cfg_t.land.bought.three_dimension.calculate_method = this.land_buy.calculation_3D
-		cfg_t.land.bought.three_dimension.price = this.land_buy.price_3D
-		cfg_t.land.bought.two_dimension.enable = this.features.land_2D
-		cfg_t.land.bought.two_dimension.calculate_method = this.land_buy.calculation_2D
-		cfg_t.land.bought.two_dimension.price = this.land_buy.price_2D
-		cfg_t.land.bought.square_range = {this.land.land_min_square,this.land.land_max_square}
-		cfg_t.land.bought.discount = this.money.discount/100
-		cfg_t.land.refund_rate = this.land_buy.refund_rate
-		cfg_t.economic.protocol = this.money.protocol
-		cfg_t.economic.scoreboard_objname = this.money.scoreboard_objname
-		cfg_t.economic.currency_name = this.money.credit_name
-		cfg_t.features.landsign.enable = this.features.landSign
-		cfg_t.features.landsign.frequency = this.features.sign_frequency
-		cfg_t.features.buttomsign.enable = this.features.landSign
-		cfg_t.features.buttomsign.frequency = this.features.sign_frequency
-		cfg_t.features.particles.enable = this.features.particles
-		cfg_t.features.particles.name = this.features.particle_effects
-		cfg_t.features.particles.max_amount = this.features.player_max_ple
-		cfg_t.features.player_selector.include_offline_players = this.features.offlinePlayerInList
-		cfg_t.features.player_selector.items_perpage = this.features.playersPerPage
-		cfg_t.features.selection.disable_dimension = this.features.blockLandDims
-		cfg_t.features.selection.tool_type = this.features.selection_tool
-		cfg_t.features.selection.tool_name = this.features.selection_tool_name
-		cfg_t.features.landtp = this.features.landtp
-		cfg_t.features.force_talk = this.features.force_talk
-		cfg_t.features.disabled_listener = this.features.disabled_listener
-		cfg_t.features.chunk_side = this.features.chunk_side
-	end
-	return cfg_t
-end
-function UpdateLand(start_ver)
-	if start_ver<=240 then
-		for landId,res in pairs(land_data) do
-			local perm = land_data[landId].permissions
-			perm.use_armor_stand = false
-			perm.eat = false
+ConfigReader = {
+	Load = function(para) -- { cfg, land, owner }
+
+		if para == nil then
+			para = { 1, 1, 1 }
 		end
-	end
-	if start_ver<=245 then
-		for landId,res in pairs(land_data) do
-			local setting = land_data[landId].settings
-			setting.ev_redstone_update = false
-		end
-	end
-	if start_ver<=260 then
-		for landId,res in pairs(land_data) do
-			local perm = land_data[landId].permissions
-			perm.useitem = nil
-		end
-	end
-	if not DEV_MODE then
-		ILAPI.save({0,1,0})
-	end
-end
-function load(para) -- { cfg, land, owner }
-	-- load cfg
-	if para==nil then
-		para = {1,1,1}
-	end
-	local need_update = {false,0}
-	if para[1]==1 then
-		if not(file.exists(DATA_PATH..'config.json')) then
-			WARN('Data file (config.json) does not exist, creating...')
-			file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
-		end
-		local count = 0
-		local function apply(val,typ)
-			count = count + 1
-			local tpe = type(val)
-			if tpe ~= typ then
-				error('Wrong type in data('..count..'), "'..typ..'" is required but "'..tpe..'" is provided!')
+		local UpdateMe = {
+			needed = false,
+			version = 0
+		}
+
+		if para[1] == 1 then -- Load config.
+
+			-- ## Pre-check
+			if not(file.exists(DATA_PATH..'config.json')) then
+				WARN('Data file (config.json) does not exist, creating...')
+				file.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 			end
-			return val
+			local loadcfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
+			if cfg.version ~= loadcfg.version then -- need update
+				UpdateMe.needed = true
+				UpdateMe.version = loadcfg.version
+				if not ConfigReader.Updater.config(loadcfg) then
+					error('Configure file too old, you must rebuild it.')
+					return false
+				end
+			end
+	
+			-- ## Read config
+			local item
+			for n,path in pairs(table.getAllPaths(cfg)) do
+				item = table.getKey(loadcfg,path)
+				if path ~= 'this.version' then
+					if item == nil then
+						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
+						UpdateMe.needed = true
+					else
+						table.setKey(cfg,path,item)
+					end
+				end
+			end
+	
+			-- ## Correct if sth wrong
+
+			if cfg.land.bought.square_range[1]>cfg.land.bought.square_range[2] then
+				WARN('cfg.land.bought.square_range has an error, which has been corrected.')
+				table.sort(cfg.land.bought.square_range)
+				UpdateMe.needed = true
+			end
+			if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
+				WARN('cfg.economic.protocol has an error, which has been corrected.')
+				cfg.economic.protocol = 'scoreboard'
+				UpdateMe.needed = true
+			end
+	
+			-- ## Save if need update
+
+			if UpdateMe.needed and not DEV_MODE then
+				ILAPI.save({1,0,0})
+			end
+
 		end
-		local loadcfg = JSON.decode(file.readFrom(DATA_PATH..'config.json'))
-		if cfg.version ~= loadcfg.version then -- need update
-			need_update = {true,loadcfg.version}
-			loadcfg = UpdateConfig(loadcfg)
-			if loadcfg==nil or loadcfg==false then
-				error('Configure file too old, you must rebuild it.')
+		if para[2]==1 then -- Load land.
+			if not(file.exists(DATA_PATH..'data.json')) then
+				WARN('Data file (data.json) does not exist, creating...')
+				file.writeTo(DATA_PATH..'data.json','{}')
+			end
+			land_data = JSON.decode(file.readFrom(DATA_PATH..'data.json'))
+			if UpdateMe.needed then
+				ConfigReader.Updater.land(UpdateMe.version)
+			end
+		end
+		if para[3]==1 then -- Load land owners.
+			if not(file.exists(DATA_PATH..'owners.json')) then
+				WARN('Data file (owners.json) does not exist, creating...')
+				file.writeTo(DATA_PATH..'owners.json','{}')
+			end
+			local wrongXuidFounded = false
+			for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
+				if data.xuid2name(ownerXuid) == '' then
+					WARN(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
+					wrong_landowners[ownerXuid] = landIds
+					wrongXuidFounded = true
+				else
+					land_owners[ownerXuid] = landIds
+				end
+			end
+			if wrongXuidFounded then
+				INFO(_Tr('console.error.readowner.tipxid'))
+			end
+		end
+		return true
+	end,
+	Updater = {
+		config = function(this)
+			local loadcfg = table.clone(this)
+			if this.version==nil or this.version<240 then
 				return false
 			end
-		end
-
-		-- cfg -> plugin
-		cfg.plugin.language = apply(loadcfg.plugin.language,'string')
-		cfg.plugin.network = apply(loadcfg.plugin.network,'boolean')
-		-- cfg -> land
-		cfg.land.operator = apply(loadcfg.land.operator,'table')
-		cfg.land.max_lands = apply(loadcfg.land.max_lands,'number')
-		cfg.land.bought.three_dimension.enable = apply(loadcfg.land.bought.three_dimension.enable,'boolean')
-		cfg.land.bought.three_dimension.calculate_method = apply(loadcfg.land.bought.three_dimension.calculate_method,'string')
-		cfg.land.bought.three_dimension.price = apply(loadcfg.land.bought.three_dimension.price,'table')
-		cfg.land.bought.two_dimension.enable = apply(loadcfg.land.bought.two_dimension.enable,'boolean')
-		cfg.land.bought.two_dimension.calculate_method = apply(loadcfg.land.bought.two_dimension.calculate_method,'string')
-		cfg.land.bought.two_dimension.price = apply(loadcfg.land.bought.two_dimension.price,'table')
-		cfg.land.bought.square_range = apply(loadcfg.land.bought.square_range,'table')
-		cfg.land.bought.discount = apply(loadcfg.land.bought.discount,'number')
-		cfg.land.refund_rate = apply(loadcfg.land.refund_rate,'number')
-		-- cfg -> economic
-		cfg.economic.protocol = apply(loadcfg.economic.protocol,'string')
-		cfg.economic.scoreboard_objname = apply(loadcfg.economic.scoreboard_objname,'string')
-		cfg.economic.currency_name = apply(loadcfg.economic.currency_name,'string')
-		-- cfg -> features
-		cfg.features.landsign.enable = apply(loadcfg.features.landsign.enable,'boolean')
-		cfg.features.landsign.frequency = apply(loadcfg.features.landsign.frequency,'number')
-		cfg.features.buttomsign.enable = apply(loadcfg.features.buttomsign.enable,'boolean')
-		cfg.features.buttomsign.frequency = apply(loadcfg.features.buttomsign.frequency,'number')
-		cfg.features.particles.enable = apply(loadcfg.features.particles.enable,'boolean')
-		cfg.features.particles.name = apply(loadcfg.features.particles.name,'string')
-		cfg.features.particles.max_amount = apply(loadcfg.features.particles.max_amount,'number')
-		cfg.features.player_selector.include_offline_players = apply(loadcfg.features.player_selector.include_offline_players,'boolean')
-		cfg.features.player_selector.items_perpage = apply(loadcfg.features.player_selector.items_perpage,'number')
-		cfg.features.selection.disable_dimension = apply(loadcfg.features.selection.disable_dimension,'table')
-		cfg.features.selection.tool_type = apply(loadcfg.features.selection.tool_type,'string')
-		cfg.features.selection.tool_name = apply(loadcfg.features.selection.tool_name,'string')
-		cfg.features.landtp = apply(loadcfg.features.landtp,'boolean')
-		cfg.features.force_talk = apply(loadcfg.features.force_talk,'boolean')
-		cfg.features.disabled_listener = apply(loadcfg.features.disabled_listener,'table')
-		cfg.features.chunk_side = apply(loadcfg.features.chunk_side,'number')
-
-		-- Automatically correct cfg.
-		if cfg.land.bought.square_range[1]>cfg.land.bought.square_range[2] then
-			WARN('cfg.land.bought.square_range has an error, which has been corrected.')
-			table.sort(cfg.land.bought.square_range)
-			need_update[1] = true
-		end
-		if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
-			WARN('cfg.economic.protocol has an error, which has been corrected.')
-			cfg.economic.protocol = 'scoreboard'
-			need_update[1] = true
-		end
-
-		-- Save if need update.
-		if need_update[1] and not DEV_MODE then
-			ILAPI.save({1,0,0})
-		end
-	end
-	-- load land data
-	if para[2]==1 then
-		if not(file.exists(DATA_PATH..'data.json')) then
-			WARN('Data file (data.json) does not exist, creating...')
-			file.writeTo(DATA_PATH..'data.json','{}')
-		end
-		land_data = JSON.decode(file.readFrom(DATA_PATH..'data.json'))
-		if need_update[1] then
-			UpdateLand(need_update[2])
-		end
-	end
-	-- load owners data
-	if para[3]==1 then
-		if not(file.exists(DATA_PATH..'owners.json')) then
-			WARN('Data file (owners.json) does not exist, creating...')
-			file.writeTo(DATA_PATH..'owners.json','{}')
-		end
-		local wrongXuidFounded = false
-		for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
-			if data.xuid2name(ownerXuid) == '' then
-				WARN(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
-				wrong_landowners[ownerXuid] = landIds
-				wrongXuidFounded = true
-			else
-				land_owners[ownerXuid] = landIds
+			--- Update
+			if this.version<=240 then -- OLD STRUCTURE
+				loadcfg = table.clone(cfg)
+				loadcfg.plugin.language = this.manager.default_language
+				loadcfg.plugin.network = this.update_check
+				loadcfg.land.operator = this.manager.operator
+				loadcfg.land.max_lands = this.land.player_max_lands
+				loadcfg.land.bought.three_dimension.enable = this.features.land_3D
+				loadcfg.land.bought.three_dimension.calculate_method = this.land_buy.calculation_3D
+				loadcfg.land.bought.three_dimension.price = this.land_buy.price_3D
+				loadcfg.land.bought.two_dimension.enable = this.features.land_2D
+				loadcfg.land.bought.two_dimension.calculate_method = this.land_buy.calculation_2D
+				loadcfg.land.bought.two_dimension.price = this.land_buy.price_2D
+				loadcfg.land.bought.square_range = {this.land.land_min_square,this.land.land_max_square}
+				loadcfg.land.bought.discount = this.money.discount/100
+				loadcfg.land.refund_rate = this.land_buy.refund_rate
+				loadcfg.economic.protocol = this.money.protocol
+				loadcfg.economic.scoreboard_objname = this.money.scoreboard_objname
+				loadcfg.economic.currency_name = this.money.credit_name
+				loadcfg.features.landsign.enable = this.features.landSign
+				loadcfg.features.landsign.frequency = this.features.sign_frequency
+				loadcfg.features.buttomsign.enable = this.features.landSign
+				loadcfg.features.buttomsign.frequency = this.features.sign_frequency
+				loadcfg.features.particles.enable = this.features.particles
+				loadcfg.features.particles.name = this.features.particle_effects
+				loadcfg.features.particles.max_amount = this.features.player_max_ple
+				loadcfg.features.player_selector.include_offline_players = this.features.offlinePlayerInList
+				loadcfg.features.player_selector.items_perpage = this.features.playersPerPage
+				loadcfg.features.selection.disable_dimension = this.features.blockLandDims
+				loadcfg.features.selection.tool_type = this.features.selection_tool
+				loadcfg.features.selection.tool_name = this.features.selection_tool_name
+				loadcfg.features.landtp = this.features.landtp
+				loadcfg.features.force_talk = this.features.force_talk
+				loadcfg.features.disabled_listener = this.features.disabled_listener
+				loadcfg.features.chunk_side = this.features.chunk_side
 			end
+			--- End
+			this = loadcfg
+			--- Rtn
+			return true
+		end,
+		land = function(version)
+			if version<=240 then
+				for landId,res in pairs(land_data) do
+					local perm = land_data[landId].permissions
+					perm.use_armor_stand = false
+					perm.eat = false
+				end
+			end
+			if version<=245 then
+				for landId,res in pairs(land_data) do
+					local setting = land_data[landId].settings
+					setting.ev_redstone_update = false
+				end
+			end
+			if version<=260 then
+				for landId,res in pairs(land_data) do
+					local perm = land_data[landId].permissions
+					perm.useitem = nil
+				end
+			end
+			if not DEV_MODE then
+				ILAPI.save({0,1,0})
+			end
+			return true
 		end
-		if wrongXuidFounded then
-			INFO(_Tr('console.error.readowner.tipxid'))
-		end
-	end
-	return true
-end
+	}
+}
+
 if not(lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3])) then
 	ERROR('LiteXLoader is too old, plugin loading aborted.')
 	return
@@ -3935,7 +3919,7 @@ mc.listen('onServerStarted',function()
 	{
 		function ()
 			-- load : data
-			if load() ~= true then
+			if ConfigReader.Load() ~= true then
 				error('wrong!')
 			end
 			-- load : maps
