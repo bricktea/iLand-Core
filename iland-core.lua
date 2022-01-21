@@ -3884,7 +3884,7 @@ mc.listen('onServerStarted',function()
 					INFO('Network',_Tr('console.getonline.failbyver','<a>',data.FILE_Version))
 					return
 				end
-		
+
 				-- Check Update
 				if Plugin.numver<data.Updates[1].NumVer then
 					INFO('Network',_Tr('console.update.newversion','<a>',data.Updates[1].Version))
@@ -3904,6 +3904,15 @@ mc.listen('onServerStarted',function()
 				if Plugin.numver>data.Updates[1].NumVer then
 					INFO('Network',_Tr('console.update.preview','<a>',Plugin.version))
 				end
+
+				-- Announcement
+				if data.Announcement.enabled then
+					INFO('Announcement',_Tr('console.announcement.founded'))
+					for n,content in pairs(data.Announcement.content) do
+						INFO('Announcement',n..'. '..content)
+					end
+				end
+				
 			end)
 		else
 			WARN(_Tr('console.getonline.failed'))
