@@ -362,13 +362,13 @@ Map = {
 --#region Plugin load.
 
 function UpdateConfig(cfg_o)
-	local this = TableHelper.Clone(cfg_o)
-	local cfg_t = TableHelper.Clone(cfg_o)
+	local this = table.clone(cfg_o)
+	local cfg_t = table.clone(cfg_o)
 	if this.version==nil or this.version<240 then
         return false
     end
 	if this.version==240 then -- OLD STRUCTURE
-		cfg_t = TableHelper.Clone(cfg)
+		cfg_t = table.clone(cfg)
 		cfg_t.plugin.language = this.manager.default_language
 		cfg_t.plugin.network = this.update_check
 		cfg_t.land.operator = this.manager.operator
@@ -1267,7 +1267,7 @@ PlayerSelector = {
 	
 		local perpage = cfg.features.player_selector.items_perpage
 		local maxpage = #psrdata.playerList
-		local rawList = TableHelper.Clone(psrdata.playerList[psrdata.nowpage])
+		local rawList = table.clone(psrdata.playerList[psrdata.nowpage])
 	
 		if type(data)=='table' then
 			local selected = {}
@@ -1276,7 +1276,7 @@ PlayerSelector = {
 			local npg = data[#data] + 1 -- custom page
 			if npg~=psrdata.nowpage and npg<=maxpage then
 				psrdata.nowpage = npg
-				rawList = TableHelper.Clone(psrdata.playerList[npg])
+				rawList = table.clone(psrdata.playerList[npg])
 				goto JUMPOUT_PSR_OTHER
 			end
 	
@@ -1802,7 +1802,7 @@ end
 function ILAPI.GetChunk(vec2,dimid)
 	local Cx,Cz = Pos.ToChunkPos(vec2)
 	if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
-		return TableHelper.Clone(Map.Chunk.data[dimid][Cx][Cz])
+		return table.clone(Map.Chunk.data[dimid][Cx][Cz])
 	end
 	return -1
 end
@@ -1857,23 +1857,23 @@ function ILAPI.GetAllLands()
 	return lst
 end
 function ILAPI.CheckPerm(landId,perm)
-	return TableHelper.Clone(land_data[landId].permissions[perm])
+	return table.clone(land_data[landId].permissions[perm])
 end
 function ILAPI.CheckSetting(landId,cfgname)
 	if cfgname=='share' or cfgname=='tpoint' or cfgname=='nickname' or cfgname=='describe' then
 		return nil
 	end
-	return TableHelper.Clone(land_data[landId].settings[cfgname])
+	return table.clone(land_data[landId].settings[cfgname])
 end
 function ILAPI.GetRange(landId)
 	return { Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b,land_data[landId].range.dimid }
 end
 function ILAPI.GetEdge(landId,dimtype)
 	if dimtype=='2D' then
-		return TableHelper.Clone(Map.Land.Edge.data[landId].D2D)
+		return table.clone(Map.Land.Edge.data[landId].D2D)
 	end
 	if dimtype=='3D' then
-		return TableHelper.Clone(Map.Land.Edge.data[landId].D3D)
+		return table.clone(Map.Land.Edge.data[landId].D3D)
 	end
 end
 function ILAPI.GetDimension(landId)
@@ -1884,10 +1884,10 @@ function ILAPI.GetDimension(landId)
 	end
 end
 function ILAPI.GetName(landId)
-	return TableHelper.Clone(land_data[landId].settings.nickname)
+	return table.clone(land_data[landId].settings.nickname)
 end
 function ILAPI.GetDescribe(landId)
-	return TableHelper.Clone(land_data[landId].settings.describe)
+	return table.clone(land_data[landId].settings.describe)
 end
 function ILAPI.GetOwner(landId)
 	for i,v in pairs(land_owners) do
@@ -1898,7 +1898,7 @@ function ILAPI.GetOwner(landId)
 	return '?'
 end
 function ILAPI.GetPoint(landId)
-	local i = TableHelper.Clone(land_data[landId].settings.tpoint)
+	local i = table.clone(land_data[landId].settings.tpoint)
 	i[4] = land_data[landId].range.dimid
 	return Array.ToPos(i)
 end
@@ -1918,7 +1918,7 @@ function ILAPI.Teleport(player,landId) -- can given xuid to `player`
 end
 -- [[ INFORMATION => PLAYER ]]
 function ILAPI.GetPlayerLands(xuid)
-	return TableHelper.Clone(land_owners[xuid])
+	return table.clone(land_owners[xuid])
 end
 function ILAPI.IsPlayerTrusted(landId,xuid)
 	if Map.Land.Trusted.data[landId][xuid]==nil then
@@ -2032,7 +2032,7 @@ function ILAPI.save(mode) -- {config,data,owners}
 		file.writeTo(DATA_PATH..'data.json',JSON.encode(land_data))
 	end
 	if mode[3] == 1 then
-		local tmpowners = TableHelper.Clone(land_owners)
+		local tmpowners = table.clone(land_owners)
 		for xuid,landIds in pairs(wrong_landowners) do
 			tmpowners[xuid] = landIds
 		end
@@ -2349,23 +2349,6 @@ Array = {
 	end
 }
 
-TableHelper = {
-	Clone = function(orig) -- [NOTICE] This function from: lua-users.org
-		local orig_type = type(orig)
-		local copy
-		if orig_type == 'table' then
-			copy = {}
-			for orig_key, orig_value in next, orig, nil do
-				copy[TableHelper.Clone(orig_key)] = TableHelper.Clone(orig_value)
-			end
-			setmetatable(copy, TableHelper.Clone(getmetatable(orig)))
-		else -- number, string, boolean, etc
-			copy = orig
-		end
-		return copy
-	end
-}
-
 Server.Repo = {
 	I18N = {
 		Install = 	function(name)
@@ -2529,6 +2512,21 @@ end
 
 -- table helper
 
+function table.clone(orig)
+	local orig_type = type(orig)
+	local copy
+	if orig_type == 'table' then
+		copy = {}
+		for orig_key, orig_value in next, orig, nil do
+			copy[table.clone(orig_key)] = table.clone(orig_value)
+		end
+		setmetatable(copy, table.clone(getmetatable(orig)))
+	else
+		copy = orig
+	end
+	return copy
+end
+
 function table.getAllPaths(tab,UnNeedThisPrefix)
 	local result = {}
 	local inner_tmp,T
@@ -2627,7 +2625,7 @@ function _Tr(a,...)
 		WARN('Translation not found: '..a)
 		return
 	end
-	local result = TableHelper.Clone(LangPack[a])
+	local result = table.clone(LangPack[a])
 	local args = {...}
 	local thisWord = false
 	for n,word in pairs(args) do
@@ -3280,7 +3278,7 @@ TimerCallbacks = {
 					_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
 				)
 				if landcfg.describe~='' then
-					local des = TableHelper.Clone(landcfg.describe)
+					local des = table.clone(landcfg.describe)
 					des = string.gsub(des,'$visitor',player.name)
 					des = string.gsub(des,'$n','\n')
 					SendText(player,des,0)
@@ -3405,7 +3403,7 @@ mc.listen('onJoin',function(player)
 	MEM[xuid] = { inland='null' }
 
 	if wrong_landowners[xuid]~=nil then
-		land_owners[xuid] = TableHelper.Clone(wrong_landowners[xuid])
+		land_owners[xuid] = table.clone(wrong_landowners[xuid])
 		for n,landId in pairs(land_owners[xuid]) do
 			Map.Land.Owner.update(landId)
 		end
