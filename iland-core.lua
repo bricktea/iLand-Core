@@ -16,7 +16,7 @@ Plugin = {
 	version = "2.60",
 	numver = 260,
 	apiver = 200,
-	minLXL = {0,5,11},
+	minLXL = {0,5,12},
 }
 
 Server = {
@@ -1146,7 +1146,7 @@ OpenGUI = {
 				Form:addSwitch('onRide',not(ILAPI.IsDisabled('onRide')))
 				Form:addSwitch('onWitherBossDestroy',not(ILAPI.IsDisabled('onWitherBossDestroy')))
 				Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
-				Form:addSwitch('onPistonPush',not(ILAPI.IsDisabled('onPistonPush')))
+				Form:addSwitch('onPistonTryPush',not(ILAPI.IsDisabled('onPistonTryPush')))
 				Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
 				Form:addSwitch('onChangeArmorStand',not(ILAPI.IsDisabled('onChangeArmorStand')))
 				Form:addSwitch('onEat',not(ILAPI.IsDisabled('onEat')))
@@ -1176,7 +1176,7 @@ OpenGUI = {
 						if not(res[15]) then dbl[#dbl+1] = "onRide" end
 						if not(res[16]) then dbl[#dbl+1] = "onWitherBossDestroy" end
 						if not(res[17]) then dbl[#dbl+1] = "onFarmLandDecay" end
-						if not(res[18]) then dbl[#dbl+1] = "onPistonPush" end
+						if not(res[18]) then dbl[#dbl+1] = "onPistonTryPush" end
 						if not(res[19]) then dbl[#dbl+1] = "onFireSpread" end
 						if not(res[20]) then dbl[#dbl+1] = "onChangeArmorStand" end
 						if not(res[21]) then dbl[#dbl+1] = "onEat" end
@@ -3714,9 +3714,9 @@ mc.listen('onFarmLandDecay',function(pos,entity)
 	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
 end)
-mc.listen('onPistonPush',function(pos,block)
+mc.listen('onPistonTryPush',function(pos,block)
 
-	if ILAPI.IsDisabled('onPistonPush') then
+	if ILAPI.IsDisabled('onPistonTryPush') then
 		return
 	end
 

@@ -8,6 +8,10 @@
  - [ ] OPLMgr新方案
  - [x] ILAPI: IsListenerDisabled, GetApiVersion
  - [ ] 整理文档站
+ - [ ] 领地内三叉戟？
+ - [ ] 彻底修复点龙蛋
+ - [ ] 删除特殊控制项UseItem
+ - [x] 适配LXL0.5.12, 修复活塞
 
 > Version **2.61**
  - [ ] 领地内左键龙蛋（lxl0.5.12）
