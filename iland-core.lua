@@ -2316,20 +2316,6 @@ Array = {
 			end
 		end
 		return -1
-	end,
-	Splicing = function(array,delimiter)
-		local result = ''
-		local max = #array
-		if delimiter==nil then
-			delimiter = ''
-		end
-		for n,res in pairs(array) do
-			result = result..res
-			if n~=max then
-				result = result..delimiter
-			end
-		end
-		return result
 	end
 }
 
@@ -3054,7 +3040,7 @@ mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
 	INFO('Memory Used: '..ILAPI.GetMemoryCount()..'MB')
 end)
 mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
-	local name = Array.Splicing(args,' ')
+	local name = table.concat(args,' ')
 	local xuid = data.name2xuid(name)
 	if xuid == "" then
 		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
@@ -3070,7 +3056,7 @@ mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
 	INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
 end)
 mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
-	local name = Array.Splicing(args,' ')
+	local name = table.concat(args,' ')
 	local xuid = data.name2xuid(name)
 	if xuid == "" then
 		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
