@@ -3142,6 +3142,12 @@ mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_
 		updateLang(args[1])
 	end
 end)
+mc.regConsoleCmd(MainCmd..' reload',_Tr('command.console.land_reload'),function(args)
+	Plugin.Reload()
+end)
+mc.regConsoleCmd(MainCmd..' unload',_Tr('command.console.land_unload'),function(args)
+	Plugin.Unload()
+end)
 
 -- Callbacks
 

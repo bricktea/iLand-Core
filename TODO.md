@@ -12,6 +12,8 @@
  - [x] 彻底修复点龙蛋
  - [x] 删除特殊控制项UseItem
  - [x] 适配LXL0.5.12, 修复活塞
+ - [x] 插件热管理`land reload`，`land unload`
+ - [ ] fix announcement
 
 > Version **2.61**
  - [ ] 领地内左键龙蛋（lxl0.5.12）
