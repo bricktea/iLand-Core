@@ -45,13 +45,11 @@ local cfg = {
 		bought = {
 			three_dimension = {
 				enable = true,
-				calculate_method = "m-1",
-				price = {20,4}
+				calculate = "{square}*8+{height}*20",
 			},
 			two_dimension = {
 				enable = true,
-				calculate_method = "d-1",
-				price = {35}
+				calculate = "{square}*25",
 			},
 			square_range = {4,50000},
 			discount = 1
@@ -461,7 +459,7 @@ ConfigReader = {
 				return false
 			end
 			--- Update
-			if this.version<=240 then -- OLD STRUCTURE
+			if this.version < 241 then -- OLD STRUCTURE
 				loadcfg = table.clone(cfg)
 				loadcfg.plugin.language = this.manager.default_language
 				loadcfg.plugin.network = this.update_check
@@ -495,6 +493,14 @@ ConfigReader = {
 				loadcfg.features.force_talk = this.features.force_talk
 				loadcfg.features.disabled_listener = this.features.disabled_listener
 				loadcfg.features.chunk_side = this.features.chunk_side
+			end
+			if this.version < 260 then
+				loadcfg.land.bought.three_dimension.calculate_method = nil
+				loadcfg.land.bought.three_dimension.price = nil
+				loadcfg.land.bought.two_dimension.calculate_method = nil
+				loadcfg.land.bought.two_dimension.price = nil
+				loadcfg.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
+				loadcfg.land.bought.two_dimension.calculate = "{square}*25"
 			end
 			--- End
 			this = loadcfg
@@ -896,7 +902,7 @@ function Handler_LandCfg(player,landId,option)
 	end
 	if option==8 then --删除领地
 		local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b)
-		local value = math.modf(CalculatePrice(cubeInfo.length,cubeInfo.width,cubeInfo.height,ILAPI.GetDimension(landId))*cfg.land.refund_rate)
+		local value = math.modf(CalculatePrice(cubeInfo,ILAPI.GetDimension(landId))*cfg.land.refund_rate)
 		player:sendModalForm(
 			_Tr('gui.delland.title'),
 			_Tr('gui.delland.content','<a>',value,'<b>',cfg.economic.currency_name),
@@ -1263,9 +1269,9 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.plugin,'dropdown','this.plugin.language',ILAPI.GetLanguageList(0))
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.max_lands')
 				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.land.bought.three_dimension.enable')
-				-- ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.three_dimension.calculate')
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.three_dimension.calculate')
 				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.land.bought.two_dimension.enable')
-				-- ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.two_dimension.calculate')
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.two_dimension.calculate')
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)1')
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)2')
 				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.bought.discount')
@@ -2657,6 +2663,21 @@ function string.split(str,reps)
 	return result
 end
 
+function string.gsubEx(key,...)
+	local tWd = false
+	local result = key
+	local args = {...}
+
+	for n,word in pairs(args) do
+		if tWd then
+			result = string.gsub(result,args[n-1],word)
+		end
+		tWd = not(tWd)
+	end
+
+	return result
+end
+
 -- table helper
 
 function table.clone(orig)
@@ -2817,27 +2838,26 @@ function SendText(player,text,mode)
 		return
 	end
 end
-function CalculatePrice(length,width,height,dimension)
-	local price=0
+function CalculatePrice(cubeInfo,dimension)
+	local ecode
 	if dimension=='3D' then
-		local t=cfg.land.bought.three_dimension.price
-		if cfg.land.bought.three_dimension.calculate_method == 'm-1' then
-			price=length*width*t[1]+height*t[2]
-		end
-		if cfg.land.bought.three_dimension.calculate_method == 'm-2' then
-			price=length*width*height*t[1]
-		end
-		if cfg.land.bought.three_dimension.calculate_method == 'm-3' then
-			price=length*width*t[1]
-		end
+		ecode = string.gsubEx(cfg.land.bought.three_dimension.calculate)
+	elseif dimension=='2D' then
+		ecode = string.gsubEx(cfg.land.bought.two_dimension.calculate)
 	end
-	if dimension=='2D' then
-		local t=cfg.land.bought.two_dimension.price
-		if cfg.land.bought.two_dimension.calculate_method == 'd-1' then
-			price=length*width*t[1]
-		end
+	local price = lxl.eval(string.gsubEx(
+		'return '..ecode,
+		'{height}',cubeInfo.height,
+		'{length}',cubeInfo.length,
+		'{width}',cubeInfo.width,
+		'{square}',cubeInfo.square,
+		'{volume}',cubeInfo.volume
+	))
+	if type(price)~='number' then
+		WARN('Something wrong when calculate, dimension = '..dimension..'.')
+		price = 0
 	end
-	return math.modf(price*(cfg.land.bought.discount))
+	return math.floor(price*(cfg.land.bought.discount))
 end
 function GenGUID()
 	local guid = system.randomGuid()
@@ -2984,7 +3004,7 @@ mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 	end
 	local res = MEM[xuid].newLand.range
 	local cubeInfo = Cube.GetInformation(res.posA,res.posB)
-	local price = CalculatePrice(cubeInfo.length,cubeInfo.width,cubeInfo.height,res.dimension)
+	local price = CalculatePrice(cubeInfo,res.dimension)
 	local discount_info = ''
 	local dimension_info = ''
 	if cfg.land.bought.discount<1 then
@@ -3064,8 +3084,8 @@ mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 	local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id].a,Map.Land.Position.data[MEM[xuid].reselectLand.id].b)
 
 	-- Checkout
-	local nr_price = CalculatePrice(cubeInfo.length,cubeInfo.width,cubeInfo.height,res.dimension)
-	local or_price = CalculatePrice(old_cubeInfo.length,old_cubeInfo.width,old_cubeInfo.height,res.dimension)
+	local nr_price = CalculatePrice(cubeInfo,res.dimension)
+	local or_price = CalculatePrice(old_cubeInfo,res.dimension)
 	local mode -- pay(0) or refund(1)
 	local payT
 	if nr_price >= or_price then

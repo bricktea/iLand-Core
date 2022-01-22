@@ -7,6 +7,7 @@
  - [x] LandTp Fix
  - [x] OPLMgr新方案
  - [x] ILAPI: IsListenerDisabled, GetApiVersion
+ - [x] 修改计算方式
  - [ ] 整理文档站
  - [x] 彻底修复点龙蛋
  - [x] 修改配置项读取方式，自动补全漏项
