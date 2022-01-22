@@ -13,8 +13,8 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.61",
-	numver = 261,
+	version = "2.62",
+	numver = 262,
 	apiver = 200,
 	minLXL = {0,5,12},
 }
@@ -501,6 +501,11 @@ ConfigReader = {
 				this.land.bought.two_dimension.price = nil
 				this.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
 				this.land.bought.two_dimension.calculate = "{square}*25"
+			end
+			if this.version < 262 then
+				if type(this.land.bought.square_range)~='table' then
+					this.land.bought.square_range = {4,50000}
+				end
 			end
 			--- Rtn
 			return true
@@ -3030,7 +3035,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].newLand==nil then
+		if MEM[xuid].newLand==nil or MEM[xuid].newLand.range==nil then
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
@@ -3107,7 +3112,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].reselectLand == nil then
+		if MEM[xuid].reselectLand==nil or MEM[xuid].reselectLand.range==nil then
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
@@ -4158,7 +4163,7 @@ mc.listen('onServerStarted',function()
 		catch
 		{
 			function (err)
-				log(err)
+				WARN(err)
 				ERROR('Something wrong when load data, plugin closed.')
 				Plugin.Unload()
 			end
