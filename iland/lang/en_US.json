@@ -1,5 +1,5 @@
 {
-    "VERSION": 261,
+    "VERSION": 262,
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "Forced transfer of land",
@@ -381,8 +381,6 @@
     "console.languages.update.single": "Starting updating language <a> ...",
 
     "console.error.money.protocol": "Unknown economic component '<a>' is being used.",
-    "console.error.money.scorenull": "The scoreboard object could not be accessed, the corresponding economic scoreboard may not exist. Please use /land mgr to change to the correct scoreboard or try restarting the server.",
-    "console.error.readowner.xuid": "Unable to identify player (xuid = <a>) because this XUID was not found in the database, skip reading...",
-    "console.error.readowner.tipxid": "The above warning does not affect the operation of the plugin for the time being. Please let the player with the corresponding XUID re-enter the server to make the database record."
+    "console.error.money.scorenull": "The scoreboard object could not be accessed, the corresponding economic scoreboard may not exist. Please use /land mgr to change to the correct scoreboard or try restarting the server."
 
 }

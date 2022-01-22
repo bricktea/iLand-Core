@@ -1,5 +1,5 @@
 {
-    "VERSION": 261,
+    "VERSION": 262,
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "強製過戶領地",
@@ -381,8 +381,6 @@
     "console.languages.update.single": "正在開始升級語言 <a> ...",
 
     "console.error.money.protocol": "正在使用未知的經濟組件 '<a>'。",
-    "console.error.money.scorenull": "無法訪問計分闆對象，可能對應的經濟計分板不存在。請使用/land mgr更改為正確計分板或嘗試重啟服務器。",
-    "console.error.readowner.xuid": "無法識別玩家（xuid = <a>），因為這個XUID在數據庫中找不到，跳過讀取...",
-    "console.error.readowner.tipxid": "以上警告暫不影響插件運行，請讓對應XUID的玩家重新進入服務器以使數據庫記錄。"
+    "console.error.money.scorenull": "無法訪問計分闆對象，可能對應的經濟計分板不存在。請使用/land mgr更改為正確計分板或嘗試重啟服務器。"
 
 }

@@ -439,7 +439,7 @@ ConfigReader = {
 			local wrongXuidFounded = false
 			for ownerXuid,landIds in pairs(JSON.decode(file.readFrom(DATA_PATH..'owners.json'))) do
 				if data.xuid2name(ownerXuid) == '' then
-					WARN(_Tr('console.error.readowner.xuid','<a>',ownerXuid))
+					WARN('Player (xuid: '..ownerXuid..') not found, skipping...')
 					wrong_landowners[ownerXuid] = landIds
 					wrongXuidFounded = true
 				else
@@ -447,7 +447,7 @@ ConfigReader = {
 				end
 			end
 			if wrongXuidFounded then
-				INFO(_Tr('console.error.readowner.tipxid'))
+				INFO('Some players are temporarily not loading because their XUID is not recorded in the database, please have them re-enter the server to make the database recorded.')
 			end
 		end
 		return true
@@ -2560,7 +2560,7 @@ Server.Repo = {
 			--  Check Data
 			local updata
 			if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
-				ERROR('console.update.vacancy')
+				ERROR(_Tr('console.update.vacancy'))
 				return
 			end
 			if rawInfo.FILE_Version==Server.version then
