@@ -1,6 +1,5 @@
 {
-    "VERSION": 245,
-    "#1": "",
+    "VERSION": 260,
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "強製過戶領地",
@@ -97,7 +96,6 @@
     "gui.landmgr.landperm.other_options.respawn_anchor": "允許使用重生錨",
     "gui.landmgr.landperm.other_options.fishing": "允許使用釣竿",
     "gui.landmgr.landperm.other_options.bucket": "允許使用桶",
-    "gui.landmgr.landperm.other_options.useitem": "§l特殊§r 禁止所有UseItem行為，一定程度上解決放置權限不完善的問題，但也會導致部分容器控制失效，同時到導致大部分容器類/使用類權限直接關閉，慎重開啟，當Place問題有更好解決辦法時此權限將移除。",
     "gui.landmgr.landperm.editevent": "控制領地內（附近）可發生的事件, 請移步領地設定選項卡。",
     
     "gui.fastlmgr.title": "Fast LMgr",
@@ -130,7 +128,42 @@
     "gui.oplandmgr.plugin.tip": "此處可以配置插件，修改即時生效。",
     "gui.listenmgr.title": "監聽器管理器",
     "gui.listenmgr.tip": "§l警告§r 不要隨意關閉一個監聽器，除非你知道你在幹什麼！",
-    
+
+    "gui.oplandmgr.plugin.class.plugin": "插件設定",
+    "gui.oplandmgr.plugin.class.land": "領地設定",
+    "gui.oplandmgr.plugin.class.economic": "經濟設定",
+    "gui.oplandmgr.plugin.class.feature_landsign": "LandSign",
+    "gui.oplandmgr.plugin.class.feature_particle": "粒子效果",
+    "gui.oplandmgr.plugin.class.feature_playerselector": "玩家選擇器",
+    "gui.oplandmgr.plugin.class.other_features": "其他功能",
+
+    "path.<config> this.features.particles.enable": "圈地粒子效果",
+    "path.<config> this.features.particles.max_amount": "粒子最大數量",
+    "path.<config> this.features.particles.name": "粒子名稱",
+    "path.<config> this.features.buttomsign.enable": "底部持續提示",
+    "path.<config> this.features.buttomsign.frequency": "提示頻率 (s)",
+    "path.<config> this.features.force_talk": "強制對話替代Actionbar",
+    "path.<config> this.features.chunk_side": "區塊邊長",
+    "path.<config> this.features.player_selector.items_perpage": "單頁顯示玩家數目",
+    "path.<config> this.features.player_selector.include_offline_players": "包含離線玩家",
+    "path.<config> this.features.landsign.enable": "領地進入提示",
+    "path.<config> this.features.landsign.frequency": "提示頻率 (s)",
+    "path.<config> this.features.landtp": "領地傳送",
+    "path.<config> this.plugin.language": "插件語言",
+    "path.<config> this.plugin.network": "允許插件聯網",
+    "path.<config> this.economic.scoreboard_objname": "計分板",
+    "path.<config> this.economic.protocol": "經濟套件",
+    "path.<config> this.economic.currency_name": "貨幣名稱",
+    "path.<config> this.land.max_lands": "單玩家最多擁有領地",
+    "path.<config> this.land.refund_rate": "退款率",
+    "path.<config> this.land.bought.two_dimension.enable": "開啟二維圈地",
+    "path.<config> this.land.bought.two_dimension.calculate": "價格計算",
+    "path.<config> this.land.bought.discount": "折扣",
+    "path.<config> this.land.bought.square_range.(*)1": "領地最小面積",
+    "path.<config> this.land.bought.square_range.(*)2": "領地最大面積",
+    "path.<config> this.land.bought.three_dimension.enable": "開啟三維圈地",
+    "path.<config> this.land.bought.three_dimension.calculate": "價格計算",
+
     "gui.buyland.chosedim": "請選擇您要創建的領地類型",
     "gui.buyland.unsupport": "本服暫不支持 <a> 圈地",
     "gui.buyland.2d": "二維領地",
@@ -155,7 +188,7 @@
     "gui.landtransfer.tip": "領地過戶完成後，所有權限將被轉移，您不再是該領地的主人，但原領地的所有配置不會改變。",
     "gui.reselectland.title": "重新選擇領地範圍",
     "gui.reselectland.tip": "重新圈地為完全重新選擇領地的範圍，非直接擴充/縮小現有領地範圍。\\n重新選擇的價格計算方式為\\\"新範圍價格 — 舊範圍價值\\\"，是否繼續？",
-    "gui.reselectland.content": "原領地範圍（<a>）價值：<b>，\\n現領地範圍（<c>）價值：<d>，\\n將<e>您<f><g>。",
+    "gui.reselectland.content": "原領地範圍（<a>）價值：<b>，\\n現領地範圍（<c>）價值：<d>，\\n將<e>您<f><g>。 ",
     "gui.reselectland.refund": "退款給",
     "gui.reselectland.pay": "收取",
 
@@ -165,9 +198,9 @@
     "gui.landcfg.landsign.tother": "其他人進入時提示",
     "gui.landcfg.landsign.bottom": "底部持續提示",
     "gui.landcfg.inside": "§l領地內事件",
-    "gui.landcfg.inside.explode": "允許爆炸發生（附近也生效）",
+    "gui.landcfg.inside.explode": "允許發生爆炸 (附近也生效)",
+    "gui.landcfg.inside.piston_push": "允許活塞推動 (僅附近)",
     "gui.landcfg.inside.farmland_decay": "允許耕地退化",
-    "gui.landcfg.inside.piston_push": "允許活塞推動",
     "gui.landcfg.inside.fire_spread": "允許火焰蔓延",
     "gui.landcfg.nearby": "§l附近事件",
     "gui.landtp.point": "成功將位置 [<a>] 設定為領地 <b> 的傳送點。",
@@ -194,7 +227,8 @@
     "title.rangeselector.inmode": "[ 圈地模式 ]",
     "title.rangeselector.selectpoint": "請手持 <a>, 點擊方塊或使用 /land set 選定 <b> 點。",
     "title.rangeselector.dimension.chose": "選擇領地維度",
-    "title.rangeselector.dimension.tip": "§l3D§r 選擇兩個點，以這兩個點為頂點的長方體為領地。\n§l2D§r 以兩個點確定XZ坐標，整個y軸皆為領地。","title.rangeselector.dimension.blocked": "管理員已關閉此圈地模式",
+    "title.rangeselector.dimension.tip": "§l3D§r 選擇兩個點，以這兩個點為頂點的長方體為領地。\n§l2D§r 以兩個點確定XZ坐標，整個y軸皆為領地。",
+    "title.rangeselector.dimension.blocked": "管理員已關閉此圈地模式",
     "title.rangeselector.dimension.chosed": "當前是 <a> 圈地模式",
     "title.rangeselector.fail.dimdiff": "操作失敗，請勿跨維度選點！",
     "title.rangeselector.fail.dimblocked": "管理員已關閉此維度的圈地功能",
@@ -220,8 +254,6 @@
     "title.landtransfer.toomanyids": "不可以向多人過戶領地",
     "title.landtransfer.canttoown": "不可以向自己過戶領地。",
     "title.landtransfer.complete": "<a> 已過戶給 <b>",
-    "title.oplandmgr.invalidchar": "修改項存在不合法字符，已中斷操作。",
-    "title.oplandmgr.transfered": "已傳送到 <a>",
     "title.oplandmgr.setselectool": "請手持欲選定的圈地工具破壞方塊",
     "title.oplandmgr.setsuccess": "成功！選定 <a> 作為圈地工具",
     "title.landmgr.failed": "沒有可以管理領地，使用\"/land new\"創建一個吧！",
@@ -236,7 +268,6 @@
     "title.landsign.visitorbuttom": "這裡是 <a> 的領地",
     "title.landtp.fail.noland": "你需要先站在領地上一點",
     "title.landtp.fail.notowner": "你不是這塊領地的主人",
-    "title.landtp.fail.danger": "無法開啟傳送，因為目標傳送點不安全",
     "title.landtp.removed": "已移除這塊領地的傳送點",
     "title.landtp.success": "傳送成功",
 
@@ -244,6 +275,13 @@
     "sign.listener.ownersubtitle": "歡迎回來",
     "sign.listener.visitortitle":"Welcome to",
     "sign.listener.visitorsubtitle":"<a> 的領地",
+
+    "api.safetp.tping.talk": "傳送中...",
+    "api.safetp.tping.chunkloading": "區塊加載中!",
+    "api.safetp.tping.foundfoothold": "尋找方塊中!",
+    "api.safetp.succeed": "傳送完成!",
+    "api.safetp.fail.timeout": "區塊加載超時，傳送失敗",
+    "api.safetp.fail.nofoothold": "傳送點附近沒有落腳點，傳送失敗",
 
     "talk.land.unselected":"未選擇任何領地",
     "talk.landmgr.open": "打開領地管理器",
@@ -256,9 +294,10 @@
     "talk.feature.disabled": "管理員關閉了此功能",
     "talk.tomany": "不支持同時操作多人",
     "talk.invalidaction": "無效操作",
+    "talk.pleasewait": "請稍等",
 
     "talk.prejoin.noxuid": "抱歉，加入使用iLand插件的服務器的玩家必須擁有XUID。",
-    "talk.gametype.creative": "檢測到創造玩家 <a> ，一些控制項將對創造模式玩家失效。",
+    "talk.gametype.creative": "檢測到創造玩家 <a> ，一些控制項將對創造模式玩家失效。 ",
 
     "command.land": "領地系統主命令",
     "command.land_new": "創建一個新領地",
@@ -285,6 +324,8 @@
     "command.console.land_language_list-online": "列出倉庫語言",
     "command.console.land_language_install": "安裝語言",
     "command.console.land_language_update": "升級iLand",
+    "command.console.land_reload": "重新加載iLand",
+    "command.console.land_unload": "反加載iLand",
 
     "console.landop.add.success": "成功添加 <a>（<b>）為領地管理員。",
     "console.landop.add.failbyexist": "玩家 <a> 已經是領地管理員了。",
@@ -296,12 +337,12 @@
     "console.update.preview": "正在使用未公開版本 <a> 。",
     "console.update.newversion": "獲取到到新版本 <a> ,可以使用 /land update 自動更新！",
     "console.update.newcontent": "更新內容：",
-    "console.update.force": "抱歉，由於雲端設定，您的iLand必須更新倒 <a> 才可使用，強制更新大多在舊版本存在嚴重問題時才會啟用。",
+    "console.update.force": "抱歉，由於雲端設定，您的iLand必須更新到 <a> 才可使用，強制更新大多在舊版本存在嚴重問題時才會啟用。",
     "console.update.unsupport": "抱歉，當前LXL版本與雲端版本不匹配，因此自動更新停止。",
     "console.update.vacancy": "抱歉，當前版本與雲端版本相差不止一個版本，請手動更新。",
     "console.update.disabled": "雲端設定關閉了自動更新，請及時手動更新。",
     "console.update.auto": "由於您開啟了自動更新，正在開始更新您的iLand到新版本...",
-    "console.update.restart": "更新完畢需要重啟服務器以生效。 ",
+    "console.update.restart": "更新完畢需要重啟服務器以生效。",
     
     "console.autoupdate.start": "正在開始自動更新...",
     "console.autoupdate.alreadylatest": "更新停止，因為已經是最新版本（<a>）。",
@@ -311,9 +352,11 @@
     "console.autoupdate.errorbyverify": "文件 <a> 校驗失敗，請檢查您的網絡或反饋問題，更新已中斷。",
     "console.autoupdate.success": "自動更新已完成，重啟服務器即可生效。",
 
-    "console.getonline.failbycode": "獲取聯網信息失敗，錯誤代碼：<a>。",
-    "console.getonline.failed": "聯網信息獲取失敗。",
-    "console.getonline.failbyver": "無法解析的在線信息文件版本（<a>），您的iLand可能已過時。",
+    "console.announcement.founded": "收到在線公告，內容如下：",
+
+    "console.getonline.failbycode": "獲取雲端信息失敗，錯誤代碼：<a>。",
+    "console.getonline.failed": "雲端信息獲取失敗。",
+    "console.getonline.failbyver": "無法解析的雲端信息文件版本（<a>），您的iLand可能已過時。",
 
     "console.languages.sign": "此服務器正在使用 <a> 語言，版本為：<b>。",
     "console.languages.set.misspara": "缺少參數，示例：\"/land language set zh_CN\"",
@@ -341,4 +384,5 @@
     "console.error.money.scorenull": "無法訪問計分闆對象，可能對應的經濟計分板不存在。請使用/land mgr更改為正確計分板或嘗試重啟服務器。",
     "console.error.readowner.xuid": "無法識別玩家（xuid = <a>），因為這個XUID在數據庫中找不到，跳過讀取...",
     "console.error.readowner.tipxid": "以上警告暫不影響插件運行，請讓對應XUID的玩家重新進入服務器以使數據庫記錄。"
+
 }

@@ -386,7 +386,7 @@ ConfigReader = {
 					return false
 				end
 			end
-	
+			
 			-- ## Read config
 			local item
 			for n,path in pairs(table.getAllPaths(cfg,false)) do
@@ -454,13 +454,12 @@ ConfigReader = {
 	end,
 	Updater = {
 		config = function(this)
-			local loadcfg = table.clone(this)
 			if this.version==nil or this.version<240 then
 				return false
 			end
 			--- Update
 			if this.version < 241 then -- OLD STRUCTURE
-				loadcfg = table.clone(cfg)
+				local loadcfg = table.clone(cfg)
 				loadcfg.plugin.language = this.manager.default_language
 				loadcfg.plugin.network = this.update_check
 				loadcfg.land.operator = this.manager.operator
@@ -493,17 +492,16 @@ ConfigReader = {
 				loadcfg.features.force_talk = this.features.force_talk
 				loadcfg.features.disabled_listener = this.features.disabled_listener
 				loadcfg.features.chunk_side = this.features.chunk_side
+				this = loadcfg
 			end
 			if this.version < 260 then
-				loadcfg.land.bought.three_dimension.calculate_method = nil
-				loadcfg.land.bought.three_dimension.price = nil
-				loadcfg.land.bought.two_dimension.calculate_method = nil
-				loadcfg.land.bought.two_dimension.price = nil
-				loadcfg.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
-				loadcfg.land.bought.two_dimension.calculate = "{square}*25"
+				this.land.bought.three_dimension.calculate_method = nil
+				this.land.bought.three_dimension.price = nil
+				this.land.bought.two_dimension.calculate_method = nil
+				this.land.bought.two_dimension.price = nil
+				this.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
+				this.land.bought.two_dimension.calculate = "{square}*25"
 			end
-			--- End
-			this = loadcfg
 			--- Rtn
 			return true
 		end,
