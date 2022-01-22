@@ -1,27 +1,5 @@
-> Version **2.60**
- - [x] 现在领地信息查看里只能看到部分LandID
- - [x] 活塞推动限制现在仅作用于附近，而非领地内
- - [x] 合并Explode
- - [x] 领地外红石更新
- - [x] 重选领地范围有Bug
- - [x] LandTp Fix
- - [x] OPLMgr新方案
- - [x] ILAPI: IsListenerDisabled, GetApiVersion
- - [x] 修改计算方式
- - [x] 彻底修复点龙蛋
- - [x] 修改配置项读取方式，自动补全漏项
- - [x] 删除特殊控制项UseItem
- - [x] 适配LXL0.5.12, 修复活塞
- - [x] 插件热管理`land reload`，`land unload`
- - [x] fix announcement.
- - [x] disable listener, disable dimension, land operator 读取失效
-
-> Version **2.61**
- - [ ] 领地内左键龙蛋（lxl0.5.12）
-
 > Version **3.0**
  - [ ] SubLand
- - [ ] OOP化代码
 
 > ILAPI 示例插件计划
  - [ ] Land Edge Shower

@@ -13,8 +13,8 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.60",
-	numver = 260,
+	version = "2.61",
+	numver = 261,
 	apiver = 200,
 	minLXL = {0,5,12},
 }
@@ -533,14 +533,18 @@ ConfigReader = {
 	}
 }
 
+I18N = {
+	Load = function()
+		LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.plugin.language..'.json'))
+		if LangPack.VERSION ~= Plugin.numver then
+			error('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
+			return
+		end
+	end
+}
+
 if not(lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3])) then
 	ERROR('LiteXLoader is too old, plugin loading aborted.')
-	return
-end
-
-LangPack = JSON.decode(file.readFrom(DATA_PATH..'lang\\'..cfg.plugin.language..'.json'))
-if LangPack.VERSION ~= Plugin.numver then
-	error('Language pack version does not correspond('..LangPack.VERSION..'!='..Plugin.numver..'), plugin loading aborted.')
 	return
 end
 
@@ -2932,506 +2936,510 @@ local function catch(err)
 	return err[1]
 end
 
--- [Client] Command Registry
+function RegisterCommands()
 
-mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
-	if #args~=0 then
-		SendText(player,_Tr('command.error','<a>',args[1]),0)
-		return
-	end
-	local pos = player.blockPos
-	local xuid = player.xuid
-	local landId = ILAPI.PosGetLand(pos)
-	if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
-		MEM[xuid].landId=landId
-		OpenGUI.FastLMgr(player)
-	else
-		local land_count = tostring(#land_owners[xuid])
+	-- ## [Client] Command Registry
+
+	mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
+		if #args~=0 then
+			SendText(player,_Tr('command.error','<a>',args[1]),0)
+			return
+		end
+		local pos = player.blockPos
+		local xuid = player.xuid
+		local landId = ILAPI.PosGetLand(pos)
+		if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
+			MEM[xuid].landId=landId
+			OpenGUI.FastLMgr(player)
+		else
+			local land_count = tostring(#land_owners[xuid])
+			local Form = mc.newSimpleForm()
+			Form:setTitle(_Tr('gui.fastgde.title'))
+			Form:setContent(_Tr('gui.fastgde.content','<a>',land_count))
+			Form:addButton(_Tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
+			Form:addButton(_Tr('gui.fastgde.manage'),'textures/ui/confirm')
+			Form:addButton(_Tr('gui.fastgde.landtp'),'textures/ui/World')
+			Form:addButton(_Tr('gui.general.close'))
+			player:sendForm(
+				Form,
+				function(player,id)
+					if id==nil then return end
+					if id==0 then
+						player:runcmd(MainCmd..' new')
+					end
+					if id==1 then
+						player:runcmd(MainCmd..' gui')
+					end
+					if id==2 then
+						player:runcmd(MainCmd..' tp')
+					end
+				end
+			)
+		end
+	end)
+	mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
+		local xuid = player.xuid
+
+		if MEM[xuid].reselectLand~=nil then
+			SendText('what are u doing?')
+			return
+		end
+		if MEM[xuid].newLand~=nil then
+			SendText(player,_Tr('title.getlicense.alreadyexists'))
+			return
+		end
+		if not(ILAPI.IsLandOperator(xuid)) and #land_owners[xuid]>=cfg.land.max_lands then
+			SendText(player,_Tr('title.getlicense.limit'))
+			return
+		end
+
+		MEM[xuid].newLand = {}
+		RangeSelector.Create(player,function(player,res)
+			MEM[xuid].keepingTitle = {
+				_Tr('title.selectland.complete1'),
+				_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
+			}
+			MEM[xuid].newLand.range = res
+		end)
+
+	end)
+	mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,args)
+		local xuid = player.xuid
+		if MEM[xuid].newLand~=nil then
+			MEM[xuid].newLand = nil
+			RangeSelector.Clear(player)
+			SendText(player,_Tr('title.giveup.succeed'))
+		end
+		if MEM[xuid].reselectLand~=nil then
+			MEM[xuid].reselectLand = nil
+			RangeSelector.Clear(player)
+			SendText(player,_Tr('title.reselectland.giveup.succeed'))
+		end
+	end)
+	mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),function (player,args)
+		OpenGUI.LMgr(player)
+	end)
+	mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
+		local xuid = player.xuid
+		if MEM[xuid].rsr ~= nil then
+			RangeSelector.Push(player,player.blockPos)
+		else
+			SendText(player,_Tr('title.rangeselector.fail.outmode'))
+		end
+	end)
+	mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
+		local xuid = player.xuid
+		if MEM[xuid].newLand==nil then
+			SendText(player,_Tr('talk.invalidaction'))
+			return
+		end
+		local res = MEM[xuid].newLand.range
+		local cubeInfo = Cube.GetInformation(res.posA,res.posB)
+		local price = CalculatePrice(cubeInfo,res.dimension)
+		local discount_info = ''
+		local dimension_info = ''
+		if cfg.land.bought.discount<1 then
+			discount_info=_Tr('gui.buyland.discount','<a>',tostring((1-cfg.land.bought.discount)*100))
+		end
+		if res.dimension=='3D' then
+			dimension_info = '§l3D-Land §r'
+		else
+			dimension_info = '§l2D-Land §r'
+		end
 		local Form = mc.newSimpleForm()
-		Form:setTitle(_Tr('gui.fastgde.title'))
-		Form:setContent(_Tr('gui.fastgde.content','<a>',land_count))
-		Form:addButton(_Tr('gui.fastgde.create'),'textures/ui/icon_iron_pickaxe')
-		Form:addButton(_Tr('gui.fastgde.manage'),'textures/ui/confirm')
-		Form:addButton(_Tr('gui.fastgde.landtp'),'textures/ui/World')
-		Form:addButton(_Tr('gui.general.close'))
-		player:sendForm(
-			Form,
-			function(player,id)
-				if id==nil then return end
-				if id==0 then
-					player:runcmd(MainCmd..' new')
+		Form:setTitle(dimension_info.._Tr('gui.buyland.title')..discount_info)
+		Form:setContent(
+			_Tr('gui.buyland.content',
+			'<a>',cubeInfo.length,
+			'<b>',cubeInfo.width,
+			'<c>',cubeInfo.height,
+			'<d>',cubeInfo.volume,
+			'<e>',price,
+			'<f>',cfg.economic.currency_name,
+			'<g>',Money.Get(player)
+		))
+		Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/check')
+		Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
+		Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/cancel')
+		player:sendForm(Form,
+			function (player,res)
+				if res==nil or res==1 then
+					SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
+					return
 				end
-				if id==1 then
-					player:runcmd(MainCmd..' gui')
+				if res==2 then
+					player:runcmd('land giveup')
+					return
 				end
-				if id==2 then
-					player:runcmd(MainCmd..' tp')
+			
+				local xuid = player.xuid
+				local range = MEM[xuid].newLand.range
+				local player_credits = Money.Get(player)
+				local landId
+				if price > player_credits then
+					SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
+					return
+				else
+					landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
+					if landId~=-1 then
+						Money.Del(player,price)
+						SendText(player,_Tr('title.buyland.succeed'))
+						player:sendModalForm(
+							'Complete.',
+							_Tr('gui.buyland.succeed'),
+							_Tr('gui.general.looklook'),
+							_Tr('gui.general.cancel'),
+							function(player,res)
+								if res then
+									MEM[xuid].landId = landId
+									OpenGUI.FastLMgr(player)
+								end
+							end
+						)
+					else
+						SendText(player,_Tr('title.buyland.fail.apirefuse'))
+					end
+					RangeSelector.Clear(player)
+					MEM[xuid].newLand = nil
 				end
+			end)
+	end)
+	mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
+		local xuid = player.xuid
+		if MEM[xuid].reselectLand == nil then
+			SendText(player,_Tr('talk.invalidaction'))
+			return
+		end
+		local res = MEM[xuid].reselectLand.range
+		local cubeInfo = Cube.GetInformation(res.posA,res.posB)
+		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id].a,Map.Land.Position.data[MEM[xuid].reselectLand.id].b)
+
+		-- Checkout
+		local nr_price = CalculatePrice(cubeInfo,res.dimension)
+		local or_price = CalculatePrice(old_cubeInfo,res.dimension)
+		local mode -- pay(0) or refund(1)
+		local payT
+		if nr_price >= or_price then
+			mode = _Tr('gui.reselectland.pay')
+			payT = 0
+		else
+			mode = _Tr('gui.reselectland.refund')
+			payT = 1
+		end
+		local needto = math.abs(nr_price-or_price)
+		local landId = MEM[xuid].reselectLand.id
+		player:sendModalForm(
+			'Checkout',
+			_Tr('gui.reselectland.content',
+				'<a>',ILAPI.GetDimension(landId),
+				'<c>',res.dimension,
+				'<b>',or_price,
+				'<d>',nr_price,
+				'<e>',mode,
+				'<f>',needto,
+				'<g>',cfg.economic.currency_name
+			),
+			_Tr('gui.general.yes'),
+			_Tr('gui.general.cancel'),
+			function(player,result)
+				if result==nil or not(result) then return end
+				local status
+				if payT==0 and Money.Get(player)<needto then
+					SendText(player,_Tr('title.buyland.moneynotenough'))
+					return
+				end
+				status = ILAPI.SetRange(landId,res.posA,res.posB,res.dimid)
+				if status then
+					if payT==0 then
+						Money.Del(player,needto)
+					else
+						Money.Add(player,needto)
+					end
+				else
+					SendText(player,_Tr('title.reselectland.fail.apirefuse'))
+				end
+				MEM[xuid].reselectLand = nil
+				SendText(player,_Tr('title.reselectland.succeed'))
+				RangeSelector.Clear(player)
 			end
 		)
-	end
-end)
-mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
-	local xuid = player.xuid
+	end)
+	mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
+		local xuid = player.xuid
+		if not(ILAPI.IsLandOperator(xuid)) then
+			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
+			return false
+		end
+		OpenGUI.OPLMgr(player)
+	end)
+	mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
+		local xuid = player.xuid
+		if Array.Fetch(cfg.land.operator,xuid)==-1 then
+			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
+			return false
+		end
+		SendText(player,_Tr('title.oplandmgr.setselectool'))
+		MEM[xuid].selectool=0
+	end)
+	mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
+		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+		local xuid = player.xuid
+		local landlst = {}
+		local tplands = {}
+		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..Pos.ToString(xpos)..') '..name
+			landlst[#landlst+1] = landId
+		end
+		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
+			local name = ILAPI.GetNickname(landId)
+			local xpos = ILAPI.GetPoint(landId)
+			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..Pos.ToString(xpos)..') '..name
+			landlst[#landlst+1] = landId
+		end
+		local Form = mc.newSimpleForm()
+		Form:setTitle(_Tr('gui.landtp.title'))
+		Form:setContent(_Tr('gui.landtp.tip'))
+		Form:addButton(_Tr('gui.general.close'))
+		for i,land in pairs(tplands) do
+			Form:addButton(land,'textures/ui/world_glyph_color')
+		end
+		player:sendForm(Form,function(player,id)
+			if id==nil or id==0 then return end
+			local landId = landlst[id]
+			ILAPI.Teleport(player,landId)
+		end
+		)
+	end)
+	mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
+		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+		local xuid = player.xuid
+		local pos = player.blockPos
 
-	if MEM[xuid].reselectLand~=nil then
-		SendText('what are u doing?')
-		return
-	end
-	if MEM[xuid].newLand~=nil then
-		SendText(player,_Tr('title.getlicense.alreadyexists'))
-		return
-	end
-	if not(ILAPI.IsLandOperator(xuid)) and #land_owners[xuid]>=cfg.land.max_lands then
-		SendText(player,_Tr('title.getlicense.limit'))
-		return
-	end
-
-	MEM[xuid].newLand = {}
-	RangeSelector.Create(player,function(player,res)
-		MEM[xuid].keepingTitle = {
-			_Tr('title.selectland.complete1'),
-			_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
+		local landId=ILAPI.PosGetLand(pos)
+		if landId==-1 then
+			SendText(player,_Tr('title.landtp.fail.noland'))
+			return false
+		end
+		if ILAPI.GetOwner(landId)~=xuid then
+			SendText(player,_Tr('title.landtp.fail.notowner'))
+			return false
+		end
+		local landname = ILAPI.GetNickname(landId,true)
+		land_data[landId].settings.tpoint = {
+			pos.x,
+			pos.y+1,
+			pos.z
 		}
-		MEM[xuid].newLand.range = res
+		ILAPI.save({0,1,0})
+		player:sendModalForm(
+			_Tr('gui.general.complete'),
+			_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+			_Tr('gui.general.iknow'),
+			_Tr('gui.general.close'),
+			FormCallbacks.NULL
+		)
+	end)
+	mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
+		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
+		local xuid = player.xuid
+		local pos = player.blockPos
+
+		local landId=ILAPI.PosGetLand(pos)
+		if landId==-1 then
+			SendText(player,_Tr('title.landtp.fail.noland'))
+			return false
+		end
+		if ILAPI.GetOwner(landId)~=xuid then
+			SendText(player,_Tr('title.landtp.fail.notowner'))
+			return false
+		end
+		local def = Map.Land.Position.data[landId].a
+		land_data[landId].settings.tpoint = {
+			def.x,
+			def.y+1,
+			def.z
+		}
+		SendText(player,_Tr('title.landtp.removed'))
 	end)
 
-end)
-mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,args)
-	local xuid = player.xuid
-	if MEM[xuid].newLand~=nil then
-		MEM[xuid].newLand = nil
-		RangeSelector.Clear(player)
-		SendText(player,_Tr('title.giveup.succeed'))
-	end
-	if MEM[xuid].reselectLand~=nil then
-		MEM[xuid].reselectLand = nil
-		RangeSelector.Clear(player)
-		SendText(player,_Tr('title.reselectland.giveup.succeed'))
-	end
-end)
-mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),function (player,args)
-	OpenGUI.LMgr(player)
-end)
-mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
-	local xuid = player.xuid
-	if MEM[xuid].rsr ~= nil then
-		RangeSelector.Push(player,player.blockPos)
-	else
-		SendText(player,_Tr('title.rangeselector.fail.outmode'))
-	end
-end)
-mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
-	local xuid = player.xuid
-	if MEM[xuid].newLand==nil then
-		SendText(player,_Tr('talk.invalidaction'))
-		return
-	end
-	local res = MEM[xuid].newLand.range
-	local cubeInfo = Cube.GetInformation(res.posA,res.posB)
-	local price = CalculatePrice(cubeInfo,res.dimension)
-	local discount_info = ''
-	local dimension_info = ''
-	if cfg.land.bought.discount<1 then
-		discount_info=_Tr('gui.buyland.discount','<a>',tostring((1-cfg.land.bought.discount)*100))
-	end
-	if res.dimension=='3D' then
-		dimension_info = '§l3D-Land §r'
-	else
-		dimension_info = '§l2D-Land §r'
-	end
-	local Form = mc.newSimpleForm()
-	Form:setTitle(dimension_info.._Tr('gui.buyland.title')..discount_info)
-	Form:setContent(
-		_Tr('gui.buyland.content',
-		'<a>',cubeInfo.length,
-		'<b>',cubeInfo.width,
-		'<c>',cubeInfo.height,
-		'<d>',cubeInfo.volume,
-		'<e>',price,
-		'<f>',cfg.economic.currency_name,
-		'<g>',Money.Get(player)
-	))
-	Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/check')
-	Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
-	Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/cancel')
-	player:sendForm(Form,
-		function (player,res)
-			if res==nil or res==1 then
-				SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
-				return
-			end
-			if res==2 then
-				player:runcmd('land giveup')
-				return
-			end
-		
-			local xuid = player.xuid
-			local range = MEM[xuid].newLand.range
-			local player_credits = Money.Get(player)
-			local landId
-			if price > player_credits then
-				SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
-				return
-			else
-				landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
-				if landId~=-1 then
-					Money.Del(player,price)
-					SendText(player,_Tr('title.buyland.succeed'))
-					player:sendModalForm(
-						'Complete.',
-						_Tr('gui.buyland.succeed'),
-						_Tr('gui.general.looklook'),
-						_Tr('gui.general.cancel'),
-						function(player,res)
-							if res then
-								MEM[xuid].landId = landId
-								OpenGUI.FastLMgr(player)
-							end
-						end
-					)
-				else
-					SendText(player,_Tr('title.buyland.fail.apirefuse'))
-				end
-				RangeSelector.Clear(player)
-				MEM[xuid].newLand = nil
-			end
-		end)
-end)
-mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
-	local xuid = player.xuid
-    if MEM[xuid].reselectLand == nil then
-		SendText(player,_Tr('talk.invalidaction'))
-		return
-	end
-	local res = MEM[xuid].reselectLand.range
-	local cubeInfo = Cube.GetInformation(res.posA,res.posB)
-	local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id].a,Map.Land.Position.data[MEM[xuid].reselectLand.id].b)
+	-- [Server] Command Registry
 
-	-- Checkout
-	local nr_price = CalculatePrice(cubeInfo,res.dimension)
-	local or_price = CalculatePrice(old_cubeInfo,res.dimension)
-	local mode -- pay(0) or refund(1)
-	local payT
-	if nr_price >= or_price then
-		mode = _Tr('gui.reselectland.pay')
-		payT = 0
-	else
-		mode = _Tr('gui.reselectland.refund')
-		payT = 1
-	end
-	local needto = math.abs(nr_price-or_price)
-	local landId = MEM[xuid].reselectLand.id
-	player:sendModalForm(
-		'Checkout',
-		_Tr('gui.reselectland.content',
-			'<a>',ILAPI.GetDimension(landId),
-			'<c>',res.dimension,
-			'<b>',or_price,
-			'<d>',nr_price,
-			'<e>',mode,
-			'<f>',needto,
-			'<g>',cfg.economic.currency_name
-		),
-		_Tr('gui.general.yes'),
-		_Tr('gui.general.cancel'),
-		function(player,result)
-			if result==nil or not(result) then return end
-			local status
-			if payT==0 and Money.Get(player)<needto then
-				SendText(player,_Tr('title.buyland.moneynotenough'))
-				return
-			end
-			status = ILAPI.SetRange(landId,res.posA,res.posB,res.dimid)
-			if status then
-				if payT==0 then
-					Money.Del(player,needto)
-				else
-					Money.Add(player,needto)
-				end
-			else
-				SendText(player,_Tr('title.reselectland.fail.apirefuse'))
-			end
-			MEM[xuid].reselectLand = nil
-			SendText(player,_Tr('title.reselectland.succeed'))
-			RangeSelector.Clear(player)
+	mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
+		if #args~=0 then
+			ERROR('Unknown parameter: "'..args[1]..'", plugin wiki: https://myland.amd.rocks/')
+			return
 		end
-	)
-end)
-mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
-	local xuid = player.xuid
-	if not(ILAPI.IsLandOperator(xuid)) then
-		SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
-		return false
-	end
-	OpenGUI.OPLMgr(player)
-end)
-mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
-	local xuid = player.xuid
-	if Array.Fetch(cfg.land.operator,xuid)==-1 then
-		SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
-		return false
-	end
-	SendText(player,_Tr('title.oplandmgr.setselectool'))
-	MEM[xuid].selectool=0
-end)
-mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
-	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
-	local xuid = player.xuid
-	local landlst = {}
-	local tplands = {}
-	for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-		local name = ILAPI.GetNickname(landId)
-		local xpos = ILAPI.GetPoint(landId)
-		tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..Pos.ToString(xpos)..') '..name
-		landlst[#landlst+1] = landId
-	end
-	for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-		local name = ILAPI.GetNickname(landId)
-		local xpos = ILAPI.GetPoint(landId)
-		tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..Pos.ToString(xpos)..') '..name
-		landlst[#landlst+1] = landId
-	end
-	local Form = mc.newSimpleForm()
-	Form:setTitle(_Tr('gui.landtp.title'))
-	Form:setContent(_Tr('gui.landtp.tip'))
-	Form:addButton(_Tr('gui.general.close'))
-	for i,land in pairs(tplands) do
-		Form:addButton(land,'textures/ui/world_glyph_color')
-	end
-	player:sendForm(Form,function(player,id)
-		if id==nil or id==0 then return end
-		local landId = landlst[id]
-		ILAPI.Teleport(player,landId)
-	end
-	)
-end)
-mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
-	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
-	local xuid = player.xuid
-	local pos = player.blockPos
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then
-		SendText(player,_Tr('title.landtp.fail.noland'))
-		return false
-	end
-	if ILAPI.GetOwner(landId)~=xuid then
-		SendText(player,_Tr('title.landtp.fail.notowner'))
-		return false
-	end
-	local landname = ILAPI.GetNickname(landId,true)
-	land_data[landId].settings.tpoint = {
-		pos.x,
-		pos.y+1,
-		pos.z
-	}
-	ILAPI.save({0,1,0})
-	player:sendModalForm(
-		_Tr('gui.general.complete'),
-		_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
-		_Tr('gui.general.iknow'),
-		_Tr('gui.general.close'),
-		FormCallbacks.NULL
-	)
-end)
-mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
-	if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
-	local xuid = player.xuid
-	local pos = player.blockPos
-
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then
-		SendText(player,_Tr('title.landtp.fail.noland'))
-		return false
-	end
-	if ILAPI.GetOwner(landId)~=xuid then
-		SendText(player,_Tr('title.landtp.fail.notowner'))
-		return false
-	end
-	local def = Map.Land.Position.data[landId].a
-	land_data[landId].settings.tpoint = {
-		def.x,
-		def.y+1,
-		def.z
-	}
-	SendText(player,_Tr('title.landtp.removed'))
-end)
-
--- [Server] Command Registry
-
-mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
-	if #args~=0 then
-		ERROR('Unknown parameter: "'..args[1]..'", plugin wiki: https://myland.amd.rocks/')
-		return
-	end
-	INFO('The server is running iLand v'..Plugin.version)
-	INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
-	INFO('Memory Used: '..ILAPI.GetMemoryCount()..'MB')
-end)
-mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
-	local name = table.concat(args,' ')
-	local xuid = data.name2xuid(name)
-	if xuid == "" then
-		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-		return
-	end
-	if ILAPI.IsLandOperator(xuid) then
-		ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
-		return
-	end
-	table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
-	Map.Land.Operator.update()
-	ILAPI.save({1,0,0})
-	INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
-end)
-mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
-	local name = table.concat(args,' ')
-	local xuid = data.name2xuid(name)
-	if xuid == "" then
-		ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-		return
-	end
-	if not(ILAPI.IsLandOperator(xuid)) then
-		ERROR(_Tr('console.landop.del.failbynull','<a>',name))
-		return
-	end
-	table.remove(cfg.land.operator,Array.Fetch(cfg.land.operator,xuid))
-	Map.Land.Operator.update()
-	ILAPI.save({1,0,0})
-	INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
-end)
-mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
-	if cfg.plugin.network then
-		Server.Repo.Plugin.Update(Server.memData)
-	else
-		ERROR(_Tr('console.update.nodata'))
-	end
-end)
-mc.regConsoleCmd(MainCmd..' language',_Tr('command.console.land_language'),function(args)
-	INFO('I18N',_Tr('console.languages.sign','<a>',cfg.plugin.language,'<b>',_Tr('VERSION')))
-	local isNone = false
-	local count = 1
-	while(not(isNone)) do
-		if LangPack['#'..count] ~= nil then
-			INFO('I18N',_Tr('#'..count))
-		else
-			isNone = true
+		INFO('The server is running iLand v'..Plugin.version)
+		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
+		INFO('Memory Used: '..ILAPI.GetMemoryCount()..'MB')
+	end)
+	mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
+		local name = table.concat(args,' ')
+		local xuid = data.name2xuid(name)
+		if xuid == "" then
+			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
+			return
 		end
-		count = count + 1
-	end
-end)
-mc.regConsoleCmd(MainCmd..' language set',_Tr('command.console.land_language_set'),function(args)
-	local langpath = DATA_PATH..'lang\\'
-	if args[1] == nil then
-		ERROR(_Tr('console.languages.set.misspara'))
-		return false;
-	end
-	local path = langpath..args[1]..'.json'
-	if File.exists(path) then
-		cfg.plugin.language = args[1]
-		LangPack = JSON.decode(file.readFrom(path))
+		if ILAPI.IsLandOperator(xuid) then
+			ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
+			return
+		end
+		table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
+		Map.Land.Operator.update()
 		ILAPI.save({1,0,0})
-		INFO(_Tr('console.languages.set.succeed','<a>',cfg.plugin.language))
-	else
-		ERROR(_Tr('console.languages.set.nofile','<a>',args[1]))
-	end
-end)
-mc.regConsoleCmd(MainCmd..' language list',_Tr('command.console.land_language_list'),function(args)
-	local langlist = ILAPI.GetLanguageList(0)
-	for i,lang in pairs(langlist) do
-		if lang==cfg.plugin.language then
-			INFO('I18N',lang..' <- Using.')
+		INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
+	end)
+	mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
+		local name = table.concat(args,' ')
+		local xuid = data.name2xuid(name)
+		if xuid == "" then
+			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
+			return
+		end
+		if not(ILAPI.IsLandOperator(xuid)) then
+			ERROR(_Tr('console.landop.del.failbynull','<a>',name))
+			return
+		end
+		table.remove(cfg.land.operator,Array.Fetch(cfg.land.operator,xuid))
+		Map.Land.Operator.update()
+		ILAPI.save({1,0,0})
+		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
+	end)
+	mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
+		if cfg.plugin.network then
+			Server.Repo.Plugin.Update(Server.memData)
 		else
+			ERROR(_Tr('console.update.nodata'))
+		end
+	end)
+	mc.regConsoleCmd(MainCmd..' language',_Tr('command.console.land_language'),function(args)
+		INFO('I18N',_Tr('console.languages.sign','<a>',cfg.plugin.language,'<b>',_Tr('VERSION')))
+		local isNone = false
+		local count = 1
+		while(not(isNone)) do
+			if LangPack['#'..count] ~= nil then
+				INFO('I18N',_Tr('#'..count))
+			else
+				isNone = true
+			end
+			count = count + 1
+		end
+	end)
+	mc.regConsoleCmd(MainCmd..' language set',_Tr('command.console.land_language_set'),function(args)
+		local langpath = DATA_PATH..'lang\\'
+		if args[1] == nil then
+			ERROR(_Tr('console.languages.set.misspara'))
+			return false;
+		end
+		local path = langpath..args[1]..'.json'
+		if File.exists(path) then
+			cfg.plugin.language = args[1]
+			LangPack = JSON.decode(file.readFrom(path))
+			ILAPI.save({1,0,0})
+			INFO(_Tr('console.languages.set.succeed','<a>',cfg.plugin.language))
+		else
+			ERROR(_Tr('console.languages.set.nofile','<a>',args[1]))
+		end
+	end)
+	mc.regConsoleCmd(MainCmd..' language list',_Tr('command.console.land_language_list'),function(args)
+		local langlist = ILAPI.GetLanguageList(0)
+		for i,lang in pairs(langlist) do
+			if lang==cfg.plugin.language then
+				INFO('I18N',lang..' <- Using.')
+			else
+				INFO('I18N',lang)
+			end
+		end
+		INFO('I18N',_Tr('console.languages.list.count','<a>',#langlist))
+	end)
+	mc.regConsoleCmd(MainCmd..' language list-online',_Tr('command.console.land_language_list-online'),function(args)
+		INFO('Network',_Tr('console.languages.list-online.wait'))
+		local rawdata = ILAPI.GetLanguageList(1)
+		if rawdata == false then
+			return false
+		end
+		INFO('I18N',_Tr('console.languages.official'))
+		for i,lang in pairs(rawdata.official) do
 			INFO('I18N',lang)
 		end
-	end
-	INFO('I18N',_Tr('console.languages.list.count','<a>',#langlist))
-end)
-mc.regConsoleCmd(MainCmd..' language list-online',_Tr('command.console.land_language_list-online'),function(args)
-	INFO('Network',_Tr('console.languages.list-online.wait'))
-	local rawdata = ILAPI.GetLanguageList(1)
-	if rawdata == false then
-		return false
-	end
-	INFO('I18N',_Tr('console.languages.official'))
-	for i,lang in pairs(rawdata.official) do
-		INFO('I18N',lang)
-	end
-	INFO('I18N',_Tr('console.languages.3rd'))
-	for i,lang in pairs(rawdata['3-rd']) do
-		INFO('I18N',lang)
-	end
-end)
-mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language_install'),function(args)
-	if args[1] == nil then
-		ERROR(_Tr('console.languages.install.misspara'))
-		return false
-	end
-	INFO('Network',_Tr('console.languages.list-online.wait'))
-	local rawdata = ILAPI.GetLanguageList(1)
-	if rawdata == false then
-		return false
-	end
-	if Array.Fetch(ILAPI.GetLanguageList(0),args[1])~=-1 then
-		ERROR(_Tr('console.languages.install.existed'))
-		return false
-	end
-	if Array.Fetch(rawdata.official,args[1])==-1 and Array.Fetch(rawdata['3-rd'],args[1])==-1 then
-		ERROR(_Tr('console.languages.install.notfound','<a>',args[1]))
-		return false
-	end
-	INFO(_Tr('console.autoupdate.download'))
-	if Server.Repo.I18N.Install(args[1]) then
-		INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
-	end
-end)
-mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_update'),function(args)
-	local langpath = DATA_PATH..'lang\\'
-	local langlist = ILAPI.GetLanguageList(0)
-	local langlist_o = ILAPI.GetLanguageList(1)
-	local function updateLang(lang)
-		local langdata
-		if File.exists(langpath..lang..'.json') then
-			langdata = JSON.decode(file.readFrom(langpath..lang..'.json'))
-		else
-			ERROR(_Tr('console.languages.update.notfound','<a>',lang))
-			return false -- this false like 'fail'
+		INFO('I18N',_Tr('console.languages.3rd'))
+		for i,lang in pairs(rawdata['3-rd']) do
+			INFO('I18N',lang)
 		end
-		if langdata.VERSION == Plugin.numver then
-			ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
-			return true -- continue
-		end
-		if Array.Fetch(langlist,lang)==-1 then
-			ERROR(_Tr('console.languages.update.notfound','<a>',lang))
+	end)
+	mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language_install'),function(args)
+		if args[1] == nil then
+			ERROR(_Tr('console.languages.install.misspara'))
 			return false
 		end
-		if Array.Fetch(langlist_o.official,lang)==-1 and Array.Fetch(langlist_o['3-rd'],lang)==-1 then
-			ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
+		INFO('Network',_Tr('console.languages.list-online.wait'))
+		local rawdata = ILAPI.GetLanguageList(1)
+		if rawdata == false then
 			return false
 		end
-		if Server.Repo.I18N.Install(lang) then
-			INFO(_Tr('console.languages.update.succeed','<a>',lang))
+		if Array.Fetch(ILAPI.GetLanguageList(0),args[1])~=-1 then
+			ERROR(_Tr('console.languages.install.existed'))
+			return false
 		end
-	end
-	if args[1] == nil then
-		INFO(_Tr('console.languages.update.all'))
-		for i,lang in pairs(langlist) do
-			if not(updateLang(lang)) then
+		if Array.Fetch(rawdata.official,args[1])==-1 and Array.Fetch(rawdata['3-rd'],args[1])==-1 then
+			ERROR(_Tr('console.languages.install.notfound','<a>',args[1]))
+			return false
+		end
+		INFO(_Tr('console.autoupdate.download'))
+		if Server.Repo.I18N.Install(args[1]) then
+			INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
+		end
+	end)
+	mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_update'),function(args)
+		local langpath = DATA_PATH..'lang\\'
+		local langlist = ILAPI.GetLanguageList(0)
+		local langlist_o = ILAPI.GetLanguageList(1)
+		local function updateLang(lang)
+			local langdata
+			if File.exists(langpath..lang..'.json') then
+				langdata = JSON.decode(file.readFrom(langpath..lang..'.json'))
+			else
+				ERROR(_Tr('console.languages.update.notfound','<a>',lang))
+				return false -- this false like 'fail'
+			end
+			if langdata.VERSION == Plugin.numver then
+				ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
+				return true -- continue
+			end
+			if Array.Fetch(langlist,lang)==-1 then
+				ERROR(_Tr('console.languages.update.notfound','<a>',lang))
 				return false
 			end
+			if Array.Fetch(langlist_o.official,lang)==-1 and Array.Fetch(langlist_o['3-rd'],lang)==-1 then
+				ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
+				return false
+			end
+			if Server.Repo.I18N.Install(lang) then
+				INFO(_Tr('console.languages.update.succeed','<a>',lang))
+			end
 		end
-	else
-		INFO(_Tr('console.languages.update.single','<a>',args[1]))
-		updateLang(args[1])
-	end
-end)
-mc.regConsoleCmd(MainCmd..' reload',_Tr('command.console.land_reload'),function(args)
-	Plugin.Reload()
-end)
-mc.regConsoleCmd(MainCmd..' unload',_Tr('command.console.land_unload'),function(args)
-	Plugin.Unload()
-end)
+		if args[1] == nil then
+			INFO(_Tr('console.languages.update.all'))
+			for i,lang in pairs(langlist) do
+				if not(updateLang(lang)) then
+					return false
+				end
+			end
+		else
+			INFO(_Tr('console.languages.update.single','<a>',args[1]))
+			updateLang(args[1])
+		end
+	end)
+	mc.regConsoleCmd(MainCmd..' reload',_Tr('command.console.land_reload'),function(args)
+		Plugin.Reload()
+	end)
+	mc.regConsoleCmd(MainCmd..' unload',_Tr('command.console.land_unload'),function(args)
+		Plugin.Unload()
+	end)
+
+end
 
 -- Callbacks
 
@@ -4138,9 +4146,13 @@ mc.listen('onServerStarted',function()
 			if ConfigReader.Load() ~= true then
 				error('wrong!')
 			end
+			-- load : language
+			I18N.Load()
 			-- load : maps
 			INFO('Load','Building tables needed to run...')
 			Map.Init()
+			-- load : cmd
+			RegisterCommands()
 		end,
 		catch
 		{
