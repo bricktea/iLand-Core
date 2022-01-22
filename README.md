@@ -1,5 +1,3 @@
-<img src="logo.png" align="right"/>
-
 ## AirLand Project
 
 [![Discord](https://img.shields.io/discord/874503096137556018?style=for-the-badge)](https://discord.gg/fEdM9eRhkH)
