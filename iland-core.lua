@@ -2796,7 +2796,8 @@ function table.setKey(tab,path,value)
 		return
 	end
 	
-	if typeEx(tab[pathes[1]]) ~= 'table' then
+	local T = typeEx(tab[pathes[1]])
+	if T ~= 'table' and (T~='array' or (T=='array' and typeEx(value)=='array')) then
 		tab[pathes[1]] = value
 		return
 	end
