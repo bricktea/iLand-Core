@@ -9,7 +9,8 @@ Powerful land plugin, made by lua.<br>
 👉 [**iLand Wiki**](https://myland.amd.rocks/)
 
 ### Loaders
-**LiteXLoader** | **now** | **Supporting**
--|-|-
-LiteLoader-Lua | [2.01](https://github.com/McAirLand/iLand-Core/tree/LiteLoader-Lua) | Stop support
-IronLuaRunner | [1.1.0](https://github.com/McAirLand/iLand-Core/tree/IronLuaRunner) | Stop Support
+| Loader          | Version                                                             | statues        |
+|-----------------|---------------------------------------------------------------------|----------------|
+| **LiteXLoader** | **latest**                                                          | **Supporting** |
+| LiteLoader-Lua  | [2.01](https://github.com/McAirLand/iLand-Core/tree/LiteLoader-Lua) | No support     |
+| IronLuaRunner   | [1.1.0](https://github.com/McAirLand/iLand-Core/tree/IronLuaRunner) | No support     |
