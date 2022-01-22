@@ -967,6 +967,128 @@ end
 
 --#endregion
 
+ConfigUIEditor = {
+	Create = function(title,content)
+		local ori = {
+			title = title or "",
+			content = content or "",
+			components = {},
+			types = {}
+		}
+		return ori
+	end,
+	RegisterType = function(ori,class)
+		if ori.components[class] ~= nil then
+			return false
+		end
+		ori.components[class] = {}
+		ori.types[#ori.types+1] = class
+		return true
+	end,
+	AddComponent = function(ori,class,uitype,cfgpath,extradata)
+		--[[
+			Class:
+				use self.RegisterType at first.
+			UIType:
+				input			=>	string, number, etc.
+				switch			=>	boolean.
+				dropdown		=>	array.		[extradata] => {item1,item2,item3}
+				percent_slider	=>	percent.
+				slider			=>	range.		[extradata] => {min=,max=,step=}
+				step_slider		=>	array.		[extradata] => {item1,item2,item3}
+			Default:
+				Auto get from cfg(cfgpath) if extradata = nil.
+		]]
+		if Array.Fetch({'input','switch','dropdown','percent_slider','slider','step_slider'},uitype)==-1 then
+			WARN('Unknown component: '..uitype)
+			return false
+		end
+		ori.components[class][#ori.components[class]+1] = {
+			name = _Tr('path.<config> '..cfgpath),
+			ui = uitype,
+			path = cfgpath,
+			data = extradata
+		}
+		return true
+	end,
+	Send = function(ori,player)
+		local Form = mc.newCustomForm()
+		Form:setTitle(ori.title)
+		Form:addLabel(ori.content)
+		ori.raw_items = {}
+		for n,class in pairs(ori.types) do
+			Form:addLabel('§l'..class)
+			for n,cmp in pairs(ori.components[class]) do
+				ori.raw_items[#ori.raw_items+1] = cmp
+				if cmp.ui=='input' then
+					Form:addInput(cmp.name,"",tostring(table.getKey(cfg,cmp.path)))
+				elseif cmp.ui=='switch' then
+					Form:addSwitch(cmp.name,table.getKey(cfg,cmp.path))
+				elseif cmp.ui=='dropdown' then
+					local pos = Array.Fetch(cmp.data,table.getKey(cfg,cmp.path))
+					if pos==-1 then
+						pos = 0
+					else
+						pos = pos - 1
+					end
+					Form:addDropdown(cmp.name,cmp.data,pos)
+				elseif cmp.ui=='slider' then
+					Form:addSlider(cmp.name,cmp.data.min,cmp.data.max,cmp.data.step,table.getKey(cfg,cmp.path))
+				elseif cmp.ui=='percent_slider' then
+					Form:addSlider(cmp.name,0,100,1,table.getKey(cfg,cmp.path)*100)
+				elseif cmp.ui=='step_slider' then
+					local pos = Array.Fetch(cmp.data,table.getKey(cfg,cmp.path))
+					if pos==-1 then
+						pos = 0
+					else
+						pos = pos - 1
+					end
+					Form:addStepSlider(cmp.name,cmp.data,pos)
+				end
+			end
+		end
+		player:sendForm(Form,function(player,res)
+			if res==nil then
+				return
+			end
+			local slf
+			for n,result in pairs(res) do
+				slf = ori.raw_items[n]
+				if slf.ui=='input' then
+					local oriType = type(table.getKey(cfg,slf.path))
+					if oriType == 'number' then
+						table.setKey(cfg,slf.path,tonumber(result))
+					elseif oriType == 'string' then
+						table.setKey(cfg,slf.path,tostring(result))
+					end
+				elseif slf.ui=='switch' then
+					table.setKey(cfg,slf.path,result)
+				elseif slf.ui=='dropdown' then
+					if slf.data[result+1]~=nil then
+						table.setKey(cfg,slf.path,slf.data[result+1])
+					end
+				elseif slf.ui=='slider' then	--- testless
+					table.setKey(cfg,slf.path,result)
+				elseif slf.ui=='percent_slider' then
+					table.setKey(cfg,slf.path,result/100)
+				elseif slf.ui=='step_slider' then	--- testless
+					if slf.data[result+1]~=nil then
+						table.setKey(cfg,slf.path,slf.data[result+1])
+					end
+				end
+			end
+			ILAPI.save({1,0,0})
+			player:sendModalForm(
+				_Tr('gui.general.complete'),
+				"Complete.",
+				_Tr('gui.general.back'),
+				_Tr('gui.general.close'),
+				FormCallbacks.BackTo.LandOPMgr
+			)
+		end)
+	end
+}
+
 OpenGUI = {
 	FastLMgr = function(player,isOP)
 		local xuid=player.xuid
@@ -1043,12 +1165,12 @@ OpenGUI = {
 		Form:setTitle(_Tr('gui.oplandmgr.landmgr.title'))
 		Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
 		Form:addButton(_Tr('gui.oplandmgr.mgrtype.land'),'textures/ui/icon_book_writable')
-		-- Form:addButton(_Tr('gui.oplandmgr.mgrtype.plugin'),'textures/ui/icon_setting')
+		Form:addButton(_Tr('gui.oplandmgr.mgrtype.plugin'),'textures/ui/icon_setting')
 		Form:addButton(_Tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
 		Form:addButton(_Tr('gui.general.close'))
 		player:sendForm(Form,function(player,id)
 			if id==nil then return end
-			if id==0 then -- Manage lands
+			if id==0 then -- Manage Lands
 				local Form = mc.newSimpleForm()
 				Form:setTitle(_Tr('gui.oplandmgr.title'))
 				Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
@@ -1109,17 +1231,64 @@ OpenGUI = {
 					
 					end
 				)
+				return
 			end
-			--[[
-			if id==1 then
-				CfgHelper.Create(player)
-				CfgHelper.RegType(player,'经济')
-				CfgHelper.AddItem(player,cfg.economic.currency_name,'经济','货币名称')
-				CfgHelper.Send(player)
+			if id==1 then -- Manage Plugin
+				local origin = ConfigUIEditor.Create(_Tr('gui.oplandmgr.plugin.title'),_Tr('gui.oplandmgr.plugin.tip'))
+				local function getAllObjectives()
+					local objs = mc.getAllScoreObjectives()
+					local rtn = {}
+					for n,obj in pairs(objs) do
+						rtn[#rtn+1] = obj.name
+					end
+					return rtn
+				end
+				local class = {
+					plugin = _Tr('gui.oplandmgr.plugin.class.plugin'),
+					land = _Tr('gui.oplandmgr.plugin.class.land'),
+					economic = _Tr('gui.oplandmgr.plugin.class.economic'),
+					feature_landsign = _Tr('gui.oplandmgr.plugin.class.feature_landsign'),
+					feature_particle = _Tr('gui.oplandmgr.plugin.class.feature_particle'),
+					feature_playerselector = _Tr('gui.oplandmgr.plugin.class.feature_playerselector'),
+					other_features = _Tr('gui.oplandmgr.plugin.class.other_features')
+				}
+				ConfigUIEditor.RegisterType(origin,class.plugin)
+				ConfigUIEditor.RegisterType(origin,class.land)
+				ConfigUIEditor.RegisterType(origin,class.economic)
+				ConfigUIEditor.RegisterType(origin,class.feature_landsign)
+				ConfigUIEditor.RegisterType(origin,class.feature_particle)
+				ConfigUIEditor.RegisterType(origin,class.feature_playerselector)
+				ConfigUIEditor.RegisterType(origin,class.other_features)
+				ConfigUIEditor.AddComponent(origin,class.plugin,'switch','this.plugin.network')
+				ConfigUIEditor.AddComponent(origin,class.plugin,'dropdown','this.plugin.language',ILAPI.GetLanguageList(0))
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.max_lands')
+				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.land.bought.three_dimension.enable')
+				-- ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.three_dimension.calculate')
+				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.land.bought.two_dimension.enable')
+				-- ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.two_dimension.calculate')
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)1')
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)2')
+				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.bought.discount')
+				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.refund_rate')
+				ConfigUIEditor.AddComponent(origin,class.economic,'dropdown','this.economic.protocol',{'llmoney','scoreboard'})
+				ConfigUIEditor.AddComponent(origin,class.economic,'dropdown','this.economic.scoreboard_objname',getAllObjectives())
+				ConfigUIEditor.AddComponent(origin,class.economic,'input','this.economic.currency_name')
+				ConfigUIEditor.AddComponent(origin,class.feature_landsign,'switch','this.features.landsign.enable')
+				ConfigUIEditor.AddComponent(origin,class.feature_landsign,'input','this.features.landsign.frequency')
+				ConfigUIEditor.AddComponent(origin,class.feature_landsign,'switch','this.features.buttomsign.enable')
+				ConfigUIEditor.AddComponent(origin,class.feature_landsign,'input','this.features.buttomsign.frequency')
+				ConfigUIEditor.AddComponent(origin,class.feature_particle,'switch','this.features.particles.enable')
+				ConfigUIEditor.AddComponent(origin,class.feature_particle,'input','this.features.particles.name')
+				ConfigUIEditor.AddComponent(origin,class.feature_particle,'input','this.features.particles.max_amount')
+				ConfigUIEditor.AddComponent(origin,class.feature_playerselector,'switch','this.features.player_selector.include_offline_players')
+				ConfigUIEditor.AddComponent(origin,class.feature_playerselector,'input','this.features.player_selector.items_perpage')
+				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.landtp')
+				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.force_talk')
+				ConfigUIEditor.AddComponent(origin,class.other_features,'input','this.features.chunk_side')
+				ConfigUIEditor.Send(origin,player)
+				return
 			end
-			]]
-			if id==1 then
-			-- if id==2 then -- Manage Listener
+			if id==2 then -- Manage Listener
 				local Form = mc.newCustomForm()
 				Form:setTitle(_Tr('gui.listenmgr.title'))
 				Form:addLabel(_Tr('gui.listenmgr.tip'))
@@ -2316,6 +2485,14 @@ Array = {
 			end
 		end
 		return -1
+	end,
+	Reverse = function(tab)
+		local tmp_tab = table.clone(tab)
+		local rtn = {}
+		for i = 1,#tmp_tab do
+			rtn[i] = table.remove(tmp_tab)
+		end
+		return rtn
 	end
 }
 
@@ -2576,6 +2753,14 @@ function table.setKey(tab,path,value)
 	
 	table.setKey(tab[pathes[1]],table.concat(pathes,'.',2,#pathes),value)
 
+end
+
+function table.toDebugString(tab)
+	local rtn = 'Total: '..#tab
+	for k,v in pairs(tab) do
+		rtn = rtn..'\n'..tostring(k)..'\t'..tostring(v)
+	end
+	return rtn
 end
 
 --#endregion

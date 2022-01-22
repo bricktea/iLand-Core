@@ -5,7 +5,7 @@
  - [x] 领地外红石更新
  - [x] 重选领地范围有Bug
  - [x] LandTp Fix
- - [ ] OPLMgr新方案
+ - [x] OPLMgr新方案
  - [x] ILAPI: IsListenerDisabled, GetApiVersion
  - [ ] 整理文档站
  - [x] 彻底修复点龙蛋
@@ -14,6 +14,7 @@
  - [x] 适配LXL0.5.12, 修复活塞
  - [x] 插件热管理`land reload`，`land unload`
  - [x] fix announcement.
+ - [ ] disable listener, disable dimension, land operator 读取失效
 
 > Version **2.61**
  - [ ] 领地内左键龙蛋（lxl0.5.12）
