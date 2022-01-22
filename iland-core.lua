@@ -389,7 +389,7 @@ ConfigReader = {
 	
 			-- ## Read config
 			local item
-			for n,path in pairs(table.getAllPaths(cfg)) do
+			for n,path in pairs(table.getAllPaths(cfg,false)) do
 				item = table.getKey(loadcfg,path)
 				if path ~= 'this.version' then
 					if item == nil then
@@ -2680,6 +2680,19 @@ end
 
 -- table helper
 
+local function typeEx(value)
+	local T = type(value)
+	if T ~= 'table' then
+		return T
+	else
+		if table.isArray(value) then
+			return 'array'
+		else
+			return 'table'
+		end
+	end
+end
+
 function table.clone(orig)
 	local orig_type = type(orig)
 	local copy
@@ -2695,19 +2708,32 @@ function table.clone(orig)
 	return copy
 end
 
-function table.getAllPaths(tab,UnNeedThisPrefix)
-	local result = {}
-	local inner_tmp,T
+function table.isArray(tab)
+	local count = 1
 	for k,v in pairs(tab) do
-		if type(v) ~= 'table' then
-			result[#result+1] = k
-		else
-			inner_tmp = table.getAllPaths(v,true)
+		if type(k) ~= 'number' or k~=count then
+			return false
+		end
+		count = count + 1
+	end
+	return true
+end
+
+function table.getAllPaths(tab,ExpandArray,UnNeedThisPrefix)
+	local result = {}
+	local inner_tmp
+	for k,v in pairs(tab) do
+		local Tk = typeEx(k)
+		local Tv = typeEx(v)
+		if Tv == 'table' or (ExpandArray and Tv == 'array') then
+			inner_tmp = table.getAllPaths(v,ExpandArray,true)
 			for a,b in pairs(inner_tmp) do
 				result[#result+1] = k..'.'..b
 			end
+		else
+			result[#result+1] = k
 		end
-		if type(k) == 'number' then
+		if Tk == 'number' then
 			result[#result] = '(*)'..result[#result]
 		end
 	end
@@ -2716,6 +2742,7 @@ function table.getAllPaths(tab,UnNeedThisPrefix)
 			result[i] = 'this.'..result[i]
 		end
 	end
+
 	return result
 end
 
@@ -2767,7 +2794,7 @@ function table.setKey(tab,path,value)
 		return
 	end
 	
-	if type(tab[pathes[1]]) ~= 'table' then
+	if typeEx(tab[pathes[1]]) ~= 'table' then
 		tab[pathes[1]] = value
 		return
 	end
@@ -4120,6 +4147,7 @@ mc.listen('onServerStarted',function()
 		catch
 		{
 			function (err)
+				log(err)
 				ERROR('Something wrong when load data, plugin closed.')
 				Plugin.Unload()
 			end
