@@ -1,7 +1,12 @@
-> Version **3.0**
+> Version **2.63**
  - [ ] OPLMgr添加禁止维度圈地选项
  - [ ] OPLMgr修改语言不及时生效
  - [ ] 自动更新默认更新语言包和插件主体，更新完自动Reload
+ - [ ] I18N功能整理
+ - [x] 修复`LandTp`
+ - [x] 修复`onLeft`报错
+
+> Version **3.0**
  - [ ] SubLand
 
 > ILAPI 示例插件计划

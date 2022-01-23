@@ -1727,7 +1727,7 @@ SafeTeleport = {
 		player:teleport(tpos.x,tpos.y,tpos.z,tpos.dimid)
 		MEM[xuid].safetp = nil
 	end,
-	Do = function(player,tpos)
+	Do = function(player,tpos,max_far)
 		local function getHeightRange(dimensionId)
 			local range = {
 				[0] = {-64,320},
@@ -1735,6 +1735,9 @@ SafeTeleport = {
 				[2] = {0,256}
 			}
 			return range[dimensionId]
+		end
+		if type(player)=='string' then
+			player = mc.getPlayer(player)
 		end
 		local xuid = player.xuid
 		local dimid = tpos.dimid
@@ -1745,9 +1748,11 @@ SafeTeleport = {
 			from_pos = player.pos,
 			to_pos = tpos
 		}
-		local def_height = 1500
+		local def_height = 500
 		local timeout = 60
-		local max_far = 12
+		if max_far==nil then
+			max_far = 12
+		end
 		player:teleport(tpos.x,def_height,tpos.z,dimid)
 		SendText(player,_Tr('api.safetp.tping.talk'))
 		local chunk_loaded = false
@@ -4269,6 +4274,7 @@ lxl.export(ILAPI.GetChunkSide,'ILAPI_GetChunkSide')
 lxl.export(ILAPI.IsDisabled,'ILAPI_IsListenerDisabled')
 lxl.export(ILAPI.GetApiVersion,'ILAPI_GetApiVersion')
 lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
+lxl.export(SafeTeleport.Do,"SafeTeleport_Do")
 
 -- Signs.
 
