@@ -1,4 +1,7 @@
 > Version **3.0**
+ - [ ] OPLMgr添加禁止维度圈地选项
+ - [ ] OPLMgr修改语言不及时生效
+ - [ ] 自动更新默认更新语言包和插件主体，更新完自动Reload
  - [ ] SubLand
 
 > ILAPI 示例插件计划

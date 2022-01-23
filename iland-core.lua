@@ -2910,11 +2910,13 @@ function ToStrDim(a)
 	if a==2 then return _Tr('talk.dim.two') end
 	return _Tr('talk.dim.other')
 end
-function ChkNil(val)
-	return (val == nil)
-end
-function ChkNil_X2(val,val2)
-	return (val == nil) or (val2 == nil)
+function ChkNil(...)
+	for n,v in pairs({...}) do
+		if v==nil then
+			return true
+		end
+	end
+	return false
 end
 function EntityGetType(type)
 	if type=='minecraft:player' then
@@ -3639,7 +3641,7 @@ mc.listen('onPreJoin',function(player)
 end)
 mc.listen('onLeft',function(player)
 
-	if ChkNil(player) then
+	if ChkNil(player,MEM[player.xuid]) then
 		return
 	end
 
@@ -3760,7 +3762,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 end)
 mc.listen('onAttackBlock',function(player,block,item)
 
-	if ChkNil_X2(player,block) or ILAPI.IsDisabled('onAttackBlock') then
+	if ChkNil(player,block) or ILAPI.IsDisabled('onAttackBlock') then
 		return
 	end
 
@@ -3785,7 +3787,7 @@ mc.listen('onAttackBlock',function(player,block,item)
 end)
 mc.listen('onAttackEntity',function(player,entity)
 
-	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onAttackEntity') then
+	if ChkNil(player,entity) or ILAPI.IsDisabled('onAttackEntity') then
 		return
 	end
 
@@ -3815,7 +3817,7 @@ mc.listen('onAttackEntity',function(player,entity)
 end)
 mc.listen('onChangeArmorStand',function(entity,player,slot)
 
-	if ChkNil_X2(entity,player) or ILAPI.IsDisabled('onChangeArmorStand') then
+	if ChkNil(entity,player) or ILAPI.IsDisabled('onChangeArmorStand') then
 		return
 	end
 
@@ -3833,7 +3835,7 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 end)
 mc.listen('onTakeItem',function(player,entity)
 
-	if ChkNil_X2(player,entity) or ILAPI.IsDisabled('onTakeItem') then
+	if ChkNil(player,entity) or ILAPI.IsDisabled('onTakeItem') then
 		return
 	end
 
@@ -4002,7 +4004,7 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 end)
 mc.listen('onRide',function(rider,entity)
 				
-	if ChkNil_X2(rider,entity) or ILAPI.IsDisabled('onRide') then
+	if ChkNil(rider,entity) or ILAPI.IsDisabled('onRide') then
 		return
 	end
 

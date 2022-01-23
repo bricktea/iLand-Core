@@ -91,7 +91,7 @@
  - 返回值
    - `string` 领地备注
 
-##### `ILAPI_GetOwer` - 获取领地主人
+##### `ILAPI_GetOwner` - 获取领地主人
  - 传入参数
    - landId - `string` 领地ID
  - 返回值
