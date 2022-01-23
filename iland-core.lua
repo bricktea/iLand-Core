@@ -4196,7 +4196,7 @@ mc.listen('onServerStarted',function()
 						INFO('Update',n..'. '..text)
 					end
 					if data.Force_Update then
-						INFO('Update',_Tr('console.update.force',data.Updates[1].Version))
+						INFO('Update',_Tr('console.update.force','<a>',data.Updates[1].Version))
 						Server.Repo.Plugin.Update(data)
 					end
 					if cfg.features.auto_update then
