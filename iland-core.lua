@@ -736,9 +736,7 @@ function Handler_LandCfg(player,landId,option)
 			_Tr('gui.general.close'),
 			FormCallbacks.BackTo.LandMgr
 		)
-		return
-	end
-	if option==1 then --编辑领地选项
+	elseif option==1 then --编辑领地选项
 		local function isThisDisabled(feature)
 			if cfg.features[feature]~=nil and cfg.features[feature] then
 				return ''
@@ -753,26 +751,27 @@ function Handler_LandCfg(player,landId,option)
 		Form:addSwitch(_Tr('gui.landcfg.landsign.tome')..isThisDisabled('landsign'),settings.signtome)
 		Form:addSwitch(_Tr('gui.landcfg.landsign.tother')..isThisDisabled('landsign'),settings.signtother)
 		Form:addSwitch(_Tr('gui.landcfg.landsign.bottom')..isThisDisabled('buttomsign'),settings.signbuttom)
-		Form:addLabel(_Tr('gui.landcfg.inside'))
-		Form:addSwitch(_Tr('gui.landcfg.inside.explode'),settings.ev_explode) 
-		Form:addSwitch(_Tr('gui.landcfg.inside.farmland_decay'),settings.ev_farmland_decay)
-		Form:addSwitch(_Tr('gui.landcfg.inside.piston_push'),settings.ev_piston_push)
-		Form:addSwitch(_Tr('gui.landcfg.inside.fire_spread'),settings.ev_fire_spread)
+		Form:addLabel(_Tr('gui.landcfg.event'))
+		Form:addSwitch(_Tr('gui.landcfg.event.explode'),settings.ev_explode) 
+		Form:addSwitch(_Tr('gui.landcfg.event.farmland_decay'),settings.ev_farmland_decay)
+		Form:addSwitch(_Tr('gui.landcfg.event.fire_spread'),settings.ev_fire_spread)
+		Form:addSwitch(_Tr('gui.landcfg.event.piston_push'),settings.ev_piston_push)
+		Form:addSwitch(_Tr('gui.landcfg.event.redstone_update'),settings.ev_redstone_update)
 		player:sendForm(
 			Form,
 			function (player,res)
 				if res==nil then return end
 
 				local settings = land_data[landId].settings
-				settings.signtome=res[1]
-				settings.signtother=res[2]
-				settings.signbuttom=res[3]
-				settings.ev_explode=res[4]
-				settings.ev_farmland_decay=res[5]
-				settings.ev_piston_push=res[6]
-				settings.ev_fire_spread=res[7]
+				settings.signtome = res[1]
+				settings.signtother = res[2]
+				settings.signbuttom = res[3]
+				settings.ev_explode = res[4]
+				settings.ev_farmland_decay = res[5]
+				settings.ev_fire_spread = res[7]
+				settings.ev_piston_push = res[6]
+				settings.ev_redstone_update = res[8]
 				ILAPI.save({0,1,0})
-
 				player:sendModalForm(
 					_Tr('gui.general.complete'),
 					'Complete.',
@@ -782,9 +781,7 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
-	end
-	if option==2 then --编辑领地权限
+	elseif option==2 then --编辑领地权限
 		local perm = land_data[landId].permissions
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.landmgr.landperm.title'))
@@ -921,9 +918,7 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
-	end
-	if option==3 then --编辑信任名单
+	elseif option==3 then --编辑信任名单
 		local shareList = land_data[landId].settings.share
 		local content = _Tr('gui.landtrust.tip')
 		if #shareList > 0 then
@@ -957,9 +952,7 @@ function Handler_LandCfg(player,landId,option)
 			end
 			PlayerSelector.Create(pl,SRCB_land_trust)
 		end)
-		return
-	end
-	if option==4 then --领地nickname
+	elseif option==4 then --领地nickname
 		local nickn = ILAPI.GetNickname(landId,false)
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.landtag.title'))
@@ -980,9 +973,7 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
-	end
-	if option==5 then --领地describe
+	elseif option==5 then --领地describe
 		local desc=ILAPI.GetDescribe(landId)
 		if desc=='' then desc='['.._Tr('gui.landmgr.unmodified')..']' end
 		local Form = mc.newCustomForm()
@@ -1005,9 +996,7 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
-	end
-	if option==6 then --领地过户
+	elseif option==6 then --领地过户
 		player:sendModalForm(
 			_Tr('gui.landtransfer.title'),
 			_Tr('gui.landtransfer.tip'),
@@ -1040,9 +1029,7 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
-	end
-	if option==7 then --重新圈地
+	elseif option==7 then --重新圈地
 		player:sendModalForm(
 			_Tr('gui.reselectland.title'),
 			_Tr('gui.reselectland.tip'),
@@ -1062,9 +1049,7 @@ function Handler_LandCfg(player,landId,option)
 				end)
 			end
 		)
-		return
-	end
-	if option==8 then --删除领地
+	elseif option==8 then --删除领地
 		local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b)
 		local value = math.modf(CalculatePrice(cubeInfo,ILAPI.GetDimension(landId))*cfg.land.refund_rate)
 		player:sendModalForm(
@@ -1087,7 +1072,6 @@ function Handler_LandCfg(player,landId,option)
 				)
 			end
 		)
-		return
 	end
 end
 function SRCB_land_trust(player,selected)
