@@ -1,5 +1,5 @@
 {
-    "VERSION": 262,
+    "VERSION": 270,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -261,6 +261,7 @@
     "title.giveup.succeed": "许可已被放弃",
     "title.giveup.failed": "没有可以放弃的圈地许可",
     "title.reselectland.giveup.succeed": "已取消重新圈地",
+    "title.reselectland.fail.makingnewland": "若要重选该领地范围，请先退出当前购买过程。",
     "title.reselectland.fail.apirefuse": "付款过程中止，因为API拒绝修改此领地。",
     "title.reselectland.succeed": "选定成功！新的领地范围已生效。",
     "title.landlimit.noperm": "这里是领地，你无权操作",
