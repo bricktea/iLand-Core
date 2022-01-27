@@ -232,10 +232,7 @@ Map = {
 		Trusted = {
 			data = {},
 			update = function(landId)
-				Map.Land.Trusted.data[landId]={}
-				for n,xuid in pairs(land_data[landId].settings.share) do
-					Map.Land.Trusted.data[landId][xuid] = 0
-				end
+				Map.Land.Trusted.data[landId] = Array.ToKeyMap(land_data[landId].settings.share)
 			end
 		},
 		Owner = {
@@ -247,119 +244,91 @@ Map = {
 		Operator = {
 			data = {},
 			update = function()
-				Map.Land.Operator.data = {}
-				for n,xuid in pairs(cfg.land.operator) do
-					Map.Land.Operator.data[xuid] = 0
-				end
+				Map.Land.Operator.data = Array.ToKeyMap(cfg.land.operator)
 			end
 		}
 	},
 	Listener = {
 		data = {},
 		build = function()
-			Map.Listener.data={}
-			for n,name in pairs(cfg.features.disabled_listener) do
-				Map.Listener.data[name] = 0
-			end
+			Map.Listener.data = Array.ToKeyMap(cfg.features.disabled_listener)
 		end
 	},
 	Control = {
 		data = {},
 		build = function()
 			Map.Control.data = {
-				[0] = {}, 	-- UseItem
-				[1] = {},	-- onBlockInteracted
-				[2] = {},	-- ItemWhiteList
-				[3] = {},	-- AttackWhiteList
-				[4] = {		-- EntityTypeList
-					animals = {},
-					mobs = {}
+				-- # UseItem
+				[0] = Array.ToKeyMap({
+					'minecraft:bed','minecraft:chest','minecraft:trapped_chest','minecraft:crafting_table',
+					'minecraft:campfire','minecraft:soul_campfire','minecraft:composter','minecraft:undyed_shulker_box',
+					'minecraft:shulker_box','minecraft:noteblock','minecraft:jukebox','minecraft:bell',
+					'minecraft:daylight_detector_inverted','minecraft:daylight_detector','minecraft:lectern',
+					'minecraft:cauldron','minecraft:lever','minecraft:stone_button','minecraft:wooden_button',
+					'minecraft:spruce_button','minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
+					'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
+					'minecraft:polished_blackstone_button','minecraft:respawn_anchor','minecraft:trapdoor',
+					'minecraft:spruce_trapdoor','minecraft:birch_trapdoor','minecraft:jungle_trapdoor',
+					'minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor','minecraft:crimson_trapdoor',
+					'minecraft:warped_trapdoor','minecraft:fence_gate','minecraft:spruce_fence_gate',
+					'minecraft:birch_fence_gate','minecraft:jungle_fence_gate','minecraft:acacia_fence_gate',
+					'minecraft:dark_oak_fence_gate','minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
+					'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door','minecraft:jungle_door',
+					'minecraft:acacia_door','minecraft:dark_oak_door','minecraft:crimson_door','minecraft:warped_door',
+					'minecraft:dragon_egg'
+				}),
+				-- # onBlockInteracted
+				[1] = Array.ToKeyMap({
+					'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
+					'minecraft:smoker','minecraft:brewing_stand','minecraft:anvil','minecraft:grindstone','minecraft:enchanting_table',
+					'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper','minecraft:dispenser',
+					'minecraft:loom','minecraft:stonecutter_block'
+				}),
+				-- # ItemWhiteList
+				[2] = Array.ToKeyMap({
+					'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
+					'minecraft:powder_snow_bucket','minecraft:pufferfish_bucket','minecraft:tropical_fish_bucket',
+					'minecraft:salmon_bucket','minecraft:cod_bucket','minecraft:water_bucket','minecraft:cod_bucket',
+					'minecraft:lava_bucket','minecraft:bucket','minecraft:flint_and_steel'
+				}),
+				-- # AttackWhiteList
+				[3] = Array.ToKeyMap({
+					'minecraft:ender_crystal','minecraft:armor_stand'
+				}),
+				-- # EntityTypeList
+				[4] = {
+					animals = Array.ToKeyMap({
+						'minecraft:axolotl','minecraft:bat','minecraft:cat','minecraft:chicken',
+						'minecraft:cod','minecraft:cow','minecraft:donkey','minecraft:fox',
+						'minecraft:glow_squid','minecraft:horse','minecraft:mooshroom','minecraft:mule',
+						'minecraft:ocelot','minecraft:parrot','minecraft:pig','minecraft:rabbit',
+						'minecraft:salmon','minecraft:snow_golem','minecraft:sheep','minecraft:skeleton_horse',
+						'minecraft:squid','minecraft:strider','minecraft:tropical_fish','minecraft:turtle',
+						'minecraft:villager_v2','minecraft:wandering_trader','minecraft:npc'
+					}),
+					mobs = Array.ToKeyMap({
+						-- type A
+						'minecraft:pufferfish','minecraft:bee','minecraft:dolphin','minecraft:goat',
+						'minecraft:iron_golem','minecraft:llama','minecraft:llama_spit','minecraft:wolf',
+						'minecraft:panda','minecraft:polar_bear','minecraft:enderman','minecraft:piglin',
+						'minecraft:spider','minecraft:cave_spider','minecraft:zombie_pigman',
+						-- type B
+						'minecraft:blaze','minecraft:small_fireball','minecraft:creeper','minecraft:drowned',
+						'minecraft:elder_guardian','minecraft:endermite','minecraft:evocation_illager','minecraft:evocation_fang',
+						'minecraft:ghast','minecraft:fireball','minecraft:guardian','minecraft:hoglin',
+						'minecraft:husk','minecraft:magma_cube','minecraft:phantom','minecraft:pillager',
+						'minecraft:ravager','minecraft:shulker','minecraft:shulker_bullet','minecraft:silverfish',
+						'minecraft:skeleton','minecraft:skeleton_horse','minecraft:slime','minecraft:vex',
+						'minecraft:vindicator','minecraft:witch','minecraft:wither_skeleton','minecraft:zoglin',
+						'minecraft:zombie','minecraft:zombie_villager_v2','minecraft:piglin_brute','minecraft:ender_dragon',
+						'minecraft:dragon_fireball','minecraft:wither','minecraft:wither_skull','minecraft:wither_skull_dangerous'
+					})
 				},
-				[5] = {}	-- AttackBlock
+				-- # AttackBlock
+				[5] = Array.ToKeyMap({
+					'minecraft:dragon_egg'
+				})
 			}
-			local tmp_useitem = {
-				'minecraft:bed','minecraft:chest','minecraft:trapped_chest','minecraft:crafting_table',
-				'minecraft:campfire','minecraft:soul_campfire','minecraft:composter','minecraft:undyed_shulker_box',
-				'minecraft:shulker_box','minecraft:noteblock','minecraft:jukebox','minecraft:bell',
-				'minecraft:daylight_detector_inverted','minecraft:daylight_detector','minecraft:lectern',
-				'minecraft:cauldron','minecraft:lever','minecraft:stone_button','minecraft:wooden_button',
-				'minecraft:spruce_button','minecraft:birch_button','minecraft:jungle_button','minecraft:acacia_button',
-				'minecraft:dark_oak_button','minecraft:crimson_button','minecraft:warped_button',
-				'minecraft:polished_blackstone_button','minecraft:respawn_anchor','minecraft:trapdoor',
-				'minecraft:spruce_trapdoor','minecraft:birch_trapdoor','minecraft:jungle_trapdoor',
-				'minecraft:acacia_trapdoor','minecraft:dark_oak_trapdoor','minecraft:crimson_trapdoor',
-				'minecraft:warped_trapdoor','minecraft:fence_gate','minecraft:spruce_fence_gate',
-				'minecraft:birch_fence_gate','minecraft:jungle_fence_gate','minecraft:acacia_fence_gate',
-				'minecraft:dark_oak_fence_gate','minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
-				'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door','minecraft:jungle_door',
-				'minecraft:acacia_door','minecraft:dark_oak_door','minecraft:crimson_door','minecraft:warped_door',
-				'minecraft:dragon_egg'
-			}
-			local tmp_blockinteract = {
-				'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
-				'minecraft:smoker','minecraft:brewing_stand','minecraft:anvil','minecraft:grindstone','minecraft:enchanting_table',
-				'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper','minecraft:dispenser',
-				'minecraft:loom','minecraft:stonecutter_block'
-			}
-			local tmp_item_whitelist = {
-				'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
-				'minecraft:powder_snow_bucket','minecraft:pufferfish_bucket','minecraft:tropical_fish_bucket',
-				'minecraft:salmon_bucket','minecraft:cod_bucket','minecraft:water_bucket','minecraft:cod_bucket',
-				'minecraft:lava_bucket','minecraft:bucket','minecraft:flint_and_steel'
-			}
-			local tmp_attack_whitelist = {
-				'minecraft:ender_crystal','minecraft:armor_stand'
-			}
-			local animals = {
-				'minecraft:axolotl','minecraft:bat','minecraft:cat','minecraft:chicken',
-				'minecraft:cod','minecraft:cow','minecraft:donkey','minecraft:fox',
-				'minecraft:glow_squid','minecraft:horse','minecraft:mooshroom','minecraft:mule',
-				'minecraft:ocelot','minecraft:parrot','minecraft:pig','minecraft:rabbit',
-				'minecraft:salmon','minecraft:snow_golem','minecraft:sheep','minecraft:skeleton_horse',
-				'minecraft:squid','minecraft:strider','minecraft:tropical_fish','minecraft:turtle',
-				'minecraft:villager_v2','minecraft:wandering_trader','minecraft:npc' -- npc not animal? hengaaaaaaaa~
-			}
-			local mobs = {
-				-- type A
-				'minecraft:pufferfish','minecraft:bee','minecraft:dolphin','minecraft:goat',
-				'minecraft:iron_golem','minecraft:llama','minecraft:llama_spit','minecraft:wolf',
-				'minecraft:panda','minecraft:polar_bear','minecraft:enderman','minecraft:piglin',
-				'minecraft:spider','minecraft:cave_spider','minecraft:zombie_pigman',
-				-- type B
-				'minecraft:blaze','minecraft:small_fireball','minecraft:creeper','minecraft:drowned',
-				'minecraft:elder_guardian','minecraft:endermite','minecraft:evocation_illager','minecraft:evocation_fang',
-				'minecraft:ghast','minecraft:fireball','minecraft:guardian','minecraft:hoglin',
-				'minecraft:husk','minecraft:magma_cube','minecraft:phantom','minecraft:pillager',
-				'minecraft:ravager','minecraft:shulker','minecraft:shulker_bullet','minecraft:silverfish',
-				'minecraft:skeleton','minecraft:skeleton_horse','minecraft:slime','minecraft:vex',
-				'minecraft:vindicator','minecraft:witch','minecraft:wither_skeleton','minecraft:zoglin',
-				'minecraft:zombie','minecraft:zombie_villager_v2','minecraft:piglin_brute','minecraft:ender_dragon',
-				'minecraft:dragon_fireball','minecraft:wither','minecraft:wither_skull','minecraft:wither_skull_dangerous'
-			}
-			local tmp_atkbls = {
-				'minecraft:dragon_egg'
-			}
-			for n,uitem in pairs(tmp_useitem) do
-				Map.Control.data[0][uitem] = 0
-			end
-			for n,bint in pairs(tmp_blockinteract) do
-				Map.Control.data[1][bint] = 0
-			end
-			for n,iwl in pairs(tmp_item_whitelist) do
-				Map.Control.data[2][iwl] = 0
-			end
-			for n,awt in pairs(tmp_attack_whitelist) do
-				Map.Control.data[3][awt] = 0
-			end
-			for n,anis in pairs(animals) do
-				Map.Control.data[4].animals[anis] = 0
-			end
-			for n,mons in pairs(mobs) do
-				Map.Control.data[4].mobs[mons] = 0
-			end
-			for n,bl in pairs(tmp_atkbls) do
-				Map.Control.data[5][bl] = 0
-			end
 		end
 	},
 	CachedQuery = {
@@ -2435,16 +2404,11 @@ function ILAPI.GetLanguageList(type) -- [0] langs from disk [1] online
 	end
 end
 function ILAPI.IsLandCollision(newposA,newposB,newDimid,ignoreList) -- 领地冲突判断
+	ignoreList = ignoreList or {}
+	local ignores = Array.ToKeyMap(ignoreList)
 	local edge = Cube.GetEdge(newposA,newposB)
-	local ignores = {} -- 建立反表提升查询性能
-	if ignoreList~=nil then
-		for key, value in pairs(ignoreList) do
-			ignores[value] = 1
-		end
-	end
 	for i=1,#edge do
 		edge[i].dimid=newDimid
-		
 		local tryLand = ILAPI.PosGetLand(edge[i])
 		if tryLand~=-1 and ignores[tryLand]==nil then
 			return {
@@ -4417,10 +4381,6 @@ mc.listen('onServerStarted',function()
 		else
 			WARN(_Tr('console.getonline.failed'))
 		end
-	end
-
-	if not collectgarbage('isrunning') then
-		collectgarbage("restart")
 	end
 
 	INFO('Load','Completed, use memory: '..ILAPI.GetMemoryCount()..'MB.')
