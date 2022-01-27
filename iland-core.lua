@@ -4218,16 +4218,10 @@ mc.listen('onPistonTryPush',function(pos,block)
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(pos)
-	if landId~=-1 then
-		return
-	end
-	local r = 2
-	local lands = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
-	for i,Id in pairs(lands) do
-		if not land_data[Id].settings.ev_piston_push then
-			return false
-		end 
+	local Id_bePushedBlock = ILAPI.PosGetLand(block.pos)
+	local Id_pistonBlock = ILAPI.PosGetLand(pos)
+	if Id_bePushedBlock~=-1 and not land_data[Id_bePushedBlock].settings.ev_piston_push and Id_pistonBlock~=Id_bePushedBlock then
+		return false
 	end
 
 end)
