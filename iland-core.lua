@@ -1850,7 +1850,7 @@ SafeTeleport = {
 		player:teleport(tpos.x,tpos.y,tpos.z,tpos.dimid)
 		MEM[xuid].safetp = nil
 	end,
-	Do = function(player,tpos,max_far)
+	Do = function(player,tpos)
 		local function getHeightRange(dimensionId)
 			local range = {
 				[0] = {-64,320},
@@ -1873,9 +1873,6 @@ SafeTeleport = {
 		}
 		local def_height = 500
 		local timeout = 60
-		if max_far==nil then
-			max_far = 12
-		end
 		player:teleport(tpos.x,def_height,tpos.z,dimid)
 		SendText(player,_Tr('api.safetp.tping.talk'))
 		local chunk_loaded = false
@@ -1893,9 +1890,11 @@ SafeTeleport = {
 				return
 			end
 			if player:getAbilities().flying==1 then
+				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.disablefly'),{0,5,0})
 				local nbt = player:getNbt()
 				nbt:getTag("abilities"):getTag("flying"):set(0)
 				player:setNbt(nbt)
+				return
 			end
 			if plpos.y == def_height and not chunk_loaded then
 				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.chunkloading'),{0,15,15})
@@ -1927,11 +1926,6 @@ SafeTeleport = {
 						recentY = y
 					end
 				end
-				if math.abs(recentY-tpos.y) > max_far then
-					SendText(player,_Tr('api.safetp.fail.nofoothold'))
-					SafeTeleport.Cancel(player)
-					return
-				end
 				player:teleport(tpos.x,recentY + 1,tpos.z,dimid)
 				MEM[xuid].safetp = nil
 				completed = true
@@ -1942,6 +1936,7 @@ SafeTeleport = {
 			if MEM[xuid]~=nil then
 				if not completed and MEM[xuid].safetp~=nil then
 					SendText(player,_Tr('api.safetp.fail.timeout'))
+					SafeTeleport.Cancel(mc.getPlayer(xuid))
 				end
 				MEM[xuid].safetp = nil
 			end

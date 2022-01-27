@@ -282,6 +282,7 @@
     "sign.listener.visitorsubtitle":"<a> 的领地",
 
     "api.safetp.tping.talk": "传送中...",
+    "api.safetp.tping.disablefly": "§c请取消飞行模式",
     "api.safetp.tping.chunkloading": "区块加载中!",
     "api.safetp.tping.foundfoothold": "寻找方块中!",
     "api.safetp.succeed": "传送完成!",
