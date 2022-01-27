@@ -54,6 +54,7 @@ local cfg = {
 			square_range = {4,50000},
 			discount = 1
 		},
+		min_space = 15,
 		refund_rate = 0.9
 	},
 	economic = {
@@ -653,6 +654,7 @@ ConfigReader = {
 				if Array.Fetch(sec.disable_dimension,2)~=-1 then
 					sec.dimension[3] = false
 				end
+				this.land.min_space = 15
 				sec.disable_dimension = nil
 			end
 			--- Rtn
@@ -1401,6 +1403,7 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.two_dimension.calculate')
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)1')
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)2')
+				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.min_space')
 				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.bought.discount')
 				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.refund_rate')
 				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.features.selection.dimension.(*)1')
@@ -1774,14 +1777,15 @@ RangeSelector = {
 			
 			--- Check land collision.
 			local collcheck
+			local sp = cfg.land.min_space
 			if MEM[xuid].reselectLand~=nil then -- can collision own if reselecting.
-				collcheck = ILAPI.IsLandCollision(posA,pos,dimid,{MEM[xuid].reselectLand.id})
+				collcheck = ILAPI.IsLandCollision(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid,{MEM[xuid].reselectLand.id})
 			else
-				collcheck = ILAPI.IsLandCollision(posA,pos,dimid)
+				collcheck = ILAPI.IsLandCollision(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid)
 			end
 			if not collcheck.status and isOk then
 				isOk = false
-				SendText(player,_Tr('title.rangeselector.fail.collision','<a>',collcheck.id,'<b>',Pos.ToString(collcheck.pos)))
+				SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(collcheck.id),'<b>',Pos.ToString(collcheck.pos)))
 			end
 	
 			--- Check result.
@@ -1953,7 +1957,7 @@ DebugHelper = {
 		for n,player in pairs(mc.getOnlinePlayers()) do
 			local pos = player.blockPos
 			local r = 10
-			local list = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
+			local list = ILAPI.GetLandInRange(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid)
 			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
 			if #list~=0 then
 				INFO('Debug','Nearby lands \n'..table.toDebugString(list))
@@ -2607,6 +2611,20 @@ Pos = {
 	end,
 	ToString = function(vec3)
 		return vec3.x..','..vec3.y..','..vec3.z
+	end,
+	Add = function(pos,value)
+		return {
+			x = pos.x + value,
+			y = pos.y + value,
+			z = pos.z + value
+		}
+	end,
+	Reduce = function(pos,value)
+		return {
+			x = pos.x - value,
+			y = pos.y - value,
+			z = pos.z - value
+		}
 	end,
 	IsEqual = function(posA,posB)
 		if posA.x==posB.x and posA.y==posB.y and posA.z==posB.z and posA.dimid==posB.dimid then
@@ -3765,7 +3783,7 @@ EventCallbacks = {
 		local landId = ILAPI.PosGetLand(bp)
 		if landId==-1 then
 			local r = math.floor(radius) + 1
-			local lands = ILAPI.GetLandInRange({x=bp.x+r,y=bp.y+r,z=bp.z+r},{x=bp.x-r,y=bp.y-r,z=bp.z-r},pos.dimid)
+			local lands = ILAPI.GetLandInRange(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid)
 			if #lands==0 then
 				return
 			end
@@ -4282,7 +4300,7 @@ mc.listen('onRedStoneUpdate',function(block,level,isActive)
 		return
 	end
 	local r = 2
-	local lands = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
+	local lands = ILAPI.GetLandInRange(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid)
 	for i,Id in pairs(lands) do
 		if not land_data[Id].settings.ev_redstone_update then
 			return false

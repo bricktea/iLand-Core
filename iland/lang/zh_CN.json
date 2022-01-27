@@ -165,6 +165,7 @@
     "path.<config> this.land.bought.discount": "折扣",
     "path.<config> this.land.bought.square_range.(*)1": "领地最小面积",
     "path.<config> this.land.bought.square_range.(*)2": "领地最大面积",
+    "path.<config> this.land.min_space": "领地与领地间最小距离",
     "path.<config> this.land.bought.three_dimension.enable": "开启三维圈地",
     "path.<config> this.land.bought.three_dimension.calculate": "价格计算",
 
@@ -240,7 +241,7 @@
     "title.rangeselector.fail.toobig": "所圈领地太大，请重新圈地。\n",
     "title.rangeselector.fail.toosmall": "所圈领地太小，请重新圈地。\n",
     "title.rangeselector.fail.toolow": "所圈领地太低，请重新圈地\n",
-    "title.rangeselector.fail.collision": "圈地范围与 <a> (坐标: <b>) 存在冲突，请重新圈地。\n",
+    "title.rangeselector.fail.collision": "圈地范围与 <a> (坐标: <b>) 距离太近或存在冲突，请重新圈地。\n",
     "title.rangeselector.largeparticle": "领地范围较大，为避免卡顿已关闭粒子特效",
     "title.rangeselector.pointed": "点 <a> 已选定：<b> (<c>, <d>, <e>)",
     "title.selectland.complete1": "圈地完成",
