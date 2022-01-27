@@ -1976,27 +1976,21 @@ SafeTeleport = {
 }
 
 DebugHelper = {
-	Enable = true,
-	GetLand = function()
-		local enable = false
-		if not DebugHelper.Enable or not enable then
-			return
-		end
-		for n,player in pairs(mc.getOnlinePlayers()) do
-			local pos = player.blockPos
-			INFO('Debug','<single> Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
-		end
-	end,
-	GetRange = function()
-		local enable = true
-		if not DebugHelper.Enable or not enable then
+	IsEnabled = false,
+	Interval = function()
+		if not DebugHelper.IsEnabled then
 			return
 		end
 		for n,player in pairs(mc.getOnlinePlayers()) do
 			local pos = player.blockPos
 			local r = 10
 			local list = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
-			INFO('Debug','<range> Position ('..Pos.ToString(pos)..'),\n'..table.toDebugString(list))
+			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
+			if #list~=0 then
+				INFO('Debug','Nearby lands \n'..table.toDebugString(list))
+			else
+				INFO('Debug','There is no land nearby.')
+			end
 		end
 	end
 }
@@ -2518,6 +2512,10 @@ function ILAPI.SetRange(landId,newposA,newposB,newDimid)
 	Map.Land.Edge.update(landId,'add')
 	Map.Chunk.update(landId,'add')
 	Map.Land.Position.update(landId,'add')
+	Map.CachedQuery.RangeArea.refresh(landId)
+	Map.CachedQuery.SinglePos.refresh(landId)
+	Map.CachedQuery.RangeArea.clear_by_land(landId)
+	Map.CachedQuery.SinglePos.check_noland_pos()
 
 	ILAPI.save({0,1,0})
 	return true
@@ -4356,8 +4354,7 @@ mc.listen('onServerStarted',function()
 	end
 	setInterval(TimerCallbacks.MEM,1000)
 	if DEV_MODE then
-		setInterval(DebugHelper.GetLand,1500)
-		setInterval(DebugHelper.GetRange,1500)
+		setInterval(DebugHelper.Interval,1500)
 	end
 
 	-- load owners data
