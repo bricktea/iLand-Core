@@ -469,7 +469,7 @@ Map = {
 				end
 				return nil
 			end,
-			clear = function(cubestr) -- clear cached range.
+			clear_range = function(cubestr) -- clear single range's cache.
 				local map = Map.CachedQuery.RangeArea
 				for n,landId in pairs(map.data[cubestr].landlist) do
 					local pos = Array.Fetch(map.recorded_landId[landId],"this."..cubestr..".landlist.(*)"..n)
@@ -479,12 +479,12 @@ Map = {
 				end
 				map.data[cubestr] = nil
 			end,
-			clear_range = function(landId) -- clear cached "range" if "range" in this range.
+			clear_by_land = function(landId) -- clear cached "range" if "range" in this range.
 				local map = Map.CachedQuery.RangeArea
 				for cubestr,rangeInfo in pairs(map.data) do
 					local r = rangeInfo.raw
-					if Array.Fetch(ILAPI.GetLandInRange(r.startpos,r.endpos,r.dimid),landId)~=-1 then
-						map.clear(cubestr)
+					if Array.Fetch(ILAPI.GetLandInRange(r.startpos,r.endpos,r.dimid,true),landId)~=-1 then
+						map.clear_range(cubestr)
 					end
 				end
 			end,
@@ -509,7 +509,7 @@ Map = {
 				if Info.querying then
 					map.RangeArea.data[cubestr].querying = false
 				else
-					map.RangeArea.clear(cubestr)
+					map.RangeArea.clear_range(cubestr)
 				end
 			end
 		end
@@ -1978,19 +1978,25 @@ SafeTeleport = {
 DebugHelper = {
 	Enable = true,
 	GetLand = function()
+		local enable = false
+		if not DebugHelper.Enable or not enable then
+			return
+		end
+		for n,player in pairs(mc.getOnlinePlayers()) do
+			local pos = player.blockPos
+			INFO('Debug','<single> Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
+		end
+	end,
+	GetRange = function()
 		local enable = true
 		if not DebugHelper.Enable or not enable then
 			return
 		end
 		for n,player in pairs(mc.getOnlinePlayers()) do
 			local pos = player.blockPos
-			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
-		end
-	end,
-	GetRange = function()
-		local enable = false
-		if not DebugHelper.Enable or not enable then
-			return
+			local r = 10
+			local list = ILAPI.GetLandInRange({x=pos.x+r,y=pos.y+r,z=pos.z+r},{x=pos.x-r,y=pos.y-r,z=pos.z-r},pos.dimid)
+			INFO('Debug','<range> Position ('..Pos.ToString(pos)..'),\n'..table.toDebugString(list))
 		end
 	end
 }
@@ -2114,7 +2120,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	Map.Land.Trusted.update(landId)
 	Map.Land.Edge.update(landId,'add')
 	Map.CachedQuery.Init(landId)
-	Map.CachedQuery.RangeArea.clear_range(landId)
+	Map.CachedQuery.RangeArea.clear_by_land(landId)
 	Map.CachedQuery.SinglePos.check_noland_pos()
 	return landId
 end
