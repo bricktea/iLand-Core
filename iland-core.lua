@@ -80,7 +80,11 @@ local cfg = {
 			items_perpage = 20,
 		},
 		selection = {
-			disable_dimension = {},
+			dimension = {
+				true,	-- overworld
+				true,	-- nether
+				true	-- end
+			},
 			tool_type = "minecraft:wooden_axe",
 			tool_name = "Wooden Axe"
 		},
@@ -636,6 +640,20 @@ ConfigReader = {
 				if type(this.land.bought.square_range)~='table' then
 					this.land.bought.square_range = {4,50000}
 				end
+			end
+			if this.version < 270 then
+				local sec = this.features.selection
+				sec.dimension = {true,true,true}
+				if Array.Fetch(sec.disable_dimension,0)~=-1 then
+					sec.dimension[1] = false
+				end
+				if Array.Fetch(sec.disable_dimension,1)~=-1 then
+					sec.dimension[2] = false
+				end
+				if Array.Fetch(sec.disable_dimension,2)~=-1 then
+					sec.dimension[3] = false
+				end
+				sec.disable_dimension = nil
 			end
 			--- Rtn
 			return true
@@ -1385,6 +1403,9 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.land,'input','this.land.bought.square_range.(*)2')
 				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.bought.discount')
 				ConfigUIEditor.AddComponent(origin,class.land,'percent_slider','this.land.refund_rate')
+				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.features.selection.dimension.(*)1')
+				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.features.selection.dimension.(*)2')
+				ConfigUIEditor.AddComponent(origin,class.land,'switch','this.features.selection.dimension.(*)3')
 				ConfigUIEditor.AddComponent(origin,class.economic,'dropdown','this.economic.protocol',{'llmoney','scoreboard'})
 				ConfigUIEditor.AddComponent(origin,class.economic,'dropdown','this.economic.scoreboard_objname',getAllObjectives())
 				ConfigUIEditor.AddComponent(origin,class.economic,'input','this.economic.currency_name')
@@ -1680,7 +1701,7 @@ RangeSelector = {
 			return
 		end
 		if MEM[xuid].rsr.step == 1 then
-			if Array.Fetch(cfg.features.selection.disable_dimension,dimid)~=-1 then
+			if not cfg.features.selection.dimension[dimid+1] then
 				SendText(player,_Tr('title.rangeselector.fail.dimblocked'))
 				return
 			end
