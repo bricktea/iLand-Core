@@ -127,8 +127,7 @@ Map = {
 			Map.Chunk.update(landId,'add')
 			Map.Land.Trusted.update(landId)
 			Map.Land.Owner.update(landId)
-			Map.CachedQuery.RangeArea.recorded_landId[landId] = {}
-			Map.CachedQuery.SinglePos.land_recorded_pos[landId] = {}
+			Map.CachedQuery.Init(landId)
 		end
 		Map.Land.Operator.update()
 		Map.Control.build()
@@ -224,7 +223,7 @@ Map = {
 				elseif mode=='add' then
 					Map.Land.Edge.data[landId]={}
 					local spos = Array.ToIntPos(land_data[landId].range.start_position)
-					local epos = Array.ToInsPos(land_data[landId].range.end_position)
+					local epos = Array.ToIntPos(land_data[landId].range.end_position)
 					Map.Land.Edge.data[landId].D2D = Cube.GetEdge_2D(spos,epos)
 					Map.Land.Edge.data[landId].D3D = Cube.GetEdge(spos,epos)
 				end
@@ -364,6 +363,16 @@ Map = {
 		end
 	},
 	CachedQuery = {
+		Init = function(landId)
+			local map = Map.CachedQuery
+			map.RangeArea.recorded_landId[landId] = {}
+			map.SinglePos.land_recorded_pos[landId] = {}
+		end,
+		UnInit = function(landId)
+			local map = Map.CachedQuery
+			map.RangeArea.recorded_landId[landId] = nil
+			map.SinglePos.land_recorded_pos[landId] = nil
+		end,
 		SinglePos = {
 			data = {},
 			land_recorded_pos = {}, -- query recorded strpos by landId.
@@ -394,11 +403,21 @@ Map = {
 			end,
 			clear = function(strpos) -- clear single pos's cache
 				local map = Map.CachedQuery.SinglePos
-				local landId = map.data[strpos].landId
+				local record = map.data[strpos]
+				if record==nil then
+					return
+				end
+				local landId = record.landId
 				if landId~=-1 then
-					table.remove(map.land_recorded_pos[landId],Array.Fetch(map.land_recorded_pos[landId],strpos))
+					local pos = Array.Fetch(map.land_recorded_pos[landId],strpos)
+					if pos ~= -1 then
+						table.remove(map.land_recorded_pos[landId],pos)
+					end
 				else
-					table.remove(map.non_land_pos,Array.Fetch(map.non_land_pos,strpos))
+					local pos = Array.Fetch(map.non_land_pos,strpos)
+					if pos ~= -1 then
+						table.remove(map.non_land_pos,pos)
+					end
 				end
 				map.data[strpos] = nil
 			end,
@@ -416,7 +435,7 @@ Map = {
 				end
 				local map = Map.CachedQuery.SinglePos
 				for n,strpos in pairs(map.land_recorded_pos[landId]) do
-					map.clear(strpos)
+					map.data[strpos] = nil -- DO NOT USE map.clear!!
 				end
 				map.land_recorded_pos[landId] = {}
 			end
@@ -453,7 +472,10 @@ Map = {
 			clear = function(cubestr) -- clear cached range.
 				local map = Map.CachedQuery.RangeArea
 				for n,landId in pairs(map.data[cubestr].landlist) do
-					table.remove(map.recorded_landId[landId],Array.Fetch("this."..cubestr..".landlist.(*)"..n))
+					local pos = Array.Fetch(map.recorded_landId[landId],"this."..cubestr..".landlist.(*)"..n)
+					if pos~=-1 then
+						table.remove(map.recorded_landId[landId],pos)
+					end
 				end
 				map.data[cubestr] = nil
 			end,
@@ -1953,6 +1975,26 @@ SafeTeleport = {
 	end
 }
 
+DebugHelper = {
+	Enable = true,
+	GetLand = function()
+		local enable = true
+		if not DebugHelper.Enable or not enable then
+			return
+		end
+		for n,player in pairs(mc.getOnlinePlayers()) do
+			local pos = player.blockPos
+			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
+		end
+	end,
+	GetRange = function()
+		local enable = false
+		if not DebugHelper.Enable or not enable then
+			return
+		end
+	end
+}
+
 --#region ILAPI
 
 -- [[ KERNEL ]]
@@ -2071,6 +2113,7 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 	Map.Land.Owner.update(landId)
 	Map.Land.Trusted.update(landId)
 	Map.Land.Edge.update(landId,'add')
+	Map.CachedQuery.Init(landId)
 	Map.CachedQuery.RangeArea.clear_range(landId)
 	Map.CachedQuery.SinglePos.check_noland_pos()
 	return landId
@@ -2082,10 +2125,11 @@ function ILAPI.DeleteLand(landId)
 	end
 	Map.CachedQuery.RangeArea.refresh(landId)
 	Map.CachedQuery.SinglePos.refresh(landId)
+	Map.CachedQuery.UnInit(landId)
 	Map.Chunk.update(landId,'del')
 	Map.Land.Position.update(landId,'del')
 	Map.Land.Edge.update(landId,'del')
-	land_data[landId]=nil
+	land_data[landId] = nil
 	ILAPI.save({0,1,1})
 	return true
 end
@@ -3227,7 +3271,7 @@ function RegisterCommands()
 			'<g>',Money.Get(player)
 		))
 		Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/realms_green_check')
-		Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/textures/ui/recipe_book_icon')
+		Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
 		Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/realms_red_x')
 		player:sendForm(Form,
 			function (player,res)
@@ -4305,6 +4349,10 @@ mc.listen('onServerStarted',function()
 		setInterval(TimerCallbacks.ButtomSign,cfg.features.buttomsign.frequency*1000)
 	end
 	setInterval(TimerCallbacks.MEM,1000)
+	if DEV_MODE then
+		setInterval(DebugHelper.GetLand,1500)
+		setInterval(DebugHelper.GetRange,1500)
+	end
 
 	-- load owners data
 	try
