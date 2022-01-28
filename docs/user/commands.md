@@ -28,12 +28,11 @@
 `op <ID>` | *Console* | 将玩家设置为领地管理员
 `deop <ID>` | *Console* | 取消某玩家的领地管理员身份
 `language` | *Console* | 打印正在使用的语言信息
-`language set <LANG>` | *Console* | 设定插件语言
 `language list` | *Console* | 列出已安装语言
 `language list-online` | *Console* | 列出语言仓库中所有语言
 `language install <LANG>` | *Console* | 从语言仓库安装语言
 `language update [LANG]` | *Console* | 升级语言，若不忽略参数则升级指定语言
-`reload` | *Console* | 重载iLand
+`reload [config|data|owner]` | *Console* | 重载iLand
 `unload` | *Console* | 反加载iLand
 
 ### **⚠ 警告**
