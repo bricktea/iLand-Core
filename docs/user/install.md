@@ -21,9 +21,10 @@
  - 观察开服日志
 
 ```
-[ILand] |INFO| Powerful land plugin is loaded! Ver-2.40,
-[ILand] |INFO| By: RedbeanW, License: GPLv3 with additional conditions.
-[LiteXLoader.Lua][Info] iland-core.lua loaded.
+[02:06:21 Info][ILand] Powerful land plugin is loaded! Ver-2.70,
+[02:06:21 Info][ILand] By: RedbeanW, License: GPLv3 with additional conditions.
+[02:06:21 Info][LiteXLoader] iland-core.lua loaded.
 ...
-[ILand] |Announcement| 欢迎使用iLand，这是测试公告。
+[02:06:24 Info][ILand] Building tables needed to run...
+[02:06:25 Info][ILand] Completed, use memory: 21.91MB.
 ```

@@ -10,7 +10,7 @@
 A full-featured, powerful [Bedrock Server](https://www.minecraft.net/en-us/download/server/bedrock) land plugin, written in Lua, based on the [LiteXLoader](https://github.com/LiteLDev/LiteXLoader) plugin platform.
 
 ## Features
-✔️ High-speed land-query based on chunk algorithm.<br/>
+✔️ High-speed land-query based on chunk algorithm and cache system.<br/>
 ✔️ Use the opposite table to quickly determine the land permission.<br/>
 ✔️ Highly GUI operation, supports GUI editing of configuration files.<br/>
 ✔️ Very low memory footprint.<br/>
