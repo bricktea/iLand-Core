@@ -702,8 +702,16 @@ end
 --#endregion
 
 I18N = {
+	TriedAutoFix = false,
 	Init = function()
-		local stat = I18N.Load(cfg.plugin.language)
+		local lang = cfg.plugin.language
+		local stat = I18N.Load(lang)
+		if stat ~= 0 and not I18N.TriedAutoFix then
+			I18N.LangPack.Install(lang)
+			I18N.TriedAutoFix = true
+			I18N.Init()
+			return
+		end
 		if stat == -1 then
 			error('Language pack not found!')
 		elseif stat == -2 then
@@ -2820,124 +2828,6 @@ Array = {
 	end
 }
 
-Server.Repo = {
-	Plugin = {
-		Update = function(rawInfo)
-	
-			--[[
-				The directory structure for server:
-				# source = .../iLand/{numver}/...
-				Vars:
-				$plugin_path	plugins/
-				$data_path		plugins/iland/
-				Example(numver=245):
-				$plugin_path::iland-core.lua	=>	H://server.link/abc/iLand/245/iland-core.lua
-				$data_path::lang/zh_CN.json		=>	H://server.link/abc/iLand/245/lang/zh_CN.json
-			]]
-		
-			local function recoverBackup(dt)
-				INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
-				for n,backupfilename in pairs(dt) do
-					File.rename(backupfilename..'.bak',backupfilename)
-				end
-			end
-			local function isLXLSupported(list)
-				local version = lxl.version()
-				for n,ver in pairs(list) do
-					if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
-						return true
-					end
-				end
-				return false
-			end
-		
-			--  Check Data
-			local updata
-			if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
-				ERROR(_Tr('console.update.vacancy'))
-				return
-			end
-			if rawInfo.FILE_Version==Server.version then
-				updata = rawInfo.Updates[1]
-			else
-				ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
-				return
-			end
-			if rawInfo.DisableClientUpdate then
-				ERROR(_Tr('console.update.disabled'))
-				return
-			end
-			if not isLXLSupported(updata.LXL) then
-				ERROR(_Tr('console.update.unsupport'))
-				return
-			end
-			
-			-- Check Plugin version
-			if updata.NumVer<=Plugin.numver then
-				ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
-				return
-			end
-			INFO('AutoUpdate',_Tr('console.autoupdate.start'))
-			
-			-- Set Resource
-			local RawPath = {}
-			local BackupEd = {}
-			local server = Server.GetLink()
-			local source
-			if server ~= false then
-				source = server..'/'..updata.NumVer..'/'
-			else
-				WARN(_Tr('console.getonline.failed'))
-				return false
-			end
-			
-			INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
-			RawPath['$plugin_path'] = 'plugins/'
-			RawPath['$data_path'] = DATA_PATH
-			
-			-- Get it, update.
-			for n,thefile in pairs(updata.FileChanged) do
-				local raw = string.split(thefile,'::')
-				local path = RawPath[raw[1]]..raw[2]
-				INFO('Network',_Tr('console.autoupdate.download')..raw[2])
-				
-				if File.exists(path) then -- create backup
-					File.rename(path,path..'.bak')
-					BackupEd[#BackupEd+1]=path
-				end
-		
-				local tmp = network.httpGetSync(source..raw[2])
-				local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
-				if tmp.status~=200 or tmp2.status~=200 then -- download check
-					ERROR(
-						_Tr('console.autoupdate.errorbydown',
-							'<a>',raw[2],
-							'<b>',tmp.status..','..tmp2.status
-						)
-					)
-					recoverBackup(BackupEd)
-					return
-				end
-		
-				local raw = string.gsub(tmp.data,'\n','\r\n')
-				if data.toMD5(raw)~=tmp2.data then -- MD5 check
-					ERROR(
-						_Tr('console.autoupdate.errorbyverify',
-							'<a>',raw[2]
-						)
-					)
-					recoverBackup(BackupEd)
-					return
-				end
-		
-				File.writeTo(path,raw)
-			end
-		
-			INFO('AutoUpdate',_Tr('console.autoupdate.success'))
-		end
-	}
-}
-
 function Server.GetLink()
 	local tokenRaw = network.httpGetSync('https://lxl-cloud.amd.rocks/id.json')
 	if tokenRaw.status~=200 then
@@ -3112,6 +3002,125 @@ end
 
 function Plugin.Unload()
 	mc.runcmdEx('lxl unload iland-core.lua')
+end
+
+function Plugin.Upgrade(rawInfo)
+	
+	--[[
+		The directory structure for server:
+		# source = .../iLand/{numver}/...
+		Vars:
+		$plugin_path	plugins/
+		$data_path		plugins/iland/
+		Example(numver=245):
+		$plugin_path::iland-core.lua	=>	H://server.link/abc/iLand/245/iland-core.lua
+		$data_path::lang/zh_CN.json		=>	H://server.link/abc/iLand/245/lang/zh_CN.json
+	]]
+
+	local function recoverBackup(dt)
+		INFO('AutoUpdate',_Tr('console.autoupdate.recoverbackup'))
+		for n,backupfilename in pairs(dt) do
+			File.rename(backupfilename..'.bak',backupfilename)
+		end
+	end
+	local function isLXLSupported(list)
+		local version = lxl.version()
+		for n,ver in pairs(list) do
+			if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
+				return true
+			end
+		end
+		return false
+	end
+
+	--  Check Data
+	local updata
+	local checkPassed = false
+	if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
+		ERROR(_Tr('console.update.vacancy'))
+	elseif rawInfo.FILE_Version~=Server.version then
+		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
+	elseif rawInfo.DisableClientUpdate then
+		ERROR(_Tr('console.update.disabled'))
+	else
+		updata = rawInfo.Updates[1]
+		if not isLXLSupported(updata.LXL) then
+			ERROR(_Tr('console.update.unsupport'))
+		else
+			checkPassed = true
+		end
+	end
+	if not checkPassed then
+		return
+	end
+	
+	-- Check Plugin version
+	if updata.NumVer<=Plugin.numver then
+		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
+		return
+	end
+	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
+	
+	-- Set Resource
+	local RawPath = {}
+	local BackupEd = {}
+	local server = Server.GetLink()
+	local source
+	if server ~= false then
+		source = server..'/'..updata.NumVer..'/'
+	else
+		WARN(_Tr('console.getonline.failed'))
+		return false
+	end
+	
+	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
+	RawPath['$plugin_path'] = 'plugins/'
+	RawPath['$data_path'] = DATA_PATH
+	
+	-- Known changed files.
+	updata.FileChanged[#updata.FileChanged+1] = "$plugin_path::iland-core.lua"
+
+	-- Get it, update.
+	for n,thefile in pairs(updata.FileChanged) do
+		local raw = string.split(thefile,'::')
+		local path = RawPath[raw[1]]..raw[2]
+		INFO('Network',_Tr('console.autoupdate.download')..raw[2])
+		
+		if File.exists(path) then -- create backup
+			File.rename(path,path..'.bak')
+			BackupEd[#BackupEd+1]=path
+		end
+
+		local tmp = network.httpGetSync(source..raw[2])
+		local tmp2 = network.httpGetSync(source..raw[2]..'.md5.verify')
+		if tmp.status~=200 or tmp2.status~=200 then -- download check
+			ERROR(
+				_Tr('console.autoupdate.errorbydown',
+					'<a>',raw[2],
+					'<b>',tmp.status..','..tmp2.status
+				)
+			)
+			recoverBackup(BackupEd)
+			return
+		end
+
+		local raw = string.gsub(tmp.data,'\n','\r\n')
+		if data.toMD5(raw)~=tmp2.data then -- MD5 check
+			ERROR(
+				_Tr('console.autoupdate.errorbyverify',
+					'<a>',raw[2]
+				)
+			)
+			recoverBackup(BackupEd)
+			return
+		end
+
+		File.writeTo(path,raw)
+	end
+	
+	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
+	Plugin.Reload()
+
 end
 
 function Plugin.Reload()
@@ -3600,7 +3609,7 @@ function RegisterCommands()
 	end)
 	mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
 		if cfg.plugin.network then
-			Server.Repo.Plugin.Update(Server.memData)
+			Plugin.Upgrade(Server.memData)
 		else
 			ERROR(_Tr('console.update.nodata'))
 		end
@@ -4425,11 +4434,11 @@ mc.listen('onServerStarted',function()
 					end
 					if data.Force_Update then
 						INFO('Update',_Tr('console.update.force','<a>',data.Updates[1].Version))
-						Server.Repo.Plugin.Update(data)
+						Plugin.Upgrade(data)
 					end
 					if cfg.features.auto_update then
 						INFO('Update',_Tr('console.update.auto'))
-						Server.Repo.Plugin.Update(data)
+						Plugin.Upgrade(data)
 					end
 				end
 				if Plugin.numver>data.Updates[1].NumVer then
