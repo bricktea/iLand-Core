@@ -2346,7 +2346,7 @@ function ILAPI.GetLandInRange(startpos,endpos,dimid,noAccessCache)
 		end
 	end
 	
-	local result = Array.ToNonRepeated(result)
+	result = Array.ToNonRepeated(result)
 	if not noAccessCache then
 		Map.CachedQuery.RangeArea.add(result,startpos,endpos,dimid)
 	end
@@ -3206,12 +3206,12 @@ function ToStrDim(a)
 	end
 end
 function ChkNil(...)
-	for n,v in pairs({...}) do
-		if v==nil then
-			return true
-		end
+	local list = {...}
+	local count = 0
+	for i,v in ipairs(list) do
+		count = count + 1
 	end
-	return false
+	return count~=#list
 end
 function EntityGetType(type)
 	if type=='minecraft:player' then
