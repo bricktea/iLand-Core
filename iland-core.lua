@@ -2163,7 +2163,7 @@ DebugHelper = {
 		end
 		for n,player in pairs(mc.getOnlinePlayers()) do
 			local pos = player.blockPos
-			local r = 10
+			local r = 50
 			local list = ILAPI.GetLandInRange(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid)
 			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
 			if #list~=0 then
@@ -2372,39 +2372,52 @@ function ILAPI.GetDistence(landId,vec4)
 	end
 	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-Map.Land.Position.data[landId].a.y),math.abs(vec4.y-Map.Land.Position.data[landId].b.y))))
 end
-function ILAPI.GetLandInRange(startpos,endpos,dimid,noAccessCache)
+function ILAPI.GetLandInRange(spos,epos,dimid,noAccessCache)
 
 	noAccessCache = noAccessCache or false
 	if not noAccessCache then
-		local cache_result = Map.CachedQuery.RangeArea.get(startpos,endpos,dimid)
+		local cache_result = Map.CachedQuery.RangeArea.get(spos,epos,dimid)
 		if cache_result~=nil then
 			return cache_result
 		end
 	end
 
-	local edge = Cube.GetEdge(startpos,endpos)
 	local result = {}
-	for i=1,#edge do
-		edge[i].dimid=dimid
-		local landId = ILAPI.PosGetLand(edge[i])
-		if landId~=-1 then
-			result[#result+1] = landId
+	local tmp_lands = {}
+	local function keyMapEx(tab,needKey,unaddIfNon)
+		if tab==nil then
+			return
 		end
-	end
-	for landId,val in pairs(land_data) do
-		if land_data[landId].range.dimid==dimid then
-			edge = Map.Land.Edge.data[landId].D3D
-			for i=1,#edge do
-				if Cube.HadPos(edge[i],startpos,endpos)==true then
-					result[#result+1] = landId
-				end
+		unaddIfNon = unaddIfNon or false
+		for n,v in pairs(tab) do
+			if not unaddIfNon or tmp_lands[v]~=nil then
+				tmp_lands[v] = needKey
 			end
 		end
 	end
+
+	for x = spos.x,epos.x do
+		local am = Map.Land.AXIS.data[dimid]['x'][x]
+		keyMapEx(am,1)
+	end
+	for y = spos.y,epos.y do
+		local am = Map.Land.AXIS.data[dimid]['y'][y]
+		keyMapEx(am,2,true)
+	end
+	for z = spos.z,epos.z do
+		local am = Map.Land.AXIS.data[dimid]['z'][z]
+		keyMapEx(am,3,true)
+	end
 	
-	result = Array.ToNonRepeated(result)
+	-- add land if this meet requirements.
+	for landId,count in pairs(tmp_lands) do
+		if count == 3 then
+			result[#result+1] = landId
+		end
+	end
+	
 	if not noAccessCache then
-		Map.CachedQuery.RangeArea.add(result,startpos,endpos,dimid)
+		Map.CachedQuery.RangeArea.add(result,spos,epos,dimid)
 	end
 	return result
 
@@ -2651,6 +2664,7 @@ function ILAPI.SetRange(landId,newposA,newposB,newDimid)
 
 	Map.Land.Edge.update(landId,'del')
 	Map.Chunk.update(landId,'del')
+	Map.Land.AXIS.update(landId,'del')
 	Map.Land.Position.update(landId,'del')
 	land_data[landId].range.start_position = {posA.x,posA.y,posA.z}
 	land_data[landId].range.end_position = {posB.x,posB.y,posB.z}
@@ -2659,6 +2673,7 @@ function ILAPI.SetRange(landId,newposA,newposB,newDimid)
 	Map.Land.Edge.update(landId,'add')
 	Map.Chunk.update(landId,'add')
 	Map.Land.Position.update(landId,'add')
+	Map.Land.AXIS.update(landId,'add')
 	Map.CachedQuery.RangeArea.refresh(landId)
 	Map.CachedQuery.SinglePos.refresh(landId)
 	Map.CachedQuery.RangeArea.clear_by_land(landId)
@@ -2849,11 +2864,8 @@ Array = {
 		return rtn
 	end,
 	ToNonRepeated = function(array)
-		local tmp = {}
+		local tmp = Array.ToKeyMap(array)
 		local result = {}
-		for i,v in pairs(array) do
-		   tmp[v] = 0
-		end
 		for i,v in pairs(tmp) do
 			result[#result+1] = i
 		end
@@ -2873,6 +2885,12 @@ Array = {
 			end
 		end
 		return -1
+	end,
+	Concat = function(origin,array)
+		for n,k in pairs(array) do
+			origin[#origin+1] = k
+		end
+		return origin
 	end,
 	Reverse = function(tab)
 		local tmp_tab = table.clone(tab)
