@@ -138,9 +138,10 @@ Map = {
 		for landId,data in pairs(land_data) do
 			Map.Land.Edge.update(landId,'add')
 			Map.Land.Position.update(landId,'add')
-			Map.Chunk.update(landId,'add')
 			Map.Land.Trusted.update(landId)
 			Map.Land.Owner.update(landId)
+			Map.Land.AXIS.update(landId,'add')
+			Map.Chunk.update(landId,'add')
 			Map.CachedQuery.Init(landId)
 		end
 		Map.Land.Operator.update()
@@ -155,9 +156,11 @@ Map = {
 			[2] = {}	-- 末地
 		},
 		update = function(landId,mode)
-			local TxTz={} -- ChunkData(position)
-			local thisRange = land_data[landId].range
-			local dimid = thisRange.dimid
+			local TxTz = {} -- ChunkData(position)
+			local ra = Map.Land.Position.data[landId]
+			local spos = ra.a
+			local epos = ra.b
+			local dimid = ra.dimid
 			local function chkNil(table,a,b)
 				if table[a]==nil then
 					table[a] = {}
@@ -168,14 +171,14 @@ Map = {
 			end
 		
 			local size = cfg.features.chunk_side
-			local sX = thisRange.start_position[1]
-			local sZ = thisRange.start_position[3]
+			local sX = spos.x
+			local sZ = spos.z
 			local count = 0
-			while (sX+size*count<=thisRange.end_position[1]+size) do
+			while (sX+size*count<=epos.x+size) do
 				local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count})
 				chkNil(TxTz,Cx,Cz)
 				local count2 = 0
-				while (sZ+size*count2<=thisRange.end_position[3]+size) do
+				while (sZ+size*count2<=epos.z+size) do
 					local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count2})
 					chkNil(TxTz,Cx,Cz)
 					count2 = count2 + 1
@@ -209,8 +212,9 @@ Map = {
 			data = {},
 			update = function(landId,mode)
 				if mode=='add' then
-					local spos = land_data[landId].range.start_position
-					local epos = land_data[landId].range.end_position
+					local ra = land_data[landId].range
+					local spos = ra.start_position
+					local epos = ra.end_position
 					Map.Land.Position.data[landId] = {
 						a = {
 							x = spos[1],
@@ -221,10 +225,60 @@ Map = {
 							x = epos[1],
 							y = epos[2],
 							z = epos[3]
-						}
+						},
+						dimid = ra.dimid
 					}
 				elseif mode=='del' then
 					Map.Land.Position.data[landId] = nil
+				end
+			end
+		},
+		AXIS = {
+			data = {
+				[0] = {['x'] = {},['y'] = {},['z'] = {}},	-- Overworld
+				[1] = {['x'] = {},['y'] = {},['z'] = {}},	-- Nether
+				[2] = {['x'] = {},['y'] = {},['z'] = {}}	-- End
+			},
+			update = function(landId,mode)
+				local ra = Map.Land.Position.data[landId]
+				local spos = ra.a
+				local epos = ra.b
+				local dimid = ra.dimid
+				if mode == 'add' then
+					for x = spos.x,epos.x do
+						local tar = Map.Land.AXIS.data[dimid]['x']
+						if tar[x]==nil then
+							tar[x] = {}
+						end
+						tar[x][#tar[x]+1] = landId
+					end
+					for y = spos.y,epos.y do
+						local tar = Map.Land.AXIS.data[dimid]['y']
+						if tar[y]==nil then
+							tar[y] = {}
+						end
+						tar[y][#tar[y]+1] = landId
+					end
+					for z = spos.z,epos.z do
+						local tar = Map.Land.AXIS.data[dimid]['z']
+						if tar[z]==nil then
+							tar[z] = {}
+						end
+						tar[z][#tar[z]+1] = landId
+					end
+				elseif mode == 'del' then
+					for x = spos.x,epos.x do
+						local tar = Map.Land.AXIS.data[dimid]['x'][x]
+						table.remove(tar,Array.Fetch(tar,landId))
+					end
+					for y = spos.y,epos.y do
+						local tar = Map.Land.AXIS.data[dimid]['y'][y]
+						table.remove(tar,Array.Fetch(tar,landId))
+					end
+					for z = spos.z,epos.z do
+						local tar = Map.Land.AXIS.data[dimid]['z'][z]
+						table.remove(tar,Array.Fetch(tar,landId))
+					end
 				end
 			end
 		},
@@ -2234,11 +2288,12 @@ function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
 
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	ILAPI.save({0,1,1})
-	Map.Chunk.update(landId,'add')
 	Map.Land.Position.update(landId,'add')
+	Map.Chunk.update(landId,'add')
 	Map.Land.Owner.update(landId)
 	Map.Land.Trusted.update(landId)
 	Map.Land.Edge.update(landId,'add')
+	Map.Land.AXIS.update(landId,'add')
 	Map.CachedQuery.Init(landId)
 	Map.CachedQuery.RangeArea.clear_by_land(landId)
 	Map.CachedQuery.SinglePos.check_noland_pos()
@@ -2252,6 +2307,7 @@ function ILAPI.DeleteLand(landId)
 	Map.CachedQuery.RangeArea.refresh(landId)
 	Map.CachedQuery.SinglePos.refresh(landId)
 	Map.CachedQuery.UnInit(landId)
+	Map.Land.AXIS.update(landId,'del')
 	Map.Chunk.update(landId,'del')
 	Map.Land.Position.update(landId,'del')
 	Map.Land.Edge.update(landId,'del')
