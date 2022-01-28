@@ -4115,17 +4115,16 @@ mc.listen('onUseFrameBlock',function(player,block)
 end)
 mc.listen('onSpawnProjectile',function(splasher,entype)
 
-	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') then
+	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') or not splasher:isPlayer() then
 		return
 	end
 
-	if splasher:toPlayer()==nil then return end
-	local landId=ILAPI.PosGetLand(splasher.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = ILAPI.PosGetLand(splasher.blockPos)
+	if landId == -1 then return end -- No Land
 
-	local player=splasher:toPlayer()
-	local xuid=player.xuid
-	local perm=land_data[landId].permissions
+	local player = splasher:toPlayer()
+	local xuid = player.xuid
+	local perm = land_data[landId].permissions
 
 	if entype == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
 	if entype == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
