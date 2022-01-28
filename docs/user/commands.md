@@ -32,7 +32,7 @@
 `language list-online` | *Console* | 列出语言仓库中所有语言
 `language install <LANG>` | *Console* | 从语言仓库安装语言
 `language update [LANG]` | *Console* | 升级语言，若不忽略参数则升级指定语言
-`reload [config|data|owner]` | *Console* | 重载iLand
+`reload` | *Console* | 重载iLand
 `unload` | *Console* | 反加载iLand
 
 ### **⚠ 警告**

@@ -134,6 +134,7 @@ end
 
 Map = {
 	Init = function()
+		INFO('Load','Building tables needed to run...')
 		for landId,data in pairs(land_data) do
 			Map.Land.Edge.update(landId,'add')
 			Map.Land.Position.update(landId,'add')
@@ -3659,9 +3660,13 @@ function RegisterCommands()
 		local list = I18N.LangPack.GetInstalled()
 		if args[1] == nil then
 			INFO(_Tr('console.languages.update.all'))
+			local count = 0
 			for i,lang in pairs(list) do
-				I18N.Update(lang)
+				if I18N.Update(lang) then
+					count = count + 1
+				end
 			end
+			INFO(_Tr('console.languages.update.completed','<a>',count))
 		else
 			INFO(_Tr('console.languages.update.single','<a>',args[1]))
 			I18N.Update(args[1])
@@ -4379,7 +4384,6 @@ mc.listen('onServerStarted',function()
 			-- load : language
 			I18N.Init()
 			-- load : maps
-			INFO('Load','Building tables needed to run...')
 			Map.Init()
 			-- load : cmd
 			RegisterCommands()
