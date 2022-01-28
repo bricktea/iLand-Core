@@ -1758,38 +1758,37 @@ RangeSelector = {
 			if MEM[xuid].rsr.dimension=='2D' then
 				pos.y = maxY
 			end
+	
+			--- Check Land.
+			local checkPassed = false
 			local cubeInfo = Cube.GetInformation(posA,pos)
-	
-			--- Check land square.
-			local isOk = true
-			if cubeInfo.square < cfg.land.bought.square_range[1] and not ILAPI.IsLandOperator(xuid) and isOk then
-				isOk = false
-				SendText(player,_Tr('title.rangeselector.fail.toosmall')) -- here.
-			end
-			if cubeInfo.square > cfg.land.bought.square_range[2] and not ILAPI.IsLandOperator(xuid) and isOk then
-				isOk = false
+			if cubeInfo.square < cfg.land.bought.square_range[1] and not ILAPI.IsLandOperator(xuid) then
+				SendText(player,_Tr('title.rangeselector.fail.toosmall'))
+			elseif cubeInfo.square > cfg.land.bought.square_range[2] and not ILAPI.IsLandOperator(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toobig'))
-			end
-			if cubeInfo.height < 2 and MEM[xuid].rsr.dimension == '3D' and isOk then
-				isOk = false
+			elseif cubeInfo.height < 2 and MEM[xuid].rsr.dimension == '3D' then
 				SendText(player,_Tr('title.rangeselector.fail.toolow'))
-			end
-			
-			--- Check land collision.
-			local collcheck
-			local sp = cfg.land.min_space
-			if MEM[xuid].reselectLand~=nil then -- can collision own if reselecting.
-				collcheck = ILAPI.IsLandCollision(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid,{MEM[xuid].reselectLand.id})
 			else
-				collcheck = ILAPI.IsLandCollision(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid)
-			end
-			if not collcheck.status and isOk then
-				isOk = false
-				SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(collcheck.id),'<b>',Pos.ToString(collcheck.pos)))
+				local checkIgnores = {}
+				if MEM[xuid].reselectLand~=nil then
+					checkIgnores = { MEM[xuid].reselectLand.id }
+				end
+				local checkColl = ILAPI.IsLandCollision(posA,pos,dimid,checkIgnores)
+				if checkColl.status then
+					local sp = cfg.land.min_space
+					local nearbyLands = ILAPI.GetLandInRange(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid)
+					if #nearbyLands ~= 0 then
+						SendText(player,_Tr('title.rangeselector.fail.space','<a>',MakeShortILD(nearbyLands[1])))
+					else
+						checkPassed = true
+					end
+				else
+					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(checkColl.id),'<b>',Pos.ToString(checkColl.pos)))
+				end
 			end
 	
-			--- Check result.
-			if not isOk then
+			--- Check Result.
+			if not checkPassed then
 				MEM[xuid].rsr.step = 1
 				MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 				return
@@ -4360,7 +4359,7 @@ mc.listen('onServerStarted',function()
 	}
 
 	-- Check Update
-	if cfg.plugin.network then
+	if cfg.plugin.network and not DEV_MODE then
 		local server = Server.GetLink()
 		if server ~=  false then
 			network.httpGet(server..'/server_203.json',function(code,result)
