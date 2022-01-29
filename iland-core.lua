@@ -3947,7 +3947,6 @@ mc.listen('onLeft',function(player)
 	local xuid = player.xuid
 
 	if MEM[xuid] == nil then
-		log('nil found.')
 		return
 	end
 
