@@ -3279,14 +3279,6 @@ function ToStrDim(a)
 		return _Tr('talk.dim.other')
 	end
 end
-function ChkNil(...)
-	local list = {...}
-	local count = 0
-	for i,v in ipairs(list) do
-		count = count + 1
-	end
-	return count~=#list
-end
 function EntityGetType(type)
 	if type=='minecraft:player' then
 		return 0
@@ -3771,7 +3763,7 @@ TimerCallbacks = {
 		for xuid,res in pairs(MEM) do
 			local player = mc.getPlayer(xuid)
 	
-			if ChkNil(player) then
+			if player == nil then
 				goto JUMPOUT_LANDSIGN
 			end
 	
@@ -3824,7 +3816,7 @@ TimerCallbacks = {
 		for xuid,res in pairs(MEM) do
 			local player = mc.getPlayer(xuid)
 	
-			if ChkNil(player) then
+			if player == nil then
 				goto JUMPOUT_BUTTOMSIGN
 			end
 	
@@ -3956,22 +3948,23 @@ mc.listen('onPreJoin',function(player)
 end)
 mc.listen('onLeft',function(player)
 
-	if ChkNil(player,MEM[player.xuid]) then
+	local xuid = player.xuid
+
+	if MEM[xuid] == nil then
+		log('nil found.')
 		return
 	end
-
-	local xuid = player.xuid
 
 	--- SafeTp
 	if MEM[xuid].safetp ~= nil then
 		SafeTeleport.Cancel(player)
 	end
-	
+
 	MEM[xuid] = nil
 end)
 mc.listen('onDestroyBlock',function(player,block)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onDestroyBlock') then
+	if ILAPI.IsDisabled('onDestroyBlock') then
 		return
 	end
 
@@ -4001,7 +3994,7 @@ mc.listen('onDestroyBlock',function(player,block)
 end)
 mc.listen('onPlaceBlock',function(player,block)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onPlaceBlock') then
+	if ILAPI.IsDisabled('onPlaceBlock') then
 		return
 	end
 
@@ -4019,7 +4012,7 @@ mc.listen('onPlaceBlock',function(player,block)
 end)
 mc.listen('onUseItemOn',function(player,item,block)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onUseItemOn') then
+	if ILAPI.IsDisabled('onUseItemOn') then
 		return
 	end
 
@@ -4077,7 +4070,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 end)
 mc.listen('onAttackBlock',function(player,block,item)
 
-	if ChkNil(player,block) or ILAPI.IsDisabled('onAttackBlock') then
+	if ILAPI.IsDisabled('onAttackBlock') then
 		return
 	end
 
@@ -4102,7 +4095,7 @@ mc.listen('onAttackBlock',function(player,block,item)
 end)
 mc.listen('onAttackEntity',function(player,entity)
 
-	if ChkNil(player,entity) or ILAPI.IsDisabled('onAttackEntity') then
+	if ILAPI.IsDisabled('onAttackEntity') then
 		return
 	end
 
@@ -4131,7 +4124,7 @@ mc.listen('onAttackEntity',function(player,entity)
 end)
 mc.listen('onChangeArmorStand',function(entity,player,slot)
 
-	if ChkNil(entity,player) or ILAPI.IsDisabled('onChangeArmorStand') then
+	if ILAPI.IsDisabled('onChangeArmorStand') then
 		return
 	end
 
@@ -4149,7 +4142,7 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 end)
 mc.listen('onTakeItem',function(player,entity)
 
-	if ChkNil(player,entity) or ILAPI.IsDisabled('onTakeItem') then
+	if ILAPI.IsDisabled('onTakeItem') then
 		return
 	end
 
@@ -4167,7 +4160,7 @@ mc.listen('onTakeItem',function(player,entity)
 end)
 mc.listen('onDropItem',function(player,item)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onDropItem') then
+	if ILAPI.IsDisabled('onDropItem') then
 		return
 	end
 
@@ -4185,7 +4178,7 @@ mc.listen('onDropItem',function(player,item)
 end)
 mc.listen('onBlockInteracted',function(player,block)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onBlockInteracted') then
+	if ILAPI.IsDisabled('onBlockInteracted') then
 		return
 	end
 
@@ -4222,7 +4215,7 @@ mc.listen('onBlockInteracted',function(player,block)
 end)
 mc.listen('onUseFrameBlock',function(player,block)
 		
-	if ChkNil(player) or ILAPI.IsDisabled('onUseFrameBlock') then
+	if ILAPI.IsDisabled('onUseFrameBlock') then
 		return
 	end
 
@@ -4240,7 +4233,7 @@ mc.listen('onUseFrameBlock',function(player,block)
 end)
 mc.listen('onSpawnProjectile',function(splasher,entype)
 
-	if ChkNil(splasher) or ILAPI.IsDisabled('onSpawnProjectile') or not splasher:isPlayer() then
+	if ILAPI.IsDisabled('onSpawnProjectile') or not splasher:isPlayer() then
 		return
 	end
 
@@ -4269,7 +4262,7 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 end)
 mc.listen('onFireworkShootWithCrossbow',function(player)
 			
-	if ChkNil(player) or ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
+	if ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
 		return
 	end
 
@@ -4287,7 +4280,7 @@ mc.listen('onFireworkShootWithCrossbow',function(player)
 end)
 mc.listen('onStepOnPressurePlate',function(entity,block)
 				
-	if ChkNil(entity) or ILAPI.IsDisabled('onStepOnPressurePlate') then
+	if ILAPI.IsDisabled('onStepOnPressurePlate') then
 		return
 	end
 
@@ -4317,7 +4310,7 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 end)
 mc.listen('onRide',function(rider,entity)
 				
-	if ChkNil(rider,entity) or ILAPI.IsDisabled('onRide') then
+	if ILAPI.IsDisabled('onRide') then
 		return
 	end
 
@@ -4360,7 +4353,7 @@ mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
 end)
 mc.listen('onFarmLandDecay',function(pos,entity)
 	
-	if ChkNil(entity) or ILAPI.IsDisabled('onFarmLandDecay') then
+	if ILAPI.IsDisabled('onFarmLandDecay') then
 		return
 	end
 
@@ -4395,7 +4388,7 @@ mc.listen('onFireSpread',function(pos)
 end)
 mc.listen('onEat',function(player,item)
 
-	if ChkNil(player) or ILAPI.IsDisabled('onEat') then
+	if ILAPI.IsDisabled('onEat') then
 		return
 	end
 
