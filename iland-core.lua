@@ -197,10 +197,7 @@ Map = {
 							table.insert(Map.Chunk.data[dimid][Tx][Tz],#Map.Chunk.data[dimid][Tx][Tz]+1,landId)
 						end
 					elseif mode=='del' then
-						local p = Array.Fetch(Map.Chunk.data[dimid][Tx][Tz],landId)
-						if p~=-1 then
-							table.remove(Map.Chunk.data[dimid][Tx][Tz],p)
-						end
+						Array.Remove(Map.Chunk.data[dimid][Tx][Tz],landId)
 					end
 				end
 			end
@@ -268,16 +265,13 @@ Map = {
 					end
 				elseif mode == 'del' then
 					for x = spos.x,epos.x do
-						local tar = Map.Land.AXIS.data[dimid]['x'][x]
-						table.remove(tar,Array.Fetch(tar,landId))
+						Array.Remove(Map.Land.AXIS.data[dimid]['x'][x],landId)
 					end
 					for y = spos.y,epos.y do
-						local tar = Map.Land.AXIS.data[dimid]['y'][y]
-						table.remove(tar,Array.Fetch(tar,landId))
+						Array.Remove(Map.Land.AXIS.data[dimid]['y'][y],landId)
 					end
 					for z = spos.z,epos.z do
-						local tar = Map.Land.AXIS.data[dimid]['z'][z]
-						table.remove(tar,Array.Fetch(tar,landId))
+						Array.Remove(Map.Land.AXIS.data[dimid]['z'][z],landId)
 					end
 				end
 			end
@@ -446,15 +440,9 @@ Map = {
 				end
 				local landId = record.landId
 				if landId~=-1 then
-					local pos = Array.Fetch(map.land_recorded_pos[landId],strpos)
-					if pos ~= -1 then
-						table.remove(map.land_recorded_pos[landId],pos)
-					end
+					Array.Remove(map.land_recorded_pos[landId],strpos)
 				else
-					local pos = Array.Fetch(map.non_land_pos,strpos)
-					if pos ~= -1 then
-						table.remove(map.non_land_pos,pos)
-					end
+					Array.Remove(map.non_land_pos,strpos)
 				end
 				map.data[strpos] = nil
 			end,
@@ -509,10 +497,7 @@ Map = {
 			clear_range = function(cubestr) -- clear single range's cache.
 				local map = Map.CachedQuery.RangeArea
 				for n,landId in pairs(map.data[cubestr].landlist) do
-					local pos = Array.Fetch(map.recorded_landId[landId],"this."..cubestr..".landlist.(*)"..n)
-					if pos~=-1 then
-						table.remove(map.recorded_landId[landId],pos)
-					end
+					Array.Remove(map.recorded_landId[landId],"this."..cubestr..".landlist.(*)"..n)
 				end
 				map.data[cubestr] = nil
 			end,
@@ -1985,6 +1970,9 @@ RangeSelector = {
 				if checkColl.status then
 					local sp = cfg.land.min_space
 					local nearbyLands = ILAPI.GetLandInRange(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid)
+					if MEM[xuid].reselectLand~=nil then
+						Array.Remove(nearbyLands,MEM[xuid].reselectLand.id)
+					end
 					if #nearbyLands ~= 0 then
 						SendText(player,_Tr('title.rangeselector.fail.space','<a>',MakeShortILD(nearbyLands[1])))
 					else
@@ -2303,7 +2291,7 @@ end
 function ILAPI.DeleteLand(landId)
 	local owner=ILAPI.GetOwner(landId)
 	if owner~='?' then
-		table.remove(land_owners[owner],Array.Fetch(land_owners[owner],landId))
+		Array.Remove(land_owners[owner],landId)
 	end
 	Map.CachedQuery.RangeArea.refresh(landId)
 	Map.CachedQuery.SinglePos.refresh(landId)
@@ -2546,7 +2534,7 @@ function ILAPI.AddTrust(landId,xuid)
 end
 function ILAPI.RemoveTrust(landId,xuid)
 	local shareList = land_data[landId].settings.share
-	table.remove(shareList,Array.Fetch(shareList,xuid))
+	Array.Remove(shareList,xuid)
 	Map.Land.Trusted.update(landId)
 	ILAPI.save({0,1,0})
 	return true
@@ -2554,7 +2542,7 @@ end
 function ILAPI.SetOwner(landId,xuid)
 	local ownerXuid = ILAPI.GetOwner(landId)
 	if ownerXuid ~= '?' then
-		table.remove(land_owners[ownerXuid],Array.Fetch(land_owners[ownerXuid],landId))
+		Array.Remove(land_owners[ownerXuid],landId)
 	end
 	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
 	Map.Land.Owner.update(landId)
@@ -2671,9 +2659,9 @@ function ILAPI.SetRange(landId,newposA,newposB,newDimid)
 	land_data[landId].range.end_position = {posB.x,posB.y,posB.z}
 	land_data[landId].range.dimid = newDimid
 	land_data[landId].settings.tpoint = {posA.x,posA.y+1,posA.z}
+	Map.Land.Position.update(landId,'add')
 	Map.Land.Edge.update(landId,'add')
 	Map.Chunk.update(landId,'add')
-	Map.Land.Position.update(landId,'add')
 	Map.Land.AXIS.update(landId,'add')
 	Map.CachedQuery.RangeArea.refresh(landId)
 	Map.CachedQuery.SinglePos.refresh(landId)
@@ -2892,6 +2880,13 @@ Array = {
 			origin[#origin+1] = k
 		end
 		return origin
+	end,
+	Remove = function(array,value)
+		local pos = Array.Fetch(array,value)
+		if pos~=-1 then
+			table.remove(array,pos)
+		end
+		return array
 	end,
 	Reverse = function(tab)
 		local tmp_tab = table.clone(tab)
@@ -3669,7 +3664,7 @@ function RegisterCommands()
 			ERROR(_Tr('console.landop.del.failbynull','<a>',name))
 			return
 		end
-		table.remove(cfg.land.operator,Array.Fetch(cfg.land.operator,xuid))
+		Array.Remove(cfg.land.operator,xuid)
 		Map.Land.Operator.update()
 		ILAPI.save({1,0,0})
 		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
