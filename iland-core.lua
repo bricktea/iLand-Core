@@ -419,7 +419,7 @@ Map = {
 				local map = Map.CachedQuery.SinglePos
 				map.data[strpos] = {
 					landId = landId,
-					raw = pos,
+					raw = Pos.ToIntPos(pos),
 					querying = true
 				}
 				if landId~=-1 then
@@ -2157,6 +2157,7 @@ SafeTeleport = {
 
 DebugHelper = {
 	IsEnabled = false,
+	Delay = 10,
 	Interval = function()
 		if not DebugHelper.IsEnabled then
 			return
@@ -4446,7 +4447,7 @@ mc.listen('onServerStarted',function()
 	end
 	setInterval(TimerCallbacks.MEM,1000)
 	if DEV_MODE then
-		setInterval(DebugHelper.Interval,1500)
+		setInterval(DebugHelper.Interval,1000*DebugHelper.Delay)
 	end
 
 	-- load owners data
@@ -4526,7 +4527,13 @@ mc.listen('onServerStarted',function()
 		end
 	end
 
-	INFO('Load','Completed, use memory: '..ILAPI.GetMemoryCount()..'MB.')
+	local startup_memory = ILAPI.GetMemoryCount()
+	INFO('Load','Completed, use memory: '..startup_memory..'MB.')
+	setInterval(function()
+		if ILAPI.GetMemoryCount() > startup_memory * 1.2 then
+			collectgarbage("collect")
+		end
+	end,1000*60)
 
 end)
 mc.listen('onBlockExplode',EventCallbacks.onExplode)
