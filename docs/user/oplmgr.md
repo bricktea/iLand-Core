@@ -44,7 +44,7 @@
 
 是否允许平面圈地。
 
-##### 开启二维圈地
+##### 开启三维圈地
 
 ?> config.json: `this.land.bought.three_dimension.enable`
 
