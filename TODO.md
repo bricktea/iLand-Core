@@ -1,6 +1,7 @@
 > Version **2.72**
  - [ ] !!! 修复主表内存问题 !!!
  - [ ] `data.json`数据结构优化
+ - [ ] event system
  - [ ] SubLand
 
 > ILAPI 示例插件计划
