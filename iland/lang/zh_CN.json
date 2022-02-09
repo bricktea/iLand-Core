@@ -241,7 +241,7 @@
     "title.rangeselector.fail.toobig": "所圈领地太大，请重新圈地。\n",
     "title.rangeselector.fail.toosmall": "所圈领地太小，请重新圈地。\n",
     "title.rangeselector.fail.toolow": "所圈领地太低，请重新圈地\n",
-    "title.rangeselector.fail.collision": "圈地范围与 <a> (坐标: <b>) 存在冲突，请重新圈地。\n",
+    "title.rangeselector.fail.collision": "圈地范围与 <a> 存在冲突，请重新圈地。\n",
     "title.rangeselector.fail.space": "圈地范围与 <a> 距离太近，请重新圈地。\n",
     "title.rangeselector.largeparticle": "领地范围较大，为避免卡顿已关闭粒子特效",
     "title.rangeselector.pointed": "点 <a> 已选定：<b> (<c>, <d>, <e>)",

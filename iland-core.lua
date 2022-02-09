@@ -1979,7 +1979,7 @@ RangeSelector = {
 						checkPassed = true
 					end
 				else
-					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(checkColl.id),'<b>',Pos.ToString(checkColl.pos)))
+					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(checkColl.id)))
 				end
 			end
 	
@@ -2364,6 +2364,7 @@ end
 function ILAPI.GetLandInRange(spos,epos,dimid,noAccessCache)
 
 	noAccessCache = noAccessCache or false
+	spos,epos = Pos.Sort(spos,epos)
 	if not noAccessCache then
 		local cache_result = Map.CachedQuery.RangeArea.get(spos,epos,dimid)
 		if cache_result~=nil then
@@ -2371,40 +2372,44 @@ function ILAPI.GetLandInRange(spos,epos,dimid,noAccessCache)
 		end
 	end
 
-	local result = {}
-	local tmp_lands = {}
-	local function keyMapEx(tab,needKey,unaddIfNon)
-		if tab==nil then
+	local temp = { [1] = {}, [2] = {}, [3] = {} }
+	local function concat(a,list)
+		if list==nil then
 			return
 		end
-		unaddIfNon = unaddIfNon or false
-		for n,v in pairs(tab) do
-			if not unaddIfNon or tmp_lands[v]~=nil then
-				tmp_lands[v] = needKey
+		for n,value in pairs(list) do
+			temp[a][value] = 0
+		end
+	end
+	local function shortest(...) -- no problem here.
+		local tar = {...}
+		local result = tar[1]
+		for i=2,#tar do
+			if #tar[i] < #result then
+				result = tar[i]
+				break
 			end
 		end
+		return result
 	end
 
 	for x = spos.x,epos.x do
-		local am = Map.Land.AXIS.data[dimid]['x'][x]
-		keyMapEx(am,1)
+		concat(1,Map.Land.AXIS.data[dimid]['x'][x])
 	end
 	for y = spos.y,epos.y do
-		local am = Map.Land.AXIS.data[dimid]['y'][y]
-		keyMapEx(am,2,true)
+		concat(2,Map.Land.AXIS.data[dimid]['y'][y])
 	end
 	for z = spos.z,epos.z do
-		local am = Map.Land.AXIS.data[dimid]['z'][z]
-		keyMapEx(am,3,true)
+		concat(3,Map.Land.AXIS.data[dimid]['z'][z])
 	end
 	
-	-- add land if this meet requirements.
-	for landId,count in pairs(tmp_lands) do
-		if count == 3 then
+	local result = {}
+	for landId,zero in pairs(shortest(temp[1],temp[2],temp[3])) do
+		if temp[1][landId]==0 and temp[2][landId]==0 and temp[3][landId]==0 then
 			result[#result+1] = landId
 		end
 	end
-	
+
 	if not noAccessCache then
 		Map.CachedQuery.RangeArea.add(result,spos,epos,dimid)
 	end
@@ -2604,35 +2609,15 @@ function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
 	end
 	return n
 end
-function ILAPI.IsLandCollision(newposA,newposB,newDimid,ignoreList) -- 领地冲突判断
+function ILAPI.IsLandCollision(posA,posB,dimid,ignoreList)
 	ignoreList = ignoreList or {}
 	local ignores = Array.ToKeyMap(ignoreList)
-	local edge = Cube.GetEdge(newposA,newposB)
-	for i=1,#edge do
-		edge[i].dimid=newDimid
-		local tryLand = ILAPI.PosGetLand(edge[i])
-		if tryLand~=-1 and ignores[tryLand]==nil then
-			return {
-				status = false,
-				pos = edge[i],
-				id = tryLand
-			}
-		end
-	end
-	for landId,val in pairs(land_data) do --反向再判一次，防止直接大领地包小领地
-		if land_data[landId].range.dimid==newDimid then
-			edge = Map.Land.Edge.data[landId].D3D
-			if ignores[landId]==nil then
-				for i=1,#edge do
-					if Cube.HadPos(edge[i],newposA,newposB)==true then
-						return {
-							status = false,
-							pos = edge[i],
-							id = landId
-						}
-					end
-				end
-			end
+	posA,posB = Pos.Sort(posA,posB)
+	local lands = ILAPI.GetLandInRange(posA,posB,dimid)
+	for i,landId in pairs(lands) do
+		if ignores[landId]==nil then
+			local p = Map.Land.Position.data[landId]
+			return { status = false, id = landId }
 		end
 	end
 	return { status = true }

@@ -2,7 +2,12 @@
  - [ ] !!! 修复主表内存问题 !!!
  - [ ] `data.json`数据结构优化
  - [ ] event system
+ - [ ] particle box offset.
+ - [ ] OPLMgr>>Land sth, problem.
+ - [ ] deep y selectland problems.
+ - [ ] 跨维度安全传送问题
  - [ ] SubLand
+ - [ ] 默认关闭onDrop
 
 > ILAPI 示例插件计划
  - [ ] Land Edge Shower
