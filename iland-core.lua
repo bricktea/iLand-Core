@@ -9,7 +9,7 @@
 	  Author   RedbeanW
 	  Github   https://github.com/LiteLDev-LXL/iLand-Core
 	  License  GPLv3 未经许可禁止商业使用
-	  
+
 --]] ------------------------------------------------------
 
 Plugin = {
@@ -27,7 +27,7 @@ Server = {
 
 JSON = require('dkjson')
 
-ILAPI = {}; MEM = {}
+MEM = {}
 MainCmd = 'land'
 DATA_PATH = 'plugins/iland/'
 local land_data; local land_owners = {}; local wrong_landowners = {}
@@ -99,7 +99,7 @@ local cfg = {
 DEV_MODE = false
 if File.exists("EnableILandDevMode") then
 	DEV_MODE = true
-	DATA_PATH = 'plugins/LXL_Plugins/iLand/iland/'
+	DATA_PATH = 'Project/iLand/iland/'
 end
 
 local minY <const> = -64
@@ -136,7 +136,6 @@ Map = {
 	Init = function()
 		INFO('Load','Building tables needed to run...')
 		for landId,data in pairs(land_data) do
-			Map.Land.Edge.update(landId,'add')
 			Map.Land.Position.update(landId,'add')
 			Map.Land.Trusted.update(landId)
 			Map.Land.Owner.update(landId)
@@ -158,8 +157,7 @@ Map = {
 		update = function(landId,mode)
 			local TxTz = {} -- ChunkData(position)
 			local ra = Map.Land.Position.data[landId]
-			local spos = ra.a
-			local epos = ra.b
+			local posA,posB = ra.posA,ra.posB
 			local dimid = ra.dimid
 			local function chkNil(table,a,b)
 				if table[a]==nil then
@@ -169,25 +167,25 @@ Map = {
 					table[a][b] = {}
 				end
 			end
-		
+
 			local size = cfg.features.chunk_side
-			local sX = spos.x
-			local sZ = spos.z
+			local sX = posA.x
+			local sZ = posA.z
 			local count = 0
-			while (sX+size*count<=epos.x+size) do
+			while (sX+size*count<=posB.x+size) do
 				local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count})
 				chkNil(TxTz,Cx,Cz)
 				local count2 = 0
-				while (sZ+size*count2<=epos.z+size) do
+				while (sZ+size*count2<=posB.z+size) do
 					local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count2})
 					chkNil(TxTz,Cx,Cz)
 					count2 = count2 + 1
 				end
 				count = count + 1
 			end
-		
+
 			-- [CODE] Add or Del some chunks.
-		
+
 			for Tx,a in pairs(TxTz) do
 				for Tz,b in pairs(a) do
 					-- Tx Tz
@@ -201,7 +199,7 @@ Map = {
 					end
 				end
 			end
-		
+
 		end
 	},
 	Land = {
@@ -210,21 +208,9 @@ Map = {
 			update = function(landId,mode)
 				if mode=='add' then
 					local ra = land_data[landId].range
-					local spos = ra.start_position
-					local epos = ra.end_position
-					Map.Land.Position.data[landId] = {
-						a = {
-							x = spos[1],
-							y = spos[2],
-							z = spos[3]
-						},
-						b = {
-							x = epos[1],
-							y = epos[2],
-							z = epos[3]
-						},
-						dimid = ra.dimid
-					}
+					local posA = ra.start_position
+					local posB = ra.end_position
+					Map.Land.Position.data[landId] = Cube.Create(posA,posB,ra.dimid)
 				elseif mode=='del' then
 					Map.Land.Position.data[landId] = nil
 				end
@@ -238,25 +224,23 @@ Map = {
 			},
 			update = function(landId,mode)
 				local ra = Map.Land.Position.data[landId]
-				local spos = ra.a
-				local epos = ra.b
-				local dimid = ra.dimid
+				local posA,posB,dimid = ra.posA,ra.posB,ra.dimid
 				if mode == 'add' then
-					for x = spos.x,epos.x do
+					for x = posA.x,posB.x do
 						local tar = Map.Land.AXIS.data[dimid]['x']
 						if tar[x]==nil then
 							tar[x] = {}
 						end
 						tar[x][#tar[x]+1] = landId
 					end
-					for y = spos.y,epos.y do
+					for y = posA.y,posB.y do
 						local tar = Map.Land.AXIS.data[dimid]['y']
 						if tar[y]==nil then
 							tar[y] = {}
 						end
 						tar[y][#tar[y]+1] = landId
 					end
-					for z = spos.z,epos.z do
+					for z = posA.z,posB.z do
 						local tar = Map.Land.AXIS.data[dimid]['z']
 						if tar[z]==nil then
 							tar[z] = {}
@@ -264,30 +248,15 @@ Map = {
 						tar[z][#tar[z]+1] = landId
 					end
 				elseif mode == 'del' then
-					for x = spos.x,epos.x do
+					for x = posA.x,posB.x do
 						Array.Remove(Map.Land.AXIS.data[dimid]['x'][x],landId)
 					end
-					for y = spos.y,epos.y do
+					for y = posA.y,posB.y do
 						Array.Remove(Map.Land.AXIS.data[dimid]['y'][y],landId)
 					end
-					for z = spos.z,epos.z do
+					for z = posA.z,posB.z do
 						Array.Remove(Map.Land.AXIS.data[dimid]['z'][z],landId)
 					end
-				end
-			end
-		},
-		Edge = {
-			data = {},
-			update = function (landId,mode)
-				if mode=='del' then
-					Map.Land.Edge.data[landId]=nil
-					return
-				elseif mode=='add' then
-					Map.Land.Edge.data[landId]={}
-					local spos = Array.ToIntPos(land_data[landId].range.start_position)
-					local epos = Array.ToIntPos(land_data[landId].range.end_position)
-					Map.Land.Edge.data[landId].D2D = Cube.GetEdge_2D(spos,epos)
-					Map.Land.Edge.data[landId].D3D = Cube.GetEdge(spos,epos)
 				end
 			end
 		},
@@ -300,7 +269,7 @@ Map = {
 		Owner = {
 			data = {},
 			update = function(landId)
-				Map.Land.Owner.data[landId] = ILAPI.GetOwner(landId)
+				Map.Land.Owner.data[landId] = Land.RelationShip.Owner.getXuid(landId)
 			end
 		},
 		Operator = {
@@ -314,6 +283,9 @@ Map = {
 		data = {},
 		build = function()
 			Map.Listener.data = Array.ToKeyMap(cfg.features.disabled_listener)
+		end,
+		check = function(listener)
+			return Map.Listener.data[listener] ~= nil
 		end
 	},
 	Control = {
@@ -391,6 +363,9 @@ Map = {
 					'minecraft:dragon_egg'
 				})
 			}
+		end,
+		check = function(mode,name)
+			return Map.Control.data[mode][name] ~= nil
 		end
 	},
 	CachedQuery = {
@@ -416,7 +391,7 @@ Map = {
 					raw = Pos.ToIntPos(pos),
 					querying = true
 				}
-				if landId~=-1 then
+				if landId~=nil then
 					map.land_recorded_pos[landId][#map.land_recorded_pos[landId]+1] = strpos
 				else
 					map.non_land_pos[#map.non_land_pos+1] = strpos
@@ -449,7 +424,7 @@ Map = {
 			check_noland_pos = function() -- when new land created, clear old non-land cached pos.
 				local map = Map.CachedQuery.SinglePos
 				for n,strpos in pairs(map.non_land_pos) do
-					if ILAPI.PosGetLand(map.data[strpos].raw,true)~=-1 then
+					if not Land.Query.Pos(map.data[strpos].raw,true) then
 						map.clear(strpos)
 					end
 				end
@@ -468,15 +443,11 @@ Map = {
 		RangeArea = {
 			data = {},
 			recorded_landId = {},
-			add = function(lands,spos,epos,dimid)
+			add = function(lands,AABB)
 				local map = Map.CachedQuery.RangeArea
-				local cubestr = Cube.ToString(spos,epos,dimid)
+				local cubestr = Cube.ToString(AABB)
 				map.data[cubestr] = {
-					raw = {
-						startpos = spos,
-						endpos = epos,
-						dimid = dimid
-					},
+					raw = AABB,
 					landlist = lands,
 					querying = true
 				}
@@ -484,9 +455,9 @@ Map = {
 					map.recorded_landId[landId][#map.recorded_landId[landId]+1] = "this."..cubestr..".landlist.(*)"..n
 				end
 			end,
-			get = function(spos,epos,dimid)
+			get = function(AABB)
 				local map = Map.CachedQuery.RangeArea
-				local cubestr = Cube.ToString(spos,epos,dimid)
+				local cubestr = Cube.ToString(AABB)
 				local record = map.data[cubestr]
 				if record ~= nil then
 					record.querying = true
@@ -504,8 +475,7 @@ Map = {
 			clear_by_land = function(landId) -- clear cached "range" if "range" in this range.
 				local map = Map.CachedQuery.RangeArea
 				for cubestr,rangeInfo in pairs(map.data) do
-					local r = rangeInfo.raw
-					if Array.Fetch(ILAPI.GetLandInRange(r.startpos,r.endpos,r.dimid,true),landId)~=-1 then
+					if Array.Fetch(Land.Query.Area(rangeInfo.raw,true),landId)~=-1 then
 						map.clear_range(cubestr)
 					end
 				end
@@ -566,7 +536,7 @@ ConfigReader = {
 					return false
 				end
 			end
-			
+
 			-- ## Read config
 			local item
 			for n,path in pairs(table.getAllPaths(cfg,false)) do
@@ -580,7 +550,7 @@ ConfigReader = {
 					end
 				end
 			end
-	
+
 			-- ## Correct if sth wrong
 
 			if cfg.land.bought.square_range[1]>cfg.land.bought.square_range[2] then
@@ -593,11 +563,11 @@ ConfigReader = {
 				cfg.economic.protocol = 'scoreboard'
 				UpdateMe.needed = true
 			end
-	
+
 			-- ## Save if need update
 
 			if UpdateMe.needed and not DEV_MODE then
-				ILAPI.save({1,0,0})
+				DataStorage.Save({1,0,0})
 			end
 
 		end
@@ -610,7 +580,7 @@ ConfigReader = {
 			if UpdateMe.needed then
 				ConfigReader.Updater.land(UpdateMe.version)
 				if not DEV_MODE then
-					ILAPI.save({0,1,0})
+					DataStorage.Save({0,1,0})
 				end
 			end
 		end
@@ -806,7 +776,7 @@ I18N = {
 			local stat = I18N.Load(lang)
 			if stat==0 then
 				cfg.plugin.language = lang
-				ILAPI.save({1,0,0})
+				DataStorage.Save({1,0,0})
 			end
 			return stat
 		end,
@@ -860,6 +830,464 @@ I18N = {
 				WARN(_Tr('console.getonline.failed'))
 				return false
 			end
+		end
+	}
+}
+
+-- ProtectedArea = {}
+-- Dimension = {}
+
+DataStorage = {
+
+	-- { Cfg, LandData, RelationShips }
+	Save = function(action)
+		action = action or {1,1,1}
+
+	end
+
+}
+
+Land = {
+
+	Storage = {
+
+		Create = function(xuid,AABB)
+
+			--- Check land.
+			if not Land.Helper.IsCollision(AABB).status then
+				return -1
+			end
+
+			--- Land storage.
+			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
+			local landId = Land.IDManager.Create()
+			local tpl = Land.DataTemplate.Create()
+			tpl.settings.teleport = Pos.ToArray(posA)
+			tpl.range.start_position = Pos.ToArray(posA)
+			tpl.range.end_position = Pos.ToArray(posB)
+			tpl.range.dimid = dimid
+			land_data[landId] = tpl
+
+			--- Add owner relationship.
+			Land.RelationShip.Owner.set(landId,xuid)
+
+			--- Update runtime maps.
+			Map.Land.Position.update(landId,'add')
+			Map.Chunk.update(landId,'add')
+			Map.Land.Owner.update(landId)
+			Map.Land.Trusted.update(landId)
+			Map.Land.AXIS.update(landId,'add')
+			Map.CachedQuery.Init(landId)
+			Map.CachedQuery.RangeArea.clear_by_land(landId)
+			Map.CachedQuery.SinglePos.check_noland_pos()
+
+			DataStorage.Save({0,1,1})
+			return landId
+
+		end,
+		Delete = function(landId)
+			Land.RelationShip.Owner.destroy(landId)
+			Map.CachedQuery.RangeArea.refresh(landId)
+			Map.CachedQuery.SinglePos.refresh(landId)
+			Map.CachedQuery.UnInit(landId)
+			Map.Land.AXIS.update(landId,'del')
+			Map.Chunk.update(landId,'del')
+			Map.Land.Position.update(landId,'del')
+			land_data[landId] = nil
+			DataStorage.Save({0,1,1})
+			return true
+		end,
+		DumpAllIds = function()
+			local rtn = {}
+			for landId,res in pairs(land_data) do
+				rtn[#rtn+1] = landId
+			end
+			return rtn
+		end
+
+	},
+
+	Options = {
+
+		Permission = {
+			get = function(landId,item)
+				return land_data[landId].permissions[item]
+			end,
+			set = function(landId,item,value)
+				land_data[landId].permissions[item] = value
+				DataStorage.Save({0,1,0})
+				return true
+			end
+		},
+
+		Setting = {
+			get = function(landId,item)
+				return land_data[landId].settings[item]
+			end,
+			set = function(landId,item,value)
+				land_data[landId].settings[item] = value
+				DataStorage.Save({0,1,0})
+				return true
+			end
+		},
+
+		Teleport = {
+			get = function(landId)
+				local pos = table.clone(land_data[landId].settings.teleport)
+				pos[4] = land_data[landId].range.dimid
+				return Array.ToIntPos(pos)
+			end,
+			set = function(landId,pos)
+				land_data[landId].settings.teleport = {
+					pos[1],pos[2],pos[3]
+				}
+				DataStorage.Save({0,1,0})
+			end
+		},
+
+		Nickname = {
+			isDefault = function(landId)
+				return land_data[landId].settings.nickname == Land.DataTemplate.raw.settings.nickname
+			end,
+			get = function(landId)
+				if Land.Options.Nickname.isDefault(landId) then
+					return nil
+				end
+				return land_data[landId].settings.nickname
+			end
+		}
+
+	},
+
+	Query = {
+
+		Pos = function(pos,noAccessCache)
+			noAccessCache = noAccessCache or false
+			if not noAccessCache then
+				local cache_result = Map.CachedQuery.SinglePos.get(pos)
+				if cache_result ~= nil then
+					return cache_result
+				end
+			end
+
+			local Cx,Cz = Pos.ToChunkPos(pos)
+			local dimid = pos.dimid
+			if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
+				for n,landId in pairs(Map.Chunk.data[dimid][Cx][Cz]) do
+					if dimid==land_data[landId].range.dimid and Cube.HadPos(pos,Cube.Create(Map.Land.Position.data[landId].posA,Map.Land.Position.data[landId].posB)) then
+						if not noAccessCache then
+							Map.CachedQuery.SinglePos.add(landId,pos)
+						end
+						return landId
+					end
+				end
+			end
+
+			if not noAccessCache then
+				Map.CachedQuery.SinglePos.add(nil,pos)
+			end
+			return nil
+		end,
+		Area = function(AABB,noAccessCache)
+			noAccessCache = noAccessCache or false
+			if not noAccessCache then
+				local cache_result = Map.CachedQuery.RangeArea.get(AABB)
+				if cache_result~=nil then
+					return cache_result
+				end
+			end
+
+			local temp = { [1] = {}, [2] = {}, [3] = {} }
+			local function concat(a,list)
+				if list==nil then
+					return
+				end
+				for n,value in pairs(list) do
+					temp[a][value] = 0
+				end
+			end
+			local function shortest(...)
+				local tar = {...}
+				local result = tar[1]
+				for i=2,#tar do
+					if #tar[i] < #result then
+						result = tar[i]
+						break
+					end
+				end
+				return result
+			end
+
+			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
+			for x = posA.x,posB.x do
+				concat(1,Map.Land.AXIS.data[dimid]['x'][x])
+			end
+			for y = posA.y,posB.y do
+				concat(2,Map.Land.AXIS.data[dimid]['y'][y])
+			end
+			for z = posA.z,posB.z do
+				concat(3,Map.Land.AXIS.data[dimid]['z'][z])
+			end
+
+			local result = {}
+			for landId,zero in pairs(shortest(temp[1],temp[2],temp[3])) do
+				if temp[1][landId]==0 and temp[2][landId]==0 and temp[3][landId]==0 then
+					result[#result+1] = landId
+				end
+			end
+
+			if not noAccessCache then
+				Map.CachedQuery.RangeArea.add(result,AABB)
+			end
+			return result
+		end
+
+	},
+
+	Util = {
+
+		CheckPerm = function(landId,xuid)
+			return Land.RelationShip.Operator.check(xuid) or
+				Land.RelationShip.Owner.check(landId,xuid) or
+				Land.RelationShip.Trusted.check(landId,xuid)
+		end,
+		GetDimension = function(landId)
+			if land_data[landId].range.start_position[2]==minY and land_data[landId].range.end_position[2]==maxY then
+				return '2D'
+			else
+				return '3D'
+			end
+		end
+
+	},
+
+	Range = {
+
+		Get = function(landId)
+			return Map.Land.Position.data[landId]
+		end,
+		Reset = function(landId,AABB)
+			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
+			if not Land.Helper.IsCollision(AABB,{landId}).status then
+				return false
+			end
+			Map.Chunk.update(landId,'del')
+			Map.Land.AXIS.update(landId,'del')
+			Map.Land.Position.update(landId,'del')
+			land_data[landId].range.start_position = Pos.ToArray(posA)
+			land_data[landId].range.end_position = Pos.ToArray(posB)
+			land_data[landId].range.dimid = dimid
+			land_data[landId].settings.teleport = Pos.ToArray(posA)
+			Map.Land.Position.update(landId,'add')
+			Map.Chunk.update(landId,'add')
+			Map.Land.AXIS.update(landId,'add')
+			Map.CachedQuery.RangeArea.refresh(landId)
+			Map.CachedQuery.SinglePos.refresh(landId)
+			Map.CachedQuery.RangeArea.clear_by_land(landId)
+			Map.CachedQuery.SinglePos.check_noland_pos()
+			DataStorage.Save({0,1,0})
+			return true
+		end
+
+	},
+
+	Helper = {
+
+		IsCollision = function(AABB,ignoreList)
+			ignoreList = ignoreList or {}
+			local ignores = Array.ToKeyMap(ignoreList)
+			local lands = Land.Query.Area(AABB)
+			for i,landId in pairs(lands) do
+				if ignores[landId]==nil then
+					return { status = false, id = landId }
+				end
+			end
+			return { status = true }
+		end,
+		Teleport = function(player,landId)
+			SafeTeleport.Do(player,Land.Options.Teleport.get(landId))
+			return true
+		end
+
+	},
+
+	IDManager = {
+
+		IsVaild = function(landId)
+			return land_data[landId]~=nil
+		end,
+		Create = function()
+			local landId
+			while true do
+				landId = string.upper(string.sub(system.randomGuid(),1,12))
+				if not Land.IDManager.IsVaild(landId) then break end
+			end
+			return landId
+		end
+
+	},
+
+	RelationShip = {
+
+		Operator = {
+			check = function(xuid)
+				return Map.Land.Operator.data[xuid] ~= nil
+			end
+		},
+		Owner = {
+			getXuid = function(landId)
+				for xuid,v in pairs(land_owners) do
+					if Array.Fetch(v,landId)~=-1 then
+						return xuid
+					end
+				end
+				return nil
+			end,
+			getLand = function(xuid)
+				return land_owners[xuid]
+			end,
+			set = function(landId,xuid)
+				Land.RelationShip.Owner.destroy(landId)
+				land_owners[xuid][#land_owners[xuid]+1] = landId
+				Map.Land.Owner.update(landId)
+				DataStorage.Save({0,0,1})
+				return true
+			end,
+			destroy = function(landId) -- it makes a non-owner land.
+				local owner = Land.RelationShip.Owner.getXuid(landId)
+				if not owner then
+					return false
+				end
+				Array.Remove(land_owners[owner],landId)
+				DataStorage.Save({0,0,1})
+				return true
+			end,
+			check = function(landId,xuid)
+				return Map.Land.Owner.data[landId] == xuid
+			end
+		},
+		Trusted = {
+			getXuid = function(landId)
+				return land_data[landId].settings.share
+			end,
+			getLand = function(xuid)
+				local rtn = {}
+				for landId,res in pairs(land_data) do
+					if Land.RelationShip.Trusted.check(landId,xuid) then
+						rtn[#rtn+1] = landId
+					end
+				end
+				return rtn
+			end,
+			add = function(landId,xuid)
+				local share = land_data[landId].settings.share
+				if Land.RelationShip.Trusted.check(landId,xuid) then
+					return false
+				end
+				share[#share+1] = xuid
+				Map.Land.Trusted.update(landId)
+				DataStorage.Save({0,1,0})
+				return true
+			end,
+			remove = function(landId,xuid)
+				local share = land_data[landId].settings.share
+				Array.Remove(share,xuid)
+				Map.Land.Trusted.update(landId)
+				DataStorage.Save({0,1,0})
+				return true
+			end,
+			check = function(landId,xuid)
+				return Map.Land.Trusted.data[landId][xuid] ~= nil
+			end
+		},
+	},
+
+	DataTemplate = {
+		raw = {
+			settings = {
+				share = {},
+				teleport = {},
+				nickname = '',
+				describe = '',
+				signtome = true,
+				signtother = true,
+				signbuttom = true,
+				ev_explode = false,
+				ev_farmland_decay = false,
+				ev_piston_push = false,
+				ev_fire_spread = false,
+				ev_redstone_update = false
+			},
+			range = {
+				start_position = {},
+				end_position = {},
+				dimid = -1
+			},
+			permissions = {
+				allow_destroy = false,
+				allow_entity_destroy = false,
+				allow_place = false,
+				allow_attack_player = false,
+				allow_attack_animal = false,
+				allow_attack_mobs = true,
+				allow_open_chest = false,
+				allow_pickupitem = false,
+				allow_dropitem = true,
+				use_anvil = false,
+				use_barrel = false,
+				use_beacon = false,
+				use_bed = false,
+				use_bell = false,
+				use_blast_furnace = false,
+				use_brewing_stand = false,
+				use_campfire = false,
+				use_firegen = false,
+				use_cartography_table = false,
+				use_composter = false,
+				use_crafting_table = false,
+				use_daylight_detector = false,
+				use_dispenser = false,
+				use_dropper = false,
+				use_enchanting_table = false,
+				use_door = false,
+				use_fence_gate = false,
+				use_furnace = false,
+				use_grindstone = false,
+				use_hopper = false,
+				use_jukebox = false,
+				use_loom = false,
+				use_stonecutter = false,
+				use_noteblock = false,
+				use_shulker_box = false,
+				use_smithing_table = false,
+				use_smoker = false,
+				use_trapdoor = false,
+				use_lectern = false,
+				use_cauldron = false,
+				use_lever = false,
+				use_button = false,
+				use_respawn_anchor = false,
+				use_item_frame = false,
+				use_fishing_hook = false,
+				use_bucket = false,
+				use_pressure_plate = false,
+				use_armor_stand = false,
+				eat = false,
+				allow_throw_potion = false,
+				allow_ride_entity = false,
+				allow_ride_trans = false,
+				allow_shoot = false,
+				useitem = false
+			}
+		},
+		Create = function()
+			return table.clone(Land.DataTemplate.raw)
+		end,
+		Fill = function(data)
+			return {}
+		end,
+		Dump = function(data)
+			return {}
 		end
 	}
 }
@@ -974,7 +1402,7 @@ ConfigUIEditor = {
 					end
 				end
 			end
-			ILAPI.save({1,0,0})
+			DataStorage.Save({1,0,0})
 			I18N.Load(cfg.plugin.language)
 			player:sendModalForm(
 				_Tr('gui.general.complete'),
@@ -989,22 +1417,23 @@ ConfigUIEditor = {
 
 OpenGUI = {
 	FastLMgr = function(player,isOP)
-		local xuid=player.xuid
-		local thelands=ILAPI.GetPlayerLands(xuid)
-		if #thelands==0 and isOP==nil then
+		local xuid = player.xuid
+		local lands = Land.RelationShip.Owner.getLand(xuid)
+		if #lands==0 and isOP==nil then
 			SendText(player,_Tr('title.landmgr.failed'));return
 		end
-	
+
 		local landId = MEM[xuid].landId
 		if land_data[landId]==nil then
 			OpenGUI.LMgr(player)
 			return
 		end
-	
+
 		local Form = mc.newSimpleForm()
+		local name = Land.Options.Nickname.get(landId) or landId
 		Form:setTitle(_Tr('gui.fastlmgr.title'))
 		if isOP==nil then
-			Form:setContent(_Tr('gui.fastlmgr.content','<a>',ILAPI.GetNickname(landId,true)))
+			Form:setContent(_Tr('gui.fastlmgr.content','<a>',name))
 		else
 			Form:setContent(_Tr('gui.fastlmgr.operator'))
 		end
@@ -1048,8 +1477,8 @@ OpenGUI = {
 	LMgr = function(player,targetXuid)
 		local xuid = player.xuid
 		local ownerXuid = targetXuid or xuid
-	
-		local landlst = ILAPI.GetPlayerLands(ownerXuid)
+
+		local landlst = Land.RelationShip.Owner.getLand(ownerXuid)
 		if #landlst==0 then
 			SendText(player,_Tr('title.landmgr.failed'))
 			return
@@ -1058,7 +1487,8 @@ OpenGUI = {
 		Form:setTitle(_Tr('gui.landmgr.title'))
 		Form:setContent(_Tr('gui.landmgr.select'))
 		for n,landId in pairs(landlst) do
-			Form:addButton(ILAPI.GetNickname(landId,true),'textures/ui/worldsIcon')
+			local name = Land.Options.Nickname.get(landId) or landId
+			Form:addButton(name,'textures/ui/worldsIcon')
 		end
 		MEM[xuid].enableBackButton = 0
 		player:sendForm(Form,function(pl,id) -- callback
@@ -1091,10 +1521,10 @@ OpenGUI = {
 					Form,
 					function(player,mode)
 						if mode==nil then return end
-					
+
 						local xuid = player.xuid
 						if mode==0 then -- 按玩家
-							PlayerSelector.Create(player,function(pl,selected) 
+							PlayerSelector.Create(player,function(pl,selected)
 								if #selected>1 then
 									SendText(pl,_Tr('talk.tomany'))
 									return
@@ -1107,13 +1537,16 @@ OpenGUI = {
 							local Form = mc.newSimpleForm()
 							Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
 							Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
-							local landlst = ILAPI.GetAllLands()
-							for num,landId in pairs(landlst) do
-								local ownerId = ILAPI.GetOwner(landId)
-								if ownerId~='?' then ownerId=data.xuid2name(ownerId) end
+							local Ids = Land.Storage.DumpAllIds()
+							for num,landId in pairs(Ids) do
+								local ownerId = Land.RelationShip.Owner.getXuid(landId)
+								if ownerId ~= nil then
+									ownerId = data.xuid2name(ownerId)
+								end
+								local name = Land.Options.Nickname.get(landId) or landId
 								Form:addButton(
 									_Tr('gui.oplandmgr.landmgr.button',
-										'<a>',ILAPI.GetNickname(landId,true),
+										'<a>',name,
 										'<b>',ownerId
 									),
 									'textures/ui/worldsIcon'
@@ -1121,13 +1554,13 @@ OpenGUI = {
 							end
 							player:sendForm(Form,function(pl,id) -- callback
 								if id==nil then return end
-								local landId = landlst[id+1]
-								ILAPI.Teleport(pl,landId)
+								local landId = Ids[id+1]
+								Land.Helper.Teleport(pl,landId)
 							end)
 						end
 						if mode==2 then -- 脚下
-							local landId = ILAPI.PosGetLand(player.blockPos)
-							if landId==-1 then
+							local landId = Land.Query.Pos(player.blockPos)
+							if not landId then
 								SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
 								return
 							end
@@ -1137,7 +1570,7 @@ OpenGUI = {
 						if mode==3 then -- 返回
 							FormCallbacks.BackTo.LandOPMgr(player,true)
 						end
-					
+
 					end
 				)
 				return
@@ -1205,35 +1638,35 @@ OpenGUI = {
 				local Form = mc.newCustomForm()
 				Form:setTitle(_Tr('gui.listenmgr.title'))
 				Form:addLabel(_Tr('gui.listenmgr.tip'))
-				Form:addSwitch('onDestroyBlock',not(ILAPI.IsDisabled('onDestroyBlock')))
-				Form:addSwitch('onPlaceBlock',not(ILAPI.IsDisabled('onPlaceBlock')))
-				Form:addSwitch('onUseItemOn',not(ILAPI.IsDisabled('onUseItemOn')))
-				Form:addSwitch('onAttackEntity',not(ILAPI.IsDisabled('onAttackEntity')))
-				Form:addSwitch('onAttackBlock',not(ILAPI.IsDisabled('onAttackBlock')))
-				Form:addSwitch('onExplode',not(ILAPI.IsDisabled('onExplode')))
-				Form:addSwitch('onBedExplode',not(ILAPI.IsDisabled('onBedExplode')))
-				Form:addSwitch('onRespawnAnchorExplode',not(ILAPI.IsDisabled('onRespawnAnchorExplode')))
-				Form:addSwitch('onTakeItem',not(ILAPI.IsDisabled('onTakeItem')))
-				Form:addSwitch('onDropItem',not(ILAPI.IsDisabled('onDropItem')))
-				Form:addSwitch('onBlockInteracted',not(ILAPI.IsDisabled('onBlockInteracted')))
-				Form:addSwitch('onUseFrameBlock',not(ILAPI.IsDisabled('onUseFrameBlock')))
-				Form:addSwitch('onSpawnProjectile',not(ILAPI.IsDisabled('onSpawnProjectile')))
-				Form:addSwitch('onFireworkShootWithCrossbow',not(ILAPI.IsDisabled('onFireworkShootWithCrossbow')))
-				Form:addSwitch('onStepOnPressurePlate',not(ILAPI.IsDisabled('onStepOnPressurePlate')))
-				Form:addSwitch('onRide',not(ILAPI.IsDisabled('onRide')))
-				Form:addSwitch('onWitherBossDestroy',not(ILAPI.IsDisabled('onWitherBossDestroy')))
-				Form:addSwitch('onFarmLandDecay',not(ILAPI.IsDisabled('onFarmLandDecay')))
-				Form:addSwitch('onPistonTryPush',not(ILAPI.IsDisabled('onPistonTryPush')))
-				Form:addSwitch('onFireSpread',not(ILAPI.IsDisabled('onFireSpread')))
-				Form:addSwitch('onChangeArmorStand',not(ILAPI.IsDisabled('onChangeArmorStand')))
-				Form:addSwitch('onEat',not(ILAPI.IsDisabled('onEat')))
-				Form:addSwitch('onRedStoneUpdate',not(ILAPI.IsDisabled('onRedStoneUpdate')))
-	
+				Form:addSwitch('onDestroyBlock',not(Map.Listener.check('onDestroyBlock')))
+				Form:addSwitch('onPlaceBlock',not(Map.Listener.check('onPlaceBlock')))
+				Form:addSwitch('onUseItemOn',not(Map.Listener.check('onUseItemOn')))
+				Form:addSwitch('onAttackEntity',not(Map.Listener.check('onAttackEntity')))
+				Form:addSwitch('onAttackBlock',not(Map.Listener.check('onAttackBlock')))
+				Form:addSwitch('onExplode',not(Map.Listener.check('onExplode')))
+				Form:addSwitch('onBedExplode',not(Map.Listener.check('onBedExplode')))
+				Form:addSwitch('onRespawnAnchorExplode',not(Map.Listener.check('onRespawnAnchorExplode')))
+				Form:addSwitch('onTakeItem',not(Map.Listener.check('onTakeItem')))
+				Form:addSwitch('onDropItem',not(Map.Listener.check('onDropItem')))
+				Form:addSwitch('onBlockInteracted',not(Map.Listener.check('onBlockInteracted')))
+				Form:addSwitch('onUseFrameBlock',not(Map.Listener.check('onUseFrameBlock')))
+				Form:addSwitch('onSpawnProjectile',not(Map.Listener.check('onSpawnProjectile')))
+				Form:addSwitch('onFireworkShootWithCrossbow',not(Map.Listener.check('onFireworkShootWithCrossbow')))
+				Form:addSwitch('onStepOnPressurePlate',not(Map.Listener.check('onStepOnPressurePlate')))
+				Form:addSwitch('onRide',not(Map.Listener.check('onRide')))
+				Form:addSwitch('onWitherBossDestroy',not(Map.Listener.check('onWitherBossDestroy')))
+				Form:addSwitch('onFarmLandDecay',not(Map.Listener.check('onFarmLandDecay')))
+				Form:addSwitch('onPistonTryPush',not(Map.Listener.check('onPistonTryPush')))
+				Form:addSwitch('onFireSpread',not(Map.Listener.check('onFireSpread')))
+				Form:addSwitch('onChangeArmorStand',not(Map.Listener.check('onChangeArmorStand')))
+				Form:addSwitch('onEat',not(Map.Listener.check('onEat')))
+				Form:addSwitch('onRedStoneUpdate',not(Map.Listener.check('onRedStoneUpdate')))
+
 				player:sendForm(
 					Form,
 					function(player,res)
 						if res==nil then return end
-					
+
 						cfg.features.disabled_listener = {}
 						local dbl = cfg.features.disabled_listener
 						if not(res[1]) then dbl[#dbl+1] = "onDestroyBlock" end
@@ -1259,9 +1692,9 @@ OpenGUI = {
 						if not(res[21]) then dbl[#dbl+1] = "onChangeArmorStand" end
 						if not(res[22]) then dbl[#dbl+1] = "onEat" end
 						if not(res[23]) then dbl[#dbl+1] = "onRedStoneUpdate" end
-						
+
 						Map.Listener.build()
-						ILAPI.save({1,0,0})
+						DataStorage.Save({1,0,0})
 						player:sendModalForm(
 							_Tr('gui.general.complete'),
 							"Complete.",
@@ -1269,30 +1702,33 @@ OpenGUI = {
 							_Tr('gui.general.close'),
 							FormCallbacks.BackTo.LandOPMgr
 						)
-					
+
 					end
 				)
 			end
 		end)
-	
+
 	end,
 	LandOptions = {
 		Information = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b)
-			local owner = ILAPI.GetOwner(landId)
-			if owner~='?' then owner=data.xuid2name(owner) end
+			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
+			local owner = Land.RelationShip.Owner.getXuid(landId)
+			if owner ~= nil then
+				owner = data.xuid2name(owner)
+			end
+			local name = Land.Options.Nickname.get(landId) or landId
 			player:sendModalForm(
 				_Tr('gui.landmgr.landinfo.title'),
 				_Tr('gui.landmgr.landinfo.content',
 					'<a>',owner,
-					'<b>',MakeShortILD(landId),
-					'<c>',ILAPI.GetNickname(landId,false),
-					'<d>',ILAPI.GetDimension(landId),
+					'<b>',landId,
+					'<c>',name,
+					'<d>',Land.Util.GetDimension(landId),
 					'<e>',ToStrDim(land_data[landId].range.dimid),
-					'<f>',Pos.ToString(Map.Land.Position.data[landId].a),
-					'<g>',Pos.ToString(Map.Land.Position.data[landId].b),
+					'<f>',Pos.ToString(Map.Land.Position.data[landId].posA),
+					'<g>',Pos.ToString(Map.Land.Position.data[landId].posB),
 					'<h>',cubeInfo.length,'<i>',cubeInfo.width,'<j>',cubeInfo.height,
 					'<k>',cubeInfo.square,'<l>',cubeInfo.volume
 				),
@@ -1319,7 +1755,7 @@ OpenGUI = {
 			Form:addSwitch(_Tr('gui.landcfg.landsign.tother')..isThisDisabled('landsign'),settings.signtother)
 			Form:addSwitch(_Tr('gui.landcfg.landsign.bottom')..isThisDisabled('buttomsign'),settings.signbuttom)
 			Form:addLabel(_Tr('gui.landcfg.event'))
-			Form:addSwitch(_Tr('gui.landcfg.event.explode'),settings.ev_explode) 
+			Form:addSwitch(_Tr('gui.landcfg.event.explode'),settings.ev_explode)
 			Form:addSwitch(_Tr('gui.landcfg.event.farmland_decay'),settings.ev_farmland_decay)
 			Form:addSwitch(_Tr('gui.landcfg.event.fire_spread'),settings.ev_fire_spread)
 			Form:addSwitch(_Tr('gui.landcfg.event.piston_push'),settings.ev_piston_push)
@@ -1328,7 +1764,7 @@ OpenGUI = {
 				Form,
 				function (player,res)
 					if res==nil then return end
-	
+
 					local settings = land_data[landId].settings
 					settings.signtome = res[1]
 					settings.signtother = res[2]
@@ -1338,7 +1774,7 @@ OpenGUI = {
 					settings.ev_fire_spread = res[7]
 					settings.ev_piston_push = res[6]
 					settings.ev_redstone_update = res[8]
-					ILAPI.save({0,1,0})
+					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -1418,9 +1854,9 @@ OpenGUI = {
 				Form,
 				function (player,res)
 					if res==nil then return end
-					
+
 					local perm = land_data[landId].permissions
-				
+
 					perm.allow_place = res[1]
 					perm.allow_destroy = res[2]
 					perm.allow_entity_destroy = res[3]
@@ -1432,7 +1868,7 @@ OpenGUI = {
 					perm.allow_attack_player = res[9]
 					perm.allow_attack_animal = res[10]
 					perm.allow_attack_mobs = res[11]
-				
+
 					perm.use_crafting_table = res[12]
 					perm.use_furnace = res[13]
 					perm.use_blast_furnace = res[14]
@@ -1448,14 +1884,14 @@ OpenGUI = {
 					perm.use_stonecutter = res[24]
 					perm.use_lectern = res[25]
 					perm.use_beacon = res[26]
-					
+
 					perm.use_barrel = res[27]
 					perm.use_hopper = res[28]
 					perm.use_dropper = res[29]
 					perm.use_dispenser = res[30]
 					perm.use_shulker_box = res[31]
 					perm.allow_open_chest = res[32]
-					
+
 					perm.use_campfire = res[33]
 					perm.use_firegen = res[34]
 					perm.use_door = res[35]
@@ -1477,8 +1913,8 @@ OpenGUI = {
 					perm.use_respawn_anchor = res[51]
 					perm.use_fishing_hook = res[52]
 					perm.use_bucket = res[53]
-				
-					ILAPI.save({0,1,0})
+
+					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -1524,12 +1960,12 @@ OpenGUI = {
 					local status_list = {}
 					if res==0 then -- add
 						for n,ID in pairs(selected) do
-							local targetXuid=data.name2xuid(ID)
-							if ILAPI.GetOwner(landId)==targetXuid then
+							local targetXuid = data.name2xuid(ID)
+							if Land.RelationShip.Owner.getXuid(landId) == targetXuid then
 								status_list[ID] = _Tr('gui.landtrust.fail.cantaddown')
 								goto CONTINUE_ADDTRUST
 							end
-							if ILAPI.AddTrust(landId,targetXuid)==false then
+							if Land.RelationShip.Trusted.add(landId,targetXuid)==false then
 								status_list[ID] = _Tr('gui.landtrust.fail.alreadyexists')
 							else
 								status_list[ID] = _Tr('gui.landtrust.addsuccess')
@@ -1539,12 +1975,12 @@ OpenGUI = {
 					end
 					if res==1 then -- rm
 						for n,ID in pairs(selected) do
-							local targetXuid=data.name2xuid(ID)
-							ILAPI.RemoveTrust(landId,targetXuid)
+							local targetXuid = data.name2xuid(ID)
+							Land.RelationShip.Trusted.remove(landId,targetXuid)
 							status_list[ID] = _Tr('gui.landtrust.rmsuccess')
 						end
 					end
-				
+
 					local text = "Completed."
 					for i,v in pairs(status_list) do
 						text = text..'\n'..i..' => '..v
@@ -1562,7 +1998,7 @@ OpenGUI = {
 		Nickname = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local nickn = ILAPI.GetNickname(landId,false)
+			local nickn = Land.Options.Nickname.get(landId) or landId
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landtag.title'))
 			Form:addLabel(_Tr('gui.landtag.tip'))
@@ -1572,7 +2008,7 @@ OpenGUI = {
 				function(player,res)
 					if res==nil then return end
 					land_data[landId].settings.nickname=res[1]
-					ILAPI.save({0,1,0})
+					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -1586,7 +2022,7 @@ OpenGUI = {
 		Describe = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local desc=ILAPI.GetDescribe(landId)
+			local desc = Land.Options.Setting.get(landId,'describe')
 			if desc=='' then desc='['.._Tr('gui.landmgr.unmodified')..']' end
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landdescribe.title'))
@@ -1596,9 +2032,9 @@ OpenGUI = {
 				Form,
 				function(player,res)
 					if res==nil then return end
-					
+
 					land_data[landId].settings.describe=res[1]
-					ILAPI.save({0,1,0})
+					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -1626,16 +2062,17 @@ OpenGUI = {
 								SendText(player,_Tr('title.landtransfer.toomanyids'))
 								return
 							end
-						
+
 							local targetXuid=data.name2xuid(selected[1])
-							if ILAPI.IsLandOwner(landId,targetXuid) then 
+							if Land.RelationShip.Owner.check(landId,targetXuid) then
 								SendText(player,_Tr('title.landtransfer.canttoown'))
 								return
 							end
-							ILAPI.SetOwner(landId,targetXuid)
+							Land.RelationShip.Owner.set(landId,targetXuid)
+							local name = Land.Options.Nickname.get(landId) or landId
 							player:sendModalForm(
 								_Tr('gui.general.complete'),
-								_Tr('title.landtransfer.complete','<a>',ILAPI.GetNickname(landId,true),'<b>',selected[1]),
+								_Tr('title.landtransfer.complete','<a>',name,'<b>',selected[1]),
 								_Tr('gui.general.back'),
 								_Tr('gui.general.close'),
 								FormCallbacks.BackTo.LandMgr
@@ -1656,7 +2093,7 @@ OpenGUI = {
 				function(player,result)
 					if not result then return end
 					local xuid = player.xuid
-	
+
 					MEM[xuid].reselectLand = { id = landId }
 					RangeSelector.Create(player,function(player,res)
 						MEM[xuid].keepingTitle = {
@@ -1671,8 +2108,8 @@ OpenGUI = {
 		Delete = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b)
-			local value = math.modf(CalculatePrice(cubeInfo,ILAPI.GetDimension(landId))*cfg.land.refund_rate)
+			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
+			local value = math.modf(CalculatePrice(cubeInfo,Land.Util.GetDimension(landId))*cfg.land.refund_rate)
 			player:sendModalForm(
 				_Tr('gui.delland.title'),
 				_Tr('gui.delland.content','<a>',value,'<b>',cfg.economic.currency_name),
@@ -1680,10 +2117,10 @@ OpenGUI = {
 				_Tr('gui.general.cancel'),
 				function (player,id)
 					if not id then return end
-					if ILAPI.GetOwner(landId)==xuid then
+					if Land.RelationShip.Owner.getXuid(landId) == xuid then
 						Money.Add(player,value)
 					end
-					ILAPI.DeleteLand(landId)
+					Land.Storage.Delete(landId)
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -1699,7 +2136,7 @@ OpenGUI = {
 
 PlayerSelector = {
 	Create = function (player,callback,customlist) -- player selector
-	
+
 		-- get player list
 		local pl_list = {}
 		local forTol
@@ -1711,7 +2148,7 @@ PlayerSelector = {
 		for xuid,lds in pairs(forTol) do
 			pl_list[#pl_list+1] = data.xuid2name(xuid)
 		end
-	
+
 		-- set TRS
 		local xuid = player.xuid
 		MEM[xuid].psr = {
@@ -1720,28 +2157,28 @@ PlayerSelector = {
 			nowpage = 1,
 			filter = ""
 		}
-	
+
 		local perpage = cfg.features.player_selector.items_perpage
 		if customlist~=nil then
 			MEM[xuid].psr.playerList = 	PlayerSelector.Helper.ToPages(customlist,perpage)
 		else
 			MEM[xuid].psr.playerList = PlayerSelector.Helper.ToPages(pl_list,perpage)
 		end
-	
+
 		-- call
 		PlayerSelector.Callback(player,'#')
-	
+
 	end,
 	Callback = function (player,data)
 		if data==nil then
 			MEM[player.xuid].psr=nil
 			return
 		end
-		
+
 		-- get data
 		local xuid = player.xuid
 		local psrdata = MEM[xuid].psr
-	
+
 		local function buildPage(num)
 			local tmp = {}
 			for i=1,num do
@@ -1749,14 +2186,14 @@ PlayerSelector = {
 			end
 			return tmp
 		end
-	
+
 		local perpage = cfg.features.player_selector.items_perpage
 		local maxpage = #psrdata.playerList
 		local rawList = table.clone(psrdata.playerList[psrdata.nowpage])
-	
+
 		if type(data)=='table' then
 			local selected = {}
-	
+
 			-- refresh page
 			local npg = data[#data] + 1 -- custom page
 			if npg~=psrdata.nowpage and npg<=maxpage then
@@ -1764,7 +2201,7 @@ PlayerSelector = {
 				rawList = table.clone(psrdata.playerList[npg])
 				goto JUMPOUT_PSR_OTHER
 			end
-	
+
 			-- create filter
 			if data[1]~='' then
 				local findTarget = string.lower(data[1])
@@ -1793,7 +2230,7 @@ PlayerSelector = {
 				end
 			end
 			psrdata.filter = data[1]
-	
+
 			-- gen selects
 			for num,key in pairs(data) do
 				if num~=1 and num~=#data and key==true then
@@ -1805,10 +2242,10 @@ PlayerSelector = {
 				psrdata=nil
 				return
 			end
-	
+
 			:: JUMPOUT_PSR_OTHER ::
 		end
-	
+
 		-- build form
 		local Form = mc.newCustomForm()
 		Form:setTitle(_Tr('gui.playerselector.title'))
@@ -1924,7 +2361,7 @@ RangeSelector = {
 				RangeSelector.Push(player,pos)
 				return
 			end
-	
+
 			local posA = MEM[xuid].rsr.posA
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.rangeselector.title'))
@@ -1946,18 +2383,18 @@ RangeSelector = {
 				SendText(player,_Tr('title.rangeselector.fail.dimdiff'))
 				return
 			end
-	
+
 			local posA = MEM[xuid].rsr.posA
 			if MEM[xuid].rsr.dimension=='2D' then
 				pos.y = maxY
 			end
-	
+
 			--- Check Land.
 			local checkPassed = false
-			local cubeInfo = Cube.GetInformation(posA,pos)
-			if cubeInfo.square < cfg.land.bought.square_range[1] and not ILAPI.IsLandOperator(xuid) then
+			local cubeInfo = Cube.GetInformation(Cube.Create(posA,pos))
+			if cubeInfo.square < cfg.land.bought.square_range[1] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toosmall'))
-			elseif cubeInfo.square > cfg.land.bought.square_range[2] and not ILAPI.IsLandOperator(xuid) then
+			elseif cubeInfo.square > cfg.land.bought.square_range[2] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toobig'))
 			elseif cubeInfo.height < 2 and MEM[xuid].rsr.dimension == '3D' then
 				SendText(player,_Tr('title.rangeselector.fail.toolow'))
@@ -1966,46 +2403,46 @@ RangeSelector = {
 				if MEM[xuid].reselectLand~=nil then
 					checkIgnores = { MEM[xuid].reselectLand.id }
 				end
-				local checkColl = ILAPI.IsLandCollision(posA,pos,dimid,checkIgnores)
+				local checkColl = Land.Helper.IsCollision(Cube.Create(posA,pos,dimid),checkIgnores)
 				if checkColl.status then
 					local sp = cfg.land.min_space
-					local nearbyLands = ILAPI.GetLandInRange(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid)
+					local nearbyLands = Land.Query.Area(Cube.Create(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid))
 					if MEM[xuid].reselectLand~=nil then
 						Array.Remove(nearbyLands,MEM[xuid].reselectLand.id)
 					end
 					if #nearbyLands ~= 0 then
-						SendText(player,_Tr('title.rangeselector.fail.space','<a>',MakeShortILD(nearbyLands[1])))
+						SendText(player,_Tr('title.rangeselector.fail.space','<a>',nearbyLands[1]))
 					else
 						checkPassed = true
 					end
 				else
-					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',MakeShortILD(checkColl.id)))
+					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',checkColl.id))
 				end
 			end
-	
+
 			--- Check Result.
 			if not checkPassed then
 				MEM[xuid].rsr.step = 1
 				MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 				return
 			end
-	
+
 			--- Apply.
 			MEM[xuid].rsr.posB = pos
 			MEM[xuid].rsr.posA,MEM[xuid].rsr.posB = Pos.Sort(posA,MEM[xuid].rsr.posB)
 			MEM[xuid].keepingTitle = nil
 			local edge
 			if MEM[xuid].rsr.dimension == '3D' then
-				edge = Cube.GetEdge(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB)
+				edge = Cube.GetEdge(Cube.Create(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB))
 			else
-				edge = Cube.GetEdge_2D(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB,player.pos.y+1)
+				edge = Cube.GetEdge_2D(Cube.Create(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB,player.pos.y+1))
 			end
 			if #edge < cfg.features.particles.max_amount then
 				MEM[xuid].particles = edge
 			else
 				SendText(player,_Tr('title.rangeselector.largeparticle'))
 			end
-	
+
 			SendText(
 				player,
 				_Tr('title.rangeselector.pointed',
@@ -2014,7 +2451,7 @@ RangeSelector = {
 					'<c>',pos.x,'<d>',pos.y,'<e>',pos.z
 				)
 			)
-	
+
 			MEM[xuid].rsr.step = 4
 			local cb = MEM[xuid].rsr.cbfunc
 			cb(player,{posA=MEM[xuid].rsr.posA,posB=MEM[xuid].rsr.posB,dimid=MEM[xuid].rsr.dimid,dimension=MEM[xuid].rsr.dimension})
@@ -2146,6 +2583,9 @@ SafeTeleport = {
 DebugHelper = {
 	IsEnabled = false,
 	Delay = 10,
+	GetMemoryCount = function()
+		return tonumber(string.format("%.2f",collectgarbage('count')/1024))
+	end,
 	Interval = function()
 		if not DebugHelper.IsEnabled then
 			return
@@ -2153,8 +2593,9 @@ DebugHelper = {
 		for n,player in pairs(mc.getOnlinePlayers()) do
 			local pos = player.blockPos
 			local r = 50
-			local list = ILAPI.GetLandInRange(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid)
-			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..ILAPI.PosGetLand(pos)..'.')
+			local list = Land.Query.Area(Cube.Create(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid))
+			local land = Land.Query.Pos(pos) or 'null'
+			INFO('Debug','Position ('..Pos.ToString(pos)..'), Land = '..land..'.')
 			if #list~=0 then
 				INFO('Debug','Nearby lands \n'..table.toDebugString(list))
 			else
@@ -2163,501 +2604,6 @@ DebugHelper = {
 		end
 	end
 }
-
---#region ILAPI
-
--- [[ KERNEL ]]
-function ILAPI.CreateLand(xuid,startpos,endpos,dimid)
-	local landId
-	while true do
-		landId = GenGUID()
-		if land_data[landId]==nil then break end
-	end
-
-	local posA,posB = Pos.Sort(startpos,endpos)
-	if not ILAPI.IsLandCollision(posA,posB,dimid).status then
-		return -1
-	end
-
-	-- LandData Templete
-	land_data[landId]={
-		settings = {
-			share = {},
-			tpoint = {
-				startpos.x,
-				startpos.y+1,
-				startpos.z
-			},
-			nickname = '',
-			describe = '',
-			signtome = true,
-			signtother = true,
-			signbuttom = true,
-			ev_explode = false,
-			ev_farmland_decay = false,
-			ev_piston_push = false,
-			ev_fire_spread = false,
-			ev_redstone_update = false
-		},
-		range = {
-			start_position = {
-				posA.x,
-				posA.y,
-				posA.z
-			},
-			end_position = {
-				posB.x,
-				posB.y,
-				posB.z
-			},
-			dimid = dimid
-		},
-		permissions = {
-			allow_destroy = false,
-			allow_entity_destroy = false,
-			allow_place = false,
-			allow_attack_player = false,
-			allow_attack_animal = false,
-			allow_attack_mobs = true,
-			allow_open_chest = false,
-			allow_pickupitem = false,
-			allow_dropitem = true,
-			use_anvil = false,
-			use_barrel = false,
-			use_beacon = false,
-			use_bed = false,
-			use_bell = false,
-			use_blast_furnace = false,
-			use_brewing_stand = false,
-			use_campfire = false,
-			use_firegen = false,
-			use_cartography_table = false,
-			use_composter = false,
-			use_crafting_table = false,
-			use_daylight_detector = false,
-			use_dispenser = false,
-			use_dropper = false,
-			use_enchanting_table = false,
-			use_door = false,
-			use_fence_gate = false,
-			use_furnace = false,
-			use_grindstone = false,
-			use_hopper = false,
-			use_jukebox = false,
-			use_loom = false,
-			use_stonecutter = false,
-			use_noteblock = false,
-			use_shulker_box = false,
-			use_smithing_table = false,
-			use_smoker = false,
-			use_trapdoor = false,
-			use_lectern = false,
-			use_cauldron = false,
-			use_lever = false,
-			use_button = false,
-			use_respawn_anchor = false,
-			use_item_frame = false,
-			use_fishing_hook = false,
-			use_bucket = false,
-			use_pressure_plate = false,
-			use_armor_stand = false,
-			eat = false,
-			allow_throw_potion = false,
-			allow_ride_entity = false,
-			allow_ride_trans = false,
-			allow_shoot = false,
-			useitem = false
-		}
-	}
-
-	-- Write data
-	if land_owners[xuid]==nil then -- ilapi
-		land_owners[xuid]={}
-	end
-
-	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
-	ILAPI.save({0,1,1})
-	Map.Land.Position.update(landId,'add')
-	Map.Chunk.update(landId,'add')
-	Map.Land.Owner.update(landId)
-	Map.Land.Trusted.update(landId)
-	Map.Land.Edge.update(landId,'add')
-	Map.Land.AXIS.update(landId,'add')
-	Map.CachedQuery.Init(landId)
-	Map.CachedQuery.RangeArea.clear_by_land(landId)
-	Map.CachedQuery.SinglePos.check_noland_pos()
-	return landId
-end
-function ILAPI.DeleteLand(landId)
-	local owner=ILAPI.GetOwner(landId)
-	if owner~='?' then
-		Array.Remove(land_owners[owner],landId)
-	end
-	Map.CachedQuery.RangeArea.refresh(landId)
-	Map.CachedQuery.SinglePos.refresh(landId)
-	Map.CachedQuery.UnInit(landId)
-	Map.Land.AXIS.update(landId,'del')
-	Map.Chunk.update(landId,'del')
-	Map.Land.Position.update(landId,'del')
-	Map.Land.Edge.update(landId,'del')
-	land_data[landId] = nil
-	ILAPI.save({0,1,1})
-	return true
-end
-function ILAPI.PosGetLand(vec4,noAccessCache)
-
-	noAccessCache = noAccessCache or false
-	if not noAccessCache then
-		local cache_result = Map.CachedQuery.SinglePos.get(vec4)
-		if cache_result ~= nil then
-			return cache_result
-		end
-	end 
-	
-	local Cx,Cz = Pos.ToChunkPos(vec4)
-	local dimid = vec4.dimid
-	if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
-		for n,landId in pairs(Map.Chunk.data[dimid][Cx][Cz]) do
-			if dimid==land_data[landId].range.dimid and Cube.HadPos(vec4,Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b) then
-				if not noAccessCache then
-					Map.CachedQuery.SinglePos.add(landId,vec4)
-				end
-				return landId
-			end
-		end
-	end
-
-	if not noAccessCache then
-		Map.CachedQuery.SinglePos.add(-1,vec4)
-	end
-	return -1
-
-end
-function ILAPI.GetChunk(vec2,dimid)
-	local Cx,Cz = Pos.ToChunkPos(vec2)
-	if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
-		return table.clone(Map.Chunk.data[dimid][Cx][Cz])
-	end
-	return -1
-end
-function ILAPI.GetDistence(landId,vec4)
-	local function pow(num)
-		return num*num
-	end
-	local function EucM(A,B) -- 2D
-		return math.sqrt(pow(B.x-A.x)+pow(B.z-A.z))
-	end
-
-	local edge = Map.Land.Edge.data[landId].D2D
-	local depos = { edge[1],EucM(edge[1],vec4) }
-	for i,pos in pairs(edge) do
-		local euc = EucM(pos,vec4)
-		if euc<depos[2] then
-			depos = { pos,euc }
-		end
-	end
-	if ILAPI.GetDimension(landId)=='2D' then
-		return depos[2]
-	end
-	return math.sqrt(pow(depos[2])+pow(math.min(math.abs(vec4.y-Map.Land.Position.data[landId].a.y),math.abs(vec4.y-Map.Land.Position.data[landId].b.y))))
-end
-function ILAPI.GetLandInRange(spos,epos,dimid,noAccessCache)
-
-	noAccessCache = noAccessCache or false
-	spos,epos = Pos.Sort(spos,epos)
-	if not noAccessCache then
-		local cache_result = Map.CachedQuery.RangeArea.get(spos,epos,dimid)
-		if cache_result~=nil then
-			return cache_result
-		end
-	end
-
-	local temp = { [1] = {}, [2] = {}, [3] = {} }
-	local function concat(a,list)
-		if list==nil then
-			return
-		end
-		for n,value in pairs(list) do
-			temp[a][value] = 0
-		end
-	end
-	local function shortest(...) -- no problem here.
-		local tar = {...}
-		local result = tar[1]
-		for i=2,#tar do
-			if #tar[i] < #result then
-				result = tar[i]
-				break
-			end
-		end
-		return result
-	end
-
-	for x = spos.x,epos.x do
-		concat(1,Map.Land.AXIS.data[dimid]['x'][x])
-	end
-	for y = spos.y,epos.y do
-		concat(2,Map.Land.AXIS.data[dimid]['y'][y])
-	end
-	for z = spos.z,epos.z do
-		concat(3,Map.Land.AXIS.data[dimid]['z'][z])
-	end
-	
-	local result = {}
-	for landId,zero in pairs(shortest(temp[1],temp[2],temp[3])) do
-		if temp[1][landId]==0 and temp[2][landId]==0 and temp[3][landId]==0 then
-			result[#result+1] = landId
-		end
-	end
-
-	if not noAccessCache then
-		Map.CachedQuery.RangeArea.add(result,spos,epos,dimid)
-	end
-	return result
-
-end
-function ILAPI.GetAllLands()
-	local lst = {}
-	for id,v in pairs(land_data) do
-		lst[#lst+1] = id
-	end
-	return lst
-end
-function ILAPI.CheckPerm(landId,perm)
-	return land_data[landId].permissions[perm]
-end
-function ILAPI.CheckSetting(landId,cfgname)
-	return land_data[landId].settings[cfgname]
-end
-function ILAPI.GetRange(landId)
-	return { Map.Land.Position.data[landId].a,Map.Land.Position.data[landId].b,land_data[landId].range.dimid }
-end
-function ILAPI.GetEdge(landId,dimtype)
-	if dimtype=='2D' then
-		return table.clone(Map.Land.Edge.data[landId].D2D)
-	elseif dimtype=='3D' then
-		return table.clone(Map.Land.Edge.data[landId].D3D)
-	end
-end
-function ILAPI.GetDimension(landId)
-	if land_data[landId].range.start_position[2]==minY and land_data[landId].range.end_position[2]==maxY then
-		return '2D'
-	else
-		return '3D'
-	end
-end
-function ILAPI.GetName(landId)
-	return land_data[landId].settings.nickname
-end
-function ILAPI.GetDescribe(landId)
-	return land_data[landId].settings.describe
-end
-function ILAPI.GetOwner(landId)
-	for i,v in pairs(land_owners) do
-		if Array.Fetch(v,landId)~=-1 then
-			return i
-		end
-	end
-	return '?'
-end
-function ILAPI.GetPoint(landId)
-	local i = table.clone(land_data[landId].settings.tpoint)
-	i[4] = land_data[landId].range.dimid
-	return Array.ToIntPos(i)
-end
-function ILAPI.Teleport(player,landId) -- can given xuid to `player`
-	local pl
-	if type(player)=='string' then
-		pl = mc.getPlayer(player)
-	else
-		pl = player
-	end
-	if land_data[landId]==nil then
-		return false
-	end
-	local pos = ILAPI.GetPoint(landId)
-	SafeTeleport.Do(pl,pos)
-	return true
-end
--- [[ INFORMATION => PLAYER ]]
-function ILAPI.GetPlayerLands(xuid)
-	return table.clone(land_owners[xuid])
-end
-function ILAPI.IsPlayerTrusted(landId,xuid)
-	if Map.Land.Trusted.data[landId][xuid]==nil then
-		return false
-	else
-		return true
-	end
-end
-function ILAPI.IsLandOwner(landId,xuid)
-	if Map.Land.Owner.data[landId]==xuid then
-		return true
-	else
-		return false
-	end
-end
-function ILAPI.IsLandOperator(xuid)
-	if Map.Land.Operator.data[xuid]==nil then
-		return false
-	else
-		return true
-	end
-end
-function ILAPI.GetAllTrustedLand(xuid)
-	local trusted = {}
-	for landId,data in pairs(land_data) do
-		if ILAPI.IsPlayerTrusted(landId,xuid) then
-			trusted[#trusted+1]=landId
-		end
-	end
-	return trusted
-end
--- [[ CONFIGURE ]]
-function ILAPI.UpdatePermission(landId,perm,value)
-	land_data[landId].permissions[perm]=value
-	ILAPI.save({0,1,0})
-	return true
-end
-function ILAPI.UpdateSetting(landId,cfgname,value)
-	if cfgname=='share' then
-		return false
-	end
-	land_data[landId].settings[cfgname]=value
-	ILAPI.save({0,1,0})
-	return true
-end
-function ILAPI.AddTrust(landId,xuid)
-	local shareList = land_data[landId].settings.share
-	if ILAPI.IsPlayerTrusted(landId,xuid) then
-		return false
-	end
-	shareList[#shareList+1]=xuid
-	Map.Land.Trusted.update(landId)
-	ILAPI.save({0,1,0})
-	return true
-end
-function ILAPI.RemoveTrust(landId,xuid)
-	local shareList = land_data[landId].settings.share
-	Array.Remove(shareList,xuid)
-	Map.Land.Trusted.update(landId)
-	ILAPI.save({0,1,0})
-	return true
-end
-function ILAPI.SetOwner(landId,xuid)
-	local ownerXuid = ILAPI.GetOwner(landId)
-	if ownerXuid ~= '?' then
-		Array.Remove(land_owners[ownerXuid],landId)
-	end
-	table.insert(land_owners[xuid],#land_owners[xuid]+1,landId)
-	Map.Land.Owner.update(landId)
-	ILAPI.save({0,0,1})
-	return true
-end
--- [[ PLUGIN ]]
-function ILAPI.GetMoneyProtocol()
-	return cfg.economic.protocol
-end
-function ILAPI.GetLanguage()
-	return cfg.plugin.language
-end
-function ILAPI.GetChunkSide()
-	return cfg.features.chunk_side
-end
-function ILAPI.IsDisabled(listener)
-	if Map.Listener.data[listener]~=nil then
-		return true
-	end
-	return false
-end
-function ILAPI.GetApiVersion()
-	return Plugin.apiver
-end
-function ILAPI.GetVersion()
-	return Plugin.numver
-end
--- [[ UNEXPORT FUNCTIONS ]]
-function ILAPI.save(mode) -- {config,data,owners}
-	if mode[1] == 1 then
-		File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
-	end
-	if mode[2] == 1 then
-		File.writeTo(DATA_PATH..'data.json',JSON.encode(land_data))
-	end
-	if mode[3] == 1 then
-		local tmpowners = table.clone(land_owners)
-		for xuid,landIds in pairs(wrong_landowners) do
-			tmpowners[xuid] = landIds
-		end
-		File.writeTo(DATA_PATH..'owners.json',JSON.encode(tmpowners))
-	end
-end
-function ILAPI.CanControl(mode,name)
-	if Map.Control.data[mode][name]==nil then
-		return false
-	else
-		return true
-	end
-end
-function ILAPI.GetNickname(landId,returnIdIfNameEmpty)
-	local n = land_data[landId].settings.nickname
-	if n=='' then
-		n='<'.._Tr('gui.landmgr.unnamed')..'>'
-		if returnIdIfNameEmpty then
-			n = n..' '..MakeShortILD(landId)
-		end
-	end
-	return n
-end
-function ILAPI.IsLandCollision(posA,posB,dimid,ignoreList)
-	ignoreList = ignoreList or {}
-	local ignores = Array.ToKeyMap(ignoreList)
-	posA,posB = Pos.Sort(posA,posB)
-	local lands = ILAPI.GetLandInRange(posA,posB,dimid)
-	for i,landId in pairs(lands) do
-		if ignores[landId]==nil then
-			local p = Map.Land.Position.data[landId]
-			return { status = false, id = landId }
-		end
-	end
-	return { status = true }
-end
-function ILAPI.GetMemoryCount()
-	return tonumber(string.format("%.2f",collectgarbage('count')/1024))
-end
-function ILAPI.SetRange(landId,newposA,newposB,newDimid)
-
-	if ILAPI.GetDimension(landId) == '2D' then
-		newposA.y = minY
-		newposB.y = maxY
-	end
-	if not ILAPI.IsLandCollision(newposA,newposB,newDimid,{landId}).status then
-		return false
-	end
-	local posA,posB = Pos.Sort(newposA,newposB)
-
-	Map.Land.Edge.update(landId,'del')
-	Map.Chunk.update(landId,'del')
-	Map.Land.AXIS.update(landId,'del')
-	Map.Land.Position.update(landId,'del')
-	land_data[landId].range.start_position = {posA.x,posA.y,posA.z}
-	land_data[landId].range.end_position = {posB.x,posB.y,posB.z}
-	land_data[landId].range.dimid = newDimid
-	land_data[landId].settings.tpoint = {posA.x,posA.y+1,posA.z}
-	Map.Land.Position.update(landId,'add')
-	Map.Land.Edge.update(landId,'add')
-	Map.Chunk.update(landId,'add')
-	Map.Land.AXIS.update(landId,'add')
-	Map.CachedQuery.RangeArea.refresh(landId)
-	Map.CachedQuery.SinglePos.refresh(landId)
-	Map.CachedQuery.RangeArea.clear_by_land(landId)
-	Map.CachedQuery.SinglePos.check_noland_pos()
-
-	ILAPI.save({0,1,0})
-	return true
-end
-
---#endregion
 
 -- Types
 
@@ -2695,23 +2641,33 @@ Money = {
 }
 
 Cube = {
-	ToString = function(spos,epos,dimid)
-		spos,epos = Pos.Sort(spos,epos)
-		return Pos.ToString(spos)..'|'..Pos.ToString(epos)..'|'..dimid
+	Create = function(posA,posB,dimid)
+		dimid = dimid or -1
+		posA,posB = Pos.Sort(posA,posB)
+		return {
+			posA = posA,
+			posB = posB,
+			dimid = dimid
+		}
 	end,
-	HadPos = function(pos,posA,posB)
-		if (pos.x>=posA.x and pos.x<=posB.x) or (pos.x<=posA.x and pos.x>=posB.x) then
-			if (pos.y>=posA.y and pos.y<=posB.y) or (pos.y<=posA.y and pos.y>=posB.y) then
-				if (pos.z>=posA.z and pos.z<=posB.z) or (pos.z<=posA.z and pos.z>=posB.z) then
-					return true
-				end
-			end
-		end
-		return false
+	ToString = function(AABB)
+		return Pos.ToString(AABB.posA)..'|'..Pos.ToString(AABB.posB)..'|'..AABB.dimid
 	end,
-	GetEdge = function(spos,epos)
-		local edge={}
-		local posB,posA = Pos.Sort(spos,epos)
+	HadPos = function(pos,AABB)
+		local posA,posB = AABB.posA,AABB.posB
+		return (pos.x >= posA.x and pos.x <= posB.x) and
+			(pos.y >= posA.y and pos.y <= posB.y) and
+			(pos.z >= posA.z and pos.z <= posB.z)
+	end,
+	Collision = function(AABB_a,AABB_b)
+		local a,b = AABB_a,AABB_b
+		return (a.posA.x <= b.posB.x and a.posB.x >= b.posB.x) and
+			(a.posA.y <= b.posB.y and a.posB.y >= b.posB.y) and
+			(a.posA.z <= b.posB.z and a.posB.z >= b.posB.z);
+	end,
+	GetEdge = function(AABB)
+		local edge = {}
+		local posA,posB = AABB.posA,AABB.posB
 		for i=1,math.abs(posA.x-posB.x)+1 do
 			edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
 			edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
@@ -2732,12 +2688,10 @@ Cube = {
 		end
 		return edge
 	end,
-	GetEdge_2D = function(spos,epos,customY)
-		local edge={}
-		local posB,posA = Pos.Sort(spos,epos)
-		if customY==nil then
-			customY = posA.y - 1
-		end
+	GetEdge_2D = function(AABB,customY)
+		local edge = {}
+		local posA,posB = AABB.posA,AABB.posB
+		customY = customY or posA.y - 1
 		for i=1,math.abs(posA.x-posB.x)+1 do
 			edge[#edge+1] = { x=posA.x-i+1, y=customY, z=posA.z }
 			edge[#edge+1] = { x=posA.x-i+1, y=customY, z=posB.z }
@@ -2748,12 +2702,12 @@ Cube = {
 		end
 		return edge
 	end,
-	GetInformation = function(spos,epos)
+	GetInformation = function(AABB)
+		local posA,posB = AABB.posA,AABB.posB
 		local cube = {
-			height = math.abs(spos.y-epos.y) + 1,
-			length = math.max(math.abs(spos.x-epos.x),math.abs(spos.z-epos.z)) + 1,
-			width = math.min(math.abs(spos.x-epos.x),math.abs(spos.z-epos.z)) + 1,
-
+			height = math.abs(posA.y-posB.y) + 1,
+			length = math.max(math.abs(posA.x-posB.x),math.abs(posA.z-posB.z)) + 1,
+			width = math.min(math.abs(posA.x-posB.x),math.abs(posA.z-posB.z)) + 1,
 		}
 		cube.square = cube.length*cube.width
 		cube.volume = cube.square*cube.height
@@ -2779,6 +2733,17 @@ Pos = {
 	end,
 	ToString = function(vec3)
 		return vec3.x..','..vec3.y..','..vec3.z
+	end,
+	ToArray = function(pos)
+		local rtn = {
+			pos.x,
+			pos.y,
+			pos.z
+		}
+		if pos.dimid~=nil then
+			rtn[4] = pos.dimid
+		end
+		return rtn
 	end,
 	Add = function(pos,value)
 		return {
@@ -2810,21 +2775,6 @@ Pos = {
 	end
 }
 
-AABB = {
-	Traverse = function(AAbb,aaBB,did)
-		local posA,posB = Pos.Sort(AAbb,aaBB)
-		local result = {}
-		for ix=posA.x,posB.x do
-			for iy=posA.y,posB.y do
-				for iz=posA.z,posB.z do
-					result[#result+1] = {x=ix,y=iy,z=iz,dimid=did}
-				end
-			end
-		end
-		return result
-	end
-}
-
 Array = {
 	ToIntPos = function(array)
 		local rtn = {
@@ -2843,7 +2793,7 @@ Array = {
 		for i,v in pairs(tmp) do
 			result[#result+1] = i
 		end
-		return result  
+		return result
 	end,
 	ToKeyMap = function(array)
 		local rtn = {}
@@ -2998,7 +2948,7 @@ function table.getKey(tab,path)
 			<path> this.(*)3		=>		1
 			<path> this.ff.(*)1		=>		8
 	]]
-	
+
 	if string.sub(path,1,5) == 'this.' then
 		path = string.sub(path,6)
 	end
@@ -3015,7 +2965,7 @@ function table.getKey(tab,path)
 	if type(lta) ~= 'table' then
 		return lta
 	end
-	
+
 	return table.getKey(lta,table.concat(pathes,'.',2,#pathes))
 
 end
@@ -3034,13 +2984,13 @@ function table.setKey(tab,path,value)
 	if tab[pathes[1]] == nil then
 		return
 	end
-	
+
 	local T = typeEx(tab[pathes[1]])
 	if T ~= 'table' and (T~='array' or (T=='array' and typeEx(value)=='array')) then
 		tab[pathes[1]] = value
 		return
 	end
-	
+
 	table.setKey(tab[pathes[1]],table.concat(pathes,'.',2,#pathes),value)
 
 end
@@ -3060,7 +3010,7 @@ function Plugin.Unload()
 end
 
 function Plugin.Upgrade(rawInfo)
-	
+
 	--[[
 		The directory structure for server:
 		# source = .../iLand/{numver}/...
@@ -3108,14 +3058,14 @@ function Plugin.Upgrade(rawInfo)
 	if not checkPassed then
 		return
 	end
-	
+
 	-- Check Plugin version
 	if updata.NumVer<=Plugin.numver then
 		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
 		return
 	end
 	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
-	
+
 	-- Set Resource
 	local RawPath = {}
 	local BackupEd = {}
@@ -3127,11 +3077,11 @@ function Plugin.Upgrade(rawInfo)
 		WARN(_Tr('console.getonline.failed'))
 		return false
 	end
-	
+
 	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
 	RawPath['$plugin_path'] = 'plugins/'
 	RawPath['$data_path'] = DATA_PATH
-	
+
 	-- Known changed files.
 	updata.FileChanged[#updata.FileChanged+1] = "$plugin_path::iland-core.lua"
 
@@ -3140,7 +3090,7 @@ function Plugin.Upgrade(rawInfo)
 		local raw = string.split(thefile,'::')
 		local path = RawPath[raw[1]]..raw[2]
 		INFO('Network',_Tr('console.autoupdate.download')..raw[2])
-		
+
 		if File.exists(path) then -- create backup
 			File.rename(path,path..'.bak')
 			BackupEd[#BackupEd+1]=path
@@ -3172,7 +3122,7 @@ function Plugin.Upgrade(rawInfo)
 
 		File.writeTo(path,raw)
 	end
-	
+
 	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
 	Plugin.Reload()
 
@@ -3206,7 +3156,7 @@ function SendTitle(player,title,subtitle,times)
 end
 function SendText(player,text,mode)
 	-- [mode] 0 = FORCE USE TALK
-	if mode==nil and not cfg.features.force_talk then 
+	if mode==nil and not cfg.features.force_talk then
 		player:sendText(text,5)
 		return
 	end
@@ -3239,16 +3189,6 @@ function CalculatePrice(cubeInfo,dimension)
 	end
 	return math.floor(price*(cfg.land.bought.discount))
 end
-function GenGUID()
-	local guid = system.randomGuid()
-    return string.format('%s-%s-%s-%s-%s',
-        string.sub(guid,1,8),
-        string.sub(guid,9,12),
-        string.sub(guid,13,16),
-        string.sub(guid,17,20),
-        string.sub(guid,21,32)
-    )
-end
 function ToStrDim(a)
 	if a==0 then
 		return _Tr('talk.dim.zero')
@@ -3272,9 +3212,6 @@ function EntityGetType(type)
 	end
 	return 0
 end
-function MakeShortILD(landId)
-	return string.sub(landId,0,16) .. '....'
-end
 local function try(func)
 	local stat, res = pcall(func[1])
 	if not stat then
@@ -3297,8 +3234,8 @@ function RegisterCommands()
 		end
 		local pos = player.blockPos
 		local xuid = player.xuid
-		local landId = ILAPI.PosGetLand(pos)
-		if landId~=-1 and ILAPI.GetOwner(landId)==xuid then
+		local landId = Land.Query.Pos(pos)
+		if landId and Land.RelationShip.Owner.getXuid(landId) == xuid then
 			MEM[xuid].landId=landId
 			OpenGUI.FastLMgr(player)
 		else
@@ -3336,7 +3273,7 @@ function RegisterCommands()
 			SendText(player,_Tr('title.getlicense.alreadyexists'))
 			return
 		end
-		if not ILAPI.IsLandOperator(xuid) and #land_owners[xuid]>=cfg.land.max_lands then
+		if not Land.RelationShip.Operator.check(xuid) and #land_owners[xuid]>=cfg.land.max_lands then
 			SendText(player,_Tr('title.getlicense.limit'))
 			return
 		end
@@ -3381,7 +3318,7 @@ function RegisterCommands()
 			return
 		end
 		local res = MEM[xuid].newLand.range
-		local cubeInfo = Cube.GetInformation(res.posA,res.posB)
+		local cubeInfo = Cube.GetInformation(Cube.Create(res.posA,res.posB))
 		local price = CalculatePrice(cubeInfo,res.dimension)
 		local discount_info = ''
 		local dimension_info = ''
@@ -3418,7 +3355,7 @@ function RegisterCommands()
 					player:runcmd('land giveup')
 					return
 				end
-			
+
 				local xuid = player.xuid
 				local range = MEM[xuid].newLand.range
 				local player_credits = Money.Get(player)
@@ -3427,7 +3364,7 @@ function RegisterCommands()
 					SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
 					return
 				else
-					landId = ILAPI.CreateLand(xuid,range.posA,range.posB,range.dimid)
+					landId = Land.Storage.Create(xuid,range)
 					if landId~=-1 then
 						Money.Del(player,price)
 						SendText(player,_Tr('title.buyland.succeed'))
@@ -3458,8 +3395,8 @@ function RegisterCommands()
 			return
 		end
 		local res = MEM[xuid].reselectLand.range
-		local cubeInfo = Cube.GetInformation(res.posA,res.posB)
-		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id].a,Map.Land.Position.data[MEM[xuid].reselectLand.id].b)
+		local cubeInfo = Cube.GetInformation(Cube.Create(res.posA,res.posB))
+		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id])
 
 		-- Checkout
 		local nr_price = CalculatePrice(cubeInfo,res.dimension)
@@ -3478,7 +3415,7 @@ function RegisterCommands()
 		player:sendModalForm(
 			'Checkout',
 			_Tr('gui.reselectland.content',
-				'<a>',ILAPI.GetDimension(landId),
+				'<a>',Land.Util.GetDimension(landId),
 				'<c>',res.dimension,
 				'<b>',or_price,
 				'<d>',nr_price,
@@ -3495,7 +3432,7 @@ function RegisterCommands()
 					SendText(player,_Tr('title.buyland.moneynotenough'))
 					return
 				end
-				status = ILAPI.SetRange(landId,res.posA,res.posB,res.dimid)
+				status = Land.Range.Reset(landId,Cube.Create(res.posA,res.posB,res.dimid))
 				if status then
 					if payT==0 then
 						Money.Del(player,needto)
@@ -3513,7 +3450,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
 		local xuid = player.xuid
-		if not ILAPI.IsLandOperator(xuid) then
+		if not Land.RelationShip.Operator.check(xuid) then
 			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
 			return false
 		end
@@ -3533,15 +3470,15 @@ function RegisterCommands()
 		local xuid = player.xuid
 		local landlst = {}
 		local tplands = {}
-		for i,landId in pairs(ILAPI.GetPlayerLands(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
+		for i,landId in pairs(Land.RelationShip.Owner.getLand(xuid)) do
+			local name = Land.Options.Nickname.get(landId) or landId
+			local xpos = Land.Options.Teleport.get(landId)
 			tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..Pos.ToString(xpos)..') '..name
 			landlst[#landlst+1] = landId
 		end
-		for i,landId in pairs(ILAPI.GetAllTrustedLand(xuid)) do
-			local name = ILAPI.GetNickname(landId)
-			local xpos = ILAPI.GetPoint(landId)
+		for i,landId in pairs(Land.RelationShip.Trusted.getLand(xuid)) do
+			local name = Land.Options.Nickname.get(landId) or landId
+			local xpos = Land.Options.Teleport.get(landId)
 			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..Pos.ToString(xpos)..') '..name
 			landlst[#landlst+1] = landId
 		end
@@ -3555,7 +3492,7 @@ function RegisterCommands()
 		player:sendForm(Form,function(player,id)
 			if id==nil or id==0 then return end
 			local landId = landlst[id]
-			ILAPI.Teleport(player,landId)
+			Land.Helper.Teleport(player,landId)
 		end
 		)
 	end)
@@ -3564,22 +3501,22 @@ function RegisterCommands()
 		local xuid = player.xuid
 		local pos = player.blockPos
 
-		local landId=ILAPI.PosGetLand(pos)
-		if landId==-1 then
+		local landId = Land.Query.Pos(pos)
+		if not landId then
 			SendText(player,_Tr('title.landtp.fail.noland'))
 			return false
 		end
-		if ILAPI.GetOwner(landId)~=xuid then
+		if Land.RelationShip.Owner.getXuid(landId) ~= xuid then
 			SendText(player,_Tr('title.landtp.fail.notowner'))
 			return false
 		end
-		local landname = ILAPI.GetNickname(landId,true)
-		land_data[landId].settings.tpoint = {
+		local landname = Land.Options.Nickname.get(landId) or landId
+		land_data[landId].settings.teleport = {
 			pos.x,
 			pos.y + 1,
 			pos.z
 		}
-		ILAPI.save({0,1,0})
+		DataStorage.Save({0,1,0})
 		player:sendModalForm(
 			_Tr('gui.general.complete'),
 			_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
@@ -3593,17 +3530,17 @@ function RegisterCommands()
 		local xuid = player.xuid
 		local pos = player.blockPos
 
-		local landId=ILAPI.PosGetLand(pos)
-		if landId==-1 then
+		local landId = Land.Query.Pos(pos)
+		if not landId then
 			SendText(player,_Tr('title.landtp.fail.noland'))
 			return false
 		end
-		if ILAPI.GetOwner(landId)~=xuid then
+		if Land.RelationShip.Owner.getXuid(landId) ~= xuid then
 			SendText(player,_Tr('title.landtp.fail.notowner'))
 			return false
 		end
-		local def = Map.Land.Position.data[landId].a
-		land_data[landId].settings.tpoint = {
+		local def = Map.Land.Position.data[landId].posA
+		land_data[landId].settings.teleport = {
 			def.x,
 			def.y + 1,
 			def.z
@@ -3620,7 +3557,7 @@ function RegisterCommands()
 		end
 		INFO('The server is running iLand v'..Plugin.version)
 		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
-		INFO('Memory Used: '..ILAPI.GetMemoryCount()..'MB')
+		INFO('Memory Used: '..DebugHelper.GetMemoryCount()..'MB')
 	end)
 	mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
 		local name = table.concat(args,' ')
@@ -3629,13 +3566,13 @@ function RegisterCommands()
 			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
 			return
 		end
-		if ILAPI.IsLandOperator(xuid) then
+		if Land.RelationShip.Operator.check(xuid) then
 			ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
 			return
 		end
 		table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
 		Map.Land.Operator.update()
-		ILAPI.save({1,0,0})
+		DataStorage.Save({1,0,0})
 		INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
 	end)
 	mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
@@ -3645,13 +3582,13 @@ function RegisterCommands()
 			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
 			return
 		end
-		if not ILAPI.IsLandOperator(xuid) then
+		if not Land.RelationShip.Operator.check(xuid) then
 			ERROR(_Tr('console.landop.del.failbynull','<a>',name))
 			return
 		end
 		Array.Remove(cfg.land.operator,xuid)
 		Map.Land.Operator.update()
-		ILAPI.save({1,0,0})
+		DataStorage.Save({1,0,0})
 		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
 	end)
 	mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
@@ -3743,33 +3680,35 @@ TimerCallbacks = {
 	LandSign = function()
 		for xuid,res in pairs(MEM) do
 			local player = mc.getPlayer(xuid)
-	
-			if player == nil then
+
+			if not player then
 				goto JUMPOUT_LANDSIGN
 			end
-	
-			local xuid = player.xuid
-			local landId = ILAPI.PosGetLand(player.blockPos)
-			if landId==-1 then
+
+			local landId = Land.Query.Pos(player.blockPos)
+			if not landId then
 				MEM[xuid].inland = 'null'
 				goto JUMPOUT_LANDSIGN
 			end
 			if landId==MEM[xuid].inland then
 				goto JUMPOUT_LANDSIGN
 			end
-	
-			local ownerXuid = ILAPI.GetOwner(landId)
+
+			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 			local ownerId = '?'
-			if ownerXuid~='?' then ownerId=data.xuid2name(ownerXuid) end
+			if ownerXuid ~= nil then
+				ownerId = data.xuid2name(ownerXuid)
+			end
 			local landcfg = land_data[landId].settings
-	
-			if (xuid==ownerXuid or ILAPI.IsPlayerTrusted(landId,xuid)) and landcfg.signtome then
+
+			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
 				-- owner/trusted
 				if not landcfg.signtome then
 					goto JUMPOUT_LANDSIGN
 				end
+				local name = Land.Options.Nickname.get(landId) or landId
 				SendTitle(player,
-					_Tr('sign.listener.ownertitle','<a>',ILAPI.GetNickname(landId,false)),
+					_Tr('sign.listener.ownertitle','<a>',name),
 					_Tr('sign.listener.ownersubtitle')
 				)
 			else
@@ -3788,7 +3727,7 @@ TimerCallbacks = {
 					SendText(player,des,0)
 				end
 			end
-	
+
 			MEM[xuid].inland = landId
 			:: JUMPOUT_LANDSIGN ::
 		end
@@ -3796,32 +3735,33 @@ TimerCallbacks = {
 	ButtomSign = function()
 		for xuid,res in pairs(MEM) do
 			local player = mc.getPlayer(xuid)
-	
+
 			if player == nil then
 				goto JUMPOUT_BUTTOMSIGN
 			end
-	
-			local landId = ILAPI.PosGetLand(player.blockPos)
-			if landId==-1 then
+
+			local landId = Land.Query.Pos(player.blockPos)
+			if not landId then
 				goto JUMPOUT_BUTTOMSIGN
 			end
 			local landcfg = land_data[landId].settings
 			if not landcfg.signbuttom then
 				goto JUMPOUT_BUTTOMSIGN
 			end
-	
-			local ownerXuid = ILAPI.GetOwner(landId)
+
+			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 			local ownerId = '?'
-			if ownerXuid~='?' then ownerId=data.xuid2name(ownerXuid) end
-			
-			if (xuid==ownerXuid or ILAPI.IsPlayerTrusted(landId,xuid)) and landcfg.signtome then
-				player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',ILAPI.GetNickname(landId)),4)
+			if ownerXuid ~= nil then
+				ownerId = data.xuid2name(ownerXuid)
+			end
+			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
+				player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId)),4)
 			else
 				if (xuid~=ownerXuid) and landcfg.signtother then
 					player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
 				end
 			end
-	
+
 			:: JUMPOUT_BUTTOMSIGN ::
 		end
 	end,
@@ -3873,29 +3813,29 @@ FormCallbacks = {
 EventCallbacks = {
 	onExplode = function(source,pos,radius,range,isDestroy,isFire)
 
-		if ILAPI.IsDisabled('onExplode') then
+		if Map.Listener.check('onExplode') then
 			return
 		end
-	
+
 		local bp = Pos.ToIntPos(pos)
-		local landId = ILAPI.PosGetLand(bp)
-		if landId==-1 then
+		local landId = Land.Query.Pos(bp)
+		if not landId then
 			local r = math.floor(radius) + 1
-			local lands = ILAPI.GetLandInRange(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid)
+			local lands = Land.Query.Area(Cube.Create(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid))
 			if #lands==0 then
 				return
 			end
 			for i,landId in pairs(lands) do
 				if not land_data[landId].settings.ev_explode then
 					return false
-				end 
+				end
 			end
 		else
 			if land_data[landId].settings.ev_explode then
 				return
-			end 
+			end
 		end
-	
+
 		return false
 	end
 }
@@ -3915,7 +3855,7 @@ mc.listen('onJoin',function(player)
 	end
 	if land_owners[xuid]==nil then
 		land_owners[xuid] = {}
-		ILAPI.save({0,0,1})
+		DataStorage.Save({0,0,1})
 	end
 
 	if player.gameMode==1 then
@@ -3944,75 +3884,75 @@ mc.listen('onLeft',function(player)
 end)
 mc.listen('onDestroyBlock',function(player,block)
 
-	if ILAPI.IsDisabled('onDestroyBlock') then
+	if Map.Listener.check('onDestroyBlock') then
 		return
 	end
 
-	local xuid=player.xuid
+	local xuid = player.xuid
 
 	if MEM[xuid].selectool==0 then
 		local HandItem = player:getHand()
 		if HandItem.isNull(HandItem) then goto PROCESS_1 end --fix crash
 		SendText(player,_Tr('title.oplandmgr.setsuccess','<a>',HandItem.name))
 		cfg.features.selection.tool_type=HandItem.type
-		ILAPI.save({1,0,0})
+		DataStorage.Save({1,0,0})
 		MEM[xuid].selectool=-1
 		return false
 	end
 
 	:: PROCESS_1 ::
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(block.pos)
+	if not landId then return end
 
-	if land_data[landId].permissions.allow_destroy then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if land_data[landId].permissions.allow_destroy then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onPlaceBlock',function(player,block)
 
-	if ILAPI.IsDisabled('onPlaceBlock') then
+	if Map.Listener.check('onPlaceBlock') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(block.pos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_place then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	local xuid = player.xuid
+	if land_data[landId].permissions.allow_place then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onUseItemOn',function(player,item,block)
 
-	if ILAPI.IsDisabled('onUseItemOn') then
+	if Map.Listener.check('onUseItemOn') then
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(block.pos)
+	if not landId then return end
 
 	local xuid = player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	local IsConPlus = false
-	if not ILAPI.CanControl(0,block.type) then 
-		if not ILAPI.CanControl(2,item.type) then
+	if not Map.Control.check(0,block.type) then
+		if not Map.Control.check(2,item.type) then
 			return
 		else
 			IsConPlus = true
 		end
 	end
-	
+
 	local perm = land_data[landId].permissions
 
 	if IsConPlus then
@@ -4050,22 +3990,22 @@ mc.listen('onUseItemOn',function(player,item,block)
 end)
 mc.listen('onAttackBlock',function(player,block,item)
 
-	if ILAPI.IsDisabled('onAttackBlock') then
+	if Map.Listener.check('onAttackBlock') then
 		return
 	end
 
 	local bltype = block.type
-	if not ILAPI.CanControl(5,bltype) then
+	if not Map.Control.check(5,bltype) then
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end
+	local landId = Land.Query.Pos(block.pos)
+	if not landId then return end
 
 	local xuid = player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	if bltype == 'minecraft:dragon_egg' and land_data[landId].permissions.allow_destroy then return end -- 左键龙蛋（拓充）
 
@@ -4075,17 +4015,17 @@ mc.listen('onAttackBlock',function(player,block,item)
 end)
 mc.listen('onAttackEntity',function(player,entity)
 
-	if ILAPI.IsDisabled('onAttackEntity') then
+	if Map.Listener.check('onAttackEntity') then
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(entity.blockPos)
-	if landId==-1 then return end
+	local landId = Land.Query.Pos(entity.blockPos)
+	if not landId then return end
 
 	local xuid = player.xuid
 	local en = entity.type
 	local perm = land_data[landId].permissions
-	if ILAPI.CanControl(3,en) then
+	if Map.Control.check(3,en) then
 		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
 		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
 	else
@@ -4095,81 +4035,81 @@ mc.listen('onAttackEntity',function(player,entity)
 		if perm.allow_attack_mobs and entityType == 2 then return end
 	end
 
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onChangeArmorStand',function(entity,player,slot)
 
-	if ILAPI.IsDisabled('onChangeArmorStand') then
+	if Map.Listener.check('onChangeArmorStand') then
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(entity.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(entity.blockPos)
+	if not landId then return end
 
 	local xuid = player.xuid
 	if land_data[landId].permissions.use_armor_stand then return end
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onTakeItem',function(player,entity)
 
-	if ILAPI.IsDisabled('onTakeItem') then
+	if Map.Listener.check('onTakeItem') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(entity.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(entity.blockPos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_pickupitem then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	local xuid = player.xuid
+	if land_data[landId].permissions.allow_pickupitem then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onDropItem',function(player,item)
 
-	if ILAPI.IsDisabled('onDropItem') then
+	if Map.Listener.check('onDropItem') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(player.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(player.blockPos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_dropitem then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	local xuid = player.xuid
+	if land_data[landId].permissions.allow_dropitem then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onBlockInteracted',function(player,block)
 
-	if ILAPI.IsDisabled('onBlockInteracted') then
+	if Map.Listener.check('onBlockInteracted') then
 		return
 	end
 
-	if not ILAPI.CanControl(1,block.type) then return end
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
+	if not Map.Control.check(1,block.type) then return end
+	local landId = Land.Query.Pos(block.pos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	local xuid = player.xuid
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	local perm = land_data[landId].permissions
 	local bn = block.type
@@ -4189,36 +4129,36 @@ mc.listen('onBlockInteracted',function(player,block)
 	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
 	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
 	if bn == 'minecraft:stonecutter_block' and perm.use_stonecutter then return end -- 切石机
-	
+
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onUseFrameBlock',function(player,block)
-		
-	if ILAPI.IsDisabled('onUseFrameBlock') then
+
+	if Map.Listener.check('onUseFrameBlock') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(block.pos)
-	if landId==-1 then return end -- No Land
+	local landId=Land.Query.Pos(block.pos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.use_item_frame then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
+	local xuid = player.xuid
+	if land_data[landId].permissions.use_item_frame then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
+
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onSpawnProjectile',function(splasher,entype)
 
-	if ILAPI.IsDisabled('onSpawnProjectile') or not splasher:isPlayer() then
+	if Map.Listener.check('onSpawnProjectile') or not splasher:isPlayer() then
 		return
 	end
 
-	local landId = ILAPI.PosGetLand(splasher.blockPos)
-	if landId == -1 then return end -- No Land
+	local landId = Land.Query.Pos(splasher.blockPos)
+	if not landId then return end
 
 	local player = splasher:toPlayer()
 	local xuid = player.xuid
@@ -4233,34 +4173,34 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 	if entype == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
 	if entype == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
 
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
+
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onFireworkShootWithCrossbow',function(player)
-			
-	if ILAPI.IsDisabled('onFireworkShootWithCrossbow') then
+
+	if Map.Listener.check('onFireworkShootWithCrossbow') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(player.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(player.blockPos)
+	if not landId then return end
 
-	local xuid=player.xuid
-	if land_data[landId].permissions.allow_shoot then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
+	local xuid = player.xuid
+	if land_data[landId].permissions.allow_shoot then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
+
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onStepOnPressurePlate',function(entity,block)
-				
-	if ILAPI.IsDisabled('onStepOnPressurePlate') then
+
+	if Map.Listener.check('onStepOnPressurePlate') then
 		return
 	end
 
@@ -4275,32 +4215,32 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(entity.blockPos)
-	if landId==-1 then return end -- No Land
-	
-	if land_data[landId].permissions.use_pressure_plate then return end -- Perm Allow
+	local landId=Land.Query.Pos(entity.blockPos)
+	if not landId then return end
+
+	if land_data[landId].permissions.use_pressure_plate then return end
 	if ispl then
-		local xuid=player.xuid
-		if ILAPI.IsLandOperator(xuid) then return end
-		if ILAPI.IsLandOwner(landId,xuid) then return end
-		if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+		local xuid = player.xuid
+		if Land.Util.CheckPerm(landId,xuid) then
+			return
+		end
 		SendText(player,_Tr('title.landlimit.noperm'))
 	end
 	return false
 end)
 mc.listen('onRide',function(rider,entity)
-				
-	if ILAPI.IsDisabled('onRide') then
+
+	if Map.Listener.check('onRide') then
 		return
 	end
 
 	if rider:toPlayer()==nil then return end
 
-	local landId=ILAPI.PosGetLand(rider.blockPos)
-	if landId==-1 then return end -- No Land 
+	local landId = Land.Query.Pos(rider.blockPos)
+	if not landId then return end
 
 	local player=rider:toPlayer()
-	local xuid=player.xuid
+	local xuid = player.xuid
 	local en=entity.type
 	if en=='minecraft:minecart' or en=='minecraft:boat' then
 		if land_data[landId].permissions.allow_ride_trans then return end
@@ -4308,99 +4248,97 @@ mc.listen('onRide',function(rider,entity)
 		if land_data[landId].permissions.allow_ride_entity then return end
 	end
 
-	 -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
-	
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
+
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
 
-	if ILAPI.IsDisabled('onWitherBossDestroy') then
+	if Map.Listener.check('onWitherBossDestroy') then
 		return
 	end
 
 	local dimid = witherBoss.pos.dimid
-	for n,pos in pairs(AABB.Traverse(AAbb,aaBB,dimid)) do
-		local landId=ILAPI.PosGetLand(pos)
-		if landId~=-1 and not land_data[landId].permissions.allow_entity_destroy then 
+	for n,pos in pairs(Cube.Traverse(AAbb,aaBB,dimid)) do
+		local landId = Land.Query.Pos(pos)
+		if landId and not land_data[landId].permissions.allow_entity_destroy then
 			break
 		end
 	end
 	return false
 end)
 mc.listen('onFarmLandDecay',function(pos,entity)
-	
-	if ILAPI.IsDisabled('onFarmLandDecay') then
+
+	if Map.Listener.check('onFarmLandDecay') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(entity.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(entity.blockPos)
+	if not landId then return end
 	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
 end)
 mc.listen('onPistonTryPush',function(pos,block)
 
-	if ILAPI.IsDisabled('onPistonTryPush') then
+	if Map.Listener.check('onPistonTryPush') then
 		return
 	end
 
-	local Id_bePushedBlock = ILAPI.PosGetLand(block.pos)
-	local Id_pistonBlock = ILAPI.PosGetLand(pos)
-	if Id_bePushedBlock~=-1 and not land_data[Id_bePushedBlock].settings.ev_piston_push and Id_pistonBlock~=Id_bePushedBlock then
+	local Id_bePushedBlock = Land.Query.Pos(block.pos)
+	local Id_pistonBlock = Land.Query.Pos(pos)
+	if Id_bePushedBlock and not land_data[Id_bePushedBlock].settings.ev_piston_push and Id_pistonBlock~=Id_bePushedBlock then
 		return false
 	end
 
 end)
 mc.listen('onFireSpread',function(pos)
 
-	if ILAPI.IsDisabled('onFireSpread') then
+	if Map.Listener.check('onFireSpread') then
 		return
 	end
 
-	local landId=ILAPI.PosGetLand(pos)
-	if landId==-1 then return end -- No Land
-	if land_data[landId].settings.ev_fire_spread then return end -- Perm Allow
+	local landId = Land.Query.Pos(pos)
+	if not landId then return end
+	if land_data[landId].settings.ev_fire_spread then return end
 	return false
 end)
 mc.listen('onEat',function(player,item)
 
-	if ILAPI.IsDisabled('onEat') then
+	if Map.Listener.check('onEat') then
 		return
 	end
 
 	local xuid = player.xuid
-	local landId=ILAPI.PosGetLand(player.blockPos)
-	if landId==-1 then return end -- No Land
+	local landId = Land.Query.Pos(player.blockPos)
+	if not landId then return end
 
-	if land_data[landId].permissions.eat then return end -- Perm Allow
-	if ILAPI.IsLandOperator(xuid) then return end
-	if ILAPI.IsLandOwner(landId,xuid) then return end
-	if ILAPI.IsPlayerTrusted(landId,xuid) then return end
+	if land_data[landId].permissions.eat then return end
+	if Land.Util.CheckPerm(landId,xuid) then
+		return
+	end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
 mc.listen('onRedStoneUpdate',function(block,level,isActive)
 
-	if ILAPI.IsDisabled('onRedStoneUpdate') then
+	if Map.Listener.check('onRedStoneUpdate') then
 		return
 	end
 
 	local pos = block.pos
-	local landId = ILAPI.PosGetLand(pos)
-	if landId~=-1 then
-		return
-	end
+	local landId = Land.Query.Pos(pos)
+	if not landId then return end
+
 	local r = 2
-	local lands = ILAPI.GetLandInRange(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid)
+	local lands = Land.Query.Area(Cube.Create(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid))
 	for i,Id in pairs(lands) do
 		if not land_data[Id].settings.ev_redstone_update then
 			return false
-		end 
+		end
 	end
 
 end)
@@ -4416,7 +4354,7 @@ mc.listen('onStartDestroyBlock',function(player,block)
 
 end)
 mc.listen('onServerStarted',function()
-	
+
 	-- Make timer
 	if cfg.features.landsign.enable then
 		setInterval(TimerCallbacks.LandSign,cfg.features.landsign.frequency*1000)
@@ -4465,7 +4403,7 @@ mc.listen('onServerStarted',function()
 				end
 				local data = JSON.decode(result)
 				Server.memData = data
-		
+
 				-- Check Server Version
 				if data.FILE_Version~=Server.version then
 					INFO('Network',_Tr('console.getonline.failbyver','<a>',data.FILE_Version))
@@ -4499,17 +4437,17 @@ mc.listen('onServerStarted',function()
 						INFO('Announcement',n..'. '..content)
 					end
 				end
-				
+
 			end)
 		else
 			WARN(_Tr('console.getonline.failed'))
 		end
 	end
 
-	local startup_memory = ILAPI.GetMemoryCount()
-	INFO('Load','Completed, use memory: '..startup_memory..'MB.')
+	local startup_memory = DebugHelper.GetMemoryCount()
+	INFO('Load','Completed.')
 	setInterval(function()
-		if ILAPI.GetMemoryCount() > startup_memory * 1.2 then
+		if DebugHelper.GetMemoryCount() > startup_memory * 1.2 then
 			collectgarbage("collect")
 		end
 	end,1000*60)
@@ -4519,10 +4457,10 @@ mc.listen('onBlockExplode',EventCallbacks.onExplode)
 mc.listen('onEntityExplode',EventCallbacks.onExplode)
 
 -- Exported ILAPIs
-
+--[[
 lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
 lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
-lxl.export(ILAPI.PosGetLand,'ILAPI_PosGetLand')
+lxl.export(Land.Query.Pos,'ILAPI_PosGetLand')
 lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
 lxl.export(ILAPI.GetDistence,'ILAPI_GetDistance')
 lxl.export(ILAPI.GetLandInRange,'ILAPI_GetLandInRange')
@@ -4531,13 +4469,13 @@ lxl.export(ILAPI.CheckPerm,'ILAPI_CheckPerm')
 lxl.export(ILAPI.CheckSetting,'ILAPI_CheckSetting')
 lxl.export(ILAPI.GetRange,'ILAPI_GetRange')
 lxl.export(ILAPI.GetEdge,'ILAPI_GetEdge')
-lxl.export(ILAPI.GetDimension,'ILAPI_GetDimension')
+lxl.export(Land.Util.GetDimension,'ILAPI_GetDimension')
 lxl.export(ILAPI.GetName,'ILAPI_GetName')
 lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
-lxl.export(ILAPI.GetOwner,'ILAPI_GetOwner')
+lxl.export(Land.RelationShip.Owner.getXuid,'ILAPI_GetOwner')
 lxl.export(ILAPI.GetPoint,'ILAPI_GetPoint')
 lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
-lxl.export(ILAPI.IsPlayerTrusted,'ILAPI_IsPlayerTrusted')
+lxl.export(Land.RelationShip.Trusted.check,'ILAPI_IsPlayerTrusted')
 lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
 lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
 lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
@@ -4554,7 +4492,7 @@ lxl.export(ILAPI.IsDisabled,'ILAPI_IsListenerDisabled')
 lxl.export(ILAPI.GetApiVersion,'ILAPI_GetApiVersion')
 lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
 lxl.export(SafeTeleport.Do,"SafeTeleport_Do")
-
+]]
 -- Signs.
 
 INFO('Powerful land plugin is loaded! Ver-'..Plugin.version..',')
