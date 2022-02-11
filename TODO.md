@@ -8,6 +8,11 @@
  - [ ] 跨维度安全传送问题
  - [ ] SubLand
  - [ ] 默认关闭onDrop
+ - [ ] better control using new events.
+ - [x] 修复冲突检查
+ - [ ] oplmgr delete land problem?
+ - [ ] lmgr transfer land problem?
+ - [ ] lmgr check invaild permission?
 
 > ILAPI 示例插件计划
  - [ ] Land Edge Shower
