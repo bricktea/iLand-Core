@@ -15,13 +15,13 @@
  - [ ] oplmgr delete land problem?
  - [ ] lmgr transfer land problem?
  - [ ] lmgr check invaild permission?
- - [x] getOwner 失败返回 nil
- - [x] PosGetLand 失败返回 nil
  - [x] 移除ILAPI.GetChunk
  - [x] 移除ILAPI.GetDistance
  - [x] GetRange返回AABB
- - [x] 区分维度012的2D领地【!NeedAutoUpdate】
+ - [ ] 区分维度012的2D领地【!NeedAutoUpdate】
  - [x] landId改12位【!NeedAutoUpdate】
+ - [x] ILAPI将会检查参数列表
+ - [ ] 适配1.18.11，LL2.1
  - [ ] 测试safetp中退出
 
 > **2.73**

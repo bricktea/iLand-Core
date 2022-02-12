@@ -1,10 +1,9 @@
 # API 接口文档
-> ILAPI已在v2.30后全面升级为V2接口版本，改动部分较多，请注意适配。
+> ILAPI已在v2.72后升级为 `201` 接口版本，有轻微改动，请注意适配。
 
 !> **接口使用注意事项**<br>
     1. LXL远程调用系统传递数据实际上是使用`JSON`，不能转为JSON的参数不可以传递，故接口间不能传递引擎提供的数据类型，比如`Player`、`Entity`、`IntPos`之类的，只有语言提供的数据类型比如`number`、`boolean`、`string`可以传递，否则值会变成`nil`(Null)。<br>
-    2. 由于LXL远程调用系统的问题，函数返回时若返回一个只有一个元素的数组，数组到达调用者的时候外面的数组消失，返回值只有那一个元素。<br>
-    3. iLand所有坐标运算单位均为`1`，请不要向ILAPI中传递浮点数，以免出现报错。
+    2. iLand所有坐标运算单位均为`1`，请不要向ILAPI中传递浮点数，以免出现报错。
 
 > **数据类型约定**<br> 
 1. `Vec3` 指一个含有整数元素`x`、`y`、`z`的`table`，如下：
@@ -22,7 +21,15 @@ local vec4 = {
     dimid = 0
 }
 ```
-3. `XUID` 就是 `string`，请不要向接口传递整数型的XUID。 
+3. `AABB` 指一个包含两点坐标和维度ID，且前一点（A）的各坐标值必小于等于后一点（B）的坐标值。
+```lua
+local AABB = {
+    posA = (Vec3)
+    posB = (Vec3)
+    dimid = 0|1|2
+}
+```
+4. `XUID` 就是 `string`，请不要向接口传递整数型的XUID。 
 
 > **调用示例**<br>
 
@@ -71,24 +78,6 @@ mc.listen('onDestroyBlock',function(player,block) {
 
 !> 若没有领地，返回值是`-1`
 
-##### `ILAPI_GetChunk` - 获得一个区块内加载的领地列表
- - 传入参数
-   - pos - `vec2` 任意坐标
-   - dimid - `number` 维度ID
- - 返回值
-   - `table` 区块内里的列表
-
-!> 若没有领地，返回值是`-1`
-
-##### `ILAPI_GetDistance` - 获取一个坐标与领地的最短距离
- - 传入参数
-   - landId - `string` 领地ID
-   - pos - `Vec4` 任意坐标
- - 返回值
-   - `number` 距离
-
-!> 若要获取一个范围内的领地，请使用`ILAPI_GetLandInRange`。
-
 ##### `ILAPI_GetLandInRange` - 获取一个长方体内所有领地
  - 传入参数
    - startpos - `Vec3` 任意坐标
@@ -112,7 +101,7 @@ mc.listen('onDestroyBlock',function(player,block) {
 ##### `ILAPI_CheckSetting` - 检查领地某设置项开启状态
  - 传入参数
    - landId - `string` 领地ID
-   - perm - `string` 设置项名
+   - set - `string` 设置项名
  - 返回值
    - `boolean` 设置项状态
 
@@ -122,16 +111,17 @@ mc.listen('onDestroyBlock',function(player,block) {
  - 传入参数
    - landId - `string` 领地ID
  - 返回值
-   - `table` 返回一个数组，第一、二成员是对角坐标，第三个成员是维度ID
+   - `AABB` 表示领地范围。
 
 ##### `ILAPI_GetEdge` - 获取领地边框坐标
  - 传入参数
    - landId - `string` 领地ID
-   - dimtype - `string` 可选值：`2D`、`3D`
+   - dimType - `string` 可选值：`2D`、`3D`
+   - customY - `number` 若`dimType`为`2D`，此参数可选择传递，为返回的边框坐标的y轴值。
  - 返回值
    - `table` 领地边缘坐标数组
 
-##### `ILAPI_GetLandDimension` - 获取领地维数
+##### `ILAPI_GetDimension` - 获取领地维数
  - 传入参数
    - landId - `string` 领地ID
  - 返回值

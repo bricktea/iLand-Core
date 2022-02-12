@@ -15,7 +15,7 @@
 Plugin = {
 	version = "2.71",
 	numver = 271,
-	apiver = 200,
+	apiver = 201,
 	minLXL = {0,5,12},
 }
 
@@ -4618,6 +4618,10 @@ mc.listen('onServerStarted',function()
 end)
 mc.listen('onBlockExplode',EventCallbacks.onExplode)
 mc.listen('onEntityExplode',EventCallbacks.onExplode)
+
+-- Export Apis.
+
+Land.API.RunExport()
 
 -- Signs.
 
