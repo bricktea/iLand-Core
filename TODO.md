@@ -1,7 +1,6 @@
 > Version **2.72**
  - [ ] `data.json`数据结构优化
  - [ ] event system
- - [x] 使用短landId代替完整uuid
  - [x] 重建ILAPI
  - [x] 修复3D重置为2D中的一个bug
  - [ ] particle box offset.
@@ -12,6 +11,7 @@
  - [ ] 默认关闭onDrop
  - [ ] better control using new events.
  - [x] 修复冲突检查
+ - [x] 修复功能被关闭后lmgr无反应
  - [ ] oplmgr delete land problem?
  - [ ] lmgr transfer land problem?
  - [ ] lmgr check invaild permission?
@@ -22,6 +22,7 @@
  - [x] GetRange返回AABB
  - [x] 区分维度012的2D领地【!NeedAutoUpdate】
  - [x] landId改12位【!NeedAutoUpdate】
+ - [ ] 测试safetp中退出
 
 > **2.73**
  - [ ] SubLand

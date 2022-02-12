@@ -109,7 +109,7 @@ local maxY <const> = 320
 logger.setConsole(true)
 logger.setTitle("ILand")
 function INFO(msgtype,content)
-	if content==nil then
+	if not content then
 		content = msgtype
 		msgtype = ""
 	else
@@ -160,12 +160,8 @@ Map = {
 			local posA,posB = ra.posA,ra.posB
 			local dimid = ra.dimid
 			local function chkNil(table,a,b)
-				if table[a]==nil then
-					table[a] = {}
-				end
-				if table[a][b]==nil then
-					table[a][b] = {}
-				end
+				table[a] = table[a] or {}
+				table[a][b] = table[a][b] or {}
 			end
 
 			local size = cfg.features.chunk_side
@@ -177,7 +173,7 @@ Map = {
 				chkNil(TxTz,Cx,Cz)
 				local count2 = 0
 				while (sZ+size*count2<=posB.z+size) do
-					local Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count2})
+					Cx,Cz = Pos.ToChunkPos({x=sX+size*count,z=sZ+size*count2})
 					chkNil(TxTz,Cx,Cz)
 					count2 = count2 + 1
 				end
@@ -191,7 +187,7 @@ Map = {
 					-- Tx Tz
 					if mode=='add' then
 						chkNil(Map.Chunk.data[dimid],Tx,Tz)
-						if Array.Fetch(Map.Chunk.data[dimid][Tx][Tz],landId) == -1 then
+						if not Array.Fetch(Map.Chunk.data[dimid][Tx][Tz],landId) then
 							table.insert(Map.Chunk.data[dimid][Tx][Tz],#Map.Chunk.data[dimid][Tx][Tz]+1,landId)
 						end
 					elseif mode=='del' then
@@ -228,21 +224,21 @@ Map = {
 				if mode == 'add' then
 					for x = posA.x,posB.x do
 						local tar = Map.Land.AXIS.data[dimid]['x']
-						if tar[x]==nil then
+						if not tar[x] then
 							tar[x] = {}
 						end
 						tar[x][#tar[x]+1] = landId
 					end
 					for y = posA.y,posB.y do
 						local tar = Map.Land.AXIS.data[dimid]['y']
-						if tar[y]==nil then
+						if not tar[y] then
 							tar[y] = {}
 						end
 						tar[y][#tar[y]+1] = landId
 					end
 					for z = posA.z,posB.z do
 						local tar = Map.Land.AXIS.data[dimid]['z']
-						if tar[z]==nil then
+						if not tar[z] then
 							tar[z] = {}
 						end
 						tar[z][#tar[z]+1] = landId
@@ -391,7 +387,7 @@ Map = {
 					raw = Pos.ToIntPos(pos),
 					querying = true
 				}
-				if landId~=nil then
+				if landId then
 					map.land_recorded_pos[landId][#map.land_recorded_pos[landId]+1] = strpos
 				else
 					map.non_land_pos[#map.non_land_pos+1] = strpos
@@ -401,7 +397,7 @@ Map = {
 				local strpos = Pos.ToString(pos)
 				local map = Map.CachedQuery.SinglePos
 				local record = map.data[strpos]
-				if record~=nil then
+				if record then
 					record.querying = true
 					return record.landId
 				end
@@ -410,7 +406,7 @@ Map = {
 			clear = function(strpos) -- clear single pos's cache
 				local map = Map.CachedQuery.SinglePos
 				local record = map.data[strpos]
-				if record==nil then
+				if not record then
 					return
 				end
 				local landId = record.landId
@@ -459,7 +455,7 @@ Map = {
 				local map = Map.CachedQuery.RangeArea
 				local cubestr = Cube.ToString(AABB)
 				local record = map.data[cubestr]
-				if record ~= nil then
+				if record then
 					record.querying = true
 					return record.landlist
 				end
@@ -475,7 +471,7 @@ Map = {
 			clear_by_land = function(landId) -- clear cached "range" if "range" in this range.
 				local map = Map.CachedQuery.RangeArea
 				for cubestr,rangeInfo in pairs(map.data) do
-					if Array.Fetch(Land.Query.Area(rangeInfo.raw,true),landId)~=-1 then
+					if Array.Fetch(Land.Query.Area(rangeInfo.raw,true),landId) then
 						map.clear_range(cubestr)
 					end
 				end
@@ -542,7 +538,7 @@ ConfigReader = {
 			for n,path in pairs(table.getAllPaths(cfg,false)) do
 				item = table.getKey(loadcfg,path)
 				if path ~= 'this.version' then
-					if item == nil then
+					if not item then
 						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
 						UpdateMe.needed = true
 					else
@@ -607,7 +603,7 @@ ConfigReader = {
 	end,
 	Updater = {
 		config = function(this)
-			if this.version==nil or this.version<240 then
+			if not this.version or this.version<240 then
 				return false
 			end
 			--- Update
@@ -663,13 +659,13 @@ ConfigReader = {
 			if this.version < 270 then
 				local sec = this.features.selection
 				sec.dimension = {true,true,true}
-				if Array.Fetch(sec.disable_dimension,0)~=-1 then
+				if Array.Fetch(sec.disable_dimension,0) then
 					sec.dimension[1] = false
 				end
-				if Array.Fetch(sec.disable_dimension,1)~=-1 then
+				if Array.Fetch(sec.disable_dimension,1) then
 					sec.dimension[2] = false
 				end
-				if Array.Fetch(sec.disable_dimension,2)~=-1 then
+				if Array.Fetch(sec.disable_dimension,2) then
 					sec.dimension[3] = false
 				end
 				this.land.min_space = 15
@@ -755,11 +751,11 @@ I18N = {
 		local list_o = I18N.LangPack.GetRepo()
 		local list_l = I18N.LangPack.GetInstalled()
 		if File.exists(path..lang..'.json') then
-			if Array.Fetch(list_l,lang)==-1 then
+			if not Array.Fetch(list_l,lang) then
 				ERROR(_Tr('console.languages.update.notfound','<a>',lang))
 			elseif JSON.decode(File.readFrom(path..lang..'.json')).VERSION == Plugin.numver then
 				ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
-			elseif Array.Fetch(list_o.official,lang)==-1 and Array.Fetch(list_o['3-rd'],lang)==-1 then
+			elseif not Array.Fetch(list_o.official,lang) and not Array.Fetch(list_o['3-rd'],lang) then
 				ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
 			elseif I18N.LangPack.Install(lang) then
 				INFO(_Tr('console.languages.update.succeed','<a>',lang))
@@ -800,7 +796,7 @@ I18N = {
 		GetSign = function()
 			local rtn = ""
 			local count = 1
-			while(I18N.LangPack.data['#'..count] ~= nil) do
+			while(I18N.LangPack.data['#'..count]) do
 				rtn = '\n'.._Tr('#'..count)
 				count = count + 1
 			end
@@ -965,14 +961,14 @@ Land = {
 			noAccessCache = noAccessCache or false
 			if not noAccessCache then
 				local cache_result = Map.CachedQuery.SinglePos.get(pos)
-				if cache_result ~= nil then
+				if cache_result then
 					return cache_result
 				end
 			end
 
 			local Cx,Cz = Pos.ToChunkPos(pos)
 			local dimid = pos.dimid
-			if Map.Chunk.data[dimid][Cx]~=nil and Map.Chunk.data[dimid][Cx][Cz]~=nil then
+			if Map.Chunk.data[dimid][Cx] and Map.Chunk.data[dimid][Cx][Cz] then
 				for n,landId in pairs(Map.Chunk.data[dimid][Cx][Cz]) do
 					if dimid==land_data[landId].range.dimid and Cube.HadPos(pos,Cube.Create(Map.Land.Position.data[landId].posA,Map.Land.Position.data[landId].posB)) then
 						if not noAccessCache then
@@ -992,14 +988,14 @@ Land = {
 			noAccessCache = noAccessCache or false
 			if not noAccessCache then
 				local cache_result = Map.CachedQuery.RangeArea.get(AABB)
-				if cache_result~=nil then
+				if cache_result then
 					return cache_result
 				end
 			end
 
 			local temp = { [1] = {}, [2] = {}, [3] = {} }
 			local function concat(a,list)
-				if list==nil then
+				if not list then
 					return
 				end
 				for n,value in pairs(list) do
@@ -1098,7 +1094,7 @@ Land = {
 			local ignores = Array.ToKeyMap(ignoreList)
 			local lands = Land.Query.Area(AABB)
 			for i,landId in pairs(lands) do
-				if ignores[landId]==nil then
+				if not ignores[landId] then
 					return { status = false, id = landId }
 				end
 			end
@@ -1114,7 +1110,7 @@ Land = {
 	IDManager = {
 
 		IsVaild = function(landId)
-			return land_data[landId]~=nil
+			return land_data[landId] ~= nil
 		end,
 		Create = function()
 			local landId
@@ -1137,7 +1133,7 @@ Land = {
 		Owner = {
 			getXuid = function(landId)
 				for xuid,v in pairs(land_owners) do
-					if Array.Fetch(v,landId)~=-1 then
+					if Array.Fetch(v,landId) then
 						return xuid
 					end
 				end
@@ -1303,7 +1299,7 @@ ConfigUIEditor = {
 		return ori
 	end,
 	RegisterType = function(ori,class)
-		if ori.components[class] ~= nil then
+		if ori.components[class] then
 			return false
 		end
 		ori.components[class] = {}
@@ -1324,7 +1320,7 @@ ConfigUIEditor = {
 			Default:
 				Auto get from cfg(cfgpath) if extradata = nil.
 		]]
-		if Array.Fetch({'input','switch','dropdown','percent_slider','slider','step_slider'},uitype)==-1 then
+		if not Array.Fetch({'input','switch','dropdown','percent_slider','slider','step_slider'},uitype) then
 			WARN('Unknown component: '..uitype)
 			return false
 		end
@@ -1363,7 +1359,7 @@ ConfigUIEditor = {
 					Form:addSlider(cmp.name,0,100,1,table.getKey(cfg,cmp.path)*100)
 				elseif cmp.ui=='step_slider' then
 					local pos = Array.Fetch(cmp.data,table.getKey(cfg,cmp.path))
-					if pos==-1 then
+					if not pos then
 						pos = 0
 					else
 						pos = pos - 1
@@ -1373,9 +1369,7 @@ ConfigUIEditor = {
 			end
 		end
 		player:sendForm(Form,function(player,res)
-			if res==nil then
-				return
-			end
+			if not res then return end
 			local slf
 			for n,result in pairs(res) do
 				slf = ori.raw_items[n]
@@ -1389,7 +1383,7 @@ ConfigUIEditor = {
 				elseif slf.ui=='switch' then
 					table.setKey(cfg,slf.path,result)
 				elseif slf.ui=='dropdown' then
-					if slf.data[result+1]~=nil then
+					if slf.data[result+1] then
 						table.setKey(cfg,slf.path,slf.data[result+1])
 					end
 				elseif slf.ui=='slider' then	--- testless
@@ -1397,7 +1391,7 @@ ConfigUIEditor = {
 				elseif slf.ui=='percent_slider' then
 					table.setKey(cfg,slf.path,result/100)
 				elseif slf.ui=='step_slider' then	--- testless
-					if slf.data[result+1]~=nil then
+					if slf.data[result+1] then
 						table.setKey(cfg,slf.path,slf.data[result+1])
 					end
 				end
@@ -1419,12 +1413,12 @@ OpenGUI = {
 	FastLMgr = function(player,isOP)
 		local xuid = player.xuid
 		local lands = Land.RelationShip.Owner.getLand(xuid)
-		if #lands==0 and isOP==nil then
+		if #lands==0 and not isOP then
 			SendText(player,_Tr('title.landmgr.failed'));return
 		end
 
 		local landId = MEM[xuid].landId
-		if land_data[landId]==nil then
+		if Land.IDManager.IsVaild(landId) then
 			OpenGUI.LMgr(player)
 			return
 		end
@@ -1432,7 +1426,7 @@ OpenGUI = {
 		local Form = mc.newSimpleForm()
 		local name = Land.Options.Nickname.get(landId) or landId
 		Form:setTitle(_Tr('gui.fastlmgr.title'))
-		if isOP==nil then
+		if not isOP then
 			Form:setContent(_Tr('gui.fastlmgr.content','<a>',name))
 		else
 			Form:setContent(_Tr('gui.fastlmgr.operator'))
@@ -1450,7 +1444,7 @@ OpenGUI = {
 		player:sendForm(
 			Form,
 			function(player,Id)
-				if Id==nil then
+				if not Id then
 					return
 				elseif Id == 0 then
 					OpenGUI.LandOptions.Information(player,landId)
@@ -1492,8 +1486,7 @@ OpenGUI = {
 		end
 		MEM[xuid].enableBackButton = 0
 		player:sendForm(Form,function(pl,id) -- callback
-			if id==nil then return end
-			local xuid = pl.xuid
+			if not id then return end
 			MEM[xuid].landId = landlst[id+1]
 			OpenGUI.FastLMgr(pl)
 		end)
@@ -1508,7 +1501,7 @@ OpenGUI = {
 		Form:addButton(_Tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
 		Form:addButton(_Tr('gui.general.close'))
 		player:sendForm(Form,function(player,id)
-			if id==nil then return end
+			if not id then return end
 			if id==0 then -- Manage Lands
 				local Form = mc.newSimpleForm()
 				Form:setTitle(_Tr('gui.oplandmgr.title'))
@@ -1520,8 +1513,7 @@ OpenGUI = {
 				player:sendForm(
 					Form,
 					function(player,mode)
-						if mode==nil then return end
-
+						if not mode then return end
 						local xuid = player.xuid
 						if mode==0 then -- 按玩家
 							PlayerSelector.Create(player,function(pl,selected)
@@ -1540,7 +1532,7 @@ OpenGUI = {
 							local Ids = Land.Storage.DumpAllIds()
 							for num,landId in pairs(Ids) do
 								local ownerId = Land.RelationShip.Owner.getXuid(landId)
-								if ownerId ~= nil then
+								if ownerId then
 									ownerId = data.xuid2name(ownerId)
 								end
 								local name = Land.Options.Nickname.get(landId) or landId
@@ -1553,7 +1545,7 @@ OpenGUI = {
 								)
 							end
 							player:sendForm(Form,function(pl,id) -- callback
-								if id==nil then return end
+								if not id then return end
 								local landId = Ids[id+1]
 								Land.Helper.Teleport(pl,landId)
 							end)
@@ -1665,7 +1657,7 @@ OpenGUI = {
 				player:sendForm(
 					Form,
 					function(player,res)
-						if res==nil then return end
+						if not res then return end
 
 						cfg.features.disabled_listener = {}
 						local dbl = cfg.features.disabled_listener
@@ -1715,7 +1707,7 @@ OpenGUI = {
 			MEM[xuid].landId = landId
 			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
 			local owner = Land.RelationShip.Owner.getXuid(landId)
-			if owner ~= nil then
+			if owner then
 				owner = data.xuid2name(owner)
 			end
 			local name = Land.Options.Nickname.get(landId) or landId
@@ -1741,7 +1733,7 @@ OpenGUI = {
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
 			local function isThisDisabled(feature)
-				if cfg.features[feature]~=nil and cfg.features[feature] then
+				if cfg.features[feature].enable then
 					return ''
 				end
 				return ' ('.._Tr('talk.features.closed')..')'
@@ -1763,7 +1755,7 @@ OpenGUI = {
 			player:sendForm(
 				Form,
 				function (player,res)
-					if res==nil then return end
+					if not res then return end
 
 					local settings = land_data[landId].settings
 					settings.signtome = res[1]
@@ -1853,7 +1845,7 @@ OpenGUI = {
 			player:sendForm(
 				Form,
 				function (player,res)
-					if res==nil then return end
+					if not res then return end
 
 					local perm = land_data[landId].permissions
 
@@ -1935,7 +1927,7 @@ OpenGUI = {
 			end
 			for n,plXuid in pairs(shareList) do
 				local id = data.xuid2name(plXuid)
-				if id~=nil then
+				if id then
 					content = content..'\n'..id
 				end
 			end
@@ -1947,7 +1939,7 @@ OpenGUI = {
 				Form:addButton(_Tr('gui.landtrust.rmtrust'))
 			end
 			player:sendForm(Form,function(pl,res) -- [0] add [1] del
-				if res==nil then return end
+				if not res then return end
 				local list = {};
 				if res==1 then -- del
 					for i,v in pairs(shareList) do
@@ -2006,8 +1998,8 @@ OpenGUI = {
 			player:sendForm(
 				Form,
 				function(player,res)
-					if res==nil then return end
-					land_data[landId].settings.nickname=res[1]
+					if not res then return end
+					land_data[landId].settings.nickname = res[1]
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
@@ -2031,7 +2023,7 @@ OpenGUI = {
 			player:sendForm(
 				Form,
 				function(player,res)
-					if res==nil then return end
+					if not res then return end
 
 					land_data[landId].settings.describe=res[1]
 					DataStorage.Save({0,1,0})
@@ -2159,7 +2151,7 @@ PlayerSelector = {
 		}
 
 		local perpage = cfg.features.player_selector.items_perpage
-		if customlist~=nil then
+		if customlist then
 			MEM[xuid].psr.playerList = 	PlayerSelector.Helper.ToPages(customlist,perpage)
 		else
 			MEM[xuid].psr.playerList = PlayerSelector.Helper.ToPages(pl_list,perpage)
@@ -2170,8 +2162,8 @@ PlayerSelector = {
 
 	end,
 	Callback = function (player,data)
-		if data==nil then
-			MEM[player.xuid].psr=nil
+		if not data then
+			MEM[player.xuid].psr = nil
 			return
 		end
 
@@ -2208,7 +2200,7 @@ PlayerSelector = {
 				local tmpList = {}
 				for num,pagelist in pairs(psrdata.playerList) do
 					for page,name in pairs(pagelist) do
-						if string.find(string.lower(name),findTarget) ~= nil then
+						if string.find(string.lower(name),findTarget) then
 							tmpList[#tmpList+1] = name
 						end
 					end
@@ -2217,7 +2209,7 @@ PlayerSelector = {
 				if psrdata.nowpage>#tableList then
 					psrdata.nowpage = 1
 				end
-				if tableList[psrdata.nowpage]==nil then
+				if not tableList[psrdata.nowpage] then
 					rawList = {}
 					maxpage = 1
 				else
@@ -2237,7 +2229,7 @@ PlayerSelector = {
 					selected[#selected+1] = rawList[num-1]
 				end
 			end
-			if next(selected) ~= nil then
+			if next(selected) then
 				psrdata.cbfunc(player,selected)
 				psrdata=nil
 				return
@@ -2270,9 +2262,7 @@ PlayerSelector = {
 			local rtn = {}
 			for n,pl in pairs(list) do
 				local num = math.ceil(n/perpage)
-				if rtn[num]==nil then
-					rtn[num] = {}
-				end
+				rtn[num] = rtn[num] or {}
 				rtn[num][#rtn[num]+1] = pl
 			end
 			return rtn
@@ -2318,8 +2308,8 @@ RangeSelector = {
 					if (res and not cfg.land.bought.three_dimension.enable) or (not res and not cfg.land.bought.two_dimension.enable) then
 						SendText(player,_Tr('title.rangeselector.dimension.blocked'))
 						RangeSelector.Clear(player)
-						if MEM[xuid].newLand~=nil then MEM[xuid].newLand=nil end
-						if MEM[xuid].reselectLand~=nil then MEM[xuid].reselectLand=nil end
+						if MEM[xuid].newLand then MEM[xuid].newLand = nil end
+						if MEM[xuid].reselectLand then MEM[xuid].reselectLand = nil end
 						return
 					end
 					if res then
@@ -2370,7 +2360,7 @@ RangeSelector = {
 			Form:addSlider(_Tr('gui.rangeselector.movestarty'),minY,maxY,1,posA.y)
 			Form:addSlider(_Tr('gui.rangeselector.moveendy'),minY,maxY,1,pos.y)
 			player:sendForm(Form,function(player,res)
-				if res==nil then return end
+				if not res then return end
 				MEM[xuid].rsr.posA.y = res[1]
 				pos.y = res[2]
 				MEM[xuid].rsr.step = 3
@@ -2400,14 +2390,14 @@ RangeSelector = {
 				SendText(player,_Tr('title.rangeselector.fail.toolow'))
 			else
 				local checkIgnores = {}
-				if MEM[xuid].reselectLand~=nil then
+				if MEM[xuid].reselectLand then
 					checkIgnores = { MEM[xuid].reselectLand.id }
 				end
 				local checkColl = Land.Helper.IsCollision(Cube.Create(posA,pos,dimid),checkIgnores)
 				if checkColl.status then
 					local sp = cfg.land.min_space
 					local nearbyLands = Land.Query.Area(Cube.Create(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid))
-					if MEM[xuid].reselectLand~=nil then
+					if MEM[xuid].reselectLand then
 						Array.Remove(nearbyLands,MEM[xuid].reselectLand.id)
 					end
 					if #nearbyLands ~= 0 then
@@ -2459,10 +2449,9 @@ RangeSelector = {
 		end
 		if MEM[xuid].rsr.step == 4 then
 			-- what the fxxk handle...
-			if MEM[xuid].newLand~=nil then
+			if MEM[xuid].newLand then
 				player:runcmd("land buy")
-			end
-			if MEM[xuid].reselectLand~=nil then
+			elseif MEM[xuid].reselectLand then
 				player:runcmd("land ok")
 			end
 			return
@@ -2479,7 +2468,7 @@ RangeSelector = {
 SafeTeleport = {
 	Cancel = function(player)
 		local xuid = player.xuid
-		if xuid==nil or MEM[xuid]==nil or MEM[xuid].safetp==nil then
+		if not xuid or not MEM[xuid] or not MEM[xuid].safetp then
 			return
 		end
 		local tpos = MEM[xuid].safetp.from_pos
@@ -2500,7 +2489,7 @@ SafeTeleport = {
 		end
 		local xuid = player.xuid
 		local dimid = tpos.dimid
-		if MEM[xuid].safetp ~= nil then -- limited: one request.
+		if MEM[xuid].safetp then -- limited: one request.
 			return false
 		end
 		MEM[xuid].safetp = {
@@ -2516,11 +2505,11 @@ SafeTeleport = {
 		local lock = false
 		local completed = false
 		local id = setInterval(function()
-			if cancel_check or lock or player==nil then
+			if cancel_check or lock or not player then
 				return
 			end
 			local plpos = Pos.ToIntPos(player.pos)
-			if plpos==nil or tpos.x~=plpos.x or tpos.z~=plpos.z or dimid~=plpos.dimid then
+			if tpos.x~=plpos.x or tpos.z~=plpos.z or dimid~=plpos.dimid then
 				cancel_check = true
 				SafeTeleport.Cancel(player)
 				return
@@ -2547,7 +2536,7 @@ SafeTeleport = {
 				end
 				local ct_block = {'minecraft:air','minecraft:lava','minecraft:flowing_lava'}
 				for i,type in pairs(bl_type_list) do
-					if Array.Fetch(ct_block,type)==-1 and bl_type_list[i+1]==ct_block[1] and bl_type_list[i+2]==ct_block[1] then
+					if not Array.Fetch(ct_block,type) and bl_type_list[i+1]==ct_block[1] and bl_type_list[i+2]==ct_block[1] then
 						footholds[#footholds+1] = i
 					end
 				end
@@ -2569,8 +2558,8 @@ SafeTeleport = {
 		end,500)
 		setTimeout(function()
 			clearInterval(id)
-			if MEM[xuid]~=nil then
-				if not completed and MEM[xuid].safetp~=nil then
+			if MEM[xuid] then
+				if not completed and MEM[xuid].safetp then
 					SendText(player,_Tr('api.safetp.fail.timeout'))
 					SafeTeleport.Cancel(mc.getPlayer(xuid))
 				end
@@ -2726,7 +2715,7 @@ Pos = {
 			y = math.floor(pos.y),
 			z = math.floor(pos.z)
 		}
-		if pos.dimid ~= nil then
+		if pos.dimid then
 			result.dimid = pos.dimid
 		end
 		return result
@@ -2740,7 +2729,7 @@ Pos = {
 			pos.y,
 			pos.z
 		}
-		if pos.dimid~=nil then
+		if pos.dimid then
 			rtn[4] = pos.dimid
 		end
 		return rtn
@@ -2782,7 +2771,7 @@ Array = {
 			y = math.floor(array[2]),
 			z = math.floor(array[3])
 		}
-		if array[4]~=nil then
+		if array[4] then
 			rtn.dimid=array[4]
 		end
 		return rtn
@@ -2808,7 +2797,7 @@ Array = {
 				return i
 			end
 		end
-		return -1
+		return nil
 	end,
 	Concat = function(origin,array)
 		for n,k in pairs(array) do
@@ -2818,7 +2807,7 @@ Array = {
 	end,
 	Remove = function(array,value)
 		local pos = Array.Fetch(array,value)
-		if pos~=-1 then
+		if pos then
 			table.remove(array,pos)
 		end
 		return array
@@ -2928,7 +2917,7 @@ function table.getAllPaths(tab,ExpandArray,UnNeedThisPrefix)
 			result[#result] = '(*)'..result[#result]
 		end
 	end
-	if UnNeedThisPrefix==nil or not UnNeedThisPrefix then
+	if not UnNeedThisPrefix then
 		for i,v in pairs(result) do
 			result[i] = 'this.'..result[i]
 		end
@@ -2981,7 +2970,7 @@ function table.setKey(tab,path,value)
 		pathes[1] = tonumber(string.sub(pathes[1],4))
 	end
 
-	if tab[pathes[1]] == nil then
+	if not tab[pathes[1]] then
 		return
 	end
 
@@ -3041,7 +3030,7 @@ function Plugin.Upgrade(rawInfo)
 	--  Check Data
 	local updata
 	local checkPassed = false
-	if rawInfo.Updates[2]~=nil and rawInfo.Updates[2].NumVer~=Plugin.numver then
+	if rawInfo.Updates[2] and rawInfo.Updates[2].NumVer~=Plugin.numver then
 		ERROR(_Tr('console.update.vacancy'))
 	elseif rawInfo.FILE_Version~=Server.version then
 		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
@@ -3135,7 +3124,7 @@ end
 -- Tools & Feature functions.
 
 function _Tr(a,...)
-	if DEV_MODE and I18N.LangPack.data[a]==nil then
+	if DEV_MODE and not I18N.LangPack.data[a] then
 		WARN('Translation not found: '..a)
 		return
 	end
@@ -3144,19 +3133,16 @@ function _Tr(a,...)
 end
 function SendTitle(player,title,subtitle,times)
 	local name = player.realName
-	if times == nil then
-		mc.runcmdEx('titleraw "' .. name .. '" times 20 25 20')
-	else
-		mc.runcmdEx('titleraw "' .. name .. '" times '..times[1]..' '..times[2]..' '..times[3])
-	end
-	if subtitle~=nil then
+	times = times or {20,25,20}
+	mc.runcmdEx('titleraw "' .. name .. '" times '..times[1]..' '..times[2]..' '..times[3])
+	if subtitle then
 		mc.runcmdEx('titleraw "'..name..'" subtitle {"rawtext": [{"text":"'..subtitle..'"}]}')
 	end
 	mc.runcmdEx('titleraw "'..name..'" title {"rawtext": [{"text":"'..title..'"}]}')
 end
 function SendText(player,text,mode)
 	-- [mode] 0 = FORCE USE TALK
-	if mode==nil and not cfg.features.force_talk then
+	if not mode and not cfg.features.force_talk then
 		player:sendText(text,5)
 		return
 	end
@@ -3204,10 +3190,10 @@ function EntityGetType(type)
 	if type=='minecraft:player' then
 		return 0
 	end
-	if Map.Control.data[4].animals[type]~=nil then
+	if Map.Control.data[4].animals[type] then
 		return 1
 	end
-	if Map.Control.data[4].mobs[type]~=nil then
+	if Map.Control.data[4].mobs[type] then
 		return 2
 	end
 	return 0
@@ -3250,7 +3236,7 @@ function RegisterCommands()
 			player:sendForm(
 				Form,
 				function(player,id)
-					if id==nil then return end
+					if not id then return end
 					if id==0 then
 						player:runcmd(MainCmd..' new')
 					elseif id==1 then
@@ -3265,11 +3251,11 @@ function RegisterCommands()
 	mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
 		local xuid = player.xuid
 
-		if MEM[xuid].reselectLand~=nil then
+		if MEM[xuid].reselectLand then
 			SendText(player,_Tr('title.reselectland.fail.makingnewland'))
 			return
 		end
-		if MEM[xuid].newLand~=nil then
+		if MEM[xuid].newLand then
 			SendText(player,_Tr('title.getlicense.alreadyexists'))
 			return
 		end
@@ -3290,11 +3276,11 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].newLand~=nil then
+		if MEM[xuid].newLand then
 			MEM[xuid].newLand = nil
 			RangeSelector.Clear(player)
 			SendText(player,_Tr('title.giveup.succeed'))
-		elseif MEM[xuid].reselectLand~=nil then
+		elseif MEM[xuid].reselectLand then
 			MEM[xuid].reselectLand = nil
 			RangeSelector.Clear(player)
 			SendText(player,_Tr('title.reselectland.giveup.succeed'))
@@ -3305,7 +3291,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].rsr ~= nil then
+		if MEM[xuid].rsr then
 			RangeSelector.Push(player,player.blockPos)
 		else
 			SendText(player,_Tr('title.rangeselector.fail.outmode'))
@@ -3313,7 +3299,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].newLand==nil or MEM[xuid].newLand.range==nil then
+		if not MEM[xuid].newLand or not MEM[xuid].newLand.range then
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
@@ -3347,7 +3333,7 @@ function RegisterCommands()
 		Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/realms_red_x')
 		player:sendForm(Form,
 			function (player,res)
-				if res==nil or res==1 then
+				if not res or res==1 then
 					SendText(player,_Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
 					return
 				end
@@ -3390,7 +3376,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 		local xuid = player.xuid
-		if MEM[xuid].reselectLand==nil or MEM[xuid].reselectLand.range==nil then
+		if not MEM[xuid].reselectLand or not MEM[xuid].reselectLand.range then
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
@@ -3458,7 +3444,7 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
 		local xuid = player.xuid
-		if Array.Fetch(cfg.land.operator,xuid)==-1 then
+		if not Array.Fetch(cfg.land.operator,xuid) then
 			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
 			return false
 		end
@@ -3490,7 +3476,7 @@ function RegisterCommands()
 			Form:addButton(land,'textures/ui/world_glyph_color')
 		end
 		player:sendForm(Form,function(player,id)
-			if id==nil or id==0 then return end
+			if not id or id==0 then return end
 			local landId = landlst[id]
 			Land.Helper.Teleport(player,landId)
 		end
@@ -3629,7 +3615,7 @@ function RegisterCommands()
 		end
 	end)
 	mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language_install'),function(args)
-		if args[1] == nil then
+		if not args[1] then
 			ERROR(_Tr('console.languages.install.misspara'))
 			return
 		end
@@ -3637,10 +3623,10 @@ function RegisterCommands()
 		local rawdata = I18N.LangPack.GetRepo()
 		if rawdata == false then
 			return
-		elseif Array.Fetch(I18N.LangPack.GetInstalled(),args[1])~=-1 then
+		elseif Array.Fetch(I18N.LangPack.GetInstalled(),args[1]) then
 			ERROR(_Tr('console.languages.install.existed'))
 			return
-		elseif Array.Fetch(rawdata.official,args[1])==-1 and Array.Fetch(rawdata['3-rd'],args[1])==-1 then
+		elseif not Array.Fetch(rawdata.official,args[1]) and not Array.Fetch(rawdata['3-rd'],args[1]) then
 			ERROR(_Tr('console.languages.install.notfound','<a>',args[1]))
 			return
 		end
@@ -3651,7 +3637,7 @@ function RegisterCommands()
 	end)
 	mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_update'),function(args)
 		local list = I18N.LangPack.GetInstalled()
-		if args[1] == nil then
+		if not args[1] then
 			INFO(_Tr('console.languages.update.all'))
 			local count = 0
 			for i,lang in pairs(list) do
@@ -3696,7 +3682,7 @@ TimerCallbacks = {
 
 			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 			local ownerId = '?'
-			if ownerXuid ~= nil then
+			if ownerXuid then
 				ownerId = data.xuid2name(ownerXuid)
 			end
 			local landcfg = land_data[landId].settings
@@ -3736,7 +3722,7 @@ TimerCallbacks = {
 		for xuid,res in pairs(MEM) do
 			local player = mc.getPlayer(xuid)
 
-			if player == nil then
+			if not player then
 				goto JUMPOUT_BUTTOMSIGN
 			end
 
@@ -3751,7 +3737,7 @@ TimerCallbacks = {
 
 			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 			local ownerId = '?'
-			if ownerXuid ~= nil then
+			if ownerXuid then
 				ownerId = data.xuid2name(ownerXuid)
 			end
 			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
@@ -3767,24 +3753,24 @@ TimerCallbacks = {
 	end,
 	MEM = function ()
 		for xuid,res in pairs(MEM) do
-			if cfg.features.particles.enable and res.particles ~= nil then -- Keeping Particles
+			if cfg.features.particles.enable and res.particles then -- Keeping Particles
 				local player = mc.getPlayer(xuid)
 				for n,pos in pairs(res.particles) do
 					local posY
-					if MEM[xuid].newLand~=nil then
+					if MEM[xuid].newLand then
 						if MEM[xuid].newLand.dimension=='2D' then
 							posY = player.blockPos.y + 2
 						else
 							posY = pos.y + 1.6
 						end
 					end
-					if MEM[xuid].reselectLand~=nil then
+					if MEM[xuid].reselectLand then
 						posY = pos.y
 					end
 					mc.spawnParticle(pos.x,posY,pos.z,player.pos.dimid,cfg.features.particles.name)
 				end
 			end
-			if res.keepingTitle ~= nil then -- Keeping Title
+			if res.keepingTitle then -- Keeping Title
 				local title = res.keepingTitle
 				if type(title)=='table' then
 					SendTitle(mc.getPlayer(xuid),title[1],title[2],{0,40,20})
@@ -3846,17 +3832,14 @@ mc.listen('onJoin',function(player)
 	local xuid = player.xuid
 	MEM[xuid] = { inland = 'null' }
 
-	if wrong_landowners[xuid]~=nil then
+	if wrong_landowners[xuid] then
 		land_owners[xuid] = table.clone(wrong_landowners[xuid])
 		for n,landId in pairs(land_owners[xuid]) do
 			Map.Land.Owner.update(landId)
 		end
 		wrong_landowners[xuid] = nil
 	end
-	if land_owners[xuid]==nil then
-		land_owners[xuid] = {}
-		DataStorage.Save({0,0,1})
-	end
+	land_owners[xuid] = land_owners[xuid] or {}
 
 	if player.gameMode==1 then
 		WARN(_Tr('talk.gametype.creative','<a>',player.realName))
@@ -3871,12 +3854,12 @@ mc.listen('onLeft',function(player)
 
 	local xuid = player.xuid
 
-	if MEM[xuid] == nil then
+	if not MEM[xuid] then
 		return
 	end
 
 	--- SafeTp
-	if MEM[xuid].safetp ~= nil then
+	if MEM[xuid].safetp then
 		SafeTeleport.Cancel(player)
 	end
 
@@ -4204,22 +4187,12 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 		return
 	end
 
-	local ispl=false
-	local player
-	if entity:toPlayer()~=nil then
-		ispl=true
-		player=entity:toPlayer()
-	end
-
-	if entity.pos==nil then -- what a silly mojang?
-		return
-	end
-
-	local landId=Land.Query.Pos(entity.blockPos)
+	local landId = Land.Query.Pos(entity.blockPos)
 	if not landId then return end
 
 	if land_data[landId].permissions.use_pressure_plate then return end
-	if ispl then
+	if entity:isPlayer() then
+		local player = entity:toPlayer()
 		local xuid = player.xuid
 		if Land.Util.CheckPerm(landId,xuid) then
 			return
@@ -4234,12 +4207,14 @@ mc.listen('onRide',function(rider,entity)
 		return
 	end
 
-	if rider:toPlayer()==nil then return end
+	if not rider:isPlayer() then
+		return
+	end
 
 	local landId = Land.Query.Pos(rider.blockPos)
 	if not landId then return end
 
-	local player=rider:toPlayer()
+	local player = rider:toPlayer()
 	local xuid = player.xuid
 	local en=entity.type
 	if en=='minecraft:minecart' or en=='minecraft:boat' then
@@ -4345,7 +4320,7 @@ end)
 mc.listen('onStartDestroyBlock',function(player,block)
 
 	local xuid = player.xuid
-	if MEM[xuid].rsr ~= nil and (MEM[xuid].rsr.sleep==nil or MEM[xuid].rsr.sleep<os.time()) then
+	if MEM[xuid].rsr and (not MEM[xuid].rsr.sleep or MEM[xuid].rsr.sleep<os.time()) then
 		local HandItem = player:getHand()
 		if HandItem:isNull() or HandItem.type~=cfg.features.selection.tool_type then return end
 		RangeSelector.Push(player,block.pos)
