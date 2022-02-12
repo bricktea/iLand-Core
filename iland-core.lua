@@ -16,7 +16,7 @@ Plugin = {
 	version = "2.71",
 	numver = 271,
 	apiver = 201,
-	minLXL = {0,5,12},
+	minLL = {2,1,0},
 }
 
 Server = {
@@ -30,7 +30,6 @@ JSON = require('dkjson')
 MEM = {}
 MainCmd = 'land'
 DATA_PATH = 'plugins/iland/'
-local land_data; local land_owners = {}; local wrong_landowners = {}
 
 -- [Raw] config.json
 local cfg = {
@@ -135,7 +134,7 @@ end
 Map = {
 	Init = function()
 		INFO('Load','Building tables needed to run...')
-		for landId,data in pairs(land_data) do
+		for landId,data in pairs(DataStorage.Land.Raw) do
 			Map.Land.Position.update(landId,'add')
 			Map.Land.Trusted.update(landId)
 			Map.Land.Owner.update(landId)
@@ -203,7 +202,7 @@ Map = {
 			data = {},
 			update = function(landId,mode)
 				if mode=='add' then
-					local ra = land_data[landId].range
+					local ra = DataStorage.Land.Raw[landId].range
 					local posA = ra.start_position
 					local posB = ra.end_position
 					Map.Land.Position.data[landId] = Cube.Create(posA,posB,ra.dimid)
@@ -259,7 +258,7 @@ Map = {
 		Trusted = {
 			data = {},
 			update = function(landId)
-				Map.Land.Trusted.data[landId] = Array.ToKeyMap(land_data[landId].settings.share)
+				Map.Land.Trusted.data[landId] = Array.ToKeyMap(DataStorage.Land.Raw[landId].settings.share)
 			end
 		},
 		Owner = {
@@ -504,207 +503,10 @@ Map = {
 	}
 }
 
---#region Plugin load.
-
-ConfigReader = {
-	Load = function(para) -- { cfg, land, owner }
-
-		para = para or {1,1,1}
-
-		local UpdateMe = {
-			needed = false,
-			version = 0
-		}
-
-		if para[1] == 1 then -- Load config.
-
-			-- ## Pre-check
-			if not File.exists(DATA_PATH..'config.json') then
-				WARN('Data file (config.json) does not exist, creating...')
-				File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
-			end
-			local loadcfg = JSON.decode(File.readFrom(DATA_PATH..'config.json'))
-			if cfg.version ~= loadcfg.version then -- need update
-				UpdateMe.needed = true
-				UpdateMe.version = loadcfg.version
-				if not ConfigReader.Updater.config(loadcfg) then
-					error('Configure file too old, you must rebuild it.')
-					return false
-				end
-			end
-
-			-- ## Read config
-			local item
-			for n,path in pairs(table.getAllPaths(cfg,false)) do
-				item = table.getKey(loadcfg,path)
-				if path ~= 'this.version' then
-					if not item then
-						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
-						UpdateMe.needed = true
-					else
-						table.setKey(cfg,path,item)
-					end
-				end
-			end
-
-			-- ## Correct if sth wrong
-
-			if cfg.land.bought.square_range[1]>cfg.land.bought.square_range[2] then
-				WARN('cfg.land.bought.square_range has an error, which has been corrected.')
-				table.sort(cfg.land.bought.square_range)
-				UpdateMe.needed = true
-			end
-			if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
-				WARN('cfg.economic.protocol has an error, which has been corrected.')
-				cfg.economic.protocol = 'scoreboard'
-				UpdateMe.needed = true
-			end
-
-			-- ## Save if need update
-
-			if UpdateMe.needed and not DEV_MODE then
-				DataStorage.Save({1,0,0})
-			end
-
-		end
-		if para[2] == 1 then -- Load land.
-			if not File.exists(DATA_PATH..'data.json') then
-				WARN('Data file (data.json) does not exist, creating...')
-				File.writeTo(DATA_PATH..'data.json','{}')
-			end
-			land_data = JSON.decode(File.readFrom(DATA_PATH..'data.json'))
-			if UpdateMe.needed then
-				ConfigReader.Updater.land(UpdateMe.version)
-				if not DEV_MODE then
-					DataStorage.Save({0,1,0})
-				end
-			end
-		end
-		if para[3] == 1 then -- Load land owners.
-			if not File.exists(DATA_PATH..'owners.json') then
-				WARN('Data file (owners.json) does not exist, creating...')
-				File.writeTo(DATA_PATH..'owners.json','{}')
-			end
-			local had_unloaded_xuid = false
-			for ownerXuid,landIds in pairs(JSON.decode(File.readFrom(DATA_PATH..'owners.json'))) do
-				if data.xuid2name(ownerXuid) == '' then
-					WARN('Player (xuid: '..ownerXuid..') not found, skipping...')
-					wrong_landowners[ownerXuid] = landIds
-					had_unloaded_xuid = true
-				else
-					land_owners[ownerXuid] = landIds
-				end
-			end
-			if had_unloaded_xuid then
-				INFO('Some players are temporarily not loading because their XUID is not recorded in the database, please have them re-enter the server to make the database recorded.')
-			end
-		end
-		return true
-	end,
-	Updater = {
-		config = function(this)
-			if not this.version or this.version<240 then
-				return false
-			end
-			--- Update
-			if this.version < 241 then -- OLD STRUCTURE
-				local loadcfg = table.clone(cfg)
-				loadcfg.plugin.language = this.manager.default_language
-				loadcfg.plugin.network = this.update_check
-				loadcfg.land.operator = this.manager.operator
-				loadcfg.land.max_lands = this.land.player_max_lands
-				loadcfg.land.bought.three_dimension.enable = this.features.land_3D
-				loadcfg.land.bought.three_dimension.calculate_method = this.land_buy.calculation_3D
-				loadcfg.land.bought.three_dimension.price = this.land_buy.price_3D
-				loadcfg.land.bought.two_dimension.enable = this.features.land_2D
-				loadcfg.land.bought.two_dimension.calculate_method = this.land_buy.calculation_2D
-				loadcfg.land.bought.two_dimension.price = this.land_buy.price_2D
-				loadcfg.land.bought.square_range = {this.land.land_min_square,this.land.land_max_square}
-				loadcfg.land.bought.discount = this.money.discount/100
-				loadcfg.land.refund_rate = this.land_buy.refund_rate
-				loadcfg.economic.protocol = this.money.protocol
-				loadcfg.economic.scoreboard_objname = this.money.scoreboard_objname
-				loadcfg.economic.currency_name = this.money.credit_name
-				loadcfg.features.landsign.enable = this.features.landSign
-				loadcfg.features.landsign.frequency = this.features.sign_frequency
-				loadcfg.features.buttomsign.enable = this.features.landSign
-				loadcfg.features.buttomsign.frequency = this.features.sign_frequency
-				loadcfg.features.particles.enable = this.features.particles
-				loadcfg.features.particles.name = this.features.particle_effects
-				loadcfg.features.particles.max_amount = this.features.player_max_ple
-				loadcfg.features.player_selector.include_offline_players = this.features.offlinePlayerInList
-				loadcfg.features.player_selector.items_perpage = this.features.playersPerPage
-				loadcfg.features.selection.disable_dimension = this.features.blockLandDims
-				loadcfg.features.selection.tool_type = this.features.selection_tool
-				loadcfg.features.selection.tool_name = this.features.selection_tool_name
-				loadcfg.features.landtp = this.features.landtp
-				loadcfg.features.force_talk = this.features.force_talk
-				loadcfg.features.disabled_listener = this.features.disabled_listener
-				loadcfg.features.chunk_side = this.features.chunk_side
-				this = loadcfg
-			end
-			if this.version < 260 then
-				this.land.bought.three_dimension.calculate_method = nil
-				this.land.bought.three_dimension.price = nil
-				this.land.bought.two_dimension.calculate_method = nil
-				this.land.bought.two_dimension.price = nil
-				this.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
-				this.land.bought.two_dimension.calculate = "{square}*25"
-			end
-			if this.version < 262 then
-				if type(this.land.bought.square_range)~='table' then
-					this.land.bought.square_range = {4,50000}
-				end
-			end
-			if this.version < 270 then
-				local sec = this.features.selection
-				sec.dimension = {true,true,true}
-				if Array.Fetch(sec.disable_dimension,0) then
-					sec.dimension[1] = false
-				end
-				if Array.Fetch(sec.disable_dimension,1) then
-					sec.dimension[2] = false
-				end
-				if Array.Fetch(sec.disable_dimension,2) then
-					sec.dimension[3] = false
-				end
-				this.land.min_space = 15
-				sec.disable_dimension = nil
-			end
-			--- Rtn
-			return true
-		end,
-		land = function(version)
-			if version<=240 then
-				for landId,res in pairs(land_data) do
-					local perm = land_data[landId].permissions
-					perm.use_armor_stand = false
-					perm.eat = false
-				end
-			end
-			if version<=245 then
-				for landId,res in pairs(land_data) do
-					local setting = land_data[landId].settings
-					setting.ev_redstone_update = false
-				end
-			end
-			if version<=260 then
-				for landId,res in pairs(land_data) do
-					local perm = land_data[landId].permissions
-					perm.useitem = nil
-				end
-			end
-			return true
-		end
-	}
-}
-
-if not lxl.checkVersion(Plugin.minLXL[1],Plugin.minLXL[2],Plugin.minLXL[3]) then
-	ERROR('Unsupported version of LiteXLoader, plugin loading aborted.')
+if not ll.checkVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
+	ERROR('Unsupported version of LiteLoader, plugin loading aborted.')
 	return
 end
-
---#endregion
 
 I18N = {
 	TriedAutoFix = false,
@@ -831,15 +633,275 @@ I18N = {
 }
 
 -- ProtectedArea = {}
--- Dimension = {}
+
+Dimension = {
+	Ids = {
+		[0] = 'Overworld',
+		[1] = 'Nether',
+		[2] = 'The_End'
+	}
+}
 
 DataStorage = {
 
-	-- { Cfg, LandData, RelationShips }
-	Save = function(action)
-		action = action or {1,1,1}
+	Config = {
 
-	end
+		Raw = {},
+		Load = function()
+
+			--- Init
+			local save = false
+
+			--- Check file.
+			if not File.exists(DATA_PATH..'config.json') then
+				WARN('Configuration file (config.json) does not exist, creating...')
+				File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
+			end
+			local localcfg = JSON.decode(File.readFrom(DATA_PATH..'config.json'))
+			if localcfg.version ~= Plugin.numver then
+				save = true
+				if not DataStorage.Config.Update(localcfg) then
+					return false
+				end
+			end
+
+			--- Load local configure.
+			for n,path in pairs(table.getAllPaths(cfg,false)) do
+				local item = table.getKey(localcfg,path)
+				if path ~= 'this.version' then
+					if not item then
+						save = true
+						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
+					else
+						table.setKey(cfg,path,item)
+					end
+				end
+			end
+
+			-- Auto correct.
+
+			if cfg.land.bought.square_range[1] > cfg.land.bought.square_range[2] then
+				WARN('cfg.land.bought.square_range has an error, which has been corrected.')
+				table.sort(cfg.land.bought.square_range)
+				save = true
+			end
+			if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
+				WARN('cfg.economic.protocol has an error, which has been corrected.')
+				cfg.economic.protocol = 'scoreboard'
+				save = true
+			end
+
+			-- Save if needed.
+			if save and not DEV_MODE then
+				DataStorage.Save({1,0,0})
+			end
+
+		end,
+		Update = function(origin)
+			if not origin.version or origin.version < 240 then
+				return false
+			end
+			--- Update
+			if origin.version < 242 then -- OLD STRUCTURE	
+				local tpl = table.clone(cfg)
+				tpl.plugin.language = origin.manager.default_language
+				tpl.plugin.network = origin.update_check
+				tpl.land.operator = origin.manager.operator
+				tpl.land.max_lands = origin.land.player_max_lands
+				tpl.land.bought.three_dimension.enable = origin.features.land_3D
+				tpl.land.bought.three_dimension.calculate_method = origin.land_buy.calculation_3D
+				tpl.land.bought.three_dimension.price = origin.land_buy.price_3D
+				tpl.land.bought.two_dimension.enable = origin.features.land_2D
+				tpl.land.bought.two_dimension.calculate_method = origin.land_buy.calculation_2D
+				tpl.land.bought.two_dimension.price = origin.land_buy.price_2D
+				tpl.land.bought.square_range = {origin.land.land_min_square,origin.land.land_max_square}
+				tpl.land.bought.discount = origin.money.discount/100
+				tpl.land.refund_rate = origin.land_buy.refund_rate
+				tpl.economic.protocol = origin.money.protocol
+				tpl.economic.scoreboard_objname = origin.money.scoreboard_objname
+				tpl.economic.currency_name = origin.money.credit_name
+				tpl.features.landsign.enable = origin.features.landSign
+				tpl.features.landsign.frequency = origin.features.sign_frequency
+				tpl.features.buttomsign.enable = origin.features.landSign
+				tpl.features.buttomsign.frequency = origin.features.sign_frequency
+				tpl.features.particles.enable = origin.features.particles
+				tpl.features.particles.name = origin.features.particle_effects
+				tpl.features.particles.max_amount = origin.features.player_max_ple
+				tpl.features.player_selector.include_offline_players = origin.features.offlinePlayerInList
+				tpl.features.player_selector.items_perpage = origin.features.playersPerPage
+				tpl.features.selection.disable_dimension = origin.features.blockLandDims
+				tpl.features.selection.tool_type = origin.features.selection_tool
+				tpl.features.selection.tool_name = origin.features.selection_tool_name
+				tpl.features.landtp = origin.features.landtp
+				tpl.features.force_talk = origin.features.force_talk
+				tpl.features.disabled_listener = origin.features.disabled_listener
+				tpl.features.chunk_side = origin.features.chunk_side
+				origin = tpl
+			end
+			if origin.version < 260 then
+				origin.land.bought.three_dimension.calculate_method = nil
+				origin.land.bought.three_dimension.price = nil
+				origin.land.bought.two_dimension.calculate_method = nil
+				origin.land.bought.two_dimension.price = nil
+				origin.land.bought.three_dimension.calculate = "{square}*8+{height}*20"
+				origin.land.bought.two_dimension.calculate = "{square}*25"
+			end
+			if origin.version < 262 then
+				if type(origin.land.bought.square_range)~='table' then
+					origin.land.bought.square_range = {4,50000}
+				end
+			end
+			if origin.version < 270 then
+				local sec = origin.features.selection
+				sec.dimension = {true,true,true}
+				if Array.Fetch(sec.disable_dimension,0) then
+					sec.dimension[1] = false
+				end
+				if Array.Fetch(sec.disable_dimension,1) then
+					sec.dimension[2] = false
+				end
+				if Array.Fetch(sec.disable_dimension,2) then
+					sec.dimension[3] = false
+				end
+				origin.land.min_space = 15
+				sec.disable_dimension = nil
+			end
+			--- Rtn
+			return true
+		end,
+		Save = function()
+			
+		end
+
+	},
+	Land = {
+
+		Raw = {},
+		Unloaded = {},
+		Load = function()
+			if not File.exists(DATA_PATH..'data.json') then
+				WARN('Land data file (data.json) does not exist, creating...')
+				File.writeTo(DATA_PATH..'data.json','{}')
+			end
+			local localdata = JSON.decode(File.readFrom(DATA_PATH..'data.json'))
+			if localdata.version ~= Plugin.numver then
+				DataStorage.Land.Update(localdata)
+			end
+			if not DEV_MODE then
+				DataStorage.Save({0,1,0})
+			end
+		end,
+		Update = function(origin)
+			if not origin.version or origin.version < 240 then
+				return false
+			end
+			--- Update
+			for landId,res in pairs(origin.Lands) do
+				local perm = origin.Lands[landId].permissions
+				local setting = origin.Lands[landId].settings
+				if origin.version < 240 then
+					return false
+				end
+				if origin.version < 245 then
+					perm.use_armor_stand = false
+					perm.eat = false
+				end
+				if origin.version < 260 then
+					setting.ev_redstone_update = false
+				end
+				if origin.version < 262 then
+					perm.useitem = nil
+				end
+			end
+			return true
+		end,
+		Save = function()end
+
+	},
+	RelationShip = {
+
+		Raw = { Owner = {} },
+		Unloaded = { Owner = {} },
+		Load = function()
+			if not File.exists(DATA_PATH..'relationship.json') then
+				WARN('Relationship table file (relationship.json) does not exist, creating...')
+				File.writeTo(DATA_PATH..'relationship.json','{}')
+			end
+			local localdata = JSON.decode(File.readFrom(DATA_PATH..'relationship.json'))
+			if localdata.version ~= Plugin.numver then
+				DataStorage.RelationShip.Update(localdata)
+			end
+			--- Owner
+			local had_unloaded_xuid = false
+			for xuid,landIds in pairs(localdata.Owner) do
+				if not data.xuid2name(xuid) then
+					WARN('Player (xuid: '..xuid..') not found, skipping...')
+					DataStorage.RelationShip.Unloaded['Owner'][xuid] = landIds
+					had_unloaded_xuid = true
+				else
+					DataStorage.RelationShip.Raw['Owner'][xuid] = landIds
+				end
+			end
+			if had_unloaded_xuid then
+				INFO('Some players are not loaded because their XUID isn\'t in the PlayerDB, please have them re-enter the server to make the PlayerDB recorded.')
+			end
+		end,
+		Update = function(origin)end,
+		Save = function()end
+
+	}
+
+}
+
+Economy = {
+
+	Status = {
+		inited = false,
+		protocol = 'null',
+	},
+	Protocol = {
+		get = function()
+			return Economy.Status.protocol
+		end,
+		set = function(name)
+			name = string.lower(name)
+			if name == 'llmoney' then
+				Economy.Player.add = function(player,value)
+					return money.add(player.xuid,value)
+				end
+				Economy.Player.del = function(player,value)
+					return money.reduce(player.xuid,value)
+				end
+				Economy.Player.get = function(player)
+					return money.get(player.xuid)
+				end
+				Economy.Status.protocol = 'llmoney'
+				Economy.Status.inited = true
+				return true
+			elseif name == 'scoreboard' then
+				Economy.Player.add = function(player,value)
+					return player:addScore(cfg.economic.scoreboard_objname,value)
+				end
+				Economy.Player.del = function(player,value)
+					return player:reduceScore(cfg.economic.scoreboard_objname,value)
+				end
+				Economy.Player.get = function(player)
+					return player:getScore(cfg.economic.scoreboard_objname)
+				end
+				Economy.Status.protocol = 'scoreboard'
+				Economy.Status.inited = true
+				return true
+			end
+			Economy.Status.protocol = 'null'
+			Economy.Status.inited = false
+			return false
+		end
+	},
+	Player = {
+		add = nil,
+		del = nil,
+		get = nil
+	}
 
 }
 
@@ -850,7 +912,7 @@ Land = {
 		Create = function(xuid,AABB)
 
 			--- Check land.
-			if not Land.Helper.IsCollision(AABB).status then
+			if not Land.Util.IsCollision(AABB).status then
 				return -1
 			end
 
@@ -862,7 +924,7 @@ Land = {
 			tpl.range.start_position = Pos.ToArray(posA)
 			tpl.range.end_position = Pos.ToArray(posB)
 			tpl.range.dimid = dimid
-			land_data[landId] = tpl
+			DataStorage.Land.Raw[landId] = tpl
 
 			--- Add owner relationship.
 			Land.RelationShip.Owner.set(landId,xuid)
@@ -889,7 +951,7 @@ Land = {
 			Map.Land.AXIS.update(landId,'del')
 			Map.Chunk.update(landId,'del')
 			Map.Land.Position.update(landId,'del')
-			land_data[landId] = nil
+			DataStorage.Land.Raw[landId] = nil
 			DataStorage.Save({0,1,1})
 			return true
 		end
@@ -900,10 +962,10 @@ Land = {
 
 		Permission = {
 			get = function(landId,item)
-				return land_data[landId].permissions[item]
+				return DataStorage.Land.Raw[landId].permissions[item]
 			end,
 			set = function(landId,item,value)
-				land_data[landId].permissions[item] = value
+				DataStorage.Land.Raw[landId].permissions[item] = value
 				DataStorage.Save({0,1,0})
 				return true
 			end
@@ -911,10 +973,10 @@ Land = {
 
 		Setting = {
 			get = function(landId,item)
-				return land_data[landId].settings[item]
+				return DataStorage.Land.Raw[landId].settings[item]
 			end,
 			set = function(landId,item,value)
-				land_data[landId].settings[item] = value
+				DataStorage.Land.Raw[landId].settings[item] = value
 				DataStorage.Save({0,1,0})
 				return true
 			end
@@ -922,12 +984,12 @@ Land = {
 
 		Teleport = {
 			get = function(landId)
-				local pos = table.clone(land_data[landId].settings.teleport)
-				pos[4] = land_data[landId].range.dimid
+				local pos = table.clone(DataStorage.Land.Raw[landId].settings.teleport)
+				pos[4] = DataStorage.Land.Raw[landId].range.dimid
 				return Array.ToIntPos(pos)
 			end,
 			set = function(landId,pos)
-				land_data[landId].settings.teleport = {
+				DataStorage.Land.Raw[landId].settings.teleport = {
 					pos[1],pos[2],pos[3]
 				}
 				DataStorage.Save({0,1,0})
@@ -936,13 +998,13 @@ Land = {
 
 		Nickname = {
 			isDefault = function(landId)
-				return land_data[landId].settings.nickname == Land.DataTemplate.raw.settings.nickname
+				return DataStorage.Land.Raw[landId].settings.nickname == Land.DataTemplate.raw.settings.nickname
 			end,
 			get = function(landId)
 				if Land.Options.Nickname.isDefault(landId) then
 					return nil
 				end
-				return land_data[landId].settings.nickname
+				return DataStorage.Land.Raw[landId].settings.nickname
 			end
 		}
 
@@ -963,7 +1025,7 @@ Land = {
 			local dimid = pos.dimid
 			if Map.Chunk.data[dimid][Cx] and Map.Chunk.data[dimid][Cx][Cz] then
 				for n,landId in pairs(Map.Chunk.data[dimid][Cx][Cz]) do
-					if dimid==land_data[landId].range.dimid and Cube.HadPos(pos,Cube.Create(Map.Land.Position.data[landId].posA,Map.Land.Position.data[landId].posB)) then
+					if dimid==DataStorage.Land.Raw[landId].range.dimid and Cube.HadPos(pos,Cube.Create(Map.Land.Position.data[landId].posA,Map.Land.Position.data[landId].posB)) then
 						if not noAccessCache then
 							Map.CachedQuery.SinglePos.add(landId,pos)
 						end
@@ -1041,47 +1103,12 @@ Land = {
 				Land.RelationShip.Trusted.check(landId,xuid)
 		end,
 		GetDimension = function(landId)
-			if land_data[landId].range.start_position[2]==minY and land_data[landId].range.end_position[2]==maxY then
+			if DataStorage.Land.Raw[landId].range.start_position[2]==minY and DataStorage.Land.Raw[landId].range.end_position[2]==maxY then
 				return '2D'
 			else
 				return '3D'
 			end
-		end
-
-	},
-
-	Range = {
-
-		Get = function(landId)
-			return Map.Land.Position.data[landId]
 		end,
-		Reset = function(landId,AABB)
-			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
-			if not Land.Helper.IsCollision(AABB,{landId}).status then
-				return false
-			end
-			Map.Chunk.update(landId,'del')
-			Map.Land.AXIS.update(landId,'del')
-			Map.Land.Position.update(landId,'del')
-			land_data[landId].range.start_position = Pos.ToArray(posA)
-			land_data[landId].range.end_position = Pos.ToArray(posB)
-			land_data[landId].range.dimid = dimid
-			land_data[landId].settings.teleport = Pos.ToArray(posA)
-			Map.Land.Position.update(landId,'add')
-			Map.Chunk.update(landId,'add')
-			Map.Land.AXIS.update(landId,'add')
-			Map.CachedQuery.RangeArea.refresh(landId)
-			Map.CachedQuery.SinglePos.refresh(landId)
-			Map.CachedQuery.RangeArea.clear_by_land(landId)
-			Map.CachedQuery.SinglePos.check_noland_pos()
-			DataStorage.Save({0,1,0})
-			return true
-		end
-
-	},
-
-	Helper = {
-
 		IsCollision = function(AABB,ignoreList)
 			ignoreList = ignoreList or {}
 			local ignores = Array.ToKeyMap(ignoreList)
@@ -1100,13 +1127,43 @@ Land = {
 
 	},
 
+	Range = {
+
+		Get = function(landId)
+			return Map.Land.Position.data[landId]
+		end,
+		Reset = function(landId,AABB)
+			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
+			if not Land.Util.IsCollision(AABB,{landId}).status then
+				return false
+			end
+			Map.Chunk.update(landId,'del')
+			Map.Land.AXIS.update(landId,'del')
+			Map.Land.Position.update(landId,'del')
+			DataStorage.Land.Raw[landId].range.start_position = Pos.ToArray(posA)
+			DataStorage.Land.Raw[landId].range.end_position = Pos.ToArray(posB)
+			DataStorage.Land.Raw[landId].range.dimid = dimid
+			DataStorage.Land.Raw[landId].settings.teleport = Pos.ToArray(posA)
+			Map.Land.Position.update(landId,'add')
+			Map.Chunk.update(landId,'add')
+			Map.Land.AXIS.update(landId,'add')
+			Map.CachedQuery.RangeArea.refresh(landId)
+			Map.CachedQuery.SinglePos.refresh(landId)
+			Map.CachedQuery.RangeArea.clear_by_land(landId)
+			Map.CachedQuery.SinglePos.check_noland_pos()
+			DataStorage.Save({0,1,0})
+			return true
+		end
+
+	},
+
 	IDManager = {
 
 		IsVaild = function(landId)
 			if not landId then
 				return false
 			end
-			return land_data[landId] ~= nil
+			return DataStorage.Land.Raw[landId] ~= nil
 		end,
 		Create = function()
 			local landId
@@ -1118,7 +1175,7 @@ Land = {
 		end,
 		DumpAll = function()
 			local rtn = {}
-			for landId,res in pairs(land_data) do
+			for landId,res in pairs(DataStorage.Land.Raw) do
 				rtn[#rtn+1] = landId
 			end
 			return rtn
@@ -1135,7 +1192,7 @@ Land = {
 		},
 		Owner = {
 			getXuid = function(landId)
-				for xuid,v in pairs(land_owners) do
+				for xuid,v in pairs(DataStorage.RelationShip.Raw['Owner']) do
 					if Array.Fetch(v,landId) then
 						return xuid
 					end
@@ -1143,11 +1200,11 @@ Land = {
 				return nil
 			end,
 			getLand = function(xuid)
-				return land_owners[xuid]
+				return DataStorage.RelationShip.Raw['Owner'][xuid]
 			end,
 			set = function(landId,xuid)
 				Land.RelationShip.Owner.destroy(landId)
-				land_owners[xuid][#land_owners[xuid]+1] = landId
+				DataStorage.RelationShip.Raw['Owner'][xuid][#DataStorage.RelationShip.Raw['Owner'][xuid]+1] = landId
 				Map.Land.Owner.update(landId)
 				DataStorage.Save({0,0,1})
 				return true
@@ -1157,7 +1214,7 @@ Land = {
 				if not owner then
 					return false
 				end
-				Array.Remove(land_owners[owner],landId)
+				Array.Remove(DataStorage.RelationShip.Raw['Owner'][owner],landId)
 				DataStorage.Save({0,0,1})
 				return true
 			end,
@@ -1167,11 +1224,11 @@ Land = {
 		},
 		Trusted = {
 			getXuid = function(landId)
-				return land_data[landId].settings.share
+				return DataStorage.Land.Raw[landId].settings.share
 			end,
 			getLand = function(xuid)
 				local rtn = {}
-				for landId,res in pairs(land_data) do
+				for landId,res in pairs(DataStorage.Land.Raw) do
 					if Land.RelationShip.Trusted.check(landId,xuid) then
 						rtn[#rtn+1] = landId
 					end
@@ -1179,7 +1236,7 @@ Land = {
 				return rtn
 			end,
 			add = function(landId,xuid)
-				local share = land_data[landId].settings.share
+				local share = DataStorage.Land.Raw[landId].settings.share
 				if Land.RelationShip.Trusted.check(landId,xuid) then
 					return false
 				end
@@ -1189,7 +1246,7 @@ Land = {
 				return true
 			end,
 			remove = function(landId,xuid)
-				local share = land_data[landId].settings.share
+				local share = DataStorage.Land.Raw[landId].settings.share
 				Array.Remove(share,xuid)
 				Map.Land.Trusted.update(landId)
 				DataStorage.Save({0,1,0})
@@ -1282,18 +1339,56 @@ Land = {
 		Create = function()
 			return table.clone(Land.DataTemplate.raw)
 		end,
-		Fill = function(data)
-			return {}
+		Fill = function(origin)
+			local tpl = Land.DataTemplate.Create()
+			local pathes = table.getAllPaths(Land.DataTemplate.raw,false)
+			for n,path in pairs(pathes) do
+				local t = table.getKey(origin,path)
+				if t == nil then
+					return nil
+				else
+					table.setKey(tpl,path,t)
+				end
+
+			end
+			return tpl
 		end,
-		Dump = function(data)
-			return {}
+		Dump = function(origin)
+			local IsSame = function(a,b)
+				local mA,mB = type(a),type(b)
+				if mA ~= mB then
+					return false
+				end
+				if mA == 'table' then
+					if #a ~= #b then
+						return false
+					end
+					for k,v in pairs(a) do
+						if b[k] ~= v then
+							return false
+						end
+					end
+					return true
+				else
+					return a == b
+				end
+			end
+			local rtn = Land.DataTemplate.Create()
+			local pathes = table.getAllPaths(Land.DataTemplate.raw,false)
+			for n,path in pairs(pathes) do
+				local t = table.getKey(origin,path)
+				if IsSame(t,table.getKey(rtn,path)) then
+					table.setKey(origin,path,nil)
+				end
+			end
+			return rtn
 		end
 	},
 
 	API = {
 		RunExport = function()
 			for apiName,func in pairs(Land.API.Exported) do
-				if not lxl.export(apiName,func) then
+				if not ll.export(func,'ILAPI_'..apiName) then
 					ERROR('There was a problem exporting the API, export is failed!')
 					return false
 				end
@@ -1345,12 +1440,12 @@ Land = {
 			['CheckPerm'] = function(landId,perm)
 				assert(Land.API.Helper.CheckNilArgument(landId,perm),Land.API.Helper.ErrMsg[1])
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
-				return land_data[landId].permissions[perm]
+				return DataStorage.Land.Raw[landId].permissions[perm]
 			end,
 			['CheckSetting'] = function(landId,setting)
 				assert(Land.API.Helper.CheckNilArgument(landId,setting),Land.API.Helper.ErrMsg[1])
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
-				return land_data[landId].settings[setting]
+				return DataStorage.Land.Raw[landId].settings[setting]
 			end,
 			['GetRange'] = function(landId)
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
@@ -1413,7 +1508,7 @@ Land = {
 			['UpdatePermission'] = function(landId,perm,value)
 				assert(Land.API.Helper.CheckNilArgument(landId,perm,value),Land.API.Helper.ErrMsg[1])
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
-				if not land_data[landId].permissions[perm] then
+				if not DataStorage.Land.Raw[landId].permissions[perm] then
 					return false
 				end
 				return Land.Options.Permission.set(landId,perm,value)
@@ -1421,7 +1516,7 @@ Land = {
 			['UpdateSetting'] = function(landId,setting,value)
 				assert(Land.API.Helper.CheckNilArgument(landId,setting,value),Land.API.Helper.ErrMsg[1])
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
-				if not land_data[landId].settings[setting] then
+				if not DataStorage.Land.Raw[landId].settings[setting] then
 					return false
 				end
 				return Land.Options.Setting.set(landId,setting,value)
@@ -1445,7 +1540,7 @@ Land = {
 				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
 				assert(Land.API.Helper.IsXuidOnline(xuid),Land.API.Helper.ErrMsg[3])
-				return Land.Helper.Teleport(mc.getPlayer(xuid),landId)
+				return Land.Util.Teleport(mc.getPlayer(xuid),landId)
 			end,
 			['GetMoneyProtocol'] = function()
 				return cfg.economic.protocol
@@ -1472,7 +1567,7 @@ Land = {
 				return SafeTeleport.Do(mc.getPlayer(xuid),pos)
 			end,
 		}
-	}
+	},
 
 }
 
@@ -1735,7 +1830,7 @@ OpenGUI = {
 							player:sendForm(Form,function(pl,id) -- callback
 								if not id then return end
 								local landId = Ids[id+1]
-								Land.Helper.Teleport(pl,landId)
+								Land.Util.Teleport(pl,landId)
 							end)
 						end
 						if mode==2 then -- 脚下
@@ -1906,7 +2001,7 @@ OpenGUI = {
 					'<b>',landId,
 					'<c>',name,
 					'<d>',Land.Util.GetDimension(landId),
-					'<e>',ToStrDim(land_data[landId].range.dimid),
+					'<e>',ToStrDim(DataStorage.Land.Raw[landId].range.dimid),
 					'<f>',Pos.ToString(Map.Land.Position.data[landId].posA),
 					'<g>',Pos.ToString(Map.Land.Position.data[landId].posB),
 					'<h>',cubeInfo.length,'<i>',cubeInfo.width,'<j>',cubeInfo.height,
@@ -1927,7 +2022,7 @@ OpenGUI = {
 				return ' ('.._Tr('talk.features.closed')..')'
 			end
 			local Form = mc.newCustomForm()
-			local settings=land_data[landId].settings
+			local settings=DataStorage.Land.Raw[landId].settings
 			Form:setTitle(_Tr('gui.landcfg.title'))
 			Form:addLabel(_Tr('gui.landcfg.tip'))
 			Form:addLabel(_Tr('gui.landcfg.landsign'))
@@ -1945,7 +2040,7 @@ OpenGUI = {
 				function (player,res)
 					if not res then return end
 
-					local settings = land_data[landId].settings
+					local settings = DataStorage.Land.Raw[landId].settings
 					settings.signtome = res[1]
 					settings.signtother = res[2]
 					settings.signbuttom = res[3]
@@ -1968,7 +2063,7 @@ OpenGUI = {
 		Permission = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local perm = land_data[landId].permissions
+			local perm = DataStorage.Land.Raw[landId].permissions
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landmgr.landperm.title'))
 			Form:addLabel(_Tr('gui.landmgr.landperm.options.title'))
@@ -2035,7 +2130,7 @@ OpenGUI = {
 				function (player,res)
 					if not res then return end
 
-					local perm = land_data[landId].permissions
+					local perm = DataStorage.Land.Raw[landId].permissions
 
 					perm.allow_place = res[1]
 					perm.allow_destroy = res[2]
@@ -2108,7 +2203,7 @@ OpenGUI = {
 		Trust = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local shareList = land_data[landId].settings.share
+			local shareList = DataStorage.Land.Raw[landId].settings.share
 			local content = _Tr('gui.landtrust.tip')
 			if #shareList > 0 then
 				content = content..'\n'.._Tr('gui.landtrust.trusted')
@@ -2187,7 +2282,7 @@ OpenGUI = {
 				Form,
 				function(player,res)
 					if not res then return end
-					land_data[landId].settings.nickname = res[1]
+					DataStorage.Land.Raw[landId].settings.nickname = res[1]
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
@@ -2213,7 +2308,7 @@ OpenGUI = {
 				function(player,res)
 					if not res then return end
 
-					land_data[landId].settings.describe=res[1]
+					DataStorage.Land.Raw[landId].settings.describe=res[1]
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
@@ -2298,7 +2393,7 @@ OpenGUI = {
 				function (player,id)
 					if not id then return end
 					if Land.RelationShip.Owner.getXuid(landId) == xuid then
-						Money.Add(player,value)
+						Economy.Player.add(player,value)
 					end
 					Land.Storage.Delete(landId)
 					player:sendModalForm(
@@ -2321,7 +2416,7 @@ PlayerSelector = {
 		local pl_list = {}
 		local forTol
 		if cfg.features.player_selector.include_offline_players then
-			forTol = land_owners
+			forTol = DataStorage.RelationShip.Raw['Owner']
 		else
 			forTol = MEM
 		end
@@ -2581,7 +2676,7 @@ RangeSelector = {
 				if MEM[xuid].reselectLand then
 					checkIgnores = { MEM[xuid].reselectLand.id }
 				end
-				local checkColl = Land.Helper.IsCollision(Cube.Create(posA,pos,dimid),checkIgnores)
+				local checkColl = Land.Util.IsCollision(Cube.Create(posA,pos,dimid),checkIgnores)
 				if checkColl.status then
 					local sp = cfg.land.min_space
 					local nearbyLands = Land.Query.Area(Cube.Create(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid))
@@ -2778,41 +2873,6 @@ DebugHelper = {
 			else
 				INFO('Debug','There is no land nearby.')
 			end
-		end
-	end
-}
-
--- Types
-
-Money = {
-	Get = function(player)
-		local ptc = cfg.economic.protocol
-		if ptc=='scoreboard' then
-			return player:getScore(cfg.economic.scoreboard_objname)
-		elseif ptc=='llmoney' then
-			return money.get(player.xuid)
-		else
-			ERROR(_Tr('console.error.money.protocol','<a>',ptc))
-		end
-	end,
-	Add = function(player,value)
-		local ptc = cfg.economic.protocol
-		if ptc=='scoreboard' then
-			player:addScore(cfg.economic.scoreboard_objname,value)
-		elseif ptc=='llmoney' then
-			money.add(player.xuid,value)
-		else
-			ERROR(_Tr('console.error.money.protocol','<a>',ptc))
-		end
-	end,
-	Del = function(player,value)
-		local ptc = cfg.economic.protocol
-		if ptc=='scoreboard' then
-			player:setScore(cfg.economic.scoreboard_objname,player:getScore(cfg.economic.scoreboard_objname)-value)
-		elseif ptc=='llmoney' then
-			money.reduce(player.xuid,value)
-		else
-			ERROR(_Tr('console.error.money.protocol','<a>',ptc))
 		end
 	end
 }
@@ -3183,7 +3243,7 @@ end
 --#endregion
 
 function Plugin.Unload()
-	mc.runcmdEx('lxl unload iland-core.lua')
+	mc.runcmdEx('ll unload iland-core.lua')
 end
 
 function Plugin.Upgrade(rawInfo)
@@ -3205,8 +3265,8 @@ function Plugin.Upgrade(rawInfo)
 			File.rename(backupfilename..'.bak',backupfilename)
 		end
 	end
-	local function isLXLSupported(list)
-		local version = lxl.version()
+	local function isLLSupported(list)
+		local version = ll.version()
 		for n,ver in pairs(list) do
 			if ver[1]==version.major and ver[2]==version.minor and ver[3]==version.revision then
 				return true
@@ -3226,7 +3286,7 @@ function Plugin.Upgrade(rawInfo)
 		ERROR(_Tr('console.update.disabled'))
 	else
 		updata = rawInfo.Updates[1]
-		if not isLXLSupported(updata.LXL) then
+		if not isLLSupported(updata.LXL) then
 			ERROR(_Tr('console.update.unsupport'))
 		else
 			checkPassed = true
@@ -3306,7 +3366,7 @@ function Plugin.Upgrade(rawInfo)
 end
 
 function Plugin.Reload()
-	mc.runcmdEx('lxl reload iland-core.lua')
+	mc.runcmdEx('ll reload iland-core.lua')
 end
 
 -- Tools & Feature functions.
@@ -3349,7 +3409,7 @@ function CalculatePrice(cubeInfo,dimension)
 	elseif dimension=='2D' then
 		ecode = string.gsubEx(cfg.land.bought.two_dimension.calculate)
 	end
-	local price = lxl.eval(string.gsubEx(
+	local price = ll.eval(string.gsubEx(
 		'return '..ecode,
 		'{height}',cubeInfo.height,
 		'{length}',cubeInfo.length,
@@ -3413,7 +3473,7 @@ function RegisterCommands()
 			MEM[xuid].landId=landId
 			OpenGUI.FastLMgr(player)
 		else
-			local land_count = tostring(#land_owners[xuid])
+			local land_count = tostring(#DataStorage.RelationShip.Raw['Owner'][xuid])
 			local Form = mc.newSimpleForm()
 			Form:setTitle(_Tr('gui.fastgde.title'))
 			Form:setContent(_Tr('gui.fastgde.content','<a>',land_count))
@@ -3447,7 +3507,7 @@ function RegisterCommands()
 			SendText(player,_Tr('title.getlicense.alreadyexists'))
 			return
 		end
-		if not Land.RelationShip.Operator.check(xuid) and #land_owners[xuid]>=cfg.land.max_lands then
+		if not Land.RelationShip.Operator.check(xuid) and #DataStorage.RelationShip.Raw['Owner'][xuid]>=cfg.land.max_lands then
 			SendText(player,_Tr('title.getlicense.limit'))
 			return
 		end
@@ -3514,7 +3574,7 @@ function RegisterCommands()
 			'<d>',cubeInfo.volume,
 			'<e>',price,
 			'<f>',cfg.economic.currency_name,
-			'<g>',Money.Get(player)
+			'<g>',Economy.Player.get(player)
 		))
 		Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/realms_green_check')
 		Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
@@ -3532,7 +3592,7 @@ function RegisterCommands()
 
 				local xuid = player.xuid
 				local range = MEM[xuid].newLand.range
-				local player_credits = Money.Get(player)
+				local player_credits = Economy.Player.get(player)
 				local landId
 				if price > player_credits then
 					SendText(player,_Tr('title.buyland.moneynotenough').._Tr('title.buyland.ordersaved','<a>',cfg.features.selection.tool_name))
@@ -3540,7 +3600,7 @@ function RegisterCommands()
 				else
 					landId = Land.Storage.Create(xuid,range)
 					if landId~=-1 then
-						Money.Del(player,price)
+						Economy.Player.del(player,price)
 						SendText(player,_Tr('title.buyland.succeed'))
 						player:sendModalForm(
 							'Complete.',
@@ -3602,16 +3662,16 @@ function RegisterCommands()
 			function(player,result)
 				if not result then return end
 				local status
-				if payT==0 and Money.Get(player)<needto then
+				if payT==0 and Economy.Player.get(player)<needto then
 					SendText(player,_Tr('title.buyland.moneynotenough'))
 					return
 				end
 				status = Land.Range.Reset(landId,Cube.Create(res.posA,res.posB,res.dimid))
 				if status then
 					if payT==0 then
-						Money.Del(player,needto)
+						Economy.Player.del(player,needto)
 					else
-						Money.Add(player,needto)
+						Economy.Player.add(player,needto)
 					end
 				else
 					SendText(player,_Tr('title.reselectland.fail.apirefuse'))
@@ -3666,7 +3726,7 @@ function RegisterCommands()
 		player:sendForm(Form,function(player,id)
 			if not id or id==0 then return end
 			local landId = landlst[id]
-			Land.Helper.Teleport(player,landId)
+			Land.Util.Teleport(player,landId)
 		end
 		)
 	end)
@@ -3685,7 +3745,7 @@ function RegisterCommands()
 			return false
 		end
 		local landname = Land.Options.Nickname.get(landId) or landId
-		land_data[landId].settings.teleport = {
+		DataStorage.Land.Raw[landId].settings.teleport = {
 			pos.x,
 			pos.y + 1,
 			pos.z
@@ -3714,7 +3774,7 @@ function RegisterCommands()
 			return false
 		end
 		local def = Map.Land.Position.data[landId].posA
-		land_data[landId].settings.teleport = {
+		DataStorage.Land.Raw[landId].settings.teleport = {
 			def.x,
 			def.y + 1,
 			def.z
@@ -3873,7 +3933,7 @@ TimerCallbacks = {
 			if ownerXuid then
 				ownerId = data.xuid2name(ownerXuid)
 			end
-			local landcfg = land_data[landId].settings
+			local landcfg = DataStorage.Land.Raw[landId].settings
 
 			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
 				-- owner/trusted
@@ -3918,7 +3978,7 @@ TimerCallbacks = {
 			if not landId then
 				goto JUMPOUT_BUTTOMSIGN
 			end
-			local landcfg = land_data[landId].settings
+			local landcfg = DataStorage.Land.Raw[landId].settings
 			if not landcfg.signbuttom then
 				goto JUMPOUT_BUTTOMSIGN
 			end
@@ -4000,12 +4060,12 @@ EventCallbacks = {
 				return
 			end
 			for i,landId in pairs(lands) do
-				if not land_data[landId].settings.ev_explode then
+				if not DataStorage.Land.Raw[landId].settings.ev_explode then
 					return false
 				end
 			end
 		else
-			if land_data[landId].settings.ev_explode then
+			if DataStorage.Land.Raw[landId].settings.ev_explode then
 				return
 			end
 		end
@@ -4020,14 +4080,14 @@ mc.listen('onJoin',function(player)
 	local xuid = player.xuid
 	MEM[xuid] = { inland = 'null' }
 
-	if wrong_landowners[xuid] then
-		land_owners[xuid] = table.clone(wrong_landowners[xuid])
-		for n,landId in pairs(land_owners[xuid]) do
+	if DataStorage.RelationShip.Unloaded['Owner'][xuid] then
+		DataStorage.RelationShip.Raw['Owner'][xuid] = table.clone(DataStorage.RelationShip.Unloaded['Owner'][xuid])
+		for n,landId in pairs(DataStorage.RelationShip.Raw['Owner'][xuid]) do
 			Map.Land.Owner.update(landId)
 		end
-		wrong_landowners[xuid] = nil
+		DataStorage.RelationShip.Unloaded['Owner'][xuid] = nil
 	end
-	land_owners[xuid] = land_owners[xuid] or {}
+	DataStorage.RelationShip.Raw['Owner'][xuid] = DataStorage.RelationShip.Raw['Owner'][xuid] or {}
 
 	if player.gameMode==1 then
 		WARN(_Tr('talk.gametype.creative','<a>',player.realName))
@@ -4075,7 +4135,7 @@ mc.listen('onDestroyBlock',function(player,block)
 	local landId = Land.Query.Pos(block.pos)
 	if not landId then return end
 
-	if land_data[landId].permissions.allow_destroy then return end
+	if DataStorage.Land.Raw[landId].permissions.allow_destroy then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4093,7 +4153,7 @@ mc.listen('onPlaceBlock',function(player,block)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.allow_place then return end
+	if DataStorage.Land.Raw[landId].permissions.allow_place then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4124,7 +4184,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 		end
 	end
 
-	local perm = land_data[landId].permissions
+	local perm = DataStorage.Land.Raw[landId].permissions
 
 	if IsConPlus then
 		local it = item.type
@@ -4178,7 +4238,7 @@ mc.listen('onAttackBlock',function(player,block,item)
 		return
 	end
 
-	if bltype == 'minecraft:dragon_egg' and land_data[landId].permissions.allow_destroy then return end -- 左键龙蛋（拓充）
+	if bltype == 'minecraft:dragon_egg' and DataStorage.Land.Raw[landId].permissions.allow_destroy then return end -- 左键龙蛋（拓充）
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
@@ -4195,7 +4255,7 @@ mc.listen('onAttackEntity',function(player,entity)
 
 	local xuid = player.xuid
 	local en = entity.type
-	local perm = land_data[landId].permissions
+	local perm = DataStorage.Land.Raw[landId].permissions
 	if Map.Control.check(3,en) then
 		if en == 'minecraft:ender_crystal' and perm.allow_destroy then return end -- 末地水晶（拓充）
 		if en == 'minecraft:armor_stand' and perm.allow_destroy then return end -- 盔甲架（拓充）
@@ -4223,7 +4283,7 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.use_armor_stand then return end
+	if DataStorage.Land.Raw[landId].permissions.use_armor_stand then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4241,7 +4301,7 @@ mc.listen('onTakeItem',function(player,entity)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.allow_pickupitem then return end
+	if DataStorage.Land.Raw[landId].permissions.allow_pickupitem then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4259,7 +4319,7 @@ mc.listen('onDropItem',function(player,item)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.allow_dropitem then return end
+	if DataStorage.Land.Raw[landId].permissions.allow_dropitem then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4282,7 +4342,7 @@ mc.listen('onBlockInteracted',function(player,block)
 		return
 	end
 
-	local perm = land_data[landId].permissions
+	local perm = DataStorage.Land.Raw[landId].permissions
 	local bn = block.type
 	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
 	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
@@ -4314,7 +4374,7 @@ mc.listen('onUseFrameBlock',function(player,block)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.use_item_frame then return end
+	if DataStorage.Land.Raw[landId].permissions.use_item_frame then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4333,7 +4393,7 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 
 	local player = splasher:toPlayer()
 	local xuid = player.xuid
-	local perm = land_data[landId].permissions
+	local perm = DataStorage.Land.Raw[landId].permissions
 
 	if entype == 'minecraft:fishing_hook' and perm.use_fishing_hook then return end -- 钓鱼竿
 	if entype == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
@@ -4361,7 +4421,7 @@ mc.listen('onFireworkShootWithCrossbow',function(player)
 	if not landId then return end
 
 	local xuid = player.xuid
-	if land_data[landId].permissions.allow_shoot then return end
+	if DataStorage.Land.Raw[landId].permissions.allow_shoot then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4378,7 +4438,7 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 	local landId = Land.Query.Pos(entity.blockPos)
 	if not landId then return end
 
-	if land_data[landId].permissions.use_pressure_plate then return end
+	if DataStorage.Land.Raw[landId].permissions.use_pressure_plate then return end
 	if entity:isPlayer() then
 		local player = entity:toPlayer()
 		local xuid = player.xuid
@@ -4406,9 +4466,9 @@ mc.listen('onRide',function(rider,entity)
 	local xuid = player.xuid
 	local en=entity.type
 	if en=='minecraft:minecart' or en=='minecraft:boat' then
-		if land_data[landId].permissions.allow_ride_trans then return end
+		if DataStorage.Land.Raw[landId].permissions.allow_ride_trans then return end
 	else
-		if land_data[landId].permissions.allow_ride_entity then return end
+		if DataStorage.Land.Raw[landId].permissions.allow_ride_entity then return end
 	end
 
 	if Land.Util.CheckPerm(landId,xuid) then
@@ -4427,7 +4487,7 @@ mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
 	local dimid = witherBoss.pos.dimid
 	for n,pos in pairs(Cube.Traverse(AAbb,aaBB,dimid)) do
 		local landId = Land.Query.Pos(pos)
-		if landId and not land_data[landId].permissions.allow_entity_destroy then
+		if landId and not DataStorage.Land.Raw[landId].permissions.allow_entity_destroy then
 			break
 		end
 	end
@@ -4441,7 +4501,7 @@ mc.listen('onFarmLandDecay',function(pos,entity)
 
 	local landId = Land.Query.Pos(entity.blockPos)
 	if not landId then return end
-	if land_data[landId].settings.ev_farmland_decay then return end -- EV Allow
+	if DataStorage.Land.Raw[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
 end)
 mc.listen('onPistonTryPush',function(pos,block)
@@ -4452,7 +4512,7 @@ mc.listen('onPistonTryPush',function(pos,block)
 
 	local Id_bePushedBlock = Land.Query.Pos(block.pos)
 	local Id_pistonBlock = Land.Query.Pos(pos)
-	if Id_bePushedBlock and not land_data[Id_bePushedBlock].settings.ev_piston_push and Id_pistonBlock~=Id_bePushedBlock then
+	if Id_bePushedBlock and not DataStorage.Land.Raw[Id_bePushedBlock].settings.ev_piston_push and Id_pistonBlock~=Id_bePushedBlock then
 		return false
 	end
 
@@ -4465,7 +4525,7 @@ mc.listen('onFireSpread',function(pos)
 
 	local landId = Land.Query.Pos(pos)
 	if not landId then return end
-	if land_data[landId].settings.ev_fire_spread then return end
+	if DataStorage.Land.Raw[landId].settings.ev_fire_spread then return end
 	return false
 end)
 mc.listen('onEat',function(player,item)
@@ -4478,7 +4538,7 @@ mc.listen('onEat',function(player,item)
 	local landId = Land.Query.Pos(player.blockPos)
 	if not landId then return end
 
-	if land_data[landId].permissions.eat then return end
+	if DataStorage.Land.Raw[landId].permissions.eat then return end
 	if Land.Util.CheckPerm(landId,xuid) then
 		return
 	end
@@ -4499,7 +4559,7 @@ mc.listen('onRedStoneUpdate',function(block,level,isActive)
 	local r = 2
 	local lands = Land.Query.Area(Cube.Create(Pos.Add(pos,r),Pos.Reduce(pos,r),pos.dimid))
 	for i,Id in pairs(lands) do
-		if not land_data[Id].settings.ev_redstone_update then
+		if not DataStorage.Land.Raw[Id].settings.ev_redstone_update then
 			return false
 		end
 	end
@@ -4534,22 +4594,18 @@ mc.listen('onServerStarted',function()
 	try
 	{
 		function ()
-			-- load : data
-			if ConfigReader.Load() ~= true then
-				error('wrong!')
-			end
-			-- load : language
+			assert(DataStorage.Config.Load(),'Error loading configuration!')
+			assert(DataStorage.Land.Load(),'Error loading land data!')
+			assert(DataStorage.RelationShip.Load(),'Error loading relationship table!')
 			I18N.Init()
-			-- load : maps
 			Map.Init()
-			-- load : cmd
 			RegisterCommands()
 		end,
 		catch
 		{
-			function (err)
-				WARN(err)
-				ERROR('Something wrong when load data, plugin closed.')
+			function (msg)
+				WARN(msg)
+				ERROR('Plugin closed.')
 				Plugin.Unload()
 			end
 		}
