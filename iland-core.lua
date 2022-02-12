@@ -281,7 +281,7 @@ Map = {
 			Map.Listener.data = Array.ToKeyMap(cfg.features.disabled_listener)
 		end,
 		check = function(listener)
-			return Map.Listener.data[listener] ~= nil
+			return Map.Listener.data[listener] == nil
 		end
 	},
 	Control = {
@@ -892,13 +892,6 @@ Land = {
 			land_data[landId] = nil
 			DataStorage.Save({0,1,1})
 			return true
-		end,
-		DumpAllIds = function()
-			local rtn = {}
-			for landId,res in pairs(land_data) do
-				rtn[#rtn+1] = landId
-			end
-			return rtn
 		end
 
 	},
@@ -1110,6 +1103,9 @@ Land = {
 	IDManager = {
 
 		IsVaild = function(landId)
+			if not landId then
+				return false
+			end
 			return land_data[landId] ~= nil
 		end,
 		Create = function()
@@ -1119,6 +1115,13 @@ Land = {
 				if not Land.IDManager.IsVaild(landId) then break end
 			end
 			return landId
+		end,
+		DumpAll = function()
+			local rtn = {}
+			for landId,res in pairs(land_data) do
+				rtn[#rtn+1] = landId
+			end
+			return rtn
 		end
 
 	},
@@ -1285,7 +1288,192 @@ Land = {
 		Dump = function(data)
 			return {}
 		end
+	},
+
+	API = {
+		RunExport = function()
+			for apiName,func in pairs(Land.API.Exported) do
+				if not lxl.export(apiName,func) then
+					ERROR('There was a problem exporting the API, export is failed!')
+					return false
+				end
+			end
+			return true
+		end,
+		Helper = {
+			IsXuidOnline = function(xuid)
+				return MEM[xuid] ~= nil
+			end,
+			CheckNilArgument = function(...)
+				local count = 0
+				local args = {...}
+				for i,v in ipairs(args) do
+					count = count + 1
+				end
+				return #args == count
+			end,
+			ErrMsg = {
+				[1] = '[ILAPI] API received invalid value.',
+				[2] = '[ILAPI] API received invaild landId.',
+				[3] = '[ILAPI] API received offline xuid.'
+			}
+		},
+		Exported = {
+			['CreateLand'] = function(xuid,posA,posB,dimid)
+				assert(Land.API.Helper.CheckNilArgument(xuid,posA,posB,dimid),Land.API.Helper.ErrMsg[1])
+				Land.API.Helper.CheckNilArgument(xuid,posA,posB,dimid)
+				local rtn = Land.Storage.Create(xuid,Cube.Create(posA,posB,dimid))
+				rtn = rtn or -1
+				return rtn
+			end,
+			['DeleteLand'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.Storage.Delete(landId)
+			end,
+			['PosGetLand'] = function(pos,noAccessCache)
+				assert(Land.API.Helper.CheckNilArgument(pos),Land.API.Helper.ErrMsg[1])
+				local rtn = Land.Query.Pos(pos,noAccessCache) or -1
+				return rtn
+			end,
+			['GetLandInRange'] = function(posA,posB,dimid,noAccessCache)
+				assert(Land.API.Helper.CheckNilArgument(posA,posB,dimid),Land.API.Helper.ErrMsg[1])
+				return Land.Query.Area(Cube.Create(posA,posB,dimid),noAccessCache)
+			end,
+			['GetAllLands'] = function()
+				return Land.IDManager.DumpAll()
+			end,
+			['CheckPerm'] = function(landId,perm)
+				assert(Land.API.Helper.CheckNilArgument(landId,perm),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return land_data[landId].permissions[perm]
+			end,
+			['CheckSetting'] = function(landId,setting)
+				assert(Land.API.Helper.CheckNilArgument(landId,setting),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return land_data[landId].settings[setting]
+			end,
+			['GetRange'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.Range.Get(landId)
+			end,
+			['GetEdge'] = function(landId,dimType,customY)
+				assert(Land.API.Helper.CheckNilArgument(landId,dimType),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				local rtn
+				if dimType == '3D' then
+					rtn = Cube.GetEdge(Land.Range.Get(landId))
+				elseif dimType == '2D' then
+					rtn = Cube.GetEdge_2D(Land.Range.Get(landId),customY)
+				end
+				return rtn
+			end,
+			['GetDimension'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.Util.GetDimension(landId)
+			end,
+			['GetName'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				local rtn = Land.Options.Nickname.get(landId) or ''
+				return rtn
+			end,
+			['GetDescribe'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.Options.Setting.get(landId,'nickname')
+			end,
+			['GetOwner'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Owner.getXuid(landId)
+			end,
+			['GetPoint'] = function(landId)
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.Options.Teleport.get(landId)
+			end,
+			['GetPlayerLands'] = function(xuid)
+				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
+				return Land.RelationShip.Owner.getLand(xuid)
+			end,
+			['IsPlayerTrusted'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Trusted.check(landId,xuid)
+			end,
+			['IsLandOwner'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Owner.check(landId,xuid)
+			end,
+			['IsLandOperator'] = function(xuid)
+				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
+				return Land.RelationShip.Operator.check(xuid)
+			end,
+			['GetAllTrustedLand'] = function(xuid)
+				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
+				return Land.RelationShip.Trusted.getLand(xuid)
+			end,
+			['UpdatePermission'] = function(landId,perm,value)
+				assert(Land.API.Helper.CheckNilArgument(landId,perm,value),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				if not land_data[landId].permissions[perm] then
+					return false
+				end
+				return Land.Options.Permission.set(landId,perm,value)
+			end,
+			['UpdateSetting'] = function(landId,setting,value)
+				assert(Land.API.Helper.CheckNilArgument(landId,setting,value),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				if not land_data[landId].settings[setting] then
+					return false
+				end
+				return Land.Options.Setting.set(landId,setting,value)
+			end,
+			['AddTrust'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Trusted.add(landId,xuid)
+			end,
+			['RemoveTrust'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Trusted.remove(landId,xuid)
+			end,
+			['SetOwner'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Owner.set(landId,xuid)
+			end,
+			['Teleport'] = function(xuid,landId)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
+				assert(Land.API.Helper.IsXuidOnline(xuid),Land.API.Helper.ErrMsg[3])
+				return Land.Helper.Teleport(mc.getPlayer(xuid),landId)
+			end,
+			['GetMoneyProtocol'] = function()
+				return cfg.economic.protocol
+			end,
+			['GetLanguage'] = function()
+				return cfg.plugin.language
+			end,
+			['GetChunkSide'] = function()
+				return cfg.features.chunk_side
+			end,
+			['IsListenerDisabled'] = function(listener)
+				assert(Land.API.Helper.CheckNilArgument(listener),Land.API.Helper.ErrMsg[1])
+				return not Map.Listener.check(listener)
+			end,
+			['GetApiVersion'] = function()
+				return Plugin.apiver
+			end,
+			['GetVersion'] = function()
+				return Plugin.numver
+			end,
+			['SafeTeleport_Do'] = function(xuid,pos)
+				assert(Land.API.Helper.CheckNilArgument(xuid,pos),Land.API.Helper.ErrMsg[1])
+				assert(Land.API.Helper.IsXuidOnline(xuid),Land.API.Helper.ErrMsg[3])
+				return SafeTeleport.Do(mc.getPlayer(xuid),pos)
+			end,
+		}
 	}
+
 }
 
 ConfigUIEditor = {
@@ -1529,7 +1717,7 @@ OpenGUI = {
 							local Form = mc.newSimpleForm()
 							Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
 							Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
-							local Ids = Land.Storage.DumpAllIds()
+							local Ids = Land.IDManager.DumpAll()
 							for num,landId in pairs(Ids) do
 								local ownerId = Land.RelationShip.Owner.getXuid(landId)
 								if ownerId then
@@ -1630,29 +1818,29 @@ OpenGUI = {
 				local Form = mc.newCustomForm()
 				Form:setTitle(_Tr('gui.listenmgr.title'))
 				Form:addLabel(_Tr('gui.listenmgr.tip'))
-				Form:addSwitch('onDestroyBlock',not(Map.Listener.check('onDestroyBlock')))
-				Form:addSwitch('onPlaceBlock',not(Map.Listener.check('onPlaceBlock')))
-				Form:addSwitch('onUseItemOn',not(Map.Listener.check('onUseItemOn')))
-				Form:addSwitch('onAttackEntity',not(Map.Listener.check('onAttackEntity')))
-				Form:addSwitch('onAttackBlock',not(Map.Listener.check('onAttackBlock')))
-				Form:addSwitch('onExplode',not(Map.Listener.check('onExplode')))
-				Form:addSwitch('onBedExplode',not(Map.Listener.check('onBedExplode')))
-				Form:addSwitch('onRespawnAnchorExplode',not(Map.Listener.check('onRespawnAnchorExplode')))
-				Form:addSwitch('onTakeItem',not(Map.Listener.check('onTakeItem')))
-				Form:addSwitch('onDropItem',not(Map.Listener.check('onDropItem')))
-				Form:addSwitch('onBlockInteracted',not(Map.Listener.check('onBlockInteracted')))
-				Form:addSwitch('onUseFrameBlock',not(Map.Listener.check('onUseFrameBlock')))
-				Form:addSwitch('onSpawnProjectile',not(Map.Listener.check('onSpawnProjectile')))
-				Form:addSwitch('onFireworkShootWithCrossbow',not(Map.Listener.check('onFireworkShootWithCrossbow')))
-				Form:addSwitch('onStepOnPressurePlate',not(Map.Listener.check('onStepOnPressurePlate')))
-				Form:addSwitch('onRide',not(Map.Listener.check('onRide')))
-				Form:addSwitch('onWitherBossDestroy',not(Map.Listener.check('onWitherBossDestroy')))
-				Form:addSwitch('onFarmLandDecay',not(Map.Listener.check('onFarmLandDecay')))
-				Form:addSwitch('onPistonTryPush',not(Map.Listener.check('onPistonTryPush')))
-				Form:addSwitch('onFireSpread',not(Map.Listener.check('onFireSpread')))
-				Form:addSwitch('onChangeArmorStand',not(Map.Listener.check('onChangeArmorStand')))
-				Form:addSwitch('onEat',not(Map.Listener.check('onEat')))
-				Form:addSwitch('onRedStoneUpdate',not(Map.Listener.check('onRedStoneUpdate')))
+				Form:addSwitch('onDestroyBlock',Map.Listener.check('onDestroyBlock'))
+				Form:addSwitch('onPlaceBlock',Map.Listener.check('onPlaceBlock'))
+				Form:addSwitch('onUseItemOn',Map.Listener.check('onUseItemOn'))
+				Form:addSwitch('onAttackEntity',Map.Listener.check('onAttackEntity'))
+				Form:addSwitch('onAttackBlock',Map.Listener.check('onAttackBlock'))
+				Form:addSwitch('onExplode',Map.Listener.check('onExplode'))
+				Form:addSwitch('onBedExplode',Map.Listener.check('onBedExplode'))
+				Form:addSwitch('onRespawnAnchorExplode',Map.Listener.check('onRespawnAnchorExplode'))
+				Form:addSwitch('onTakeItem',Map.Listener.check('onTakeItem'))
+				Form:addSwitch('onDropItem',Map.Listener.check('onDropItem'))
+				Form:addSwitch('onBlockInteracted',Map.Listener.check('onBlockInteracted'))
+				Form:addSwitch('onUseFrameBlock',Map.Listener.check('onUseFrameBlock'))
+				Form:addSwitch('onSpawnProjectile',Map.Listener.check('onSpawnProjectile'))
+				Form:addSwitch('onFireworkShootWithCrossbow',Map.Listener.check('onFireworkShootWithCrossbow'))
+				Form:addSwitch('onStepOnPressurePlate',Map.Listener.check('onStepOnPressurePlate'))
+				Form:addSwitch('onRide',Map.Listener.check('onRide'))
+				Form:addSwitch('onWitherBossDestroy',Map.Listener.check('onWitherBossDestroy'))
+				Form:addSwitch('onFarmLandDecay',Map.Listener.check('onFarmLandDecay'))
+				Form:addSwitch('onPistonTryPush',Map.Listener.check('onPistonTryPush'))
+				Form:addSwitch('onFireSpread',Map.Listener.check('onFireSpread'))
+				Form:addSwitch('onChangeArmorStand',Map.Listener.check('onChangeArmorStand'))
+				Form:addSwitch('onEat',Map.Listener.check('onEat'))
+				Form:addSwitch('onRedStoneUpdate',Map.Listener.check('onRedStoneUpdate'))
 
 				player:sendForm(
 					Form,
@@ -3799,7 +3987,7 @@ FormCallbacks = {
 EventCallbacks = {
 	onExplode = function(source,pos,radius,range,isDestroy,isFire)
 
-		if Map.Listener.check('onExplode') then
+		if not Map.Listener.check('onExplode') then
 			return
 		end
 
@@ -3867,7 +4055,7 @@ mc.listen('onLeft',function(player)
 end)
 mc.listen('onDestroyBlock',function(player,block)
 
-	if Map.Listener.check('onDestroyBlock') then
+	if not Map.Listener.check('onDestroyBlock') then
 		return
 	end
 
@@ -3897,7 +4085,7 @@ mc.listen('onDestroyBlock',function(player,block)
 end)
 mc.listen('onPlaceBlock',function(player,block)
 
-	if Map.Listener.check('onPlaceBlock') then
+	if not Map.Listener.check('onPlaceBlock') then
 		return
 	end
 
@@ -3915,7 +4103,7 @@ mc.listen('onPlaceBlock',function(player,block)
 end)
 mc.listen('onUseItemOn',function(player,item,block)
 
-	if Map.Listener.check('onUseItemOn') then
+	if not Map.Listener.check('onUseItemOn') then
 		return
 	end
 
@@ -3973,7 +4161,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 end)
 mc.listen('onAttackBlock',function(player,block,item)
 
-	if Map.Listener.check('onAttackBlock') then
+	if not Map.Listener.check('onAttackBlock') then
 		return
 	end
 
@@ -3998,7 +4186,7 @@ mc.listen('onAttackBlock',function(player,block,item)
 end)
 mc.listen('onAttackEntity',function(player,entity)
 
-	if Map.Listener.check('onAttackEntity') then
+	if not Map.Listener.check('onAttackEntity') then
 		return
 	end
 
@@ -4027,7 +4215,7 @@ mc.listen('onAttackEntity',function(player,entity)
 end)
 mc.listen('onChangeArmorStand',function(entity,player,slot)
 
-	if Map.Listener.check('onChangeArmorStand') then
+	if not Map.Listener.check('onChangeArmorStand') then
 		return
 	end
 
@@ -4045,7 +4233,7 @@ mc.listen('onChangeArmorStand',function(entity,player,slot)
 end)
 mc.listen('onTakeItem',function(player,entity)
 
-	if Map.Listener.check('onTakeItem') then
+	if not Map.Listener.check('onTakeItem') then
 		return
 	end
 
@@ -4063,7 +4251,7 @@ mc.listen('onTakeItem',function(player,entity)
 end)
 mc.listen('onDropItem',function(player,item)
 
-	if Map.Listener.check('onDropItem') then
+	if not Map.Listener.check('onDropItem') then
 		return
 	end
 
@@ -4081,7 +4269,7 @@ mc.listen('onDropItem',function(player,item)
 end)
 mc.listen('onBlockInteracted',function(player,block)
 
-	if Map.Listener.check('onBlockInteracted') then
+	if not Map.Listener.check('onBlockInteracted') then
 		return
 	end
 
@@ -4118,7 +4306,7 @@ mc.listen('onBlockInteracted',function(player,block)
 end)
 mc.listen('onUseFrameBlock',function(player,block)
 
-	if Map.Listener.check('onUseFrameBlock') then
+	if not Map.Listener.check('onUseFrameBlock') then
 		return
 	end
 
@@ -4136,7 +4324,7 @@ mc.listen('onUseFrameBlock',function(player,block)
 end)
 mc.listen('onSpawnProjectile',function(splasher,entype)
 
-	if Map.Listener.check('onSpawnProjectile') or not splasher:isPlayer() then
+	if not Map.Listener.check('onSpawnProjectile') or not splasher:isPlayer() then
 		return
 	end
 
@@ -4165,7 +4353,7 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 end)
 mc.listen('onFireworkShootWithCrossbow',function(player)
 
-	if Map.Listener.check('onFireworkShootWithCrossbow') then
+	if not Map.Listener.check('onFireworkShootWithCrossbow') then
 		return
 	end
 
@@ -4183,7 +4371,7 @@ mc.listen('onFireworkShootWithCrossbow',function(player)
 end)
 mc.listen('onStepOnPressurePlate',function(entity,block)
 
-	if Map.Listener.check('onStepOnPressurePlate') then
+	if not Map.Listener.check('onStepOnPressurePlate') then
 		return
 	end
 
@@ -4203,7 +4391,7 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 end)
 mc.listen('onRide',function(rider,entity)
 
-	if Map.Listener.check('onRide') then
+	if not Map.Listener.check('onRide') then
 		return
 	end
 
@@ -4232,7 +4420,7 @@ mc.listen('onRide',function(rider,entity)
 end)
 mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
 
-	if Map.Listener.check('onWitherBossDestroy') then
+	if not Map.Listener.check('onWitherBossDestroy') then
 		return
 	end
 
@@ -4247,7 +4435,7 @@ mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
 end)
 mc.listen('onFarmLandDecay',function(pos,entity)
 
-	if Map.Listener.check('onFarmLandDecay') then
+	if not Map.Listener.check('onFarmLandDecay') then
 		return
 	end
 
@@ -4258,7 +4446,7 @@ mc.listen('onFarmLandDecay',function(pos,entity)
 end)
 mc.listen('onPistonTryPush',function(pos,block)
 
-	if Map.Listener.check('onPistonTryPush') then
+	if not Map.Listener.check('onPistonTryPush') then
 		return
 	end
 
@@ -4271,7 +4459,7 @@ mc.listen('onPistonTryPush',function(pos,block)
 end)
 mc.listen('onFireSpread',function(pos)
 
-	if Map.Listener.check('onFireSpread') then
+	if not Map.Listener.check('onFireSpread') then
 		return
 	end
 
@@ -4282,7 +4470,7 @@ mc.listen('onFireSpread',function(pos)
 end)
 mc.listen('onEat',function(player,item)
 
-	if Map.Listener.check('onEat') then
+	if not Map.Listener.check('onEat') then
 		return
 	end
 
@@ -4300,7 +4488,7 @@ mc.listen('onEat',function(player,item)
 end)
 mc.listen('onRedStoneUpdate',function(block,level,isActive)
 
-	if Map.Listener.check('onRedStoneUpdate') then
+	if not Map.Listener.check('onRedStoneUpdate') then
 		return
 	end
 
@@ -4431,43 +4619,6 @@ end)
 mc.listen('onBlockExplode',EventCallbacks.onExplode)
 mc.listen('onEntityExplode',EventCallbacks.onExplode)
 
--- Exported ILAPIs
---[[
-lxl.export(ILAPI.CreateLand,'ILAPI_CreateLand')
-lxl.export(ILAPI.DeleteLand,'ILAPI_DeleteLand')
-lxl.export(Land.Query.Pos,'ILAPI_PosGetLand')
-lxl.export(ILAPI.GetChunk,'ILAPI_GetChunk')
-lxl.export(ILAPI.GetDistence,'ILAPI_GetDistance')
-lxl.export(ILAPI.GetLandInRange,'ILAPI_GetLandInRange')
-lxl.export(ILAPI.GetAllLands,'ILAPI_GetAllLands')
-lxl.export(ILAPI.CheckPerm,'ILAPI_CheckPerm')
-lxl.export(ILAPI.CheckSetting,'ILAPI_CheckSetting')
-lxl.export(ILAPI.GetRange,'ILAPI_GetRange')
-lxl.export(ILAPI.GetEdge,'ILAPI_GetEdge')
-lxl.export(Land.Util.GetDimension,'ILAPI_GetDimension')
-lxl.export(ILAPI.GetName,'ILAPI_GetName')
-lxl.export(ILAPI.GetDescribe,'ILAPI_GetDescribe')
-lxl.export(Land.RelationShip.Owner.getXuid,'ILAPI_GetOwner')
-lxl.export(ILAPI.GetPoint,'ILAPI_GetPoint')
-lxl.export(ILAPI.GetPlayerLands,'ILAPI_GetPlayerLands')
-lxl.export(Land.RelationShip.Trusted.check,'ILAPI_IsPlayerTrusted')
-lxl.export(ILAPI.IsLandOwner,'ILAPI_IsLandOwner')
-lxl.export(ILAPI.IsLandOperator,'ILAPI_IsLandOperator')
-lxl.export(ILAPI.GetAllTrustedLand,'ILAPI_GetAllTrustedLand')
-lxl.export(ILAPI.UpdatePermission,'ILAPI_UpdatePermission')
-lxl.export(ILAPI.UpdateSetting,'ILAPI_UpdateSetting')
-lxl.export(ILAPI.AddTrust,'ILAPI_AddTrust')
-lxl.export(ILAPI.RemoveTrust,'ILAPI_RemoveTrust')
-lxl.export(ILAPI.SetOwner,'ILAPI_SetOwner')
-lxl.export(ILAPI.Teleport,'ILAPI_Teleport')
-lxl.export(ILAPI.GetMoneyProtocol,'ILAPI_GetMoneyProtocol')
-lxl.export(ILAPI.GetLanguage,'ILAPI_GetLanguage')
-lxl.export(ILAPI.GetChunkSide,'ILAPI_GetChunkSide')
-lxl.export(ILAPI.IsDisabled,'ILAPI_IsListenerDisabled')
-lxl.export(ILAPI.GetApiVersion,'ILAPI_GetApiVersion')
-lxl.export(ILAPI.GetVersion,'ILAPI_GetVersion')
-lxl.export(SafeTeleport.Do,"SafeTeleport_Do")
-]]
 -- Signs.
 
 INFO('Powerful land plugin is loaded! Ver-'..Plugin.version..',')
