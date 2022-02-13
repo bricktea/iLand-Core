@@ -13,9 +13,22 @@
 --]] ------------------------------------------------------
 
 Plugin = {
-	version = "2.71",
-	numver = 271,
-	apiver = 201,
+	Version = {
+		major = 2,
+		minor = 7,
+		revision = 1,
+		toString = function()
+			local ver = Plugin.Version
+			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)
+		end,
+		toNumber = function()
+			local ver = Plugin.Version
+			return ver.major*100+ver.minor*10+ver.revision
+		end,
+		getApi = function()
+			return 201
+		end
+	},
 	minLL = {2,1,0},
 }
 
@@ -33,7 +46,7 @@ DATA_PATH = 'plugins/iland/'
 -- [Tpl] config.json
 
 local cfg = {
-	version = Plugin.numver,
+	version = Plugin.Version.toNumber(),
 	plugin = {
 		network = true,
 		language = "zh_CN"
@@ -129,10 +142,27 @@ function WARN(content)
 	logger.warn(content)
 end
 
--- Check LiteLoader version.
+-- Register to LiteLoader.
 
-if not ll.checkVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
+if not ll.requireVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
 	error('Unsupported version of LiteLoader, plugin loading aborted.')
+else
+	--[[
+	ll.registerPlugin(
+		'iLand',
+		'Powerful land plugin.',
+		{
+			major = Plugin.Version.major,
+			minor = Plugin.Version.minor,
+			revision = Plugin.Version.revision
+		},
+		{
+			Author = 'RedbeanW',
+			Github = 'https://github.com/LiteLScript-Dev/iLand-Core',
+			License = 'GPLv3 with additional conditions.'
+		}
+	)
+	]]
 end
 
 -- Classes.
@@ -416,7 +446,7 @@ Map = {
 					return
 				end
 				local landId = record.landId
-				if landId~=-1 then
+				if landId then
 					Array.Remove(map.land_recorded_pos[landId],strpos)
 				else
 					Array.Remove(map.non_land_pos,strpos)
@@ -519,9 +549,11 @@ I18N = {
 			I18N.LangPack.Install(lang)
 			I18N.TriedAutoFix = true
 			I18N.Init()
-			return true
+			return
 		end
-		if stat == -1 then
+		if stat == 0 then
+			return true
+		elseif stat == -1 then
 			ERROR('Language pack not found!')
 		elseif stat == -2 then
 			ERROR('The language pack used is not suitable for this version!')
@@ -534,7 +566,7 @@ I18N = {
 			return -1
 		end
 		local pack = JSON.decode(File.readFrom(path))
-		if pack.VERSION ~= Plugin.numver then
+		if pack.VERSION ~= Plugin.Version.toNumber() then
 			return -2
 		else
 			I18N.LangPack.data = pack
@@ -558,7 +590,7 @@ I18N = {
 		if File.exists(path..lang..'.json') then
 			if not Array.Fetch(list_l,lang) then
 				ERROR(_Tr('console.languages.update.notfound','<a>',lang))
-			elseif JSON.decode(File.readFrom(path..lang..'.json')).VERSION == Plugin.numver then
+			elseif JSON.decode(File.readFrom(path..lang..'.json')).VERSION == Plugin.Version.toNumber() then
 				ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
 			elseif not Array.Fetch(list_o.official,lang) and not Array.Fetch(list_o['3-rd'],lang) then
 				ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
@@ -592,7 +624,7 @@ I18N = {
 				return -2
 			end
 			local THISVER = JSON.decode(raw).VERSION
-			if THISVER~=Plugin.numver then
+			if THISVER~=Plugin.Version.toNumber() then
 				return -3
 			end
 			File.writeTo(DATA_PATH..'lang/'..lang..'.json',raw)
@@ -680,7 +712,7 @@ DataStorage = {
 				File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 			end
 			local localcfg = JSON.decode(File.readFrom(DATA_PATH..'config.json'))
-			if localcfg.version ~= Plugin.numver then
+			if localcfg.version ~= Plugin.Version.toNumber() then
 				save = true
 				if not DataStorage.Config.Update(localcfg) then
 					return false
@@ -691,7 +723,7 @@ DataStorage = {
 			for n,path in pairs(table.getAllPaths(cfg,false)) do
 				local item = table.getKey(localcfg,path)
 				if path ~= 'this.version' then
-					if not item then
+					if item == nil then
 						save = true
 						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
 					else
@@ -716,6 +748,7 @@ DataStorage = {
 			if save and not DEV_MODE then
 				DataStorage.Save({1,0,0})
 			end
+			return true
 
 		end,
 		Update = function(origin)
@@ -808,12 +841,12 @@ DataStorage = {
 			if not File.exists(DATA_PATH..'data.json') then
 				WARN('Land data file (data.json) does not exist, creating...')
 				File.writeTo(DATA_PATH..'data.json',JSON.encode({
-					version = Plugin.numver,
+					version = Plugin.Version.toNumber(),
 					Lands = {}
 				}))
 			end
 			local localdata = JSON.decode(File.readFrom(DATA_PATH..'data.json'))
-			if localdata.version ~= Plugin.numver then
+			if localdata.version ~= Plugin.Version.toNumber() then
 				DataStorage.Land.Update(localdata)
 			end
 
@@ -832,6 +865,7 @@ DataStorage = {
 			if save and not DEV_MODE then
 				DataStorage.Save({0,1,0})
 			end
+			return true
 		end,
 		Update = function(origin)
 			if not origin.version then
@@ -963,33 +997,37 @@ DataStorage = {
 		Raw = {},
 		Unloaded = {},
 		Load = function()
+			local rel = DataStorage.RelationShip
 			if not File.exists(DATA_PATH..'relationship.json') then
 				WARN('Relationship table file (relationship.json) does not exist, creating...')
 				File.writeTo(DATA_PATH..'relationship.json',JSON.encode({
-					version = Plugin.numver,
+					version = Plugin.Version.toNumber(),
 					Owner = {},
 					Operator = {},
 					Trusted = {}
 				}))
 			end
 			local localdata = JSON.decode(File.readFrom(DATA_PATH..'relationship.json'))
-			if localdata.version ~= Plugin.numver then
-				DataStorage.RelationShip.Update(localdata)
+			if localdata.version ~= Plugin.Version.toNumber() then
+				rel.Update(localdata)
 			end
 			--- Owner
+			rel.Raw['Owner'] = {}
+			rel.Unloaded['Owner'] = {}
 			local had_unloaded_xuid = false
 			for xuid,landIds in pairs(localdata.Owner) do
 				if not data.xuid2name(xuid) then
 					WARN('Player (xuid: '..xuid..') not found, skipping...')
-					DataStorage.RelationShip.Unloaded['Owner'][xuid] = landIds
+					rel.Unloaded['Owner'][xuid] = landIds
 					had_unloaded_xuid = true
 				else
-					DataStorage.RelationShip.Raw['Owner'][xuid] = landIds
+					rel.Raw['Owner'][xuid] = landIds
 				end
 			end
 			if had_unloaded_xuid then
 				INFO('Some players are not loaded because their XUID isn\'t in the PlayerDB, please have them re-enter the server to make the PlayerDB recorded.')
 			end
+			return true
 		end,
 		Update = function(origin)
 			if not origin.version then
@@ -1583,10 +1621,10 @@ Land = {
 				return not Map.Listener.check(listener)
 			end,
 			['GetApiVersion'] = function()
-				return Plugin.apiver
+				return Plugin.Version.getApi()
 			end,
 			['GetVersion'] = function()
-				return Plugin.numver
+				return Plugin.Version.toNumber()
 			end,
 			['SafeTeleport_Do'] = function(xuid,pos)
 				assert(Land.API.Helper.CheckNilArgument(xuid,pos),Land.API.Helper.ErrMsg[1])
@@ -3444,7 +3482,7 @@ function Plugin.Upgrade(rawInfo)
 	--  Check Data
 	local updata
 	local checkPassed = false
-	if rawInfo.Updates[2] and rawInfo.Updates[2].NumVer~=Plugin.numver then
+	if rawInfo.Updates[2] and rawInfo.Updates[2].NumVer~=Plugin.Version.toNumber() then
 		ERROR(_Tr('console.update.vacancy'))
 	elseif rawInfo.FILE_Version~=Server.version then
 		ERROR(_Tr('console.getonline.failbyver','<a>',rawInfo.FILE_Version))
@@ -3463,8 +3501,8 @@ function Plugin.Upgrade(rawInfo)
 	end
 
 	-- Check Plugin version
-	if updata.NumVer<=Plugin.numver then
-		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.numver))
+	if updata.NumVer<=Plugin.Version.toNumber() then
+		ERROR(_Tr('console.autoupdate.alreadylatest','<a>',updata.NumVer..'<='..Plugin.Version.toNumber()))
 		return
 	end
 	INFO('AutoUpdate',_Tr('console.autoupdate.start'))
@@ -3481,7 +3519,7 @@ function Plugin.Upgrade(rawInfo)
 		return false
 	end
 
-	INFO('AutoUpdate',Plugin.version..' => '..updata.Version)
+	INFO('AutoUpdate',Plugin.Version.toString()..' => '..updata.Version)
 	RawPath['$plugin_path'] = 'plugins/'
 	RawPath['$data_path'] = DATA_PATH
 
@@ -3754,7 +3792,7 @@ function RegisterCommands()
 					return
 				else
 					landId = Land.Storage.Create(xuid,range)
-					if landId~=-1 then
+					if landId then
 						Economy.Player.del(player,price)
 						SendText(player,_Tr('title.buyland.succeed'))
 						player:sendModalForm(
@@ -3946,7 +3984,7 @@ function RegisterCommands()
 			ERROR('Unknown parameter: "'..args[1]..'", plugin wiki: https://myland.amd.rocks/')
 			return
 		end
-		INFO('The server is running iLand v'..Plugin.version)
+		INFO('The server is running iLand v'..Plugin.Version.toString())
 		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
 		INFO('Memory Used: '..DebugHelper.GetMemoryCount()..'MB')
 	end)
@@ -4073,14 +4111,15 @@ mc.listen('onJoin',function(player)
 	local xuid = player.xuid
 	MEM[xuid] = { inland = 'null' }
 
-	if DataStorage.RelationShip.Unloaded['Owner'][xuid] then
-		DataStorage.RelationShip.Raw['Owner'][xuid] = table.clone(DataStorage.RelationShip.Unloaded['Owner'][xuid])
-		for n,landId in pairs(DataStorage.RelationShip.Raw['Owner'][xuid]) do
+	local rel = DataStorage.RelationShip
+	if rel.Unloaded['Owner'][xuid] then
+		rel.Raw['Owner'][xuid] = table.clone(rel.Unloaded['Owner'][xuid])
+		for n,landId in pairs(rel.Raw['Owner'][xuid]) do
 			Map.Land.Owner.update(landId)
 		end
-		DataStorage.RelationShip.Unloaded['Owner'][xuid] = nil
+		rel.Unloaded['Owner'][xuid] = nil
 	end
-	DataStorage.RelationShip.Raw['Owner'][xuid] = DataStorage.RelationShip.Raw['Owner'][xuid] or {}
+	rel.Raw['Owner'][xuid] = rel.Raw['Owner'][xuid] or {}
 
 	if player.gameMode==1 then
 		WARN(_Tr('talk.gametype.creative','<a>',player.realName))
@@ -4623,7 +4662,7 @@ mc.listen('onServerStarted',function()
 				end
 
 				-- Check Update
-				if Plugin.numver<data.Updates[1].NumVer then
+				if Plugin.Version.toNumber()<data.Updates[1].NumVer then
 					INFO('Network',_Tr('console.update.newversion','<a>',data.Updates[1].Version))
 					INFO('Update',_Tr('console.update.newcontent'))
 					for n,text in pairs(data.Updates[1].Description) do
@@ -4638,8 +4677,8 @@ mc.listen('onServerStarted',function()
 						Plugin.Upgrade(data)
 					end
 				end
-				if Plugin.numver>data.Updates[1].NumVer then
-					INFO('Network',_Tr('console.update.preview','<a>',Plugin.version))
+				if Plugin.Version.toNumber()>data.Updates[1].NumVer then
+					INFO('Network',_Tr('console.update.preview','<a>',Plugin.Version.toString()))
 				end
 
 				-- Announcement
@@ -4674,5 +4713,5 @@ Land.API.RunExport()
 
 -- Signs.
 
-INFO('Powerful land plugin is loaded! Ver-'..Plugin.version..',')
+INFO('Powerful land plugin is loaded! Ver-'..Plugin.Version.toString()..',')
 INFO('By: RedbeanW, License: GPLv3 with additional conditions.')

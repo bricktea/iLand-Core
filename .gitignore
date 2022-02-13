@@ -1,5 +1,10 @@
+# data files
 config.json
 data.json
-owners.json
+relationship.json
+
+# emm..
 iLand.pptx
+
+# vscode
 .vscode/
