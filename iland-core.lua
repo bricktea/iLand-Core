@@ -2799,9 +2799,12 @@ RangeSelector = {
 			end)
 		elseif mem.step == 4 then
 			local passed = false
+			local dim = Dimension.Get(mem.dimid)
 			local range = Cube.Create(mem.posA,mem.posB,mem.dimid)
 			local cubeInfo = Cube.GetInformation(range)
-			if cubeInfo.square < cfg.land.bought.square_range[1] and not Land.RelationShip.Operator.check(xuid) then
+			if (range.posA.y <= dim.min or range.posB.y >= dim.max) and mem.dimension == '3D' then
+				SendText(player,_Tr('title.rangeselector.fail.height'))
+			elseif cubeInfo.square < cfg.land.bought.square_range[1] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toosmall'))
 			elseif cubeInfo.square > cfg.land.bought.square_range[2] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toobig'))
