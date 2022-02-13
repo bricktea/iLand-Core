@@ -9,6 +9,7 @@
  - [ ] 跨维度安全传送问题
  - [ ] language autofix bugs.
  - [ ] 默认关闭onDrop
+ - [x] 汉化加载中的报错
  - [ ] better control using new events.
  - [x] 修复单坐标缓存系统中的一处Bug
  - [x] 修复冲突检查

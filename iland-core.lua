@@ -169,7 +169,7 @@ end
 
 Map = {
 	Init = function()
-		INFO('Load','Building tables needed to run...')
+		INFO('Load',_Tr('console.loading.map.load'))
 		for landId,data in pairs(DataStorage.Land.Raw) do
 			Map.Land.Position.update(landId,'add')
 			Map.Land.Trusted.update(landId)
@@ -711,7 +711,7 @@ DataStorage = {
 
 			--- Check file.
 			if not File.exists(DATA_PATH..'config.json') then
-				WARN('Configuration file (config.json) does not exist, creating...')
+				WARN(_Tr('console.loading.config.notfound'))
 				File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 			end
 			local localcfg = JSON.decode(File.readFrom(DATA_PATH..'config.json'))
@@ -728,7 +728,7 @@ DataStorage = {
 				if path ~= 'this.version' then
 					if item == nil then
 						save = true
-						WARN('cfg.'..string.sub(path,6)..' not found, reset to default.')
+						WARN(_Tr('console.loading.config.itemlost','<a>',string.sub(path,6)))
 					else
 						table.setKey(cfg,path,item)
 					end
@@ -737,12 +737,12 @@ DataStorage = {
 
 			-- Auto correct.
 			if cfg.land.bought.square_range[1] > cfg.land.bought.square_range[2] then
-				WARN('cfg.land.bought.square_range has an error, which has been corrected.')
+				WARN(_Tr('console.loading.config.autocorrect','<a>','cfg.land.bought.square_range'))
 				table.sort(cfg.land.bought.square_range)
 				save = true
 			end
 			if cfg.economic.protocol~='llmoney' and cfg.economic.protocol~='scoreboard' then
-				WARN('cfg.economic.protocol has an error, which has been corrected.')
+				WARN(_Tr('console.loading.config.autocorrect','<a>','cfg.economic.protocol'))
 				cfg.economic.protocol = 'scoreboard'
 				save = true
 			end
@@ -848,7 +848,7 @@ DataStorage = {
 
 			--- Check file.
 			if not File.exists(DATA_PATH..'data.json') then
-				WARN('Land data file (data.json) does not exist, creating...')
+				WARN(_Tr('console.loading.land.notfound'))
 				File.writeTo(DATA_PATH..'data.json',JSON.encode({
 					version = Plugin.Version.toNumber(),
 					Lands = {}
@@ -865,7 +865,7 @@ DataStorage = {
 				if m then
 					DataStorage.Land.Raw[landId] = m
 				else
-					WARN('Land loading failed (Id: '..landId..'), range is corrupted.')
+					WARN(_Tr('console.loading.land.invalild','<a>',landId))
 					Land.RelationShip.Owner.destroy(landId)
 				end
 			end
@@ -1020,7 +1020,7 @@ DataStorage = {
 		Load = function()
 			local rel = DataStorage.RelationShip
 			if not File.exists(DATA_PATH..'relationship.json') then
-				WARN('Relationship table file (relationship.json) does not exist, creating...')
+				WARN(_Tr('console.loading.relationship.notfound'))
 				File.writeTo(DATA_PATH..'relationship.json',JSON.encode({
 					version = Plugin.Version.toNumber(),
 					Owner = {},
@@ -1037,7 +1037,7 @@ DataStorage = {
 			local had_unloaded_xuid = false
 			for xuid,landIds in pairs(localdata.Owner) do
 				if not data.xuid2name(xuid) then
-					WARN('Player (xuid: '..xuid..') not found, skipping...')
+					WARN(_Tr('console.loading.relationship.xuidinvalid',xuid))
 					rel.Unloaded['Owner'][xuid] = landIds
 					had_unloaded_xuid = true
 				else
@@ -1045,7 +1045,7 @@ DataStorage = {
 				end
 			end
 			if had_unloaded_xuid then
-				INFO('Some players are not loaded because their XUID isn\'t in the PlayerDB, please have them re-enter the server to make the PlayerDB recorded.')
+				INFO(_Tr('console.loading.relationship.xuidinvalidtip'))
 			end
 			return true
 		end,
@@ -1109,6 +1109,9 @@ Economy = {
 		protocol = 'null',
 	},
 	Protocol = {
+		IsVaild = function(name)
+			return Array.Fetch({'llmoney','scoreboard'},string.lower(name)) ~= nil
+		end,
 		get = function()
 			return Economy.Status.protocol
 		end,
@@ -3659,11 +3662,7 @@ end
 -- Tools & Feature functions.
 
 function _Tr(a,...)
-	if DEV_MODE and not I18N.LangPack.data[a] then
-		WARN('Translation not found: '..a)
-		return
-	end
-	local rtn = I18N.LangPack.data[a]
+	local rtn = I18N.LangPack.data[a] or a
 	return string.gsubEx(rtn,...)
 end
 function SendTitle(player,title,subtitle,times)
@@ -4693,13 +4692,13 @@ mc.listen('onServerStarted',function()
 	{
 		function ()
 			-- DO NOT CHANGE THE LOAD ORDER.
-			assert(I18N.Init(),'Error loading i18n!')
-			assert(DataStorage.Config.Load(),'Error loading configuration!')
-			assert(DataStorage.RelationShip.Load(),'Error loading relationship table!')
-			assert(DataStorage.Land.Load(),'Error loading land data!')
-			assert(Economy.Protocol.set(cfg.economic.protocol),'Error loading money protocol!')
-			assert(Map.Init(),'Error loading runtime-tables!')
-			assert(RegisterCommands(),'Error register commands!')
+			assert(I18N.Init(),'Error loading I18N!')
+			assert(DataStorage.Config.Load(),_Tr('console.loading.fail.config'))
+			assert(DataStorage.RelationShip.Load(),_Tr('console.loading.fail.relationship'))
+			assert(DataStorage.Land.Load(),_Tr('console.loading.fail.land'))
+			assert(Economy.Protocol.set(cfg.economic.protocol),_Tr('console.loading.fail.economy'))
+			assert(Map.Init(),_Tr('console.loading.fail.maps'))
+			assert(RegisterCommands(),_Tr('console.loading.fail.regcmd'))
 		end,
 		catch
 		{
@@ -4777,7 +4776,7 @@ mc.listen('onServerStarted',function()
 	end
 
 	local startup_memory = DebugHelper.GetMemoryCount()
-	INFO('Load','Completed.')
+	INFO('Load',_Tr('console.loading.map.complete','<a>',startup_memory))
 	setInterval(function()
 		if DebugHelper.GetMemoryCount() > startup_memory * 1.2 then
 			collectgarbage("collect")
