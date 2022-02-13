@@ -4478,20 +4478,19 @@ mc.listen('onRide',function(rider,entity)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
-mc.listen('onWitherBossDestroy',function(witherBoss,AAbb,aaBB)
+mc.listen('onWitherBossDestroy',function(entity,posA,posB)
 
 	if not Map.Listener.check('onWitherBossDestroy') then
 		return
 	end
-
-	local dimid = witherBoss.pos.dimid
-	for n,pos in pairs(Cube.Traverse(AAbb,aaBB,dimid)) do
-		local landId = Land.Query.Pos(pos)
-		if landId and not DataStorage.Land.Raw[landId].permissions.allow_entity_destroy then
-			break
+	
+	for n,landId in pairs(Land.Query.Area(Cube.Create(posA,posB,entity.pos.dimid))) do
+		if not DataStorage.Land.Raw[landId].permissions.allow_entity_destroy then
+			return false
 		end
 	end
-	return false
+
+	return true
 end)
 mc.listen('onFarmLandDecay',function(pos,entity)
 
