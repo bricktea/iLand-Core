@@ -104,9 +104,6 @@ if File.exists("EnableILandDevMode") then
 	DATA_PATH = 'Project/iLand/iland/'
 end
 
-local minY <const> = -64
-local maxY <const> = 320
-
 -- Init logger.
 
 logger.setConsole(true)
@@ -638,11 +635,33 @@ I18N = {
 }
 
 Dimension = {
-	Ids = {
-		[0] = 'Overworld',
-		[1] = 'Nether',
-		[2] = 'The_End'
-	}
+	Get = function(id)
+		if id == 0 then
+			return {
+				name = _Tr('talk.dim.zero'),
+				max = 320,
+				min = -64
+			}
+		elseif id == 1 then
+			return {
+				name = _Tr('talk.dim.one'),
+				max = 128,
+				min = 0
+			}
+		elseif id == 2 then
+			return {
+				name = _Tr('talk.dim.two'),
+				max = 256,
+				min = 0
+			}
+		else
+			return {
+				name =  _Tr('talk.dim.other'),
+				max = 0,
+				min = 0
+			}
+		end
+	end
 }
 
 DataStorage = {
@@ -1106,11 +1125,12 @@ Land = {
 				Land.RelationShip.Trusted.check(landId,xuid)
 		end,
 		GetDimension = function(landId)
-			if DataStorage.Land.Raw[landId].range.start_position[2]==minY and DataStorage.Land.Raw[landId].range.end_position[2]==maxY then
+			local range = Map.Land.Position.data[landId]
+			local dim = Dimension.Get(range.dimid)
+			if dim.min == range.posA.y and dim.max == range.posB.y then
 				return '2D'
-			else
-				return '3D'
 			end
+			return '3D'
 		end,
 		IsCollision = function(AABB,ignoreList)
 			ignoreList = ignoreList or {}
@@ -2004,7 +2024,7 @@ OpenGUI = {
 					'<b>',landId,
 					'<c>',name,
 					'<d>',Land.Util.GetDimension(landId),
-					'<e>',ToStrDim(DataStorage.Land.Raw[landId].range.dimid),
+					'<e>',Dimension.Get(Map.Land.Position.data[landId]).name,
 					'<f>',Pos.ToString(Map.Land.Position.data[landId].posA),
 					'<g>',Pos.ToString(Map.Land.Position.data[landId].posB),
 					'<h>',cubeInfo.length,'<i>',cubeInfo.width,'<j>',cubeInfo.height,
@@ -2371,14 +2391,14 @@ OpenGUI = {
 				function(player,result)
 					if not result then return end
 					local xuid = player.xuid
-
 					MEM[xuid].reselectLand = { id = landId }
-					RangeSelector.Create(player,function(player,res)
+					RangeSelector.Create(player,function(player,cube,dimension)
 						MEM[xuid].keepingTitle = {
 							_Tr('title.selectland.complete1'),
 							_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land ok')
 						}
-						MEM[xuid].reselectLand.range = res
+						MEM[xuid].reselectLand.range = cube
+						MEM[xuid].reselectLand.dimension = dimension
 					end)
 				end
 			)
@@ -2579,161 +2599,144 @@ RangeSelector = {
 			(1) -> Select posA.
 			(2) -> Select posB.
 			(3) -> [3D-Only] Move Y.
-			(4) -> Complete.
+			(4) -> Range checks. && Show particle.
+			(5) -> [Extra] Run as cmd.
 		]]
 		local xuid = player.xuid
 		local dimid = player.pos.dimid
-		if MEM[xuid].rsr.step == 0 then
+		local mem = MEM[xuid].rsr
+		if mem.step == 0 then
 			player:sendModalForm(
 				_Tr('title.rangeselector.dimension.chose'),
 				_Tr('title.rangeselector.dimension.tip'),
-				'3D',
-				'2D',
+				'3D','2D',
 				function (player,res)
-					MEM[xuid].rsr.step = 1
+					mem.step = 1
 					if (res and not cfg.land.bought.three_dimension.enable) or (not res and not cfg.land.bought.two_dimension.enable) then
 						SendText(player,_Tr('title.rangeselector.dimension.blocked'))
-						RangeSelector.Clear(player)
-						if MEM[xuid].newLand then MEM[xuid].newLand = nil end
-						if MEM[xuid].reselectLand then MEM[xuid].reselectLand = nil end
+						player:runcmd('land giveup')
 						return
 					end
 					if res then
 						SendText(player,_Tr('title.rangeselector.dimension.chosed','<a>','3D'))
-						MEM[xuid].rsr.dimension = '3D'
+						mem.dimension = '3D'
 					else
 						SendText(player,_Tr('title.rangeselector.dimension.chosed','<a>','2D'))
-						MEM[xuid].rsr.dimension = '2D'
+						mem.dimension = '2D'
 					end
 				end
 			)
-			return
-		end
-		if MEM[xuid].rsr.step == 1 then
+		elseif mem.step == 1 then
 			if not cfg.features.selection.dimension[dimid+1] then
 				SendText(player,_Tr('title.rangeselector.fail.dimblocked'))
 				return
 			end
-			if MEM[xuid].rsr.dimension=='2D' then
-				pos.y = minY
+			if mem.dimension == '2D' then
+				pos.y = Dimension.Get(dimid).min
 			end
-			MEM[xuid].rsr.posA = pos
-			MEM[xuid].rsr.dimid = dimid
-			MEM[xuid].rsr.step = 2
+			mem.dimid = dimid
+			mem.posA = pos
+			mem.step = 2
 			MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','B')
 			SendText(
 				player,
 				_Tr('title.rangeselector.pointed',
 					'<a>','A',
-					'<b>',ToStrDim(dimid),
+					'<b>',Dimension.Get(dimid).name,
 					'<c>',pos.x,'<d>',pos.y,'<e>',pos.z
 				)
 			)
-			return
-		end
-		if MEM[xuid].rsr.step == 2 then
-			if MEM[xuid].rsr.dimension ~= '3D' then
-				MEM[xuid].rsr.step = 3
-				RangeSelector.Push(player,pos)
-				return
-			end
-
-			local posA = MEM[xuid].rsr.posA
-			local Form = mc.newCustomForm()
-			Form:setTitle(_Tr('gui.rangeselector.title'))
-			Form:addLabel(_Tr('gui.rangeselector.tip'))
-			Form:addLabel(_Tr('gui.rangeselector.selectedpos','<a>',posA.x,'<b>',posA.y,'<c>',posA.z,'<d>',pos.x,'<e>',pos.y,'<f>',pos.z))
-			Form:addSlider(_Tr('gui.rangeselector.movestarty'),minY,maxY,1,posA.y)
-			Form:addSlider(_Tr('gui.rangeselector.moveendy'),minY,maxY,1,pos.y)
-			player:sendForm(Form,function(player,res)
-				if not res then return end
-				MEM[xuid].rsr.posA.y = res[1]
-				pos.y = res[2]
-				MEM[xuid].rsr.step = 3
-				RangeSelector.Push(player,pos)
-			end)
-			return
-		end
-		if MEM[xuid].rsr.step == 3 then
-			if MEM[xuid].rsr.dimid ~= dimid then
+		elseif mem.step == 2 then
+			if mem.dimid ~= dimid then
 				SendText(player,_Tr('title.rangeselector.fail.dimdiff'))
 				return
 			end
 
-			local posA = MEM[xuid].rsr.posA
-			if MEM[xuid].rsr.dimension=='2D' then
-				pos.y = maxY
+			if mem.dimension=='2D' then
+				pos.y = Dimension.Get(dimid).max
+			end
+			mem.posB = pos
+			mem.step = 3
+			SendText(
+				player,
+				_Tr('title.rangeselector.pointed',
+					'<a>','B',
+					'<b>',Dimension.Get(dimid).name,
+					'<c>',pos.x,'<d>',pos.y,'<e>',pos.z
+				)
+			)
+			RangeSelector.Push(player,pos)
+		elseif mem.step == 3 then
+			if mem.dimension ~= '3D' then
+				mem.step = 4
+				RangeSelector.Push(player,pos)
+				return
 			end
 
-			--- Check Land.
-			local checkPassed = false
-			local cubeInfo = Cube.GetInformation(Cube.Create(posA,pos))
+			local posA,posB = mem.posA,mem.posB
+			local dim = Dimension.Get(dimid)
+			local Form = mc.newCustomForm()
+			Form:setTitle(_Tr('gui.rangeselector.title'))
+			Form:addLabel(_Tr('gui.rangeselector.tip'))
+			Form:addLabel(_Tr('gui.rangeselector.selectedpos','<a>',posA.x,'<b>',posA.y,'<c>',posA.z,'<d>',posB.x,'<e>',posB.y,'<f>',posB.z))
+			Form:addSlider(_Tr('gui.rangeselector.movestarty'),dim.min,dim.max,1,posA.y)
+			Form:addSlider(_Tr('gui.rangeselector.moveendy'),dim.min,dim.max,1,posB.y)
+			player:sendForm(Form,function(player,res)
+				if not res then return end
+				posA.y = res[1]
+				posB.y = res[2]
+				mem.step = 4
+				RangeSelector.Push(player,posB)
+			end)
+		elseif mem.step == 4 then
+			local passed = false
+			local range = Cube.Create(mem.posA,mem.posB,mem.dimid)
+			local cubeInfo = Cube.GetInformation(range)
 			if cubeInfo.square < cfg.land.bought.square_range[1] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toosmall'))
 			elseif cubeInfo.square > cfg.land.bought.square_range[2] and not Land.RelationShip.Operator.check(xuid) then
 				SendText(player,_Tr('title.rangeselector.fail.toobig'))
-			elseif cubeInfo.height < 2 and MEM[xuid].rsr.dimension == '3D' then
+			elseif cubeInfo.height < 2 and mem.dimension == '3D' then
 				SendText(player,_Tr('title.rangeselector.fail.toolow'))
 			else
-				local checkIgnores = {}
+				local chkIgnores = {}
 				if MEM[xuid].reselectLand then
-					checkIgnores = { MEM[xuid].reselectLand.id }
+					chkIgnores = { MEM[xuid].reselectLand.id }
 				end
-				local checkColl = Land.Util.IsCollision(Cube.Create(posA,pos,dimid),checkIgnores)
-				if checkColl.status then
+				local chkColl = Land.Util.IsCollision(range,chkIgnores)
+				if chkColl.status then
 					local sp = cfg.land.min_space
-					local nearbyLands = Land.Query.Area(Cube.Create(Pos.Add(posA,sp),Pos.Reduce(pos,sp),dimid))
-					if MEM[xuid].reselectLand then
-						Array.Remove(nearbyLands,MEM[xuid].reselectLand.id)
-					end
-					if #nearbyLands ~= 0 then
-						SendText(player,_Tr('title.rangeselector.fail.space','<a>',nearbyLands[1]))
+					local chkNearby = Land.Util.IsCollision(Cube.Create(Pos.Add(mem.posA,sp),Pos.Reduce(mem.posB,sp),dimid),chkIgnores)
+					if not chkNearby.status then
+						SendText(player,_Tr('title.rangeselector.fail.space','<a>',chkNearby.id))
 					else
-						checkPassed = true
+						passed = true
 					end
 				else
-					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',checkColl.id))
+					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',chkColl.id))
 				end
 			end
 
 			--- Check Result.
-			if not checkPassed then
-				MEM[xuid].rsr.step = 1
+			if not passed then
+				mem.step = 1
 				MEM[xuid].keepingTitle[2] = _Tr('title.rangeselector.selectpoint','<a>',cfg.features.selection.tool_name,'<b>','A')
 				return
 			end
 
-			--- Apply.
-			MEM[xuid].rsr.posB = pos
-			MEM[xuid].rsr.posA,MEM[xuid].rsr.posB = Pos.Sort(posA,MEM[xuid].rsr.posB)
 			MEM[xuid].keepingTitle = nil
 			local edge
-			if MEM[xuid].rsr.dimension == '3D' then
-				edge = Cube.GetEdge(Cube.Create(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB))
+			if mem.dimension == '3D' then
+				edge = Cube.GetEdge(Cube.Create(mem.posA,mem.posB))
 			else
-				edge = Cube.GetEdge_2D(Cube.Create(MEM[xuid].rsr.posA,MEM[xuid].rsr.posB,player.pos.y+1))
+				edge = Cube.GetEdge_2D(Cube.Create(mem.posA,mem.posB),player.pos.y + 1)
 			end
 			if #edge < cfg.features.particles.max_amount then
 				MEM[xuid].particles = edge
 			else
 				SendText(player,_Tr('title.rangeselector.largeparticle'))
 			end
-
-			SendText(
-				player,
-				_Tr('title.rangeselector.pointed',
-					'<a>','B',
-					'<b>',ToStrDim(dimid),
-					'<c>',pos.x,'<d>',pos.y,'<e>',pos.z
-				)
-			)
-
-			MEM[xuid].rsr.step = 4
-			local cb = MEM[xuid].rsr.cbfunc
-			cb(player,{posA=MEM[xuid].rsr.posA,posB=MEM[xuid].rsr.posB,dimid=MEM[xuid].rsr.dimid,dimension=MEM[xuid].rsr.dimension})
-			return
-		end
-		if MEM[xuid].rsr.step == 4 then
+		elseif mem.step == 5 then
 			-- what the fxxk handle...
 			if MEM[xuid].newLand then
 				player:runcmd("land buy")
@@ -2762,14 +2765,6 @@ SafeTeleport = {
 		MEM[xuid].safetp = nil
 	end,
 	Do = function(player,tpos)
-		local function getHeightRange(dimensionId)
-			local range = {
-				[0] = {-64,320},
-				[1] = {0,128 - 2}, -- because,, top bedrock.
-				[2] = {0,256}
-			}
-			return range[dimensionId]
-		end
 		if type(player)=='string' then
 			player = mc.getPlayer(player)
 		end
@@ -2815,8 +2810,8 @@ SafeTeleport = {
 				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.foundfoothold'),{0,15,15})
 				local bl_type_list = {}
 				local footholds = {}
-				local y_range = getHeightRange(dimid)
-				for i=y_range[1],y_range[2] do
+				local range = Dimension.Get(dimid)
+				for i = range.min,range.max-2 do
 					local bl = mc.getBlock(tpos.x,i,tpos.z,dimid)
 					bl_type_list[i] = bl.type
 				end
@@ -3590,17 +3585,6 @@ function CalculatePrice(cubeInfo,dimension)
 	end
 	return math.floor(price*(cfg.land.bought.discount))
 end
-function ToStrDim(a)
-	if a==0 then
-		return _Tr('talk.dim.zero')
-	elseif a==1 then
-		return _Tr('talk.dim.one')
-	elseif a==2 then
-		return _Tr('talk.dim.two')
-	else
-		return _Tr('talk.dim.other')
-	end
-end
 function EntityGetType(type)
 	if type=='minecraft:player' then
 		return 0
@@ -3678,14 +3662,14 @@ function RegisterCommands()
 			SendText(player,_Tr('title.getlicense.limit'))
 			return
 		end
-
 		MEM[xuid].newLand = {}
-		RangeSelector.Create(player,function(player,res)
+		RangeSelector.Create(player,function(player,cube,dimension)
 			MEM[xuid].keepingTitle = {
 				_Tr('title.selectland.complete1'),
 				_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
 			}
-			MEM[xuid].newLand.range = res
+			MEM[xuid].newLand.range = cube
+			MEM[xuid].newLand.dimension = dimension
 		end)
 
 	end)
@@ -3791,17 +3775,20 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
 		local xuid = player.xuid
-		if not MEM[xuid].reselectLand or not MEM[xuid].reselectLand.range then
+		local mem = MEM[xuid].reselectLand
+		if not mem or not mem.range then
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
-		local res = MEM[xuid].reselectLand.range
-		local cubeInfo = Cube.GetInformation(Cube.Create(res.posA,res.posB))
-		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[MEM[xuid].reselectLand.id])
+		local range = mem.range
+		local cubeInfo = Cube.GetInformation(range)
+		local dimension = mem.dimension
+		local landId = mem.id
+		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
 
 		-- Checkout
-		local nr_price = CalculatePrice(cubeInfo,res.dimension)
-		local or_price = CalculatePrice(old_cubeInfo,res.dimension)
+		local nr_price = CalculatePrice(cubeInfo,dimension)
+		local or_price = CalculatePrice(old_cubeInfo,dimension)
 		local mode -- pay(0) or refund(1)
 		local payT
 		if nr_price >= or_price then
@@ -3812,12 +3799,11 @@ function RegisterCommands()
 			payT = 1
 		end
 		local needto = math.abs(nr_price-or_price)
-		local landId = MEM[xuid].reselectLand.id
 		player:sendModalForm(
 			'Checkout',
 			_Tr('gui.reselectland.content',
 				'<a>',Land.Util.GetDimension(landId),
-				'<c>',res.dimension,
+				'<c>',dimension,
 				'<b>',or_price,
 				'<d>',nr_price,
 				'<e>',mode,
@@ -3833,7 +3819,7 @@ function RegisterCommands()
 					SendText(player,_Tr('title.buyland.moneynotenough'))
 					return
 				end
-				status = Land.Range.Reset(landId,Cube.Create(res.posA,res.posB,res.dimid))
+				status = Land.Range.Reset(landId,range)
 				if status then
 					if payT==0 then
 						Economy.Player.del(player,needto)
@@ -3874,13 +3860,13 @@ function RegisterCommands()
 		for i,landId in pairs(Land.RelationShip.Owner.getLand(xuid)) do
 			local name = Land.Options.Nickname.get(landId) or landId
 			local xpos = Land.Options.Teleport.get(landId)
-			tplands[#tplands+1] = ToStrDim(xpos.dimid)..' ('..Pos.ToString(xpos)..') '..name
+			tplands[#tplands+1] = Dimension.Get(xpos.dimid).name..' ('..Pos.ToString(xpos)..') '..name
 			landlst[#landlst+1] = landId
 		end
 		for i,landId in pairs(Land.RelationShip.Trusted.getLand(xuid)) do
 			local name = Land.Options.Nickname.get(landId) or landId
 			local xpos = Land.Options.Teleport.get(landId)
-			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..ToStrDim(xpos.dimid)..'('..Pos.ToString(xpos)..') '..name
+			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..Dimension.Get(xpos.dimid).name..'('..Pos.ToString(xpos)..') '..name
 			landlst[#landlst+1] = landId
 		end
 		local Form = mc.newSimpleForm()
