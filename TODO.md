@@ -1,5 +1,5 @@
 > Version **2.72**
- - [ ] `data.json`数据结构优化
+ - [x] `data.json`数据结构优化
  - [ ] event system
  - [x] 重建ILAPI
  - [x] 修复3D重置为2D中的一个bug
@@ -18,12 +18,11 @@
  - [x] 移除ILAPI.GetChunk
  - [x] 移除ILAPI.GetDistance
  - [x] GetRange返回AABB
- - [ ] 区分维度012的2D领地【!NeedAutoUpdate】
  - [x] landId改12位【!NeedAutoUpdate】
  - [x] ILAPI将会检查参数列表
  - [ ] 适配1.18.11，LL2.1
  - [ ] 测试safetp中退出
- - [ ] 现在每个维度的领地高度均normal，且圈地高度检查
+ - [x] 现在每个维度的领地高度均normal，且圈地高度检查【!NeedAutoUpdate】
 
 > **2.73**
  - [ ] SubLand

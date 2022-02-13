@@ -105,8 +105,8 @@ end
 
 -- Init logger.
 
-logger.setConsole(true)
 logger.setTitle("ILand")
+logger.setConsole(true)
 function INFO(msgtype,content)
 	if not content then
 		content = msgtype
@@ -152,6 +152,7 @@ Map = {
 		Map.Control.build()
 		Map.Listener.build()
 		setInterval(Map.CachedQuery.CACHE_MANAGER,1000*8)
+		return true
 	end,
 	Chunk = {
 		data = {
@@ -518,13 +519,14 @@ I18N = {
 			I18N.LangPack.Install(lang)
 			I18N.TriedAutoFix = true
 			I18N.Init()
-			return
+			return true
 		end
 		if stat == -1 then
-			error('Language pack not found!')
+			ERROR('Language pack not found!')
 		elseif stat == -2 then
-			error('The language pack used is not suitable for this version!')
+			ERROR('The language pack used is not suitable for this version!')
 		end
+		return false
 	end,
 	Load = function(lang)
 		local path = DATA_PATH..'lang/'..lang..'.json'
@@ -667,10 +669,9 @@ DataStorage = {
 
 	Config = {
 
-		Raw = {},
 		Load = function()
 
-			--- Init
+			--- Init.
 			local save = false
 
 			--- Check file.
@@ -700,7 +701,6 @@ DataStorage = {
 			end
 
 			-- Auto correct.
-
 			if cfg.land.bought.square_range[1] > cfg.land.bought.square_range[2] then
 				WARN('cfg.land.bought.square_range has an error, which has been corrected.')
 				table.sort(cfg.land.bought.square_range)
@@ -800,21 +800,42 @@ DataStorage = {
 		Raw = {},
 		Unloaded = {},
 		Load = function()
+
+			--- Init.
+			local save = false
+
+			--- Check file.
 			if not File.exists(DATA_PATH..'data.json') then
 				WARN('Land data file (data.json) does not exist, creating...')
-				File.writeTo(DATA_PATH..'data.json','{}')
+				File.writeTo(DATA_PATH..'data.json',JSON.encode({
+					version = Plugin.numver,
+					Lands = {}
+				}))
 			end
 			local localdata = JSON.decode(File.readFrom(DATA_PATH..'data.json'))
 			if localdata.version ~= Plugin.numver then
 				DataStorage.Land.Update(localdata)
 			end
-			if not DEV_MODE then
+
+			--- Load local land.
+			for landId,res in pairs(localdata.Lands) do
+				local m = DataStorage.Land.Template.Fill(res)
+				if m then
+					DataStorage.Land.Raw[landId] = m
+				else
+					WARN('Land loading failed (Id: '..landId..'), range is corrupted.')
+					Land.RelationShip.Owner.destroy(landId)
+				end
+			end
+
+			--- Save if needed.
+			if save and not DEV_MODE then
 				DataStorage.Save({0,1,0})
 			end
 		end,
 		Update = function(origin)
-			if not origin.version or origin.version < 240 then
-				return false
+			if not origin.version then
+				
 			end
 			--- Update
 			for landId,res in pairs(origin.Lands) do
@@ -836,17 +857,120 @@ DataStorage = {
 			end
 			return true
 		end,
-		Save = function()end
+		Template = {
+			data = {
+				settings = {
+					teleport = {},
+					nickname = '',
+					describe = '',
+					signtome = true,
+					signtother = true,
+					signbuttom = true,
+					ev_explode = false,
+					ev_farmland_decay = false,
+					ev_piston_push = false,
+					ev_fire_spread = false,
+					ev_redstone_update = false
+				},
+				range = {
+					start_position = {},
+					end_position = {},
+					dimid = -1
+				},
+				permissions = {
+					allow_destroy = false,
+					allow_entity_destroy = false,
+					allow_place = false,
+					allow_attack_player = false,
+					allow_attack_animal = false,
+					allow_attack_mobs = true,
+					allow_open_chest = false,
+					allow_pickupitem = false,
+					allow_dropitem = true,
+					use_anvil = false,
+					use_barrel = false,
+					use_beacon = false,
+					use_bed = false,
+					use_bell = false,
+					use_blast_furnace = false,
+					use_brewing_stand = false,
+					use_campfire = false,
+					use_firegen = false,
+					use_cartography_table = false,
+					use_composter = false,
+					use_crafting_table = false,
+					use_daylight_detector = false,
+					use_dispenser = false,
+					use_dropper = false,
+					use_enchanting_table = false,
+					use_door = false,
+					use_fence_gate = false,
+					use_furnace = false,
+					use_grindstone = false,
+					use_hopper = false,
+					use_jukebox = false,
+					use_loom = false,
+					use_stonecutter = false,
+					use_noteblock = false,
+					use_shulker_box = false,
+					use_smithing_table = false,
+					use_smoker = false,
+					use_trapdoor = false,
+					use_lectern = false,
+					use_cauldron = false,
+					use_lever = false,
+					use_button = false,
+					use_respawn_anchor = false,
+					use_item_frame = false,
+					use_fishing_hook = false,
+					use_bucket = false,
+					use_pressure_plate = false,
+					use_armor_stand = false,
+					eat = false,
+					allow_throw_potion = false,
+					allow_ride_entity = false,
+					allow_ride_trans = false,
+					allow_shoot = false,
+					useitem = false
+				}
+			},
+			Create = function()
+				return table.clone(DataStorage.Land.Template.data)
+			end,
+			Fill = function(origin)
+				local land = DataStorage.Land.Template.Create()
+				for n,path in pairs(table.getAllPaths(land)) do
+					local m = table.getKey(origin,path)
+					local o = table.getKey(land,path)
+					if m == nil or type(m) ~= type(o) then
+						if string.sub(path,1,10) == 'this.range' then
+							return nil
+						end
+						table.setKey(land,path,o)
+					else
+						table.setKey(land,path,m)
+					end
+				end
+				return land
+			end
+		},
+		Save = function()
+		end
 
 	},
 	RelationShip = {
 
-		Raw = { Owner = {} },
-		Unloaded = { Owner = {} },
+		Raw = {},
+		Unloaded = {},
 		Load = function()
 			if not File.exists(DATA_PATH..'relationship.json') then
 				WARN('Relationship table file (relationship.json) does not exist, creating...')
-				File.writeTo(DATA_PATH..'relationship.json','{}')
+				File.writeTo(DATA_PATH..'relationship.json',JSON.encode({
+					version = Plugin.numver,
+					Owner = {},
+					Operator = {},
+					Trusted = {}
+				}))
 			end
 			local localdata = JSON.decode(File.readFrom(DATA_PATH..'relationship.json'))
 			if localdata.version ~= Plugin.numver then
@@ -867,10 +991,18 @@ DataStorage = {
 				INFO('Some players are not loaded because their XUID isn\'t in the PlayerDB, please have them re-enter the server to make the PlayerDB recorded.')
 			end
 		end,
-		Update = function(origin)end,
-		Save = function()end
+		Update = function(origin)
+			if not origin.version then
+				
+			end
+		end,
+		Save = function()
+		end
 
-	}
+	},
+	Save = function(mode)
+		
+	end
 
 }
 
@@ -940,7 +1072,7 @@ Land = {
 			--- Land storage.
 			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
 			local landId = Land.IDManager.Create()
-			local tpl = Land.DataTemplate.Create()
+			local tpl = DataStorage.Land.Template.Create()
 			tpl.settings.teleport = Pos.ToArray(posA)
 			tpl.range.start_position = Pos.ToArray(posA)
 			tpl.range.end_position = Pos.ToArray(posB)
@@ -1019,7 +1151,7 @@ Land = {
 
 		Nickname = {
 			isDefault = function(landId)
-				return DataStorage.Land.Raw[landId].settings.nickname == Land.DataTemplate.raw.settings.nickname
+				return DataStorage.Land.Raw[landId].settings.nickname == DataStorage.Land.Template['data'].settings.nickname
 			end,
 			get = function(landId)
 				if Land.Options.Nickname.isDefault(landId) then
@@ -1278,133 +1410,6 @@ Land = {
 				return Map.Land.Trusted.data[landId][xuid] ~= nil
 			end
 		},
-	},
-
-	DataTemplate = {
-		raw = {
-			settings = {
-				share = {},
-				teleport = {},
-				nickname = '',
-				describe = '',
-				signtome = true,
-				signtother = true,
-				signbuttom = true,
-				ev_explode = false,
-				ev_farmland_decay = false,
-				ev_piston_push = false,
-				ev_fire_spread = false,
-				ev_redstone_update = false
-			},
-			range = {
-				start_position = {},
-				end_position = {},
-				dimid = -1
-			},
-			permissions = {
-				allow_destroy = false,
-				allow_entity_destroy = false,
-				allow_place = false,
-				allow_attack_player = false,
-				allow_attack_animal = false,
-				allow_attack_mobs = true,
-				allow_open_chest = false,
-				allow_pickupitem = false,
-				allow_dropitem = true,
-				use_anvil = false,
-				use_barrel = false,
-				use_beacon = false,
-				use_bed = false,
-				use_bell = false,
-				use_blast_furnace = false,
-				use_brewing_stand = false,
-				use_campfire = false,
-				use_firegen = false,
-				use_cartography_table = false,
-				use_composter = false,
-				use_crafting_table = false,
-				use_daylight_detector = false,
-				use_dispenser = false,
-				use_dropper = false,
-				use_enchanting_table = false,
-				use_door = false,
-				use_fence_gate = false,
-				use_furnace = false,
-				use_grindstone = false,
-				use_hopper = false,
-				use_jukebox = false,
-				use_loom = false,
-				use_stonecutter = false,
-				use_noteblock = false,
-				use_shulker_box = false,
-				use_smithing_table = false,
-				use_smoker = false,
-				use_trapdoor = false,
-				use_lectern = false,
-				use_cauldron = false,
-				use_lever = false,
-				use_button = false,
-				use_respawn_anchor = false,
-				use_item_frame = false,
-				use_fishing_hook = false,
-				use_bucket = false,
-				use_pressure_plate = false,
-				use_armor_stand = false,
-				eat = false,
-				allow_throw_potion = false,
-				allow_ride_entity = false,
-				allow_ride_trans = false,
-				allow_shoot = false,
-				useitem = false
-			}
-		},
-		Create = function()
-			return table.clone(Land.DataTemplate.raw)
-		end,
-		Fill = function(origin)
-			local tpl = Land.DataTemplate.Create()
-			local pathes = table.getAllPaths(Land.DataTemplate.raw,false)
-			for n,path in pairs(pathes) do
-				local t = table.getKey(origin,path)
-				if t == nil then
-					return nil
-				else
-					table.setKey(tpl,path,t)
-				end
-
-			end
-			return tpl
-		end,
-		Dump = function(origin)
-			local IsSame = function(a,b)
-				local mA,mB = type(a),type(b)
-				if mA ~= mB then
-					return false
-				end
-				if mA == 'table' then
-					if #a ~= #b then
-						return false
-					end
-					for k,v in pairs(a) do
-						if b[k] ~= v then
-							return false
-						end
-					end
-					return true
-				else
-					return a == b
-				end
-			end
-			local rtn = Land.DataTemplate.Create()
-			local pathes = table.getAllPaths(Land.DataTemplate.raw,false)
-			for n,path in pairs(pathes) do
-				local t = table.getKey(origin,path)
-				if IsSame(t,table.getKey(rtn,path)) then
-					table.setKey(origin,path,nil)
-				end
-			end
-			return rtn
-		end
 	},
 
 	API = {
@@ -3609,7 +3614,7 @@ end
 
 function RegisterCommands()
 
-	-- ## [Client] Command Registry
+	-- [Client] Command Registry.
 
 	mc.regPlayerCmd('land',_Tr('command.land'),function(player,args)
 		if #args~=0 then
@@ -3934,7 +3939,7 @@ function RegisterCommands()
 		SendText(player,_Tr('title.landtp.removed'))
 	end)
 
-	-- [Server] Command Registry
+	-- [Server] Command Registry.
 
 	mc.regConsoleCmd('land',_Tr('command.console.land'),function(args)
 		if #args~=0 then
@@ -4057,6 +4062,8 @@ function RegisterCommands()
 	mc.regConsoleCmd('land unload',_Tr('command.console.land_unload'),function(args)
 		Plugin.Unload()
 	end)
+
+	return true
 
 end
 
@@ -4579,18 +4586,19 @@ mc.listen('onServerStarted',function()
 	try
 	{
 		function ()
+			-- DO NOT CHANGE THE LOAD ORDER.
+			assert(I18N.Init(),'Error loading i18n!')
 			assert(DataStorage.Config.Load(),'Error loading configuration!')
-			assert(DataStorage.Land.Load(),'Error loading land data!')
 			assert(DataStorage.RelationShip.Load(),'Error loading relationship table!')
-			I18N.Init()
-			Map.Init()
-			RegisterCommands()
+			assert(DataStorage.Land.Load(),'Error loading land data!')
+			assert(Map.Init(),'Error loading runtime-tables!')
+			assert(RegisterCommands(),'Error register commands!')
 		end,
 		catch
 		{
 			function (msg)
 				WARN(msg)
-				ERROR('Plugin closed.')
+				WARN('Plugin closed.')
 				Plugin.Unload()
 			end
 		}
