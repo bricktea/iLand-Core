@@ -2781,7 +2781,7 @@ RangeSelector = {
 		elseif mem.step == 3 then
 			if mem.dimension ~= '3D' then
 				mem.step = 4
-				RangeSelector.Push(player,pos)
+				RangeSelector.Push(player)
 				return
 			end
 
@@ -2791,12 +2791,18 @@ RangeSelector = {
 			Form:setTitle(_Tr('gui.rangeselector.title'))
 			Form:addLabel(_Tr('gui.rangeselector.tip'))
 			Form:addLabel(_Tr('gui.rangeselector.selectedpos','<a>',posA.x,'<b>',posA.y,'<c>',posA.z,'<d>',posB.x,'<e>',posB.y,'<f>',posB.z))
-			Form:addSlider(_Tr('gui.rangeselector.movestarty'),dim.min,dim.max,1,posA.y)
-			Form:addSlider(_Tr('gui.rangeselector.moveendy'),dim.min,dim.max,1,posB.y)
+			Form:addInput(_Tr('gui.rangeselector.movestarty'),dim.min..'~'..dim.max,tostring(posA.y))
+			Form:addInput(_Tr('gui.rangeselector.moveendy'),dim.min..'~'..dim.max,tostring(posB.y))
 			player:sendForm(Form,function(player,res)
 				if not res then return end
-				posA.y = res[1]
-				posB.y = res[2]
+				local Ay,By = tonumber(res[1]),tonumber(res[2])
+				if not Ay or not By then
+					SendText(player,_Tr('gui.rangeselector.invalid'))
+					RangeSelector.Push(player)
+					return
+				end
+				posA.y = Ay
+				posB.y = By
 				mem.step = 4
 				RangeSelector.Push(player)
 			end)
@@ -3284,18 +3290,19 @@ Callback = {
 				if cfg.features.particles.enable and res.particles then -- Keeping Particles
 					local player = mc.getPlayer(xuid)
 					for n,pos in pairs(res.particles) do
-						local posY
 						if MEM[xuid].newLand then
-							if MEM[xuid].newLand.dimension=='2D' then
-								posY = player.blockPos.y + 2
-							else
-								posY = pos.y + 1.6
+							if MEM[xuid].newLand.dimension == '2D' then
+								pos.y = player.blockPos.y + 2
+							end
+						elseif MEM[xuid].reselectLand then
+							if MEM[xuid].reselectLand.dimension == '2D' then
+								pos.y = player.blockPos.y + 2
 							end
 						end
-						if MEM[xuid].reselectLand then
-							posY = pos.y
-						end
-						mc.spawnParticle(pos.x,posY,pos.z,player.pos.dimid,cfg.features.particles.name)
+						--- handle box offset.
+						pos = Pos.Add(pos,0.5)
+						pos.y = pos.y + 1
+						mc.spawnParticle(pos.x,pos.y,pos.z,player.pos.dimid,cfg.features.particles.name)
 					end
 				end
 				if res.keepingTitle then -- Keeping Title

@@ -225,6 +225,7 @@
 
     "gui.rangeselector.title": "Y轴调整",
     "gui.rangeselector.tip": "你可以在这里调整现有的起点与终点的高度，如果不需要调整直接提交即可。",
+    "gui.rangeselector.invalid": "高度值无效，请重新输入",
     "gui.rangeselector.selectedpos": "已选定: <a>,§l<b>§r,<c> >> <d>,§l<e>§r,<f>",
     "gui.rangeselector.movestarty": "起点Y轴",
     "gui.rangeselector.moveendy": "终点Y轴",
