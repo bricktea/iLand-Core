@@ -31,7 +31,8 @@ MEM = {}
 MainCmd = 'land'
 DATA_PATH = 'plugins/iland/'
 
--- [Raw] config.json
+-- [Tpl] config.json
+
 local cfg = {
 	version = Plugin.numver,
 	plugin = {
@@ -95,6 +96,8 @@ local cfg = {
 	}
 }
 
+-- Init debug mode.
+
 DEV_MODE = false
 if File.exists("EnableILandDevMode") then
 	DEV_MODE = true
@@ -104,7 +107,8 @@ end
 local minY <const> = -64
 local maxY <const> = 320
 
--- Init log system
+-- Init logger.
+
 logger.setConsole(true)
 logger.setTitle("ILand")
 function INFO(msgtype,content)
@@ -129,7 +133,13 @@ function WARN(content)
 	logger.warn(content)
 end
 
--- Init map system
+-- Check LiteLoader version.
+
+if not ll.checkVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
+	error('Unsupported version of LiteLoader, plugin loading aborted.')
+end
+
+-- Classes.
 
 Map = {
 	Init = function()
@@ -503,11 +513,6 @@ Map = {
 	}
 }
 
-if not ll.checkVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
-	ERROR('Unsupported version of LiteLoader, plugin loading aborted.')
-	return
-end
-
 I18N = {
 	TriedAutoFix = false,
 	Init = function()
@@ -631,8 +636,6 @@ I18N = {
 		end
 	}
 }
-
--- ProtectedArea = {}
 
 Dimension = {
 	Ids = {
@@ -1686,7 +1689,7 @@ ConfigUIEditor = {
 				"Complete.",
 				_Tr('gui.general.back'),
 				_Tr('gui.general.close'),
-				FormCallbacks.BackTo.LandOPMgr
+				Callback.Form.BackTo.LandOPMgr
 			)
 		end)
 	end
@@ -1843,7 +1846,7 @@ OpenGUI = {
 							OpenGUI.FastLMgr(player,true)
 						end
 						if mode==3 then -- 返回
-							FormCallbacks.BackTo.LandOPMgr(player,true)
+							Callback.Form.BackTo.LandOPMgr(player,true)
 						end
 
 					end
@@ -1975,7 +1978,7 @@ OpenGUI = {
 							"Complete.",
 							_Tr('gui.general.back'),
 							_Tr('gui.general.close'),
-							FormCallbacks.BackTo.LandOPMgr
+							Callback.Form.BackTo.LandOPMgr
 						)
 
 					end
@@ -2009,7 +2012,7 @@ OpenGUI = {
 				),
 				_Tr('gui.general.iknow'),
 				_Tr('gui.general.close'),
-				FormCallbacks.BackTo.LandMgr
+				Callback.Form.BackTo.LandMgr
 			)
 		end,
 		Setting = function(player,landId)
@@ -2055,7 +2058,7 @@ OpenGUI = {
 						'Complete.',
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end
 			)
@@ -2195,7 +2198,7 @@ OpenGUI = {
 						'Complete.',
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end
 			)
@@ -2265,7 +2268,7 @@ OpenGUI = {
 						text,
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end,list)
 			end)
@@ -2289,7 +2292,7 @@ OpenGUI = {
 						'Complete.',
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end
 			)
@@ -2315,7 +2318,7 @@ OpenGUI = {
 						'Complete.',
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end
 			)
@@ -2350,7 +2353,7 @@ OpenGUI = {
 								_Tr('title.landtransfer.complete','<a>',name,'<b>',selected[1]),
 								_Tr('gui.general.back'),
 								_Tr('gui.general.close'),
-								FormCallbacks.BackTo.LandMgr
+								Callback.Form.BackTo.LandMgr
 							)
 						end
 					)
@@ -2401,7 +2404,7 @@ OpenGUI = {
 						'Complete.',
 						_Tr('gui.general.back'),
 						_Tr('gui.general.close'),
-						FormCallbacks.BackTo.LandMgr
+						Callback.Form.BackTo.LandMgr
 					)
 				end
 			)
@@ -3068,6 +3071,170 @@ Array = {
 		end
 		return rtn
 	end
+}
+
+Callback = {
+	Timer = {
+		LandSign = function()
+			for xuid,res in pairs(MEM) do
+				local player = mc.getPlayer(xuid)
+	
+				if not player then
+					goto JUMPOUT_LANDSIGN
+				end
+	
+				local landId = Land.Query.Pos(player.blockPos)
+				if not landId then
+					MEM[xuid].inland = 'null'
+					goto JUMPOUT_LANDSIGN
+				end
+				if landId==MEM[xuid].inland then
+					goto JUMPOUT_LANDSIGN
+				end
+	
+				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
+				local ownerId = '?'
+				if ownerXuid then
+					ownerId = data.xuid2name(ownerXuid)
+				end
+				local landcfg = DataStorage.Land.Raw[landId].settings
+	
+				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
+					-- owner/trusted
+					if not landcfg.signtome then
+						goto JUMPOUT_LANDSIGN
+					end
+					local name = Land.Options.Nickname.get(landId) or landId
+					SendTitle(player,
+						_Tr('sign.listener.ownertitle','<a>',name),
+						_Tr('sign.listener.ownersubtitle')
+					)
+				else
+					-- visitor
+					if not landcfg.signtother then
+						goto JUMPOUT_LANDSIGN
+					end
+					SendTitle(player,
+						_Tr('sign.listener.visitortitle'),
+						_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
+					)
+					if landcfg.describe~='' then
+						local des = table.clone(landcfg.describe)
+						des = string.gsub(des,'$visitor',player.name)
+						des = string.gsub(des,'$n','\n')
+						SendText(player,des,0)
+					end
+				end
+	
+				MEM[xuid].inland = landId
+				:: JUMPOUT_LANDSIGN ::
+			end
+		end,
+		ButtomSign = function()
+			for xuid,res in pairs(MEM) do
+				local player = mc.getPlayer(xuid)
+	
+				if not player then
+					goto JUMPOUT_BUTTOMSIGN
+				end
+	
+				local landId = Land.Query.Pos(player.blockPos)
+				if not landId then
+					goto JUMPOUT_BUTTOMSIGN
+				end
+				local landcfg = DataStorage.Land.Raw[landId].settings
+				if not landcfg.signbuttom then
+					goto JUMPOUT_BUTTOMSIGN
+				end
+	
+				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
+				local ownerId = '?'
+				if ownerXuid then
+					ownerId = data.xuid2name(ownerXuid)
+				end
+				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
+					player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId)),4)
+				else
+					if (xuid~=ownerXuid) and landcfg.signtother then
+						player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
+					end
+				end
+	
+				:: JUMPOUT_BUTTOMSIGN ::
+			end
+		end,
+		MEM = function ()
+			for xuid,res in pairs(MEM) do
+				if cfg.features.particles.enable and res.particles then -- Keeping Particles
+					local player = mc.getPlayer(xuid)
+					for n,pos in pairs(res.particles) do
+						local posY
+						if MEM[xuid].newLand then
+							if MEM[xuid].newLand.dimension=='2D' then
+								posY = player.blockPos.y + 2
+							else
+								posY = pos.y + 1.6
+							end
+						end
+						if MEM[xuid].reselectLand then
+							posY = pos.y
+						end
+						mc.spawnParticle(pos.x,posY,pos.z,player.pos.dimid,cfg.features.particles.name)
+					end
+				end
+				if res.keepingTitle then -- Keeping Title
+					local title = res.keepingTitle
+					if type(title)=='table' then
+						SendTitle(mc.getPlayer(xuid),title[1],title[2],{0,40,20})
+					else
+						SendTitle(mc.getPlayer(xuid),title,{0,100,0})
+					end
+				end
+			end
+		end
+	},
+	Form = {
+		NULL = function(...) end,
+		BackTo = {
+			LandOPMgr = function(player,id)
+				if not id then return end
+				OpenGUI.OPLMgr(player)
+			end,
+			LandMgr = function (player,id)
+				if not id then return end
+				OpenGUI.FastLMgr(player)
+			end
+		}
+	},
+	Event = {
+		onExplode = function(source,pos,radius,range,isDestroy,isFire)
+	
+			if not Map.Listener.check('onExplode') then
+				return
+			end
+	
+			local bp = Pos.ToIntPos(pos)
+			local landId = Land.Query.Pos(bp)
+			if not landId then
+				local r = math.floor(radius) + 1
+				local lands = Land.Query.Area(Cube.Create(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid))
+				if #lands==0 then
+					return
+				end
+				for i,landId in pairs(lands) do
+					if not DataStorage.Land.Raw[landId].settings.ev_explode then
+						return false
+					end
+				end
+			else
+				if DataStorage.Land.Raw[landId].settings.ev_explode then
+					return
+				end
+			end
+	
+			return false
+		end
+	}
 }
 
 function Server.GetLink()
@@ -3756,7 +3923,7 @@ function RegisterCommands()
 			_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
 			_Tr('gui.general.iknow'),
 			_Tr('gui.general.close'),
-			FormCallbacks.NULL
+			Callback.Form.NULL
 		)
 	end)
 	mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
@@ -3908,173 +4075,7 @@ function RegisterCommands()
 
 end
 
--- Callbacks
-
-TimerCallbacks = {
-	LandSign = function()
-		for xuid,res in pairs(MEM) do
-			local player = mc.getPlayer(xuid)
-
-			if not player then
-				goto JUMPOUT_LANDSIGN
-			end
-
-			local landId = Land.Query.Pos(player.blockPos)
-			if not landId then
-				MEM[xuid].inland = 'null'
-				goto JUMPOUT_LANDSIGN
-			end
-			if landId==MEM[xuid].inland then
-				goto JUMPOUT_LANDSIGN
-			end
-
-			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
-			local ownerId = '?'
-			if ownerXuid then
-				ownerId = data.xuid2name(ownerXuid)
-			end
-			local landcfg = DataStorage.Land.Raw[landId].settings
-
-			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
-				-- owner/trusted
-				if not landcfg.signtome then
-					goto JUMPOUT_LANDSIGN
-				end
-				local name = Land.Options.Nickname.get(landId) or landId
-				SendTitle(player,
-					_Tr('sign.listener.ownertitle','<a>',name),
-					_Tr('sign.listener.ownersubtitle')
-				)
-			else
-				-- visitor
-				if not landcfg.signtother then
-					goto JUMPOUT_LANDSIGN
-				end
-				SendTitle(player,
-					_Tr('sign.listener.visitortitle'),
-					_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
-				)
-				if landcfg.describe~='' then
-					local des = table.clone(landcfg.describe)
-					des = string.gsub(des,'$visitor',player.name)
-					des = string.gsub(des,'$n','\n')
-					SendText(player,des,0)
-				end
-			end
-
-			MEM[xuid].inland = landId
-			:: JUMPOUT_LANDSIGN ::
-		end
-	end,
-	ButtomSign = function()
-		for xuid,res in pairs(MEM) do
-			local player = mc.getPlayer(xuid)
-
-			if not player then
-				goto JUMPOUT_BUTTOMSIGN
-			end
-
-			local landId = Land.Query.Pos(player.blockPos)
-			if not landId then
-				goto JUMPOUT_BUTTOMSIGN
-			end
-			local landcfg = DataStorage.Land.Raw[landId].settings
-			if not landcfg.signbuttom then
-				goto JUMPOUT_BUTTOMSIGN
-			end
-
-			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
-			local ownerId = '?'
-			if ownerXuid then
-				ownerId = data.xuid2name(ownerXuid)
-			end
-			if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
-				player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId)),4)
-			else
-				if (xuid~=ownerXuid) and landcfg.signtother then
-					player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
-				end
-			end
-
-			:: JUMPOUT_BUTTOMSIGN ::
-		end
-	end,
-	MEM = function ()
-		for xuid,res in pairs(MEM) do
-			if cfg.features.particles.enable and res.particles then -- Keeping Particles
-				local player = mc.getPlayer(xuid)
-				for n,pos in pairs(res.particles) do
-					local posY
-					if MEM[xuid].newLand then
-						if MEM[xuid].newLand.dimension=='2D' then
-							posY = player.blockPos.y + 2
-						else
-							posY = pos.y + 1.6
-						end
-					end
-					if MEM[xuid].reselectLand then
-						posY = pos.y
-					end
-					mc.spawnParticle(pos.x,posY,pos.z,player.pos.dimid,cfg.features.particles.name)
-				end
-			end
-			if res.keepingTitle then -- Keeping Title
-				local title = res.keepingTitle
-				if type(title)=='table' then
-					SendTitle(mc.getPlayer(xuid),title[1],title[2],{0,40,20})
-				else
-					SendTitle(mc.getPlayer(xuid),title,{0,100,0})
-				end
-			end
-		end
-	end
-}
-
-FormCallbacks = {
-	NULL = function(...) end,
-	BackTo = {
-		LandOPMgr = function(player,id)
-			if not id then return end
-			OpenGUI.OPLMgr(player)
-		end,
-		LandMgr = function (player,id)
-			if not id then return end
-			OpenGUI.FastLMgr(player)
-		end
-	}
-}
-
-EventCallbacks = {
-	onExplode = function(source,pos,radius,range,isDestroy,isFire)
-
-		if not Map.Listener.check('onExplode') then
-			return
-		end
-
-		local bp = Pos.ToIntPos(pos)
-		local landId = Land.Query.Pos(bp)
-		if not landId then
-			local r = math.floor(radius) + 1
-			local lands = Land.Query.Area(Cube.Create(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid))
-			if #lands==0 then
-				return
-			end
-			for i,landId in pairs(lands) do
-				if not DataStorage.Land.Raw[landId].settings.ev_explode then
-					return false
-				end
-			end
-		else
-			if DataStorage.Land.Raw[landId].settings.ev_explode then
-				return
-			end
-		end
-
-		return false
-	end
-}
-
--- Minecraft Eventing
+-- Minecraft Eventing.
 
 mc.listen('onJoin',function(player)
 	local xuid = player.xuid
@@ -4579,12 +4580,12 @@ mc.listen('onServerStarted',function()
 
 	-- Make timer
 	if cfg.features.landsign.enable then
-		setInterval(TimerCallbacks.LandSign,cfg.features.landsign.frequency*1000)
+		setInterval(Callback.Timer.LandSign,cfg.features.landsign.frequency*1000)
 	end
 	if cfg.features.buttomsign.enable then
-		setInterval(TimerCallbacks.ButtomSign,cfg.features.buttomsign.frequency*1000)
+		setInterval(Callback.Timer.ButtomSign,cfg.features.buttomsign.frequency*1000)
 	end
-	setInterval(TimerCallbacks.MEM,1000)
+	setInterval(Callback.Timer.MEM,1000)
 	if DEV_MODE then
 		setInterval(DebugHelper.Interval,1000*DebugHelper.Delay)
 	end
@@ -4671,8 +4672,8 @@ mc.listen('onServerStarted',function()
 	end,1000*60)
 
 end)
-mc.listen('onBlockExplode',EventCallbacks.onExplode)
-mc.listen('onEntityExplode',EventCallbacks.onExplode)
+mc.listen('onBlockExplode',Callback.Event.onExplode)
+mc.listen('onEntityExplode',Callback.Event.onExplode)
 
 -- Export Apis.
 
