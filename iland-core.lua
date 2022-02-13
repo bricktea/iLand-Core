@@ -827,13 +827,7 @@ DataStorage = {
 			return true
 		end,
 		Save = function()
-			local localfile = File(DATA_PATH..'config.json',File.WriteMode)
-			localfile:write(JSON.encode(cfg),function (res)
-				if not res then
-					WARN(_Tr('api.datamgr.save.failed','<a>','Config'))
-				end
-				localfile:close()
-			end)
+			File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
 		end
 
 	},
@@ -999,17 +993,11 @@ DataStorage = {
 			end
 		},
 		Save = function()
-			local localfile = File(DATA_PATH..'data.json',File.WriteMode)
 			local localdata = {
 				version = Plugin.Version.toNumber(),
 				Lands = table.concatEx(DataStorage.Land.Raw,DataStorage.Land.Unloaded)
 			}
-			localfile:write(JSON.encode(localdata),function (res)
-				if not res then
-					WARN(_Tr('api.datamgr.save.failed','<a>','Land'))
-				end
-				localfile:close()
-			end)
+			File.writeTo(DATA_PATH..'data.json',JSON.encode(localdata))
 		end
 
 	},
@@ -1056,19 +1044,13 @@ DataStorage = {
 			return origin
 		end,
 		Save = function()
-			local localfile = File(DATA_PATH..'relationship.json',File.WriteMode)
 			local rel = DataStorage.RelationShip
 			local localdata = {
 				version = Plugin.Version.toNumber(),
 				Owner = table.concatEx(rel.Raw['Owner'],rel.Unloaded['Owner']),
 				Operator = rel.Raw['Operator']
 			}
-			localfile:write(JSON.encode(localdata),function (res)
-				if not res then
-					WARN(_Tr('api.datamgr.save.failed','<a>','RelationShip'))
-				end
-				localfile:close()
-			end)
+			File.writeTo(DATA_PATH..'relationship.json',JSON.encode(localdata))
 		end
 
 	},
@@ -1087,6 +1069,10 @@ DataStorage = {
 			DataStorage._stat[3] = false
 			DataStorage.RelationShip.Save()
 		end
+	end,
+	IsPending = function()
+		local m = DataStorage._stat
+		return m[1] or m[2] or m[3]
 	end,
 	Save = function(mode)
 		if mode[1] == 1 then
@@ -4691,6 +4677,13 @@ mc.listen('onStartDestroyBlock',function(player,block)
 		MEM[xuid].rsr.sleep = os.time() + 2
 	end
 
+end)
+mc.listen('onConsoleCmd',function(cmd)
+	local m = string.split(cmd,' ')
+	if (m[1]=='stop' and not m[2]) and DataStorage.IsPending() then
+		DataStorage.INTERVAL()
+		INFO('Pending data saved.')
+	end
 end)
 mc.listen('onServerStarted',function()
 
