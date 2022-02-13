@@ -28,7 +28,7 @@
     "gui.general.plzchose": "请选择",
     
     "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n昵称: <c>\\n范围:  §l<d>§r <e> <f> -> <g>\\n长/宽/高: <h>/<i>/<j>\\n底面积: <k> 平方格    体积: <l> 立方格",
-    "gui.landmgr.unnamed": "未命名",
+    "gui.landmgr.unnamed": "<未命名>",
     "gui.landmgr.unmodified": "未修改",
     "gui.landmgr.options.landinfo": "查看领地信息",
     "gui.landmgr.options.landcfg": "领地配置项",
@@ -291,6 +291,7 @@
     "api.safetp.fail.timeout": "区块加载超时，传送失败",
     "api.safetp.fail.nofoothold": "传送点附近没有落脚点，传送失败",
 
+    "api.datamgr.save.failed": "<a> 数据保存失败",
     "talk.land.unselected":"未选择任何领地",
     "talk.landmgr.open": "打开领地管理器",
     "talk.scoreboard": "计分板",

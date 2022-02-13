@@ -240,8 +240,8 @@ Map = {
 			update = function(landId,mode)
 				if mode=='add' then
 					local ra = DataStorage.Land.Raw[landId].range
-					local posA = ra.start_position
-					local posB = ra.end_position
+					local posA = Array.ToIntPos(ra.start_position)
+					local posB = Array.ToIntPos(ra.end_position)
 					Map.Land.Position.data[landId] = Cube.Create(posA,posB,ra.dimid)
 				elseif mode=='del' then
 					Map.Land.Position.data[landId] = nil
@@ -416,8 +416,11 @@ Map = {
 			land_recorded_pos = {}, -- query recorded strpos by landId.
 			non_land_pos = {}, -- non-land position recorded.
 			add = function(landId,pos)
-				local strpos = Pos.ToString(pos)
+				local strpos = Pos.ToString(pos,true)
 				local map = Map.CachedQuery.SinglePos
+				if map.data[strpos] then
+					map.clear(strpos)
+				end
 				map.data[strpos] = {
 					landId = landId,
 					raw = Pos.ToIntPos(pos),
@@ -430,14 +433,14 @@ Map = {
 				end
 			end,
 			get = function(pos)
-				local strpos = Pos.ToString(pos)
+				local strpos = Pos.ToString(pos,true)
 				local map = Map.CachedQuery.SinglePos
 				local record = map.data[strpos]
 				if record then
 					record.querying = true
-					return record.landId
+					return true,record.landId
 				end
-				return nil
+				return false,nil
 			end,
 			clear = function(strpos) -- clear single pos's cache
 				local map = Map.CachedQuery.SinglePos
@@ -456,7 +459,7 @@ Map = {
 			check_noland_pos = function() -- when new land created, clear old non-land cached pos.
 				local map = Map.CachedQuery.SinglePos
 				for n,strpos in pairs(map.non_land_pos) do
-					if not Land.Query.Pos(map.data[strpos].raw,true) then
+					if Land.Query.Pos(map.data[strpos].raw,true) then
 						map.clear(strpos)
 					end
 				end
@@ -756,7 +759,7 @@ DataStorage = {
 				return false
 			end
 			--- Update
-			if origin.version < 242 then -- OLD STRUCTURE	
+			if origin.version < 242 then -- OLD STRUCTURE
 				local tpl = table.clone(cfg)
 				tpl.plugin.language = origin.manager.default_language
 				tpl.plugin.network = origin.update_check
@@ -824,7 +827,13 @@ DataStorage = {
 			return true
 		end,
 		Save = function()
-			
+			local localfile = File(DATA_PATH..'config.json',File.WriteMode)
+			localfile:write(JSON.encode(cfg),function (res)
+				if not res then
+					WARN(_Tr('api.datamgr.save.failed','<a>','Config'))
+				end
+				localfile:close()
+			end)
 		end
 
 	},
@@ -869,7 +878,7 @@ DataStorage = {
 		end,
 		Update = function(origin)
 			if not origin.version then
-				
+
 			end
 			--- Update
 			for landId,res in pairs(origin.Lands) do
@@ -894,6 +903,7 @@ DataStorage = {
 		Template = {
 			data = {
 				settings = {
+					share = {},
 					teleport = {},
 					nickname = '',
 					describe = '',
@@ -989,6 +999,17 @@ DataStorage = {
 			end
 		},
 		Save = function()
+			local localfile = File(DATA_PATH..'data.json',File.WriteMode)
+			local localdata = {
+				version = Plugin.Version.toNumber(),
+				Lands = table.concatEx(DataStorage.Land.Raw,DataStorage.Land.Unloaded)
+			}
+			localfile:write(JSON.encode(localdata),function (res)
+				if not res then
+					WARN(_Tr('api.datamgr.save.failed','<a>','Land'))
+				end
+				localfile:close()
+			end)
 		end
 
 	},
@@ -1003,8 +1024,7 @@ DataStorage = {
 				File.writeTo(DATA_PATH..'relationship.json',JSON.encode({
 					version = Plugin.Version.toNumber(),
 					Owner = {},
-					Operator = {},
-					Trusted = {}
+					Operator = {}
 				}))
 			end
 			local localdata = JSON.decode(File.readFrom(DATA_PATH..'relationship.json'))
@@ -1031,15 +1051,53 @@ DataStorage = {
 		end,
 		Update = function(origin)
 			if not origin.version then
-				
+
 			end
+			return origin
 		end,
 		Save = function()
+			local localfile = File(DATA_PATH..'relationship.json',File.WriteMode)
+			local rel = DataStorage.RelationShip
+			local localdata = {
+				version = Plugin.Version.toNumber(),
+				Owner = table.concatEx(rel.Raw['Owner'],rel.Unloaded['Owner']),
+				Operator = rel.Raw['Operator']
+			}
+			localfile:write(JSON.encode(localdata),function (res)
+				if not res then
+					WARN(_Tr('api.datamgr.save.failed','<a>','RelationShip'))
+				end
+				localfile:close()
+			end)
 		end
 
 	},
+
+	_stat = {false,false,false}, -- { Config, Land, RelationShip }
+	INTERVAL = function()
+		if DataStorage._stat[1] then
+			DataStorage._stat[1] = false
+			DataStorage.Config.Save()
+		end
+		if DataStorage._stat[2] then
+			DataStorage._stat[2] = false
+			DataStorage.Land.Save()
+		end
+		if DataStorage._stat[3] then
+			DataStorage._stat[3] = false
+			DataStorage.RelationShip.Save()
+		end
+	end,
 	Save = function(mode)
-		
+		if mode[1] == 1 then
+			DataStorage._stat[1] = true
+		end
+		if mode[2] == 1 then
+			DataStorage._stat[2] = true
+		end
+		if mode[3] == 1 then
+			DataStorage._stat[3] = true
+		end
 	end
 
 }
@@ -1191,9 +1249,25 @@ Land = {
 			isDefault = function(landId)
 				return DataStorage.Land.Raw[landId].settings.nickname == DataStorage.Land.Template['data'].settings.nickname
 			end,
-			get = function(landId)
+			get = function(landId,rtnmode)
+				--[[ Return Mode (If name default).
+					nil -> return nil,
+					0	-> return '',
+					1	-> return landId,
+					2	-> return <Unnamed>
+					3	-> return <Unnamed> + landId ]]
 				if Land.Options.Nickname.isDefault(landId) then
-					return nil
+					if not rtnmode then
+						return nil
+					elseif rtnmode == 0 then
+						return ''
+					elseif rtnmode == 1 then
+						return landId
+					elseif rtnmode == 2 then
+						return _Tr('gui.landmgr.unnamed')
+					elseif rtnmode == 3 then
+						return _Tr('gui.landmgr.unnamed')..' '..landId
+					end
 				end
 				return DataStorage.Land.Raw[landId].settings.nickname
 			end
@@ -1206,9 +1280,9 @@ Land = {
 		Pos = function(pos,noAccessCache)
 			noAccessCache = noAccessCache or false
 			if not noAccessCache then
-				local cache_result = Map.CachedQuery.SinglePos.get(pos)
-				if cache_result then
-					return cache_result
+				local hadCache,result = Map.CachedQuery.SinglePos.get(pos)
+				if hadCache then
+					return result
 				end
 			end
 
@@ -1533,8 +1607,7 @@ Land = {
 			end,
 			['GetName'] = function(landId)
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
-				local rtn = Land.Options.Nickname.get(landId) or ''
-				return rtn
+				return Land.Options.Nickname.get(landId,0)
 			end,
 			['GetDescribe'] = function(landId)
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
@@ -1766,16 +1839,15 @@ OpenGUI = {
 		end
 
 		local landId = MEM[xuid].landId
-		if Land.IDManager.IsVaild(landId) then
+		if not Land.IDManager.IsVaild(landId) then
 			OpenGUI.LMgr(player)
 			return
 		end
 
 		local Form = mc.newSimpleForm()
-		local name = Land.Options.Nickname.get(landId) or landId
 		Form:setTitle(_Tr('gui.fastlmgr.title'))
 		if not isOP then
-			Form:setContent(_Tr('gui.fastlmgr.content','<a>',name))
+			Form:setContent(_Tr('gui.fastlmgr.content','<a>',Land.Options.Nickname.get(landId,3)))
 		else
 			Form:setContent(_Tr('gui.fastlmgr.operator'))
 		end
@@ -1829,8 +1901,7 @@ OpenGUI = {
 		Form:setTitle(_Tr('gui.landmgr.title'))
 		Form:setContent(_Tr('gui.landmgr.select'))
 		for n,landId in pairs(landlst) do
-			local name = Land.Options.Nickname.get(landId) or landId
-			Form:addButton(name,'textures/ui/worldsIcon')
+			Form:addButton(Land.Options.Nickname.get(landId,3),'textures/ui/worldsIcon')
 		end
 		MEM[xuid].enableBackButton = 0
 		player:sendForm(Form,function(pl,id) -- callback
@@ -1883,10 +1954,9 @@ OpenGUI = {
 								if ownerId then
 									ownerId = data.xuid2name(ownerId)
 								end
-								local name = Land.Options.Nickname.get(landId) or landId
 								Form:addButton(
 									_Tr('gui.oplandmgr.landmgr.button',
-										'<a>',name,
+										'<a>',Land.Options.Nickname.get(landId,3),
 										'<b>',ownerId
 									),
 									'textures/ui/worldsIcon'
@@ -2058,15 +2128,14 @@ OpenGUI = {
 			if owner then
 				owner = data.xuid2name(owner)
 			end
-			local name = Land.Options.Nickname.get(landId) or landId
 			player:sendModalForm(
 				_Tr('gui.landmgr.landinfo.title'),
 				_Tr('gui.landmgr.landinfo.content',
 					'<a>',owner,
 					'<b>',landId,
-					'<c>',name,
+					'<c>',Land.Options.Nickname.get(landId,2),
 					'<d>',Land.Util.GetDimension(landId),
-					'<e>',Dimension.Get(Map.Land.Position.data[landId]).name,
+					'<e>',Dimension.Get(Map.Land.Position.data[landId].dimid).name,
 					'<f>',Pos.ToString(Map.Land.Position.data[landId].posA),
 					'<g>',Pos.ToString(Map.Land.Position.data[landId].posB),
 					'<h>',cubeInfo.length,'<i>',cubeInfo.width,'<j>',cubeInfo.height,
@@ -2338,11 +2407,10 @@ OpenGUI = {
 		Nickname = function(player,landId)
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
-			local nickn = Land.Options.Nickname.get(landId) or landId
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landtag.title'))
 			Form:addLabel(_Tr('gui.landtag.tip'))
-			Form:addInput("",nickn)
+			Form:addInput("",Land.Options.Nickname.get(landId,2))
 			player:sendForm(
 				Form,
 				function(player,res)
@@ -2409,10 +2477,9 @@ OpenGUI = {
 								return
 							end
 							Land.RelationShip.Owner.set(landId,targetXuid)
-							local name = Land.Options.Nickname.get(landId) or landId
 							player:sendModalForm(
 								_Tr('gui.general.complete'),
-								_Tr('title.landtransfer.complete','<a>',name,'<b>',selected[1]),
+								_Tr('title.landtransfer.complete','<a>',Land.Options.Nickname.get(landId,3),'<b>',selected[1]),
 								_Tr('gui.general.back'),
 								_Tr('gui.general.close'),
 								Callback.Form.BackTo.LandMgr
@@ -2449,7 +2516,7 @@ OpenGUI = {
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
 			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
-			local value = math.modf(CalculatePrice(cubeInfo,Land.Util.GetDimension(landId))*cfg.land.refund_rate)
+			local value = math.floor(CalculatePrice(cubeInfo,Land.Util.GetDimension(landId))*cfg.land.refund_rate)
 			player:sendModalForm(
 				_Tr('gui.delland.title'),
 				_Tr('gui.delland.content','<a>',value,'<b>',cfg.economic.currency_name),
@@ -2728,7 +2795,7 @@ RangeSelector = {
 				posA.y = res[1]
 				posB.y = res[2]
 				mem.step = 4
-				RangeSelector.Push(player,posB)
+				RangeSelector.Push(player)
 			end)
 		elseif mem.step == 4 then
 			local passed = false
@@ -2769,15 +2836,18 @@ RangeSelector = {
 			MEM[xuid].keepingTitle = nil
 			local edge
 			if mem.dimension == '3D' then
-				edge = Cube.GetEdge(Cube.Create(mem.posA,mem.posB))
+				edge = Cube.GetEdge(range)
 			else
-				edge = Cube.GetEdge_2D(Cube.Create(mem.posA,mem.posB),player.pos.y + 1)
+				edge = Cube.GetEdge_2D(range,player.pos.y + 1)
 			end
 			if #edge < cfg.features.particles.max_amount then
 				MEM[xuid].particles = edge
 			else
 				SendText(player,_Tr('title.rangeselector.largeparticle'))
 			end
+			mem.cbfunc(player,range,mem.dimension)
+			mem.step = 5
+
 		elseif mem.step == 5 then
 			-- what the fxxk handle...
 			if MEM[xuid].newLand then
@@ -2922,8 +2992,8 @@ Cube = {
 		dimid = dimid or -1
 		posA,posB = Pos.Sort(posA,posB)
 		return {
-			posA = posA,
-			posB = posB,
+			posA = Pos.ToIntPos(posA,true),
+			posB = Pos.ToIntPos(posB,true),
 			dimid = dimid
 		}
 	end,
@@ -2944,7 +3014,7 @@ Cube = {
 	end,
 	GetEdge = function(AABB)
 		local edge = {}
-		local posA,posB = AABB.posA,AABB.posB
+		local posB,posA = AABB.posA,AABB.posB
 		for i=1,math.abs(posA.x-posB.x)+1 do
 			edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posA.z }
 			edge[#edge+1] = { x=posA.x-i+1, y=posA.y-1, z=posB.z }
@@ -2967,7 +3037,7 @@ Cube = {
 	end,
 	GetEdge_2D = function(AABB,customY)
 		local edge = {}
-		local posA,posB = AABB.posA,AABB.posB
+		local posB,posA = AABB.posA,AABB.posB
 		customY = customY or posA.y - 1
 		for i=1,math.abs(posA.x-posB.x)+1 do
 			edge[#edge+1] = { x=posA.x-i+1, y=customY, z=posA.z }
@@ -2997,19 +3067,23 @@ Pos = {
 		local p = cfg.features.chunk_side
 		return math.floor(pos.x/p),math.floor(pos.z/p)
 	end,
-	ToIntPos = function(pos)
+	ToIntPos = function(pos,removeDimId)
 		local result = {
 			x = math.floor(pos.x),
 			y = math.floor(pos.y),
 			z = math.floor(pos.z)
 		}
-		if pos.dimid then
+		if not removeDimId and pos.dimid then
 			result.dimid = pos.dimid
 		end
 		return result
 	end,
-	ToString = function(vec3)
-		return vec3.x..','..vec3.y..','..vec3.z
+	ToString = function(pos,convDimId)
+		local rtn = pos.x..','..pos.y..','..pos.z
+		if convDimId and pos.dimid then
+			rtn = '['..pos.dimid..'] '..rtn
+		end
+		return rtn
 	end,
 	ToArray = function(pos)
 		local rtn = {
@@ -3060,7 +3134,7 @@ Array = {
 			z = math.floor(array[3])
 		}
 		if array[4] then
-			rtn.dimid=array[4]
+			rtn.dimid = array[4]
 		end
 		return rtn
 	end,
@@ -3115,11 +3189,11 @@ Callback = {
 		LandSign = function()
 			for xuid,res in pairs(MEM) do
 				local player = mc.getPlayer(xuid)
-	
+
 				if not player then
 					goto JUMPOUT_LANDSIGN
 				end
-	
+
 				local landId = Land.Query.Pos(player.blockPos)
 				if not landId then
 					MEM[xuid].inland = 'null'
@@ -3128,22 +3202,21 @@ Callback = {
 				if landId==MEM[xuid].inland then
 					goto JUMPOUT_LANDSIGN
 				end
-	
+
 				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 				local ownerId = '?'
 				if ownerXuid then
 					ownerId = data.xuid2name(ownerXuid)
 				end
 				local landcfg = DataStorage.Land.Raw[landId].settings
-	
+
 				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
 					-- owner/trusted
 					if not landcfg.signtome then
 						goto JUMPOUT_LANDSIGN
 					end
-					local name = Land.Options.Nickname.get(landId) or landId
 					SendTitle(player,
-						_Tr('sign.listener.ownertitle','<a>',name),
+						_Tr('sign.listener.ownertitle','<a>',Land.Options.Nickname.get(landId,2)),
 						_Tr('sign.listener.ownersubtitle')
 					)
 				else
@@ -3162,7 +3235,7 @@ Callback = {
 						SendText(player,des,0)
 					end
 				end
-	
+
 				MEM[xuid].inland = landId
 				:: JUMPOUT_LANDSIGN ::
 			end
@@ -3170,11 +3243,11 @@ Callback = {
 		ButtomSign = function()
 			for xuid,res in pairs(MEM) do
 				local player = mc.getPlayer(xuid)
-	
+
 				if not player then
 					goto JUMPOUT_BUTTOMSIGN
 				end
-	
+
 				local landId = Land.Query.Pos(player.blockPos)
 				if not landId then
 					goto JUMPOUT_BUTTOMSIGN
@@ -3183,20 +3256,20 @@ Callback = {
 				if not landcfg.signbuttom then
 					goto JUMPOUT_BUTTOMSIGN
 				end
-	
+
 				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 				local ownerId = '?'
 				if ownerXuid then
 					ownerId = data.xuid2name(ownerXuid)
 				end
 				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
-					player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId)),4)
+					player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId,3)),4)
 				else
 					if (xuid~=ownerXuid) and landcfg.signtother then
 						player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
 					end
 				end
-	
+
 				:: JUMPOUT_BUTTOMSIGN ::
 			end
 		end,
@@ -3245,11 +3318,11 @@ Callback = {
 	},
 	Event = {
 		onExplode = function(source,pos,radius,range,isDestroy,isFire)
-	
+
 			if not Map.Listener.check('onExplode') then
 				return
 			end
-	
+
 			local bp = Pos.ToIntPos(pos)
 			local landId = Land.Query.Pos(bp)
 			if not landId then
@@ -3268,7 +3341,7 @@ Callback = {
 					return
 				end
 			end
-	
+
 			return false
 		end
 	}
@@ -3434,6 +3507,13 @@ function table.setKey(tab,path,value)
 
 	table.setKey(tab[pathes[1]],table.concat(pathes,'.',2,#pathes),value)
 
+end
+
+function table.concatEx(origin,tbl)
+	for a,b in pairs(tbl) do
+		origin[a] = b
+	end
+	return origin
 end
 
 function table.toDebugString(tab)
@@ -3744,8 +3824,8 @@ function RegisterCommands()
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
-		local res = MEM[xuid].newLand.range
-		local cubeInfo = Cube.GetInformation(Cube.Create(res.posA,res.posB))
+		local res = MEM[xuid].newLand
+		local cubeInfo = Cube.GetInformation(res.range)
 		local price = CalculatePrice(cubeInfo,res.dimension)
 		local discount_info = ''
 		local dimension_info = ''
@@ -3767,8 +3847,7 @@ function RegisterCommands()
 			'<d>',cubeInfo.volume,
 			'<e>',price,
 			'<f>',cfg.economic.currency_name,
-			'<g>',Economy.Player.get(player)
-		))
+			'<g>',Economy.Player.get(player)))
 		Form:addButton(_Tr('gui.buyland.button.confirm'),'textures/ui/realms_green_check')
 		Form:addButton(_Tr('gui.buyland.button.close'),'textures/ui/recipe_book_icon')
 		Form:addButton(_Tr('gui.buyland.button.cancel'),'textures/ui/realms_red_x')
@@ -3900,15 +3979,13 @@ function RegisterCommands()
 		local landlst = {}
 		local tplands = {}
 		for i,landId in pairs(Land.RelationShip.Owner.getLand(xuid)) do
-			local name = Land.Options.Nickname.get(landId) or landId
 			local xpos = Land.Options.Teleport.get(landId)
-			tplands[#tplands+1] = Dimension.Get(xpos.dimid).name..' ('..Pos.ToString(xpos)..') '..name
+			tplands[#tplands+1] = Dimension.Get(xpos.dimid).name..' ('..Pos.ToString(xpos)..') '..Land.Options.Nickname.get(landId,3)
 			landlst[#landlst+1] = landId
 		end
 		for i,landId in pairs(Land.RelationShip.Trusted.getLand(xuid)) do
-			local name = Land.Options.Nickname.get(landId) or landId
 			local xpos = Land.Options.Teleport.get(landId)
-			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..Dimension.Get(xpos.dimid).name..'('..Pos.ToString(xpos)..') '..name
+			tplands[#tplands+1]='§l'.._Tr('gui.landtp.trusted')..'§r '..Dimension.Get(xpos.dimid).name..'('..Pos.ToString(xpos)..') '..Land.Options.Nickname.get(landId,3)
 			landlst[#landlst+1] = landId
 		end
 		local Form = mc.newSimpleForm()
@@ -3939,7 +4016,6 @@ function RegisterCommands()
 			SendText(player,_Tr('title.landtp.fail.notowner'))
 			return false
 		end
-		local landname = Land.Options.Nickname.get(landId) or landId
 		DataStorage.Land.Raw[landId].settings.teleport = {
 			pos.x,
 			pos.y + 1,
@@ -3948,7 +4024,7 @@ function RegisterCommands()
 		DataStorage.Save({0,1,0})
 		player:sendModalForm(
 			_Tr('gui.general.complete'),
-			_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',landname),
+			_Tr('gui.landtp.point','<a>',Pos.ToString({x=pos.x,y=pos.y+1,z=pos.z}),'<b>',Land.Options.Nickname.get(landId,2)),
 			_Tr('gui.general.iknow'),
 			_Tr('gui.general.close'),
 			Callback.Form.NULL
@@ -4515,7 +4591,7 @@ mc.listen('onWitherBossDestroy',function(entity,posA,posB)
 	if not Map.Listener.check('onWitherBossDestroy') then
 		return
 	end
-	
+
 	for n,landId in pairs(Land.Query.Area(Cube.Create(posA,posB,entity.pos.dimid))) do
 		if not DataStorage.Land.Raw[landId].permissions.allow_entity_destroy then
 			return false
@@ -4609,18 +4685,6 @@ mc.listen('onStartDestroyBlock',function(player,block)
 end)
 mc.listen('onServerStarted',function()
 
-	-- Make timer
-	if cfg.features.landsign.enable then
-		setInterval(Callback.Timer.LandSign,cfg.features.landsign.frequency*1000)
-	end
-	if cfg.features.buttomsign.enable then
-		setInterval(Callback.Timer.ButtomSign,cfg.features.buttomsign.frequency*1000)
-	end
-	setInterval(Callback.Timer.MEM,1000)
-	if DEV_MODE then
-		setInterval(DebugHelper.Interval,1000*DebugHelper.Delay)
-	end
-
 	-- load owners data
 	try
 	{
@@ -4630,6 +4694,7 @@ mc.listen('onServerStarted',function()
 			assert(DataStorage.Config.Load(),'Error loading configuration!')
 			assert(DataStorage.RelationShip.Load(),'Error loading relationship table!')
 			assert(DataStorage.Land.Load(),'Error loading land data!')
+			assert(Economy.Protocol.set(cfg.economic.protocol),'Error loading money protocol!')
 			assert(Map.Init(),'Error loading runtime-tables!')
 			assert(RegisterCommands(),'Error register commands!')
 		end,
@@ -4642,6 +4707,19 @@ mc.listen('onServerStarted',function()
 			end
 		}
 	}
+
+	-- Make timer
+	if cfg.features.landsign.enable then
+		setInterval(Callback.Timer.LandSign,cfg.features.landsign.frequency*1000)
+	end
+	if cfg.features.buttomsign.enable then
+		setInterval(Callback.Timer.ButtomSign,cfg.features.buttomsign.frequency*1000)
+	end
+	setInterval(DataStorage.INTERVAL,1000*90)
+	setInterval(Callback.Timer.MEM,1000)
+	if DEV_MODE then
+		setInterval(DebugHelper.Interval,1000*DebugHelper.Delay)
+	end
 
 	-- Check Update
 	if cfg.plugin.network and not DEV_MODE then

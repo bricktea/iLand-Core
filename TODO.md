@@ -10,6 +10,7 @@
  - [ ] language autofix bugs.
  - [ ] 默认关闭onDrop
  - [ ] better control using new events.
+ - [x] 修复单坐标缓存系统中的一处Bug
  - [x] 修复冲突检查
  - [x] 修复功能被关闭后lmgr无反应
  - [ ] oplmgr delete land problem?
