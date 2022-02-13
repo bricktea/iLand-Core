@@ -28,7 +28,6 @@ Server = {
 JSON = require('dkjson')
 
 MEM = {}
-MainCmd = 'land'
 DATA_PATH = 'plugins/iland/'
 
 -- [Tpl] config.json
@@ -3612,7 +3611,7 @@ function RegisterCommands()
 
 	-- ## [Client] Command Registry
 
-	mc.regPlayerCmd(MainCmd,_Tr('command.land'),function(player,args)
+	mc.regPlayerCmd('land',_Tr('command.land'),function(player,args)
 		if #args~=0 then
 			SendText(player,_Tr('command.error','<a>',args[1]),0)
 			return
@@ -3637,17 +3636,17 @@ function RegisterCommands()
 				function(player,id)
 					if not id then return end
 					if id==0 then
-						player:runcmd(MainCmd..' new')
+						player:runcmd('land new')
 					elseif id==1 then
-						player:runcmd(MainCmd..' gui')
+						player:runcmd('land gui')
 					elseif id==2 then
-						player:runcmd(MainCmd..' tp')
+						player:runcmd('land tp')
 					end
 				end
 			)
 		end
 	end)
-	mc.regPlayerCmd(MainCmd..' new',_Tr('command.land_new'),function (player,args)
+	mc.regPlayerCmd('land new',_Tr('command.land_new'),function (player,args)
 		local xuid = player.xuid
 
 		if MEM[xuid].reselectLand then
@@ -3673,7 +3672,7 @@ function RegisterCommands()
 		end)
 
 	end)
-	mc.regPlayerCmd(MainCmd..' giveup',_Tr('command.land_giveup'),function (player,args)
+	mc.regPlayerCmd('land giveup',_Tr('command.land_giveup'),function (player,args)
 		local xuid = player.xuid
 		if MEM[xuid].newLand then
 			MEM[xuid].newLand = nil
@@ -3685,10 +3684,10 @@ function RegisterCommands()
 			SendText(player,_Tr('title.reselectland.giveup.succeed'))
 		end
 	end)
-	mc.regPlayerCmd(MainCmd..' gui',_Tr('command.land_gui'),function (player,args)
+	mc.regPlayerCmd('land gui',_Tr('command.land_gui'),function (player,args)
 		OpenGUI.LMgr(player)
 	end)
-	mc.regPlayerCmd(MainCmd..' set',_Tr('command.land_set'),function (player,args)
+	mc.regPlayerCmd('land set',_Tr('command.land_set'),function (player,args)
 		local xuid = player.xuid
 		if MEM[xuid].rsr then
 			RangeSelector.Push(player,player.blockPos)
@@ -3696,7 +3695,7 @@ function RegisterCommands()
 			SendText(player,_Tr('title.rangeselector.fail.outmode'))
 		end
 	end)
-	mc.regPlayerCmd(MainCmd..' buy',_Tr('command.land_buy'),function (player,args)
+	mc.regPlayerCmd('land buy',_Tr('command.land_buy'),function (player,args)
 		local xuid = player.xuid
 		if not MEM[xuid].newLand or not MEM[xuid].newLand.range then
 			SendText(player,_Tr('talk.invalidaction'))
@@ -3773,7 +3772,7 @@ function RegisterCommands()
 				end
 			end)
 	end)
-	mc.regPlayerCmd(MainCmd..' ok',_Tr('command.land_ok'),function (player,args)
+	mc.regPlayerCmd('land ok',_Tr('command.land_ok'),function (player,args)
 		local xuid = player.xuid
 		local mem = MEM[xuid].reselectLand
 		if not mem or not mem.range then
@@ -3835,7 +3834,7 @@ function RegisterCommands()
 			end
 		)
 	end)
-	mc.regPlayerCmd(MainCmd..' mgr',_Tr('command.land_mgr'),function (player,args)
+	mc.regPlayerCmd('land mgr',_Tr('command.land_mgr'),function (player,args)
 		local xuid = player.xuid
 		if not Land.RelationShip.Operator.check(xuid) then
 			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
@@ -3843,7 +3842,7 @@ function RegisterCommands()
 		end
 		OpenGUI.OPLMgr(player)
 	end)
-	mc.regPlayerCmd(MainCmd..' mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
+	mc.regPlayerCmd('land mgr selectool',_Tr('command.land_mgr_selectool'),function (player,args)
 		local xuid = player.xuid
 		if not Array.Fetch(cfg.land.operator,xuid) then
 			SendText(player,_Tr('command.land_mgr.noperm','<a>',player.realName),0)
@@ -3852,7 +3851,7 @@ function RegisterCommands()
 		SendText(player,_Tr('title.oplandmgr.setselectool'))
 		MEM[xuid].selectool=0
 	end)
-	mc.regPlayerCmd(MainCmd..' tp',_Tr('command.land_tp'),function (player,args)
+	mc.regPlayerCmd('land tp',_Tr('command.land_tp'),function (player,args)
 		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
 		local xuid = player.xuid
 		local landlst = {}
@@ -3883,7 +3882,7 @@ function RegisterCommands()
 		end
 		)
 	end)
-	mc.regPlayerCmd(MainCmd..' tp set',_Tr('command.land_tp_set'),function (player,args)
+	mc.regPlayerCmd('land tp set',_Tr('command.land_tp_set'),function (player,args)
 		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
 		local xuid = player.xuid
 		local pos = player.blockPos
@@ -3912,7 +3911,7 @@ function RegisterCommands()
 			Callback.Form.NULL
 		)
 	end)
-	mc.regPlayerCmd(MainCmd..' tp rm',_Tr('command.land_tp_rm'),function (player,args)
+	mc.regPlayerCmd('land tp rm',_Tr('command.land_tp_rm'),function (player,args)
 		if not cfg.features.landtp then SendText(player,_Tr('talk.feature.disabled'));return end
 		local xuid = player.xuid
 		local pos = player.blockPos
@@ -3937,7 +3936,7 @@ function RegisterCommands()
 
 	-- [Server] Command Registry
 
-	mc.regConsoleCmd(MainCmd,_Tr('command.console.land'),function(args)
+	mc.regConsoleCmd('land',_Tr('command.console.land'),function(args)
 		if #args~=0 then
 			ERROR('Unknown parameter: "'..args[1]..'", plugin wiki: https://myland.amd.rocks/')
 			return
@@ -3946,7 +3945,7 @@ function RegisterCommands()
 		INFO('Github: https://github.com/LiteLDev-LXL/iLand-Core')
 		INFO('Memory Used: '..DebugHelper.GetMemoryCount()..'MB')
 	end)
-	mc.regConsoleCmd(MainCmd..' op',_Tr('command.console.land_op'),function(args)
+	mc.regConsoleCmd('land op',_Tr('command.console.land_op'),function(args)
 		local name = table.concat(args,' ')
 		local xuid = data.name2xuid(name)
 		if xuid == "" then
@@ -3962,7 +3961,7 @@ function RegisterCommands()
 		DataStorage.Save({1,0,0})
 		INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
 	end)
-	mc.regConsoleCmd(MainCmd..' deop',_Tr('command.console.land_deop'),function(args)
+	mc.regConsoleCmd('land deop',_Tr('command.console.land_deop'),function(args)
 		local name = table.concat(args,' ')
 		local xuid = data.name2xuid(name)
 		if xuid == "" then
@@ -3978,18 +3977,18 @@ function RegisterCommands()
 		DataStorage.Save({1,0,0})
 		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
 	end)
-	mc.regConsoleCmd(MainCmd..' update',_Tr('command.console.land_update'),function(args)
+	mc.regConsoleCmd('land update',_Tr('command.console.land_update'),function(args)
 		if cfg.plugin.network then
 			Plugin.Upgrade(Server.memData)
 		else
 			ERROR(_Tr('console.update.nodata'))
 		end
 	end)
-	mc.regConsoleCmd(MainCmd..' language',_Tr('command.console.land_language'),function(args)
+	mc.regConsoleCmd('land language',_Tr('command.console.land_language'),function(args)
 		INFO('I18N',_Tr('console.languages.sign','<a>',cfg.plugin.language,'<b>',_Tr('VERSION')))
 		INFO('I18N',I18N.LangPack.GetSign())
 	end)
-	mc.regConsoleCmd(MainCmd..' language list',_Tr('command.console.land_language_list'),function(args)
+	mc.regConsoleCmd('land language list',_Tr('command.console.land_language_list'),function(args)
 		local list = I18N.LangPack.GetInstalled()
 		for i,lang in pairs(list) do
 			if lang==cfg.plugin.language then
@@ -4000,7 +3999,7 @@ function RegisterCommands()
 		end
 		INFO('I18N',_Tr('console.languages.list.count','<a>',#list))
 	end)
-	mc.regConsoleCmd(MainCmd..' language list-online',_Tr('command.console.land_language_list-online'),function(args)
+	mc.regConsoleCmd('land language list-online',_Tr('command.console.land_language_list-online'),function(args)
 		INFO('Network',_Tr('console.languages.list-online.wait'))
 		local rawdata = I18N.LangPack.GetRepo()
 		if rawdata == false then
@@ -4015,7 +4014,7 @@ function RegisterCommands()
 			INFO('I18N',lang)
 		end
 	end)
-	mc.regConsoleCmd(MainCmd..' language install',_Tr('command.console.land_language_install'),function(args)
+	mc.regConsoleCmd('land language install',_Tr('command.console.land_language_install'),function(args)
 		if not args[1] then
 			ERROR(_Tr('console.languages.install.misspara'))
 			return
@@ -4036,7 +4035,7 @@ function RegisterCommands()
 			INFO(_Tr('console.languages.install.succeed','<a>',args[1]))
 		end
 	end)
-	mc.regConsoleCmd(MainCmd..' language update',_Tr('command.console.land_language_update'),function(args)
+	mc.regConsoleCmd('land language update',_Tr('command.console.land_language_update'),function(args)
 		local list = I18N.LangPack.GetInstalled()
 		if not args[1] then
 			INFO(_Tr('console.languages.update.all'))
@@ -4052,10 +4051,10 @@ function RegisterCommands()
 			I18N.Update(args[1])
 		end
 	end)
-	mc.regConsoleCmd(MainCmd..' reload',_Tr('command.console.land_reload'),function(args)
+	mc.regConsoleCmd('land reload',_Tr('command.console.land_reload'),function(args)
 		Plugin.Reload()
 	end)
-	mc.regConsoleCmd(MainCmd..' unload',_Tr('command.console.land_unload'),function(args)
+	mc.regConsoleCmd('land unload',_Tr('command.console.land_unload'),function(args)
 		Plugin.Unload()
 	end)
 
