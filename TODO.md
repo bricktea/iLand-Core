@@ -4,7 +4,7 @@
  - [x] 修复3D重置为2D中的一个bug
  - [x] particle box offset.
  - [x] deep y selectland problems.
- - [ ] 跨维度安全传送问题
+ - [x] 跨维度安全传送问题
  - [ ] language autofix bugs.
  - [ ] 默认关闭onDrop
  - [ ] event system

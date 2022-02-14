@@ -2875,9 +2875,6 @@ SafeTeleport = {
 		MEM[xuid].safetp = nil
 	end,
 	Do = function(player,tpos)
-		if type(player)=='string' then
-			player = mc.getPlayer(player)
-		end
 		local xuid = player.xuid
 		local dimid = tpos.dimid
 		if MEM[xuid].safetp then -- limited: one request.
@@ -2912,7 +2909,7 @@ SafeTeleport = {
 				player:setNbt(nbt)
 				return
 			end
-			if plpos.y == def_height and not chunk_loaded then
+			if plpos.y >= def_height and not chunk_loaded then
 				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.chunkloading'),{0,15,15})
 			else
 				chunk_loaded = true
