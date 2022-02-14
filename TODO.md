@@ -5,7 +5,7 @@
  - [x] particle box offset.
  - [x] deep y selectland problems.
  - [x] 跨维度安全传送问题
- - [ ] language autofix bugs.
+ - [ ] fix autoupdate crash.
  - [ ] 默认关闭onDrop
  - [ ] event system
  - [ ] better control using new events.

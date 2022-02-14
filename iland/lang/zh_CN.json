@@ -377,7 +377,7 @@
     "console.autoupdate.errorbydown": "下载文件 <a> 失败，错误代码：<b>。请检查您的网络或反馈问题，更新已中断。",
     "console.autoupdate.recoverbackup": "已经恢复备份，正在使用旧版本iLand。",
     "console.autoupdate.errorbyverify": "文件 <a> 校验失败，请检查您的网络或反馈问题，更新已中断。",
-    "console.autoupdate.success": "自动更新已完成，重启服务器即可生效。",
+    "console.autoupdate.success": "自动更新已完成，请重启服务器以使更新生效。",
 
     "console.announcement.founded": "收到在线公告，内容如下：",
 

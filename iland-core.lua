@@ -3641,7 +3641,6 @@ function Plugin.Upgrade(rawInfo)
 	end
 
 	INFO('AutoUpdate',_Tr('console.autoupdate.success'))
-	Plugin.Reload()
 
 end
 
