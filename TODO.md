@@ -1,14 +1,11 @@
 > Version **2.72**
- - [x] `data.json`数据结构优化【!NeedAutoUpdate】
  - [x] 重建ILAPI
  - [x] 修复3D重置为2D中的一个bug
  - [x] particle box offset.
  - [x] deep y selectland problems.
  - [x] 跨维度安全传送问题
  - [x] fix autoupdate crash.
- - [ ] 默认关闭onDrop【!NeedAutoUpdate】
  - [x] event system
- - [x] better control using new events. remove allow_shoot【!NeedAutoUpdate】
  - [x] 汉化加载中的提示信息
  - [x] 修复单坐标缓存系统中的一处Bug
  - [x] 修复冲突检查
@@ -18,14 +15,18 @@
  - [x] 移除ILAPI.GetChunk
  - [x] 移除ILAPI.GetDistance
  - [x] GetRange返回AABB
- - [x] landId改12位【!NeedAutoUpdate】
  - [x] ILAPI将会检查参数列表
  - [ ] 检查适配1.18.11，LL2.1
  - [ ] 测试safetp中退出
  - [ ] oplmgr delete land problem?
  - [ ] lmgr transfer land problem?
  - [ ] OPLMgr>>Land sth, problem.
- - [x] 现在每个维度的领地高度均normal，且圈地高度检查【!NeedAutoUpdate】
+ - [ ] 完成EventSystem，加入传入参数检查。
+ - [x] 【!NeedAutoUpdate】`data.json`数据结构优化
+ - [ ] 【!NeedAutoUpdate】默认关闭onDrop
+ - [x] 【!NeedAutoUpdate】better control using new events. remove allow_shoot
+ - [x] 【!NeedAutoUpdate】landId改12位
+ - [x] 【!NeedAutoUpdate】现在每个维度的领地高度均normal，且圈地高度检查
 
 > **2.73**
  - [ ] SubLand
