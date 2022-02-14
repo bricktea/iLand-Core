@@ -17,13 +17,13 @@ onPlaceBlock | 关闭后不再干涉玩家放置方块 | ⛔
 onUseItemOn | 关闭后对大部分功能性方块控制失效 | ⛔
 onAttackEntity | 关闭后不再干涉玩家攻击生物行为 | ⛔
 onAttackBlock | 关闭后不再干涉玩家攻击方块行为 | ⛔
+onMobHurt | 关闭后不再干涉发射弹射物伤害实体 | ⛔
 onExplode | 关闭后不再干涉游戏内常规爆炸 | ℹ️
 onTakeItem | 关闭后不再干涉捡起物品行为 | ⛔
 onDropItem | 关闭后不再干涉丢弃物品行为 | ⚠️
 onBlockInteracted | 关闭后大部分功能性方块控制失效 | ⛔
 onUseFrameBlock | 关闭后对展示框控制失效 | ⛔
 onSpawnProjectile | 关闭后对所有弹射物发射控制失效 | ⛔
-onFireworkShootWithCrossbow | 关闭后不再干涉用弩发射烟花行为 | ⛔
 onStepOnPressurePlate | 关闭后不再干涉踩压力板行为 | ⛔
 onRide | 关闭后不再干涉骑乘行为 | ⛔
 onWitherBossDestroy | 关闭后不再干涉凋零破坏方块 | ℹ️

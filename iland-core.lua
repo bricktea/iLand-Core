@@ -968,7 +968,6 @@ DataStorage = {
 					allow_throw_potion = false,
 					allow_ride_entity = false,
 					allow_ride_trans = false,
-					allow_shoot = false,
 					useitem = false
 				}
 			},
@@ -2050,7 +2049,7 @@ OpenGUI = {
 				Form:addSwitch('onBlockInteracted',Map.Listener.check('onBlockInteracted'))
 				Form:addSwitch('onUseFrameBlock',Map.Listener.check('onUseFrameBlock'))
 				Form:addSwitch('onSpawnProjectile',Map.Listener.check('onSpawnProjectile'))
-				Form:addSwitch('onFireworkShootWithCrossbow',Map.Listener.check('onFireworkShootWithCrossbow'))
+				Form:addSwitch('onMobHurt',Map.Listener.check('onMobHurt'))
 				Form:addSwitch('onStepOnPressurePlate',Map.Listener.check('onStepOnPressurePlate'))
 				Form:addSwitch('onRide',Map.Listener.check('onRide'))
 				Form:addSwitch('onWitherBossDestroy',Map.Listener.check('onWitherBossDestroy'))
@@ -2068,29 +2067,34 @@ OpenGUI = {
 
 						cfg.features.disabled_listener = {}
 						local dbl = cfg.features.disabled_listener
-						if not(res[1]) then dbl[#dbl+1] = "onDestroyBlock" end
-						if not(res[2]) then dbl[#dbl+1] = "onPlaceBlock" end
-						if not(res[3]) then dbl[#dbl+1] = "onUseItemOn" end
-						if not(res[4]) then dbl[#dbl+1] = "onAttackEntity" end
-						if not(res[5]) then dbl[#dbl+1] = "onAttackBlock" end
-						if not(res[6]) then dbl[#dbl+1] = "onExplode" end
-						if not(res[7]) then dbl[#dbl+1] = "onBedExplode" end
-						if not(res[8]) then dbl[#dbl+1] = "onRespawnAnchorExplode" end
-						if not(res[9]) then dbl[#dbl+1] = "onTakeItem" end
-						if not(res[10]) then dbl[#dbl+1] = "onDropItem" end
-						if not(res[11]) then dbl[#dbl+1] = "onBlockInteracted" end
-						if not(res[12]) then dbl[#dbl+1] = "onUseFrameBlock" end
-						if not(res[13]) then dbl[#dbl+1] = "onSpawnProjectile" end
-						if not(res[14]) then dbl[#dbl+1] = "onFireworkShootWithCrossbow" end
-						if not(res[15]) then dbl[#dbl+1] = "onStepOnPressurePlate" end
-						if not(res[16]) then dbl[#dbl+1] = "onRide" end
-						if not(res[17]) then dbl[#dbl+1] = "onWitherBossDestroy" end
-						if not(res[18]) then dbl[#dbl+1] = "onFarmLandDecay" end
-						if not(res[19]) then dbl[#dbl+1] = "onPistonTryPush" end
-						if not(res[20]) then dbl[#dbl+1] = "onFireSpread" end
-						if not(res[21]) then dbl[#dbl+1] = "onChangeArmorStand" end
-						if not(res[22]) then dbl[#dbl+1] = "onEat" end
-						if not(res[23]) then dbl[#dbl+1] = "onRedStoneUpdate" end
+						local count = 0
+						local function get()
+							count = count + 1
+							return res[count]
+						end
+						if not get() then dbl[#dbl+1] = "onDestroyBlock" end
+						if not get() then dbl[#dbl+1] = "onPlaceBlock" end
+						if not get() then dbl[#dbl+1] = "onUseItemOn" end
+						if not get() then dbl[#dbl+1] = "onAttackEntity" end
+						if not get() then dbl[#dbl+1] = "onAttackBlock" end
+						if not get() then dbl[#dbl+1] = "onExplode" end
+						if not get() then dbl[#dbl+1] = "onBedExplode" end
+						if not get() then dbl[#dbl+1] = "onRespawnAnchorExplode" end
+						if not get() then dbl[#dbl+1] = "onTakeItem" end
+						if not get() then dbl[#dbl+1] = "onDropItem" end
+						if not get() then dbl[#dbl+1] = "onBlockInteracted" end
+						if not get() then dbl[#dbl+1] = "onUseFrameBlock" end
+						if not get() then dbl[#dbl+1] = "onSpawnProjectile" end
+						if not get() then dbl[#dbl+1] = "onMobHurt" end
+						if not get() then dbl[#dbl+1] = "onStepOnPressurePlate" end
+						if not get() then dbl[#dbl+1] = "onRide" end
+						if not get() then dbl[#dbl+1] = "onWitherBossDestroy" end
+						if not get() then dbl[#dbl+1] = "onFarmLandDecay" end
+						if not get() then dbl[#dbl+1] = "onPistonTryPush" end
+						if not get() then dbl[#dbl+1] = "onFireSpread" end
+						if not get() then dbl[#dbl+1] = "onChangeArmorStand" end
+						if not get() then dbl[#dbl+1] = "onEat" end
+						if not get() then dbl[#dbl+1] = "onRedStoneUpdate" end
 
 						Map.Listener.build()
 						DataStorage.Save({1,0,0})
@@ -2254,63 +2258,68 @@ OpenGUI = {
 					if not res then return end
 
 					local perm = DataStorage.Land.Raw[landId].permissions
+					local count = 0
+					local function get()
+						count = count + 1
+						return res[count]
+					end
 
-					perm.allow_place = res[1]
-					perm.allow_destroy = res[2]
-					perm.allow_entity_destroy = res[3]
-					perm.allow_dropitem = res[4]
-					perm.allow_pickupitem = res[5]
-					perm.allow_ride_entity = res[6]
-					perm.allow_ride_trans = res[7]
-					perm.allow_shoot = res[8]
-					perm.allow_attack_player = res[9]
-					perm.allow_attack_animal = res[10]
-					perm.allow_attack_mobs = res[11]
+					perm.allow_place = get()
+					perm.allow_destroy = get()
+					perm.allow_entity_destroy = get()
+					perm.allow_dropitem = get()
+					perm.allow_pickupitem = get()
+					perm.allow_ride_entity = get()
+					perm.allow_ride_trans = get()
+					perm.allow_shoot = get()
+					perm.allow_attack_player = get()
+					perm.allow_attack_animal = get()
+					perm.allow_attack_mobs = get()
 
-					perm.use_crafting_table = res[12]
-					perm.use_furnace = res[13]
-					perm.use_blast_furnace = res[14]
-					perm.use_smoker = res[15]
-					perm.use_brewing_stand = res[16]
-					perm.use_cauldron = res[17]
-					perm.use_anvil = res[18]
-					perm.use_grindstone = res[19]
-					perm.use_enchanting_table = res[20]
-					perm.use_cartography_table = res[21]
-					perm.use_smithing_table = res[22]
-					perm.use_loom = res[23]
-					perm.use_stonecutter = res[24]
-					perm.use_lectern = res[25]
-					perm.use_beacon = res[26]
+					perm.use_crafting_table = get()
+					perm.use_furnace = get()
+					perm.use_blast_furnace = get()
+					perm.use_smoker = get()
+					perm.use_brewing_stand = get()
+					perm.use_cauldron = get()
+					perm.use_anvil = get()
+					perm.use_grindstone = get()
+					perm.use_enchanting_table = get()
+					perm.use_cartography_table = get()
+					perm.use_smithing_table = get()
+					perm.use_loom = get()
+					perm.use_stonecutter = get()
+					perm.use_lectern = get()
+					perm.use_beacon = get()
 
-					perm.use_barrel = res[27]
-					perm.use_hopper = res[28]
-					perm.use_dropper = res[29]
-					perm.use_dispenser = res[30]
-					perm.use_shulker_box = res[31]
-					perm.allow_open_chest = res[32]
+					perm.use_barrel = get()
+					perm.use_hopper = get()
+					perm.use_dropper = get()
+					perm.use_dispenser = get()
+					perm.use_shulker_box = get()
+					perm.allow_open_chest = get()
 
-					perm.use_campfire = res[33]
-					perm.use_firegen = res[34]
-					perm.use_door = res[35]
-					perm.use_trapdoor = res[36]
-					perm.use_fence_gate = res[37]
-					perm.use_bell = res[38]
-					perm.use_jukebox = res[39]
-					perm.use_noteblock = res[40]
-					perm.use_composter = res[41]
-					perm.use_bed = res[42]
-					perm.use_item_frame = res[43]
-					perm.use_daylight_detector = res[44]
-					perm.use_lever = res[45]
-					perm.use_button = res[46]
-					perm.use_pressure_plate = res[47]
-					perm.use_armor_stand = res[48]
-					perm.eat = res[49]
-					perm.allow_throw_potion = res[50]
-					perm.use_respawn_anchor = res[51]
-					perm.use_fishing_hook = res[52]
-					perm.use_bucket = res[53]
+					perm.use_campfire = get()
+					perm.use_firegen = get()
+					perm.use_door = get()
+					perm.use_trapdoor = get()
+					perm.use_fence_gate = get()
+					perm.use_bell = get()
+					perm.use_jukebox = get()
+					perm.use_noteblock = get()
+					perm.use_composter = get()
+					perm.use_bed = get()
+					perm.use_item_frame = get()
+					perm.use_daylight_detector = get()
+					perm.use_lever = get()
+					perm.use_button = get()
+					perm.use_pressure_plate = get()
+					perm.use_armor_stand = get()
+					perm.eat = get()
+					perm.allow_throw_potion = get()
+					perm.use_respawn_anchor = get()
+					perm.use_fishing_hook = get()
+					perm.use_bucket = get()
 
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
@@ -4498,7 +4507,8 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 	if entype == 'minecraft:splash_potion' and perm.allow_throw_potion then return end -- 喷溅药水
 	if entype == 'minecraft:lingering_potion' and perm.allow_throw_potion then return end -- 滞留药水
 	if entype == 'minecraft:thrown_trident' and perm.allow_shoot then return end -- 三叉戟
-	if entype == 'minecraft:arrow' and perm.allow_shoot then return end -- 弓&弩（箭）
+	if entype == 'minecraft:arrow' and perm.allow_shoot then return end -- 箭
+	if entype == 'minecraft:crossbow' and perm.allow_shoot then return end -- 弩射烟花
 	if entype == 'minecraft:snowball' and perm.allow_dropitem then return end -- 雪球
 	if entype == 'minecraft:ender_pearl' and perm.allow_dropitem then return end -- 末影珍珠
 	if entype == 'minecraft:egg' and perm.allow_dropitem then return end -- 鸡蛋
@@ -4510,20 +4520,22 @@ mc.listen('onSpawnProjectile',function(splasher,entype)
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
 end)
-mc.listen('onFireworkShootWithCrossbow',function(player)
+mc.listen('onMobHurt',function(mob,source,damage)
 
-	if not Map.Listener.check('onFireworkShootWithCrossbow') then
+	if not Map.Listener.check('onMobHurt') or not source or not source:isPlayer() then
 		return
 	end
 
-	local landId = Land.Query.Pos(player.blockPos)
+	local player = source:toPlayer()
+	local landId = Land.Query.Pos(mob.blockPos)
 	if not landId then return end
 
-	local xuid = player.xuid
-	if DataStorage.Land.Raw[landId].permissions.allow_shoot then return end
-	if Land.Util.CheckPerm(landId,xuid) then
-		return
-	end
+	local entityType = EntityGetType(source.type)
+	local perm = DataStorage.Land.Raw[landId].permissions
+	if perm.allow_attack_player and entityType == 0 then return end
+	if perm.allow_attack_animal and entityType == 1 then return end
+	if perm.allow_attack_mobs and entityType == 2 then return end
+	if Land.Util.CheckPerm(landId,player.xuid) then return end
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false

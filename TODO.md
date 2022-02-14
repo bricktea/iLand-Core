@@ -5,10 +5,10 @@
  - [x] particle box offset.
  - [x] deep y selectland problems.
  - [x] 跨维度安全传送问题
- - [ ] fix autoupdate crash.
+ - [x] fix autoupdate crash.
  - [ ] 默认关闭onDrop
  - [ ] event system
- - [ ] better control using new events.
+ - [x] better control using new events. remove allow_shoot
  - [x] 汉化加载中的报错
  - [x] 修复单坐标缓存系统中的一处Bug
  - [x] 修复冲突检查
