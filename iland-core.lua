@@ -1156,6 +1156,9 @@ Land = {
 			--- Land storage.
 			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
 			local landId = Land.IDManager.Create()
+			if not EventSystem.Call(EventSystem.EV.onCreate,'Before',{landId,xuid,AABB}) then
+				return -1
+			end
 			local tpl = DataStorage.Land.Template.Create()
 			tpl.settings.teleport = Pos.ToArray(posA)
 			tpl.range.start_position = Pos.ToArray(posA)
@@ -1541,6 +1544,22 @@ Land = {
 			}
 		},
 		Exported = {
+			['AddBeforeEventListener'] = function(event,funcname)
+				local ev = EventSystem.EV[event]
+				local func = ll.import(funcname)
+				if not ev or not func then
+					return -1
+				end
+				return EventSystem.AddListener(ev,'Before',func)
+			end,
+			['AddAfterEventListener'] = function(event,funcname)
+				local ev = EventSystem.EV[event]
+				local func = ll.import(funcname)
+				if not ev or not func then
+					return -1
+				end
+				return EventSystem.AddListener(ev,'After',func)
+			end,
 			['CreateLand'] = function(xuid,posA,posB,dimid)
 				assert(Land.API.Helper.CheckNilArgument(xuid,posA,posB,dimid),Land.API.Helper.ErrMsg[1])
 				Land.API.Helper.CheckNilArgument(xuid,posA,posB,dimid)
@@ -3187,6 +3206,63 @@ Array = {
 		return rtn
 	end
 }
+
+EventSystem = {
+
+	EV = {
+		onCreate = 1,
+		onDelete = 2,
+		onEnter = 3,
+		onLeave = 4,
+		onChangeRange = 5,
+		onChangeOwner = 6,
+		onChangeDescribe = 7,
+		onChangeName = 8,
+		onChangeTrust = 9,
+		onChangeSetting = 10,
+		onChangePermission = 11
+	},
+	_ev = {},
+	_cb = {},
+	Init = function()
+		EventSystem._cb = {
+			Before = {},
+			After = {}
+		}
+		for ev,id in pairs(EventSystem.EV) do
+			EventSystem._cb.Before[id] = {}
+			EventSystem._cb.After[id] = {}
+			EventSystem._ev[id] = ev
+		end
+		return true
+	end,
+	-- [enum] event, [string] Before|After, [table] extradata
+	Call = function(event,type,extradata)
+		local rtn = true
+		for n,func in pairs(EventSystem._cb[type][event]) do
+			if not func then
+				goto JUMPOUT_EV_CALL;
+			end
+			local m = func(extradata)
+			if m ~= nil and (m == 0 or not m) then
+				rtn = false
+			end
+			:: JUMPOUT_EV_CALL ::
+		end
+		return rtn
+	end,
+	-- [enum] event, [string] Before|After, [function] callback
+	AddListener = function(event,type,callback)
+		local pos = -1
+		pos = #EventSystem._cb[type][event] + 1
+		EventSystem._cb[type][event][pos] = callback
+		return pos
+	end,
+	getName = function(evId)
+		return EventSystem._ev[evId]
+	end
+}
+EventSystem.Init()
 
 Callback = {
 	Timer = {

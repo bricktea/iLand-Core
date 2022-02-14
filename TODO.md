@@ -1,15 +1,15 @@
 > Version **2.72**
- - [x] `data.json`数据结构优化
+ - [x] `data.json`数据结构优化【!NeedAutoUpdate】
  - [x] 重建ILAPI
  - [x] 修复3D重置为2D中的一个bug
  - [x] particle box offset.
  - [x] deep y selectland problems.
  - [x] 跨维度安全传送问题
  - [x] fix autoupdate crash.
- - [ ] 默认关闭onDrop
- - [ ] event system
- - [x] better control using new events. remove allow_shoot
- - [x] 汉化加载中的报错
+ - [ ] 默认关闭onDrop【!NeedAutoUpdate】
+ - [x] event system
+ - [x] better control using new events. remove allow_shoot【!NeedAutoUpdate】
+ - [x] 汉化加载中的提示信息
  - [x] 修复单坐标缓存系统中的一处Bug
  - [x] 修复冲突检查
  - [x] 领地数据自动纠错
