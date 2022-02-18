@@ -463,7 +463,7 @@ Map = {
 				end
 			end,
 			refresh = function(landId) -- remove single land's cache
-				if landId==-1 then
+				if not landId then
 					return
 				end
 				local map = Map.CachedQuery.SinglePos
@@ -923,6 +923,7 @@ DataStorage = {
 					allow_open_chest = false,
 					allow_pickupitem = false,
 					allow_dropitem = true,
+					allow_shoot = false,
 					use_anvil = false,
 					use_barrel = false,
 					use_beacon = false,
@@ -1784,7 +1785,7 @@ ConfigUIEditor = {
 					Form:addSwitch(cmp.name,table.getKey(cfg,cmp.path))
 				elseif cmp.ui=='dropdown' then
 					local pos = Array.Fetch(cmp.data,table.getKey(cfg,cmp.path))
-					if pos==-1 then
+					if not pos then
 						pos = 0
 					else
 						pos = pos - 1
@@ -2912,7 +2913,6 @@ SafeTeleport = {
 		MEM[xuid].safetp = nil
 	end,
 	Do = function(player,pos)
-		pos = {x=-44444,y=177,z=22222,dimid=0}
 		local xuid = player.xuid
 		local dimid = pos.dimid
 		if MEM[xuid].safetp then
@@ -3985,34 +3985,36 @@ function RegisterCommands()
 			SendText(player,_Tr('talk.invalidaction'))
 			return
 		end
-		local range = mem.range
-		local cubeInfo = Cube.GetInformation(range)
-		local dimension = mem.dimension
-		local landId = mem.id
-		local old_cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
 
-		-- Checkout
-		local nr_price = CalculatePrice(cubeInfo,dimension)
-		local or_price = CalculatePrice(old_cubeInfo,dimension)
-		local mode -- pay(0) or refund(1)
-		local payT
-		if nr_price >= or_price then
+		local landId = mem.id
+		local old = {}
+		old.range = Map.Land.Position.data[landId]
+		old.dimension = Land.Util.GetDimension(landId)
+		old.cubeInfo = Cube.GetInformation(old.range)
+		old.price = CalculatePrice(old.cubeInfo,old.dimension)
+		local now = {}
+		now.range = mem.range
+		now.dimension = mem.dimension
+		now.cubeInfo = Cube.GetInformation(now.range)
+		now.price = CalculatePrice(now.cubeInfo,now.dimension)
+		
+		local mode = _Tr('gui.reselectland.refund')
+		local payT = 1
+		if now.price >= old.price then
 			mode = _Tr('gui.reselectland.pay')
 			payT = 0
-		else
-			mode = _Tr('gui.reselectland.refund')
-			payT = 1
 		end
-		local needto = math.abs(nr_price-or_price)
+		
+		local needTo = math.abs(now.price - old.price)
 		player:sendModalForm(
 			'Checkout',
 			_Tr('gui.reselectland.content',
-				'<a>',Land.Util.GetDimension(landId),
-				'<c>',dimension,
-				'<b>',or_price,
-				'<d>',nr_price,
+				'<a>',old.dimension,
+				'<c>',now.dimension,
+				'<b>',old.price,
+				'<d>',now.price,
 				'<e>',mode,
-				'<f>',needto,
+				'<f>',needTo,
 				'<g>',cfg.economic.currency_name
 			),
 			_Tr('gui.general.yes'),
@@ -4020,16 +4022,16 @@ function RegisterCommands()
 			function(player,result)
 				if not result then return end
 				local status
-				if payT==0 and Economy.Player.get(player)<needto then
+				if payT == 0 and Economy.Player.get(player) < needTo then
 					SendText(player,_Tr('title.buyland.moneynotenough'))
 					return
 				end
-				status = Land.Range.Reset(landId,range)
+				status = Land.Range.Reset(landId,now.range)
 				if status then
-					if payT==0 then
-						Economy.Player.del(player,needto)
-					else
-						Economy.Player.add(player,needto)
+					if payT == 0 then
+						Economy.Player.del(player,needTo)
+					elseif payT == 1 then
+						Economy.Player.add(player,needTo)
 					end
 				else
 					SendText(player,_Tr('title.reselectland.fail.apirefuse'))
