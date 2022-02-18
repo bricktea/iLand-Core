@@ -1067,10 +1067,6 @@ DataStorage = {
 			DataStorage.RelationShip.Save()
 		end
 	end,
-	IsPending = function()
-		local m = DataStorage._stat
-		return m[1] or m[2] or m[3]
-	end,
 	Save = function(mode)
 		if mode[1] == 1 then
 			DataStorage._stat[1] = true
@@ -1081,7 +1077,22 @@ DataStorage = {
 		if mode[3] == 1 then
 			DataStorage._stat[3] = true
 		end
-	end
+	end,
+
+	PendingRequests = {
+		getStatus = function()
+			local m = DataStorage._stat
+			return m[1] or m[2] or m[3]
+		end,
+		save = function()
+			if not DataStorage.PendingRequests.getStatus() then
+				return false
+			end
+			DataStorage.INTERVAL()
+			INFO('Pending data saved.')
+			return true
+		end
+	}
 
 }
 
@@ -3603,6 +3614,7 @@ end
 --#endregion
 
 function Plugin.Unload()
+	DataStorage.PendingRequests.save()
 	mc.runcmdEx('ll unload iLand')
 end
 
@@ -3725,6 +3737,7 @@ function Plugin.Upgrade(rawInfo)
 end
 
 function Plugin.Reload()
+	DataStorage.PendingRequests.save()
 	mc.runcmdEx('ll reload iLand')
 end
 
@@ -4759,9 +4772,8 @@ mc.listen('onStartDestroyBlock',function(player,block)
 end)
 mc.listen('onConsoleCmd',function(cmd)
 	local m = string.split(cmd,' ')
-	if (m[1]=='stop' and not m[2]) and DataStorage.IsPending() then
-		DataStorage.INTERVAL()
-		INFO('Pending data saved.')
+	if m[1]=='stop' and not m[2] then
+		DataStorage.PendingRequests.save()
 	end
 end)
 mc.listen('onServerStarted',function()
