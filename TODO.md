@@ -19,6 +19,7 @@
  - [ ] 检查适配1.18.11，LL2.1
  - [x] 测试safetp中退出
  - [x] 修复重选领地的bug
+ - [x] 修复领地管理器配置项编辑不正常
  - [ ] oplmgr delete land problem?
  - [ ] lmgr transfer land problem?
  - [ ] OPLMgr>>Land sth, problem.

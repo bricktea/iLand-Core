@@ -1453,6 +1453,27 @@ Land = {
 	RelationShip = {
 
 		Operator = {
+			add = function(xuid)
+				if not xuid then
+					return -1
+				elseif Land.RelationShip.Operator.check(xuid) then
+					return -2
+				end
+				table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
+				Map.Land.Operator.update()
+				DataStorage.Save({1,0,0})
+				return 0
+			end,
+			remove = function(xuid)
+				if not xuid then
+					return -1
+				elseif not Land.RelationShip.Operator.check(xuid) then
+					return -2
+				end
+				Array.Remove(cfg.land.operator,xuid)
+				Map.Land.Operator.update()
+				DataStorage.Save({1,0,0})
+			end,
 			check = function(xuid)
 				return Map.Land.Operator.data[xuid] ~= nil
 			end
@@ -1937,8 +1958,9 @@ OpenGUI = {
 		Form:addButton(_Tr('gui.oplandmgr.mgrtype.listener'),'textures/ui/icon_bookshelf')
 		Form:addButton(_Tr('gui.general.close'))
 		player:sendForm(Form,function(player,id)
-			if not id then return end
-			if id==0 then -- Manage Lands
+			if not id then
+				return
+			elseif id==0 then -- Manage Lands
 				local Form = mc.newSimpleForm()
 				Form:setTitle(_Tr('gui.oplandmgr.title'))
 				Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
@@ -1949,9 +1971,10 @@ OpenGUI = {
 				player:sendForm(
 					Form,
 					function(player,mode)
-						if not mode then return end
 						local xuid = player.xuid
-						if mode==0 then -- 按玩家
+						if not mode then
+							return
+						elseif mode==0 then -- 按玩家
 							PlayerSelector.Create(player,function(pl,selected)
 								if #selected>1 then
 									SendText(pl,_Tr('talk.tomany'))
@@ -1960,8 +1983,7 @@ OpenGUI = {
 								local thisXid = data.name2xuid(selected[1])
 								OpenGUI.LMgr(pl,thisXid)
 							end)
-						end
-						if mode==1 then -- 传送
+						elseif mode==1 then -- 传送
 							local Form = mc.newSimpleForm()
 							Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
 							Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
@@ -1984,8 +2006,7 @@ OpenGUI = {
 								local landId = Ids[id+1]
 								Land.Util.Teleport(pl,landId)
 							end)
-						end
-						if mode==2 then -- 脚下
+						elseif mode==2 then -- 脚下
 							local landId = Land.Query.Pos(player.blockPos)
 							if not landId then
 								SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
@@ -1993,16 +2014,13 @@ OpenGUI = {
 							end
 							MEM[xuid].landId = landId
 							OpenGUI.FastLMgr(player,true)
-						end
-						if mode==3 then -- 返回
+						elseif mode==3 then -- 返回
 							Callback.Form.BackTo.LandOPMgr(player,true)
 						end
 
 					end
 				)
-				return
-			end
-			if id==1 then -- Manage Plugin
+			elseif id==1 then -- Manage Plugin
 				local origin = ConfigUIEditor.Create(_Tr('gui.oplandmgr.plugin.title'),_Tr('gui.oplandmgr.plugin.tip'))
 				local function getAllObjectives()
 					local objs = mc.getAllScoreObjectives()
@@ -2059,9 +2077,7 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.force_talk')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'input','this.features.chunk_side')
 				ConfigUIEditor.Send(origin,player)
-				return
-			end
-			if id==2 then -- Manage Listener
+			elseif id==2 then -- Manage Listener
 				local Form = mc.newCustomForm()
 				Form:setTitle(_Tr('gui.listenmgr.title'))
 				Form:addLabel(_Tr('gui.listenmgr.tip'))
@@ -2146,14 +2162,14 @@ OpenGUI = {
 			local xuid = player.xuid
 			MEM[xuid].landId = landId
 			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
-			local owner = Land.RelationShip.Owner.getXuid(landId)
-			if owner then
-				owner = data.xuid2name(owner)
+			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
+			if ownerXuid then
+				ownerXuid = data.xuid2name(ownerXuid)
 			end
 			player:sendModalForm(
 				_Tr('gui.landmgr.landinfo.title'),
 				_Tr('gui.landmgr.landinfo.content',
-					'<a>',owner,
+					'<a>',ownerXuid,
 					'<b>',landId,
 					'<c>',Land.Options.Nickname.get(landId,2),
 					'<d>',Land.Util.GetDimension(landId),
@@ -2202,8 +2218,8 @@ OpenGUI = {
 					settings.signbuttom = res[3]
 					settings.ev_explode = res[4]
 					settings.ev_farmland_decay = res[5]
-					settings.ev_fire_spread = res[7]
-					settings.ev_piston_push = res[6]
+					settings.ev_fire_spread = res[6]
+					settings.ev_piston_push = res[7]
 					settings.ev_redstone_update = res[8]
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
@@ -2401,15 +2417,14 @@ OpenGUI = {
 								status_list[ID] = _Tr('gui.landtrust.fail.cantaddown')
 								goto CONTINUE_ADDTRUST
 							end
-							if Land.RelationShip.Trusted.add(landId,targetXuid)==false then
+							if not Land.RelationShip.Trusted.add(landId,targetXuid) then
 								status_list[ID] = _Tr('gui.landtrust.fail.alreadyexists')
 							else
 								status_list[ID] = _Tr('gui.landtrust.addsuccess')
 							end
 							:: CONTINUE_ADDTRUST ::
 						end
-					end
-					if res==1 then -- rm
+					elseif res==1 then -- rm
 						for n,ID in pairs(selected) do
 							local targetXuid = data.name2xuid(ID)
 							Land.RelationShip.Trusted.remove(landId,targetXuid)
@@ -2462,7 +2477,7 @@ OpenGUI = {
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landdescribe.title'))
 			Form:addLabel(_Tr('gui.landdescribe.tip'))
-			Form:addInput("",desc)
+			Form:addInput('',desc)
 			player:sendForm(
 				Form,
 				function(player,res)
@@ -4153,34 +4168,26 @@ function RegisterCommands()
 	mc.regConsoleCmd('land op',_Tr('command.console.land_op'),function(args)
 		local name = table.concat(args,' ')
 		local xuid = data.name2xuid(name)
-		if xuid == "" then
+		local stat = Land.RelationShip.Operator.add(xuid)
+		if stat == 0 then
+			INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
+		elseif stat == -1 then
 			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-			return
-		end
-		if Land.RelationShip.Operator.check(xuid) then
+		elseif stat == -2 then
 			ERROR(_Tr('console.landop.add.failbyexist','<a>',name))
-			return
 		end
-		table.insert(cfg.land.operator,#cfg.land.operator+1,xuid)
-		Map.Land.Operator.update()
-		DataStorage.Save({1,0,0})
-		INFO('System',_Tr('console.landop.add.success','<a>',name,'<b>',xuid))
 	end)
 	mc.regConsoleCmd('land deop',_Tr('command.console.land_deop'),function(args)
 		local name = table.concat(args,' ')
 		local xuid = data.name2xuid(name)
-		if xuid == "" then
+		local stat = Land.RelationShip.Operator.remove(xuid)
+		if stat == 0 then
+			INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
+		elseif stat == -1 then
 			ERROR(_Tr('console.landop.failbyxuid','<a>',name))
-			return
-		end
-		if not Land.RelationShip.Operator.check(xuid) then
+		elseif stat == -2 then
 			ERROR(_Tr('console.landop.del.failbynull','<a>',name))
-			return
 		end
-		Array.Remove(cfg.land.operator,xuid)
-		Map.Land.Operator.update()
-		DataStorage.Save({1,0,0})
-		INFO('System',_Tr('console.landop.del.success','<a>',name,'<b>',xuid))
 	end)
 	mc.regConsoleCmd('land update',_Tr('command.console.land_update'),function(args)
 		if cfg.plugin.network then
