@@ -89,8 +89,7 @@ local cfg = {
 			max_amount = 600
 		},
 		player_selector = {
-			include_offline_players = true,
-			items_perpage = 20,
+			include_offline_players = true
 		},
 		selection = {
 			dimension = {
@@ -783,7 +782,6 @@ DataStorage = {
 				tpl.features.particles.name = origin.features.particle_effects
 				tpl.features.particles.max_amount = origin.features.player_max_ple
 				tpl.features.player_selector.include_offline_players = origin.features.offlinePlayerInList
-				tpl.features.player_selector.items_perpage = origin.features.playersPerPage
 				tpl.features.selection.disable_dimension = origin.features.blockLandDims
 				tpl.features.selection.tool_type = origin.features.selection_tool
 				tpl.features.selection.tool_name = origin.features.selection_tool_name
@@ -1869,26 +1867,19 @@ ConfigUIEditor = {
 }
 
 OpenGUI = {
-	FastLMgr = function(player,isOP)
-		local xuid = player.xuid
-		local lands = Land.RelationShip.Owner.getLand(xuid)
-		if #lands==0 and not isOP then
-			SendText(player,_Tr('title.landmgr.failed'));return
-		end
+	FastLMgr = function(player,landId)
 
-		local landId = MEM[xuid].landId
+		local xuid = player.xuid
 		if not Land.IDManager.IsVaild(landId) then
 			OpenGUI.LMgr(player)
 			return
 		end
 
+		MEM[xuid].BackToId = landId
+
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_Tr('gui.fastlmgr.title'))
-		if not isOP then
-			Form:setContent(_Tr('gui.fastlmgr.content','<a>',Land.Options.Nickname.get(landId,3)))
-		else
-			Form:setContent(_Tr('gui.fastlmgr.operator'))
-		end
+		Form:setContent(_Tr('gui.fastlmgr.content','<a>',Land.Options.Nickname.get(landId,3)))
 		Form:addButton(_Tr('gui.landmgr.options.landinfo'))
 		Form:addButton(_Tr('gui.landmgr.options.landcfg'))
 		Form:addButton(_Tr('gui.landmgr.options.landperm'))
@@ -1935,17 +1926,16 @@ OpenGUI = {
 			SendText(player,_Tr('title.landmgr.failed'))
 			return
 		end
+
 		local Form = mc.newSimpleForm()
 		Form:setTitle(_Tr('gui.landmgr.title'))
 		Form:setContent(_Tr('gui.landmgr.select'))
 		for n,landId in pairs(landlst) do
 			Form:addButton(Land.Options.Nickname.get(landId,3),'textures/ui/worldsIcon')
 		end
-		MEM[xuid].enableBackButton = 0
 		player:sendForm(Form,function(pl,id) -- callback
 			if not id then return end
-			MEM[xuid].landId = landlst[id+1]
-			OpenGUI.FastLMgr(pl)
+			OpenGUI.FastLMgr(pl,landlst[id + 1])
 		end)
 	end,
 	OPLMgr = function(player)
@@ -1965,55 +1955,78 @@ OpenGUI = {
 				Form:setTitle(_Tr('gui.oplandmgr.title'))
 				Form:setContent(_Tr('gui.oplandmgr.landmgr.tip'))
 				Form:addButton(_Tr('gui.oplandmgr.landmgr.byplayer'),'textures/ui/icon_multiplayer')
-				Form:addButton(_Tr('gui.oplandmgr.landmgr.teleport'),'textures/ui/icon_blackfriday')
+				Form:addButton(_Tr('gui.oplandmgr.landmgr.byland'),'textures/ui/recipe_book_icon')
 				Form:addButton(_Tr('gui.oplandmgr.landmgr.byfeet'),'textures/ui/icon_sign')
 				Form:addButton(_Tr('gui.general.back'))
 				player:sendForm(
 					Form,
 					function(player,mode)
-						local xuid = player.xuid
 						if not mode then
 							return
-						elseif mode==0 then -- 按玩家
-							PlayerSelector.Create(player,function(pl,selected)
-								if #selected>1 then
-									SendText(pl,_Tr('talk.tomany'))
-									return
+						elseif mode == 0 then -- 按玩家
+							ItemSelector.Create(player,{
+								title = _Tr('gui.itemselector.mgrpl.title'),
+								tip_usage = _Tr('gui.itemselector.mgrpl.tip_usage'),
+								tip_search = _Tr('gui.itemselector.mgrpl.tip_search'),
+								list = GetPlayerList(1),
+								callback = function(selected)
+									if #selected > 1 then
+										SendText(player,_Tr('gui.itemselector.toomany'))
+										return
+									end
+									local thisXid = data.name2xuid(selected[1])
+									OpenGUI.LMgr(player,thisXid)
 								end
-								local thisXid = data.name2xuid(selected[1])
-								OpenGUI.LMgr(pl,thisXid)
-							end)
-						elseif mode==1 then -- 传送
-							local Form = mc.newSimpleForm()
-							Form:setTitle(_Tr('gui.oplandmgr.landmgr.landtp.title'))
-							Form:setContent(_Tr('gui.oplandmgr.landmgr.landtp.tip'))
-							local Ids = Land.IDManager.DumpAll()
-							for num,landId in pairs(Ids) do
-								local ownerId = Land.RelationShip.Owner.getXuid(landId)
-								if ownerId then
-									ownerId = data.xuid2name(ownerId)
-								end
-								Form:addButton(
-									_Tr('gui.oplandmgr.landmgr.button',
-										'<a>',Land.Options.Nickname.get(landId,3),
-										'<b>',ownerId
-									),
-									'textures/ui/worldsIcon'
+							})
+						elseif mode == 1 then -- 按领地
+							local lands = Land.IDManager.DumpAll()
+							local list = {}
+							for n,landId in pairs(lands) do
+								local owner = Land.RelationShip.Owner.getXuid(landId) or '?'
+								if owner ~= '?' then
+									owner = data.xuid2name(owner) or '?'
+								end 
+								list[#list+1] = string.gsubEx(
+									'<name> §lID: §r<landId>§r\n§l<dimension>§r <dim> §l<a>:§r <owner>',
+									'<a>',_Tr('talk.owner'),
+									'<name>',Land.Options.Nickname.get(landId,2),
+									'<dimension>',Land.Util.GetDimension(landId),
+									'<dim>',Dimension.Get(Map.Land.Position.data[landId].dimid).name,
+									'<landId>',landId,
+									'<owner>',owner
 								)
 							end
-							player:sendForm(Form,function(pl,id) -- callback
-								if not id then return end
-								local landId = Ids[id+1]
-								Land.Util.Teleport(pl,landId)
-							end)
-						elseif mode==2 then -- 脚下
+							ItemSelector.Create(player,{
+								title = _Tr('gui.itemselector.land.title'),
+								tip_usage = _Tr('gui.itemselector.land.tip_usage'),
+								tip_search = _Tr('gui.itemselector.land.tip_search'),
+								list = list,
+								callback = function(selected,pos)
+									if #selected > 1 then
+										SendText(player,_Tr('gui.itemselector.toomany'))
+										return
+									end
+									local landId = lands[pos[1]]
+									player:sendModalForm(
+										_Tr('gui.oplandmgr.mgrtype.land'),
+										_Tr('gui.oplandmgr.selectoption'),
+										_Tr('gui.oplandmgr.landmgr.action.asowner'),
+										_Tr('gui.oplandmgr.landmgr.action.teleport'),function(player,res)
+										if res then
+											OpenGUI.FastLMgr(player,landId)
+										else
+											Land.Util.Teleport(player,landId)
+										end
+									end)
+								end
+							})
+						elseif mode == 2 then -- 脚下
 							local landId = Land.Query.Pos(player.blockPos)
 							if not landId then
 								SendText(player,_Tr('gui.oplandmgr.landmgr.byfeet.errbynull'))
 								return
 							end
-							MEM[xuid].landId = landId
-							OpenGUI.FastLMgr(player,true)
+							OpenGUI.FastLMgr(player,landId)
 						elseif mode==3 then -- 返回
 							Callback.Form.BackTo.LandOPMgr(player,true)
 						end
@@ -2072,7 +2085,6 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.feature_particle,'input','this.features.particles.name')
 				ConfigUIEditor.AddComponent(origin,class.feature_particle,'input','this.features.particles.max_amount')
 				ConfigUIEditor.AddComponent(origin,class.feature_playerselector,'switch','this.features.player_selector.include_offline_players')
-				ConfigUIEditor.AddComponent(origin,class.feature_playerselector,'input','this.features.player_selector.items_perpage')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.landtp')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.force_talk')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'input','this.features.chunk_side')
@@ -2159,8 +2171,6 @@ OpenGUI = {
 	end,
 	LandOptions = {
 		Information = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
 			local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 			if ownerXuid then
@@ -2185,8 +2195,6 @@ OpenGUI = {
 			)
 		end,
 		Setting = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local function isThisDisabled(feature)
 				if cfg.features[feature].enable then
 					return ''
@@ -2233,8 +2241,6 @@ OpenGUI = {
 			)
 		end,
 		Permission = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local perm = DataStorage.Land.Raw[landId].permissions
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landmgr.landperm.title'))
@@ -2378,8 +2384,6 @@ OpenGUI = {
 			)
 		end,
 		Trust = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local shareList = DataStorage.Land.Raw[landId].settings.share
 			local content = _Tr('gui.landtrust.tip')
 			if #shareList > 0 then
@@ -2406,49 +2410,53 @@ OpenGUI = {
 						list[#list+1] = data.xuid2name(v)
 					end
 				elseif res==0 then
-					list = nil
+					list = GetPlayerList(1)
 				end
-				PlayerSelector.Create(pl,function(player,selected)
-					local status_list = {}
-					if res==0 then -- add
-						for n,ID in pairs(selected) do
-							local targetXuid = data.name2xuid(ID)
-							if Land.RelationShip.Owner.getXuid(landId) == targetXuid then
-								status_list[ID] = _Tr('gui.landtrust.fail.cantaddown')
-								goto CONTINUE_ADDTRUST
+				ItemSelector.Create(pl,{
+					title = _Tr('gui.itemselector.trust.title'),
+					tip_usage = _Tr('gui.itemselector.trust.tip_usage'),
+					tip_search = _Tr('gui.itemselector.trust.tip_search'),
+					list = list,
+					callback = function(selected)
+						local status_list = {}
+						if res==0 then -- add
+							for n,ID in pairs(selected) do
+								local targetXuid = data.name2xuid(ID)
+								if Land.RelationShip.Owner.getXuid(landId) == targetXuid then
+									status_list[ID] = _Tr('gui.landtrust.fail.cantaddown')
+									goto CONTINUE_ADDTRUST
+								end
+								if not Land.RelationShip.Trusted.add(landId,targetXuid) then
+									status_list[ID] = _Tr('gui.landtrust.fail.alreadyexists')
+								else
+									status_list[ID] = _Tr('gui.landtrust.addsuccess')
+								end
+								:: CONTINUE_ADDTRUST ::
 							end
-							if not Land.RelationShip.Trusted.add(landId,targetXuid) then
-								status_list[ID] = _Tr('gui.landtrust.fail.alreadyexists')
-							else
-								status_list[ID] = _Tr('gui.landtrust.addsuccess')
+						elseif res==1 then -- rm
+							for n,ID in pairs(selected) do
+								local targetXuid = data.name2xuid(ID)
+								Land.RelationShip.Trusted.remove(landId,targetXuid)
+								status_list[ID] = _Tr('gui.landtrust.rmsuccess')
 							end
-							:: CONTINUE_ADDTRUST ::
 						end
-					elseif res==1 then -- rm
-						for n,ID in pairs(selected) do
-							local targetXuid = data.name2xuid(ID)
-							Land.RelationShip.Trusted.remove(landId,targetXuid)
-							status_list[ID] = _Tr('gui.landtrust.rmsuccess')
+	
+						local text = "Completed."
+						for i,v in pairs(status_list) do
+							text = text..'\n'..i..' => '..v
 						end
+						player:sendModalForm(
+							_Tr('gui.general.complete'),
+							text,
+							_Tr('gui.general.back'),
+							_Tr('gui.general.close'),
+							Callback.Form.BackTo.LandMgr
+						)
 					end
-
-					local text = "Completed."
-					for i,v in pairs(status_list) do
-						text = text..'\n'..i..' => '..v
-					end
-					player:sendModalForm(
-						_Tr('gui.general.complete'),
-						text,
-						_Tr('gui.general.back'),
-						_Tr('gui.general.close'),
-						Callback.Form.BackTo.LandMgr
-					)
-				end,list)
+				})
 			end)
 		end,
 		Nickname = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local Form = mc.newCustomForm()
 			Form:setTitle(_Tr('gui.landtag.title'))
 			Form:addLabel(_Tr('gui.landtag.tip'))
@@ -2470,8 +2478,6 @@ OpenGUI = {
 			)
 		end,
 		Describe = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local desc = Land.Options.Setting.get(landId,'describe')
 			if desc=='' then desc='['.._Tr('gui.landmgr.unmodified')..']' end
 			local Form = mc.newCustomForm()
@@ -2496,8 +2502,6 @@ OpenGUI = {
 			)
 		end,
 		Transfer = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			player:sendModalForm(
 				_Tr('gui.landtransfer.title'),
 				_Tr('gui.landtransfer.tip'),
@@ -2505,21 +2509,24 @@ OpenGUI = {
 				_Tr('gui.general.close'),
 				function(pl,ids)
 					if not ids then return end
-					PlayerSelector.Create(
-						pl,
-						function (player,selected)
+					ItemSelector.Create(pl,{
+						title = _Tr('gui.itemselector.transfer.title'),
+						tip_usage = _Tr('gui.itemselector.transfer.tip_usage'),
+						tip_search = _Tr('gui.itemselector.transfer.tip_search'),
+						list = GetPlayerList(1),
+						callback = function (selected)
 							if #selected > 1 then
-								SendText(player,_Tr('title.landtransfer.toomanyids'))
+								SendText(pl,_Tr('title.landtransfer.toomanyids'))
 								return
 							end
 
-							local targetXuid=data.name2xuid(selected[1])
+							local targetXuid = data.name2xuid(selected[1])
 							if Land.RelationShip.Owner.check(landId,targetXuid) then
-								SendText(player,_Tr('title.landtransfer.canttoown'))
+								SendText(pl,_Tr('title.landtransfer.canttoown'))
 								return
 							end
 							Land.RelationShip.Owner.set(landId,targetXuid)
-							player:sendModalForm(
+							pl:sendModalForm(
 								_Tr('gui.general.complete'),
 								_Tr('title.landtransfer.complete','<a>',Land.Options.Nickname.get(landId,3),'<b>',selected[1]),
 								_Tr('gui.general.back'),
@@ -2527,13 +2534,11 @@ OpenGUI = {
 								Callback.Form.BackTo.LandMgr
 							)
 						end
-					)
+					})
 				end
 			)
 		end,
 		Reselect = function(player,landId)
-			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			player:sendModalForm(
 				_Tr('gui.reselectland.title'),
 				_Tr('gui.reselectland.tip'),
@@ -2556,7 +2561,6 @@ OpenGUI = {
 		end,
 		Delete = function(player,landId)
 			local xuid = player.xuid
-			MEM[xuid].landId = landId
 			local cubeInfo = Cube.GetInformation(Map.Land.Position.data[landId])
 			local value = math.floor(CalculatePrice(cubeInfo,Land.Util.GetDimension(landId))*cfg.land.refund_rate)
 			player:sendModalForm(
@@ -2583,71 +2587,59 @@ OpenGUI = {
 	}
 }
 
-PlayerSelector = {
-	Create = function (player,callback,customlist) -- player selector
+ItemSelector = {
+	_perpage = 20,
+	Create = function (player,payload)
 
-		-- get player list
-		local pl_list = {}
-		local forTol
-		if cfg.features.player_selector.include_offline_players then
-			forTol = DataStorage.RelationShip.Raw['Owner']
-		else
-			forTol = MEM
-		end
-		for xuid,lds in pairs(forTol) do
-			pl_list[#pl_list+1] = data.xuid2name(xuid)
-		end
+		--[[ Payload: 
+			- (string) title
+			- (string) tip_usage
+			- (string) tip_search
+			- (table) list
+			- (function) callback [1|selected item] [2|position]
+		]]
 
-		-- set TRS
 		local xuid = player.xuid
-		MEM[xuid].psr = {
-			playerList = {},
-			cbfunc = callback,
+		MEM[xuid].isr = {
+			itemList = {},
+			payload = payload,
 			nowpage = 1,
-			filter = ""
+			filter = ''
 		}
 
-		local perpage = cfg.features.player_selector.items_perpage
-		if customlist then
-			MEM[xuid].psr.playerList = 	PlayerSelector.Helper.ToPages(customlist,perpage)
-		else
-			MEM[xuid].psr.playerList = PlayerSelector.Helper.ToPages(pl_list,perpage)
-		end
-
-		-- call
-		PlayerSelector.Callback(player,'#')
+		MEM[xuid].isr.itemList = ItemSelector.Helper.ToPages(payload.list)
+		ItemSelector.Callback(player,'#')
 
 	end,
 	Callback = function (player,data)
+		local xuid = player.xuid
 		if not data then
-			MEM[player.xuid].psr = nil
+			MEM[xuid].isr = nil
 			return
 		end
 
 		-- get data
-		local xuid = player.xuid
-		local psrdata = MEM[xuid].psr
+		local psrdata = MEM[xuid].isr
+		local payload = psrdata.payload
 
 		local function buildPage(num)
 			local tmp = {}
 			for i=1,num do
-				tmp[i]=_Tr('gui.playerselector.num','<a>',i)
+				tmp[i] = _Tr('gui.itemselector.num','<a>',i)
 			end
 			return tmp
 		end
 
-		local perpage = cfg.features.player_selector.items_perpage
-		local maxpage = #psrdata.playerList
-		local rawList = table.clone(psrdata.playerList[psrdata.nowpage])
+		local maxpage = #psrdata.itemList
+		local rawList = table.clone(psrdata.itemList[psrdata.nowpage])
 
 		if type(data)=='table' then
-			local selected = {}
 
 			-- refresh page
 			local npg = data[#data] + 1 -- custom page
 			if npg~=psrdata.nowpage and npg<=maxpage then
 				psrdata.nowpage = npg
-				rawList = table.clone(psrdata.playerList[npg])
+				rawList = table.clone(psrdata.itemList[npg])
 				goto JUMPOUT_PSR_OTHER
 			end
 
@@ -2655,14 +2647,14 @@ PlayerSelector = {
 			if data[1]~='' then
 				local findTarget = string.lower(data[1])
 				local tmpList = {}
-				for num,pagelist in pairs(psrdata.playerList) do
+				for num,pagelist in pairs(psrdata.itemList) do
 					for page,name in pairs(pagelist) do
 						if string.find(string.lower(name),findTarget) then
 							tmpList[#tmpList+1] = name
 						end
 					end
 				end
-				local tableList = PlayerSelector.Helper.ToPages(tmpList,perpage)
+				local tableList = ItemSelector.Helper.ToPages(tmpList)
 				if psrdata.nowpage>#tableList then
 					psrdata.nowpage = 1
 				end
@@ -2681,14 +2673,17 @@ PlayerSelector = {
 			psrdata.filter = data[1]
 
 			-- gen selects
+			local selected = {}
+			local selected_pos = {}
 			for num,key in pairs(data) do
 				if num~=1 and num~=#data and key==true then
 					selected[#selected+1] = rawList[num-1]
+					selected_pos[#selected_pos+1] = (psrdata.nowpage-1)*ItemSelector._perpage + num - 1
 				end
 			end
 			if next(selected) then
-				psrdata.cbfunc(player,selected)
-				psrdata=nil
+				payload.callback(selected,selected_pos)
+				psrdata = nil
 				return
 			end
 
@@ -2697,12 +2692,12 @@ PlayerSelector = {
 
 		-- build form
 		local Form = mc.newCustomForm()
-		Form:setTitle(_Tr('gui.playerselector.title'))
-		Form:addLabel(_Tr('gui.playerselector.search.tip'))
-		Form:addLabel(_Tr('gui.playerselector.search.tip2'))
-		Form:addInput(_Tr('gui.playerselector.search.type'),_Tr('gui.playerselector.search.ph'),psrdata.filter)
+		Form:setTitle(payload.title)
+		Form:addLabel(_Tr('gui.itemselector.search.tip','<a>',payload.tip_usage))
+		Form:addLabel(_Tr('gui.itemselector.search.tip2','<a>',payload.tip_search))
+		Form:addInput(_Tr('gui.itemselector.search.type'),_Tr('gui.itemselector.search.ph'),psrdata.filter)
 		Form:addLabel(
-			_Tr('gui.playerselector.pages',
+			_Tr('gui.itemselector.pages',
 				'<a>',psrdata.nowpage,
 				'<b>',maxpage,
 				'<c>',#rawList
@@ -2711,14 +2706,14 @@ PlayerSelector = {
 		for n,plname in pairs(rawList) do
 			Form:addSwitch(plname,false)
 		end
-		Form:addStepSlider(_Tr('gui.playerselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
-		player:sendForm(Form,PlayerSelector.Callback)
+		Form:addStepSlider(_Tr('gui.itemselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
+		player:sendForm(Form,ItemSelector.Callback)
 	end,
 	Helper = {
-		ToPages = function(list,perpage)
+		ToPages = function(list)
 			local rtn = {}
 			for n,pl in pairs(list) do
-				local num = math.ceil(n/perpage)
+				local num = math.ceil(n/ItemSelector._perpage)
 				rtn[num] = rtn[num] or {}
 				rtn[num][#rtn[num]+1] = pl
 			end
@@ -3414,7 +3409,8 @@ Callback = {
 			end,
 			LandMgr = function (player,id)
 				if not id then return end
-				OpenGUI.FastLMgr(player)
+				local xuid = player.xuid
+				OpenGUI.FastLMgr(player,MEM[xuid].BackToId)
 			end
 		}
 	},
@@ -3818,6 +3814,44 @@ function EntityGetType(type)
 	end
 	return 0
 end
+function GetPlayerList(mode,IncAll)
+	--[[ mode
+		<0> xuid list.
+		<1> name list.
+		<2> xuid-name list.
+		<3> xuid and name list.
+	]]
+	IncAll = IncAll or cfg.features.player_selector.include_offline_players
+	local rtn = {}
+	local base = {}
+	if IncAll then
+		base = DataStorage.RelationShip.Raw['Owner']
+	else
+		base = MEM
+	end
+	if mode == 0 then
+		for xuid,ex in pairs(base) do
+			rtn[#rtn+1] = xuid
+		end
+	elseif mode == 1 then
+		for xuid,ex in pairs(base) do
+			local t = data.xuid2name(xuid)
+			if t then
+				rtn[#rtn+1] = t
+			end
+		end
+	elseif mode == 2 then
+		for xuid,ex in pairs(base) do
+			local t = data.xuid2name(xuid)
+			if t then
+				rtn[xuid] = t
+			end
+		end
+	elseif mode == 3 then
+		return GetPlayerList(0,IncAll),GetPlayerList(1,IncAll)
+	end
+	return rtn
+end
 local function try(func)
 	local stat, res = pcall(func[1])
 	if not stat then
@@ -3842,8 +3876,7 @@ function RegisterCommands()
 		local xuid = player.xuid
 		local landId = Land.Query.Pos(pos)
 		if landId and Land.RelationShip.Owner.getXuid(landId) == xuid then
-			MEM[xuid].landId=landId
-			OpenGUI.FastLMgr(player)
+			OpenGUI.FastLMgr(player,landId)
 		else
 			local land_count = tostring(#DataStorage.RelationShip.Raw['Owner'][xuid])
 			local Form = mc.newSimpleForm()
@@ -3979,10 +4012,8 @@ function RegisterCommands()
 							_Tr('gui.general.looklook'),
 							_Tr('gui.general.cancel'),
 							function(player,res)
-								if res then
-									MEM[xuid].landId = landId
-									OpenGUI.FastLMgr(player)
-								end
+								if not res then return end
+								OpenGUI.FastLMgr(player,landId)
 							end
 						)
 					else
@@ -4012,14 +4043,14 @@ function RegisterCommands()
 		now.dimension = mem.dimension
 		now.cubeInfo = Cube.GetInformation(now.range)
 		now.price = CalculatePrice(now.cubeInfo,now.dimension)
-		
+
 		local mode = _Tr('gui.reselectland.refund')
 		local payT = 1
 		if now.price >= old.price then
 			mode = _Tr('gui.reselectland.pay')
 			payT = 0
 		end
-		
+
 		local needTo = math.abs(now.price - old.price)
 		player:sendModalForm(
 			'Checkout',
