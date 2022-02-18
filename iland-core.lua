@@ -2896,36 +2896,32 @@ SafeTeleport = {
 		if not xuid or not MEM[xuid] or not MEM[xuid].safetp then
 			return
 		end
-		local tpos = MEM[xuid].safetp.from_pos
+		local tpos = MEM[xuid].safetp.from
 		player:teleport(tpos.x,tpos.y,tpos.z,tpos.dimid)
 		MEM[xuid].safetp = nil
 	end,
-	Do = function(player,tpos)
-		tpos = {x=-20821,y=177,z=118736,dimid=0}
+	Do = function(player,pos)
+		pos = {x=-44444,y=177,z=22222,dimid=0}
 		local xuid = player.xuid
-		local dimid = tpos.dimid
-		if MEM[xuid].safetp then -- limited: one request.
+		local dimid = pos.dimid
+		if MEM[xuid].safetp then
 			return false
 		end
-		MEM[xuid].safetp = {
-			from_pos = player.pos,
-			to_pos = tpos
-		}
+		MEM[xuid].safetp = { from = player.pos }
 		local def_height = 500
 		local timeout = 60
-		player:teleport(tpos.x,def_height,tpos.z,dimid)
+		player:teleport(pos.x,def_height,pos.z,dimid)
 		SendText(player,_Tr('api.safetp.tping.talk'))
+		local locked = false
 		local chunk_loaded = false
-		local cancel_check = false
-		local lock = false
 		local completed = false
 		local id = setInterval(function()
-			if cancel_check or lock or not player then
+			if locked or not player or not player.pos then
 				return
 			end
 			local plpos = Pos.ToIntPos(player.pos)
-			if tpos.x~=plpos.x or tpos.z~=plpos.z or dimid~=plpos.dimid then
-				cancel_check = true
+			if pos.x~=plpos.x or pos.z~=plpos.z or dimid~=plpos.dimid then
+				locked = true
 				SafeTeleport.Cancel(player)
 				return
 			end
@@ -2940,13 +2936,13 @@ SafeTeleport = {
 				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.chunkloading'),{0,15,15})
 			else
 				chunk_loaded = true
-				lock = true
+				locked = true
 				SendTitle(player,_Tr('talk.pleasewait'),_Tr('api.safetp.tping.foundfoothold'),{0,15,15})
 				local bl_type_list = {}
 				local footholds = {}
 				local range = Dimension.Get(dimid)
 				for i = range.min,range.max-2 do
-					local bl = mc.getBlock(tpos.x,i,tpos.z,dimid)
+					local bl = mc.getBlock(pos.x,i,pos.z,dimid)
 					bl_type_list[i] = bl.type
 				end
 				local ct_block = {'minecraft:air','minecraft:lava','minecraft:flowing_lava'}
@@ -2962,11 +2958,11 @@ SafeTeleport = {
 				end
 				local recentY = footholds[1]
 				for i,y in pairs(footholds) do
-					if math.abs(tpos.y-y)<math.abs(tpos.y-recentY) then
+					if math.abs(pos.y-y)<math.abs(pos.y-recentY) then
 						recentY = y
 					end
 				end
-				player:teleport(tpos.x,recentY + 1,tpos.z,dimid)
+				player:teleport(pos.x,recentY + 1,pos.z,dimid)
 				MEM[xuid].safetp = nil
 				completed = true
 			end

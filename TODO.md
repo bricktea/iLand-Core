@@ -17,10 +17,11 @@
  - [x] GetRange返回AABB
  - [x] ILAPI将会检查参数列表
  - [ ] 检查适配1.18.11，LL2.1
- - [ ] 测试safetp中退出
+ - [x] 测试safetp中退出
  - [ ] oplmgr delete land problem?
  - [ ] lmgr transfer land problem?
  - [ ] OPLMgr>>Land sth, problem.
+ - [ ] a reselect wallet bugs?
  - [ ] 完成EventSystem，加入传入参数检查。
  - [x] 【!NeedAutoUpdate】`data.json`数据结构优化
  - [ ] 【!NeedAutoUpdate】默认关闭onDrop
