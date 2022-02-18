@@ -147,8 +147,7 @@ end
 if not ll.requireVersion(Plugin.minLL[1],Plugin.minLL[2],Plugin.minLL[3]) then
 	error('Unsupported version of LiteLoader, plugin loading aborted.')
 else
-	--[[
-	ll.registerPlugin(
+	assert(ll.registerPlugin(
 		'iLand',
 		'Powerful land plugin.',
 		{
@@ -161,8 +160,7 @@ else
 			Github = 'https://github.com/LiteLScript-Dev/iLand-Core',
 			License = 'GPLv3 with additional conditions.'
 		}
-	)
-	]]
+	),'Plugin registration failed!')
 end
 
 -- Classes.
@@ -2903,6 +2901,7 @@ SafeTeleport = {
 		MEM[xuid].safetp = nil
 	end,
 	Do = function(player,tpos)
+		tpos = {x=-20821,y=177,z=118736,dimid=0}
 		local xuid = player.xuid
 		local dimid = tpos.dimid
 		if MEM[xuid].safetp then -- limited: one request.
@@ -3608,7 +3607,7 @@ end
 --#endregion
 
 function Plugin.Unload()
-	mc.runcmdEx('ll unload iland-core.lua')
+	mc.runcmdEx('ll unload iLand')
 end
 
 function Plugin.Upgrade(rawInfo)
@@ -3730,7 +3729,7 @@ function Plugin.Upgrade(rawInfo)
 end
 
 function Plugin.Reload()
-	mc.runcmdEx('ll reload iland-core.lua')
+	mc.runcmdEx('ll reload iLand')
 end
 
 -- Tools & Feature functions.
