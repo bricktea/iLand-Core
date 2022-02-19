@@ -23,13 +23,12 @@
  - [x] 修复OPLMgr-Land当自己无领地时编辑麻烦
  - [x] 重新设计OPLMgr-Land
  - [x] 完成EventSystem，加入传入参数检查。
- - [x] 【!NeedAutoUpdate】加入关闭创造玩家进入提示
- - [x] 【!NeedAutoUpdate】删除perpage
- - [x] 【!NeedAutoUpdate】`data.json`数据结构优化
- - [x] 【!NeedAutoUpdate】默认关闭onDrop
- - [x] 【!NeedAutoUpdate】better control using new events. remove allow_shoot
- - [x] 【!NeedAutoUpdate】landId改12位
- - [x] 【!NeedAutoUpdate】现在每个维度的领地高度均normal，且圈地高度检查
+ - [x] 加入关闭创造玩家进入提示
+ - [x] 删除perpage
+ - [x] `data.json` `owners.json` 数据结构优化
+ - [x] 默认关闭onDrop
+ - [x] better control using new events.
+ - [x] 现在每个维度的领地高度均normal，且圈地高度检查
 
 > **2.73**
  - [ ] SubLand

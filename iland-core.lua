@@ -15,8 +15,8 @@
 Plugin = {
 	Version = {
 		major = 2,
-		minor = 7,
-		revision = 1,
+		minor = 8,
+		revision = 0,
 		toString = function()
 			local ver = Plugin.Version
 			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)
@@ -857,6 +857,14 @@ DataStorage = {
 				origin.land.min_space = 15
 				sec.disable_dimension = nil
 			end
+			if origin.version < 280 then
+				local res = origin.features
+				res.disable_creative_warn = false
+				res.player_selector.items_perpage = nil
+				if not Array.Fetch(res.disabled_listener,'onDropItem') then
+					res.disabled_listener[#res.disabled_listener+1] = 'onDropItem'
+				end
+			end
 			--- Rtn
 			return true
 		end,
@@ -908,7 +916,10 @@ DataStorage = {
 		end,
 		Update = function(origin)
 			if not origin.version then
-
+				origin = {
+					version = 270,
+					Lands = table.clone(origin)
+				}
 			end
 			--- Update
 			for landId,res in pairs(origin.Lands) do
@@ -926,6 +937,12 @@ DataStorage = {
 				end
 				if origin.version < 262 then
 					perm.useitem = nil
+				end
+				if origin.version < 280 then
+					local ra = origin.Lands[landId].range
+					local dim = Dimension.Get(ra.dimid)
+					ra.start_position[2] = dim.min
+					ra.end_position[2] = dim.max
 				end
 			end
 			return true
