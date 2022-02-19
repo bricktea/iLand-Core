@@ -1628,6 +1628,7 @@ Land = {
 		},
 		Exported = {
 			['AddBeforeEventListener'] = function(event,funcname)
+				assert(Land.API.Helper.CheckNilArgument(event,funcname),Land.API.Helper.ErrMsg[1])
 				local ev = EventSystem._ev_int[event]
 				local func = ll.import(funcname)
 				if not ev or not func then
@@ -1636,6 +1637,7 @@ Land = {
 				return EventSystem.AddListener(ev,'Before',func)
 			end,
 			['AddAfterEventListener'] = function(event,funcname)
+				assert(Land.API.Helper.CheckNilArgument(event,funcname),Land.API.Helper.ErrMsg[1])
 				local ev = EventSystem._ev_int[event]
 				local func = ll.import(funcname)
 				if not ev or not func then
