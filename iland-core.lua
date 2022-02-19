@@ -118,7 +118,10 @@ local cfg = {
 		},
 		landtp = true,
 		force_talk = false,
-		disabled_listener = {},
+		disable_creative_warn = false,
+		disabled_listener = {
+			'onDropItem'
+		},
         chunk_side = 16
 	}
 }
@@ -780,7 +783,7 @@ DataStorage = {
 			end
 
 			-- Save if needed.
-			if save and not DEV_MODE then
+			if save then
 				DataStorage.Save({1,0,0})
 			end
 			return true
@@ -898,7 +901,7 @@ DataStorage = {
 			end
 
 			--- Save if needed.
-			if save and not DEV_MODE then
+			if save then
 				DataStorage.Save({0,1,0})
 			end
 			return true
@@ -1001,8 +1004,7 @@ DataStorage = {
 					eat = false,
 					allow_throw_potion = false,
 					allow_ride_entity = false,
-					allow_ride_trans = false,
-					useitem = false
+					allow_ride_trans = false
 				}
 			},
 			Create = function()
@@ -1517,6 +1519,7 @@ Land = {
 				Array.Remove(cfg.land.operator,xuid)
 				Map.Land.Operator.update()
 				DataStorage.Save({1,0,0})
+				return 0
 			end,
 			check = function(xuid)
 				return Map.Land.Operator.data[xuid] ~= nil
@@ -2142,6 +2145,7 @@ OpenGUI = {
 				ConfigUIEditor.AddComponent(origin,class.feature_particle,'input','this.features.particles.max_amount')
 				ConfigUIEditor.AddComponent(origin,class.feature_playerselector,'switch','this.features.player_selector.include_offline_players')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.landtp')
+				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.disable_creative_warn')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'switch','this.features.force_talk')
 				ConfigUIEditor.AddComponent(origin,class.other_features,'input','this.features.chunk_side')
 				ConfigUIEditor.Send(origin,player)
@@ -3305,6 +3309,10 @@ EventSystem = {
 	end,
 	-- [enum] event, [string] Before|After, [table] resources
 	Call = function(event,type,res)
+		local rtn = true
+		if not EventSystem._cb[type][event] then
+			return rtn
+		end
 		local ed = {}
 		if type == 'Before' then
 			if event == EventSystem._ev_int['onAskLicense'] then
@@ -3340,7 +3348,6 @@ EventSystem = {
 				ed.mPlayer = res[2]
 			end
 		end
-		local rtn = true
 		for n,func in pairs(EventSystem._cb[type][event]) do
 			if not func then
 				goto JUMPOUT_EV_CALL;
@@ -3399,7 +3406,7 @@ Callback = {
 
 				if Land.Util.CheckPerm(landId,xuid) then
 					-- owner/trusted
-					if landcfg.signtome then
+					if not landcfg.signtome then
 						goto JUMPOUT_LANDSIGN
 					end
 					SendTitle(player,
@@ -3407,7 +3414,7 @@ Callback = {
 					_Tr('sign.listener.ownersubtitle'))
 				else
 					-- visitor
-					if landcfg.signtother then
+					if not landcfg.signtother then
 						goto JUMPOUT_LANDSIGN
 					end
 					SendTitle(player,
@@ -3447,10 +3454,12 @@ Callback = {
 				if ownerXuid then
 					ownerId = data.xuid2name(ownerXuid) or '?'
 				end
-				if Land.Util.CheckPerm(landId,xuid) and landcfg.signtome then
-					player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId,3)),4)
+				if Land.Util.CheckPerm(landId,xuid) then
+					if landcfg.signtome then
+						player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId,3)),4)
+					end
 				else
-					if (xuid~=ownerXuid) and landcfg.signtother then
+					if landcfg.signtother then
 						player:sendText(_Tr('title.landsign.visitorbuttom','<a>',ownerId),4)
 					end
 				end
@@ -3515,21 +3524,17 @@ Callback = {
 			if not landId then
 				local r = math.floor(radius) + 1
 				local lands = Land.Query.Area(Cube.Create(Pos.Add(bp,r),Pos.Reduce(bp,r),pos.dimid))
-				if #lands==0 then
-					return
-				end
 				for i,landId in pairs(lands) do
 					if not DataStorage.Land.Raw[landId].settings.ev_explode then
 						return false
 					end
 				end
 			else
-				if DataStorage.Land.Raw[landId].settings.ev_explode then
-					return
+				if not DataStorage.Land.Raw[landId].settings.ev_explode then
+					return false
 				end
 			end
 
-			return false
 		end
 	}
 }
@@ -3685,7 +3690,7 @@ function table.setKey(tab,path,value)
 		pathes[1] = tonumber(string.sub(pathes[1],4))
 	end
 
-	if not tab[pathes[1]] then
+	if tab[pathes[1]] == nil then
 		return
 	end
 
@@ -4410,7 +4415,7 @@ mc.listen('onJoin',function(player)
 	end
 	rel.Raw['Owner'][xuid] = rel.Raw['Owner'][xuid] or {}
 
-	if player.gameMode==1 then
+	if not cfg.features.disable_creative_warn and player.gameMode == 1 then
 		WARN(_Tr('talk.gametype.creative','<a>',player.realName))
 	end
 end)
@@ -4743,7 +4748,7 @@ mc.listen('onMobHurt',function(mob,source,damage)
 	local landId = Land.Query.Pos(mob.blockPos)
 	if not landId then return end
 
-	local entityType = EntityGetType(source.type)
+	local entityType = EntityGetType(mob.type)
 	local perm = DataStorage.Land.Raw[landId].permissions
 	if perm.allow_attack_player and entityType == 0 then return end
 	if perm.allow_attack_animal and entityType == 1 then return end

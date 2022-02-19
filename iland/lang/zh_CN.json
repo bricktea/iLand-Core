@@ -138,6 +138,7 @@
     "path.<config> this.features.buttomsign.enable": "底部持续提示",
     "path.<config> this.features.buttomsign.frequency": "提示频率 (s)",
     "path.<config> this.features.force_talk": "强制对话替代Actionbar",
+    "path.<config> this.features.disable_creative_warn": "关闭创造模式玩家入服警告",
     "path.<config> this.features.chunk_side": "区块边长",
     "path.<config> this.features.player_selector.items_perpage": "单页显示玩家数目",
     "path.<config> this.features.player_selector.include_offline_players": "包含离线玩家",
@@ -241,7 +242,7 @@
     "gui.rangeselector.moveendy": "终点Y轴",
 
     "title.rangeselector.inmode": "[ 圈地模式 ]",
-    "title.rangeselector.selectpoint": "请手持 <a>, 点击方块或使用 /land set 选定 <b> 点。",
+    "title.rangeselector.selectpoint": "请手持 <a>\n点击方块或使用 /land set 选定 <b> 点。",
     "title.rangeselector.dimension.chose": "选择领地维度",
     "title.rangeselector.dimension.tip": "§l3D§r 选择两个点，以这两个点为顶点的长方体为领地。\n§l2D§r 以两个点确定XZ坐标，整个y轴皆为领地。",
     "title.rangeselector.dimension.blocked": "管理员已关闭此圈地模式",
@@ -258,7 +259,7 @@
     "title.rangeselector.largeparticle": "领地范围较大，为避免卡顿已关闭粒子特效",
     "title.rangeselector.pointed": "点 <a> 已选定：<b> (<c>, <d>, <e>)",
     "title.selectland.complete1": "圈地完成",
-    "title.selectland.complete2": "请手持 <a>, 使用 /<b> 或再次点击任意方块以创建订单。",
+    "title.selectland.complete2": "请手持 <a>\n使用 /<b> 或再次点击任意方块以创建订单。",
 
     "title.land.nolicense": "请先使用 /land new 请求创建新领地",
     "title.getlicense.alreadyexists": "请勿重复请求\n",
