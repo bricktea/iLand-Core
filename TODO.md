@@ -1,36 +1,4 @@
-> Version **2.80**
- - [x] 重建ILAPI
- - [x] 修复3D重置为2D中的一个bug
- - [x] particle box offset.
- - [x] deep y selectland problems.
- - [x] 跨维度安全传送问题
- - [x] fix autoupdate crash.
- - [x] event system
- - [x] 汉化加载中的提示信息
- - [x] 修复单坐标缓存系统中的一处Bug
- - [x] 修复冲突检查
- - [x] 领地数据自动纠错
- - [x] 修复功能被关闭后lmgr无反应
- - [x] 提升读写大量领地数据时的性能
- - [x] 移除ILAPI.GetChunk
- - [x] 移除ILAPI.GetDistance
- - [x] GetRange返回AABB
- - [x] ILAPI将会检查参数列表
- - [x] 检查适配1.18.11，LL2.1
- - [x] 测试safetp中退出
- - [x] 修复重选领地的bug
- - [x] 修复领地管理器配置项编辑不正常
- - [x] 修复OPLMgr-Land当自己无领地时编辑麻烦
- - [x] 重新设计OPLMgr-Land
- - [x] 完成EventSystem，加入传入参数检查。
- - [x] 加入关闭创造玩家进入提示
- - [x] 删除perpage
- - [x] `data.json` `owners.json` 数据结构优化
- - [x] 默认关闭onDrop
- - [x] better control using new events.
- - [x] 现在每个维度的领地高度均normal，且圈地高度检查
-
-> **2.73**
+> **2.81**
  - [ ] SubLand
 
 > ILAPI 示例插件计划

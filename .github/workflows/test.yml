@@ -2,9 +2,7 @@ name: Package iLand-Core
 
 on:
   push:
-    branches: [ LiteXLoader ]
-  pull_request:
-    branches: [ LiteXLoader ]
+    branches: [ LiteLoader ]
 
   workflow_dispatch:
 
