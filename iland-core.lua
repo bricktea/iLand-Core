@@ -38,7 +38,23 @@ Server = {
 	memData = {}
 }
 
-JSON = require('dkjson')
+JSON = {
+	_base = require('dkjson'),
+	parse = function(str)
+		local stat,rtn = pcall(JSON._base.decode,str)
+		if stat then
+			return rtn
+		end
+		return nil
+	end,
+	stringify = function(object)
+		local stat,rtn = pcall(JSON._base.encode,object)
+		if stat then
+			return rtn
+		end
+		return nil
+	end
+}
 
 MEM = {}
 DATA_PATH = 'plugins/iland/'
@@ -557,6 +573,8 @@ I18N = {
 			ERROR('Language pack not found!')
 		elseif stat == -2 then
 			ERROR('The language pack used is not suitable for this version!')
+		elseif stat == -3 then
+			ERROR('The language pack is corrupt and cannot be parsed.')
 		end
 		return false
 	end,
@@ -565,8 +583,10 @@ I18N = {
 		if not File.exists(path) then
 			return -1
 		end
-		local pack = JSON.decode(File.readFrom(path))
-		if pack.VERSION ~= Plugin.Version.toNumber() then
+		local pack = JSON.parse(File.readFrom(path))
+		if not pack then
+			return -3
+		elseif pack.VERSION ~= Plugin.Version.toNumber() then
 			return -2
 		else
 			I18N.LangPack.data = pack
@@ -581,6 +601,8 @@ I18N = {
 			ERROR(_Tr('console.languages.install.fail.verify','<a>',lang))
 		elseif stat==-3 then
 			ERROR(_Tr('console.languages.install.fail.version','<a>',lang))
+		elseif stat==-4 then
+			ERROR(_Tr('console.languages.install.fail.broken','<a>',lang))
 		end
 	end,
 	Update = function(lang)
@@ -590,11 +612,15 @@ I18N = {
 		if File.exists(path..lang..'.json') then
 			if not Array.Fetch(list_l,lang) then
 				ERROR(_Tr('console.languages.update.notfound','<a>',lang))
-			elseif JSON.decode(File.readFrom(path..lang..'.json')).VERSION == Plugin.Version.toNumber() then
+			end
+			local pack = JSON.parse(File.readFrom(path..lang..'.json'))
+			if not pack then
+				ERROR(_Tr('console.languages.update.broken','<a>',lang))
+			elseif pack.VERSION == Plugin.Version.toNumber() then
 				ERROR(lang..': '.._Tr('console.languages.update.alreadylatest'))
 			elseif not Array.Fetch(list_o.official,lang) and not Array.Fetch(list_o['3-rd'],lang) then
 				ERROR(_Tr('console.languages.update.notfoundonline','<a>',lang))
-			elseif I18N.LangPack.Install(lang) then
+			elseif I18N.LangPack.Install(lang)==0 then
 				INFO(_Tr('console.languages.update.succeed','<a>',lang))
 				return true
 			end
@@ -623,8 +649,10 @@ I18N = {
 			if data.toMD5(raw)~=lang_v.data then
 				return -2
 			end
-			local THISVER = JSON.decode(raw).VERSION
-			if THISVER~=Plugin.Version.toNumber() then
+			local pack = JSON.parse(raw)
+			if not pack then
+				return -4
+			elseif pack.VERSION~=Plugin.Version.toNumber() then
 				return -3
 			end
 			File.writeTo(DATA_PATH..'lang/'..lang..'.json',raw)
@@ -654,15 +682,19 @@ I18N = {
 			if server ~= false then
 				local raw = network.httpGetSync(server..'/languages/repo.json')
 				if raw.status==200 then
-					return JSON.decode(raw.data)
+					local rtn = JSON.parse(raw.data)
+					if rtn then
+						return rtn
+					else
+						ERROR(_Tr('console.getonline.failbybroken'))
+					end
 				else
 					ERROR(_Tr('console.getonline.failbycode','<a>',raw.status))
-					return false
 				end
 			else
 				WARN(_Tr('console.getonline.failed'))
-				return false
 			end
+			return false
 		end
 	}
 }
@@ -709,10 +741,13 @@ DataStorage = {
 			--- Check file.
 			if not File.exists(DATA_PATH..'config.json') then
 				WARN(_Tr('console.loading.config.notfound'))
-				File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
+				File.writeTo(DATA_PATH..'config.json',JSON.stringify(cfg))
 			end
-			local localcfg = JSON.decode(File.readFrom(DATA_PATH..'config.json'))
-			if localcfg.version ~= Plugin.Version.toNumber() then
+			local localcfg = JSON.parse(File.readFrom(DATA_PATH..'config.json'))
+			if not localcfg then
+				ERROR(_Tr('console.loading.config.broken'))
+				return false
+			elseif localcfg.version ~= Plugin.Version.toNumber() then
 				save = true
 				if not DataStorage.Config.Update(localcfg) then
 					return false
@@ -823,7 +858,7 @@ DataStorage = {
 			return true
 		end,
 		Save = function()
-			File.writeTo(DATA_PATH..'config.json',JSON.encode(cfg))
+			File.writeTo(DATA_PATH..'config.json',JSON.stringify(cfg))
 		end
 
 	},
@@ -839,13 +874,15 @@ DataStorage = {
 			--- Check file.
 			if not File.exists(DATA_PATH..'data.json') then
 				WARN(_Tr('console.loading.land.notfound'))
-				File.writeTo(DATA_PATH..'data.json',JSON.encode({
+				File.writeTo(DATA_PATH..'data.json',JSON.stringify({
 					version = Plugin.Version.toNumber(),
 					Lands = {}
 				}))
 			end
-			local localdata = JSON.decode(File.readFrom(DATA_PATH..'data.json'))
-			if localdata.version ~= Plugin.Version.toNumber() then
+			local localdata = JSON.parse(File.readFrom(DATA_PATH..'data.json'))
+			if not localdata then
+				ERROR(_Tr('console.loading.land.broken'))
+			elseif localdata.version ~= Plugin.Version.toNumber() then
 				DataStorage.Land.Update(localdata)
 			end
 
@@ -993,7 +1030,7 @@ DataStorage = {
 				version = Plugin.Version.toNumber(),
 				Lands = table.concatEx(DataStorage.Land.Raw,DataStorage.Land.Unloaded)
 			}
-			File.writeTo(DATA_PATH..'data.json',JSON.encode(localdata))
+			File.writeTo(DATA_PATH..'data.json',JSON.stringify(localdata))
 		end
 
 	},
@@ -1005,14 +1042,16 @@ DataStorage = {
 			local rel = DataStorage.RelationShip
 			if not File.exists(DATA_PATH..'relationship.json') then
 				WARN(_Tr('console.loading.relationship.notfound'))
-				File.writeTo(DATA_PATH..'relationship.json',JSON.encode({
+				File.writeTo(DATA_PATH..'relationship.json',JSON.stringify({
 					version = Plugin.Version.toNumber(),
 					Owner = {},
 					Operator = {}
 				}))
 			end
-			local localdata = JSON.decode(File.readFrom(DATA_PATH..'relationship.json'))
-			if localdata.version ~= Plugin.Version.toNumber() then
+			local localdata = JSON.parse(File.readFrom(DATA_PATH..'relationship.json'))
+			if not localdata then
+				ERROR(_Tr('console.loading.relationship.notfound'))
+			elseif localdata.version ~= Plugin.Version.toNumber() then
 				rel.Update(localdata)
 			end
 			--- Owner
@@ -1046,7 +1085,7 @@ DataStorage = {
 				Owner = table.concatEx(rel.Raw['Owner'],rel.Unloaded['Owner']),
 				Operator = rel.Raw['Operator']
 			}
-			File.writeTo(DATA_PATH..'relationship.json',JSON.encode(localdata))
+			File.writeTo(DATA_PATH..'relationship.json',JSON.stringify(localdata))
 		end
 
 	},
@@ -1158,14 +1197,14 @@ Land = {
 
 			--- Check land.
 			if not Land.Util.IsCollision(AABB).status then
-				return -1
+				return nil
 			end
 
 			--- Land storage.
 			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
 			local landId = Land.IDManager.Create()
-			if not EventSystem.Call(EventSystem.EV.onCreate,'Before',{landId,xuid,AABB}) then
-				return -1
+			if not EventSystem.Call(EventSystem._ev_int['onCreate'],'Before',{landId,xuid,AABB}) then
+				return nil
 			end
 			local tpl = DataStorage.Land.Template.Create()
 			tpl.settings.teleport = Pos.ToArray(posA)
@@ -1188,10 +1227,14 @@ Land = {
 			Map.CachedQuery.SinglePos.check_noland_pos()
 
 			DataStorage.Save({0,1,1})
+			EventSystem.Call(EventSystem._ev_int['onCreate'],'After',{landId,xuid})
 			return landId
 
 		end,
 		Delete = function(landId)
+			if not EventSystem.Call(EventSystem._ev_int['onDelete'],'Before',{landId}) then
+				return false
+			end
 			Land.RelationShip.Owner.destroy(landId)
 			Map.CachedQuery.RangeArea.refresh(landId)
 			Map.CachedQuery.SinglePos.refresh(landId)
@@ -1201,6 +1244,7 @@ Land = {
 			Map.Land.Position.update(landId,'del')
 			DataStorage.Land.Raw[landId] = nil
 			DataStorage.Save({0,1,1})
+			EventSystem.Call(EventSystem._ev_int['onDelete'],'After',{landId})
 			return true
 		end
 
@@ -1401,6 +1445,8 @@ Land = {
 			local posA,posB,dimid = AABB.posA,AABB.posB,AABB.dimid
 			if not Land.Util.IsCollision(AABB,{landId}).status then
 				return false
+			elseif not EventSystem.Call(EventSystem._ev_int['onChangeRange'],'Before',{landId,AABB}) then
+				return false
 			end
 			Map.Chunk.update(landId,'del')
 			Map.Land.AXIS.update(landId,'del')
@@ -1489,6 +1535,9 @@ Land = {
 				return DataStorage.RelationShip.Raw['Owner'][xuid]
 			end,
 			set = function(landId,xuid)
+				if not EventSystem.Call(EventSystem._ev_int['onChangeOwner'],'Before',{landId,xuid}) then
+					return false
+				end
 				Land.RelationShip.Owner.destroy(landId)
 				DataStorage.RelationShip.Raw['Owner'][xuid][#DataStorage.RelationShip.Raw['Owner'][xuid]+1] = landId
 				Map.Land.Owner.update(landId)
@@ -1525,6 +1574,8 @@ Land = {
 				local share = DataStorage.Land.Raw[landId].settings.share
 				if Land.RelationShip.Trusted.check(landId,xuid) then
 					return false
+				elseif not EventSystem.Call(EventSystem._ev_int['onChangeTrust'],'Before',{landId,0,xuid}) then
+					return false
 				end
 				share[#share+1] = xuid
 				Map.Land.Trusted.update(landId)
@@ -1532,6 +1583,9 @@ Land = {
 				return true
 			end,
 			remove = function(landId,xuid)
+				if not EventSystem.Call(EventSystem._ev_int['onChangeTrust'],'Before',{landId,1,xuid}) then
+					return false
+				end
 				local share = DataStorage.Land.Raw[landId].settings.share
 				Array.Remove(share,xuid)
 				Map.Land.Trusted.update(landId)
@@ -1574,7 +1628,7 @@ Land = {
 		},
 		Exported = {
 			['AddBeforeEventListener'] = function(event,funcname)
-				local ev = EventSystem.EV[event]
+				local ev = EventSystem._ev_int[event]
 				local func = ll.import(funcname)
 				if not ev or not func then
 					return -1
@@ -1582,7 +1636,7 @@ Land = {
 				return EventSystem.AddListener(ev,'Before',func)
 			end,
 			['AddAfterEventListener'] = function(event,funcname)
-				local ev = EventSystem.EV[event]
+				local ev = EventSystem._ev_int[event]
 				local func = ll.import(funcname)
 				if not ev or not func then
 					return -1
@@ -1964,18 +2018,18 @@ OpenGUI = {
 						if not mode then
 							return
 						elseif mode == 0 then -- 按玩家
+							local xuidlist,namelist = GetPlayerList(3)
 							ItemSelector.Create(player,{
 								title = _Tr('gui.itemselector.mgrpl.title'),
 								tip_usage = _Tr('gui.itemselector.mgrpl.tip_usage'),
 								tip_search = _Tr('gui.itemselector.mgrpl.tip_search'),
-								list = GetPlayerList(1),
-								callback = function(selected)
+								list = namelist,
+								callback = function(selected,pos)
 									if #selected > 1 then
 										SendText(player,_Tr('gui.itemselector.toomany'))
 										return
 									end
-									local thisXid = data.name2xuid(selected[1])
-									OpenGUI.LMgr(player,thisXid)
+									OpenGUI.LMgr(player,xuidlist[pos[1]])
 								end
 							})
 						elseif mode == 1 then -- 按领地
@@ -2570,10 +2624,13 @@ OpenGUI = {
 				_Tr('gui.general.cancel'),
 				function (player,id)
 					if not id then return end
-					if Land.RelationShip.Owner.getXuid(landId) == xuid then
+					local owner = Land.RelationShip.Owner.getXuid(landId)
+					if not Land.Storage.Delete(landId) then
+						return
+					elseif owner == xuid then
 						Economy.Player.add(player,value)
 					end
-					Land.Storage.Delete(landId)
+					
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -3225,42 +3282,69 @@ Array = {
 
 EventSystem = {
 
-	EV = {
-		onCreate = 1,
-		onDelete = 2,
-		onEnter = 3,
-		onLeave = 4,
-		onChangeRange = 5,
-		onChangeOwner = 6,
-		onChangeDescribe = 7,
-		onChangeName = 8,
-		onChangeTrust = 9,
-		onChangeSetting = 10,
-		onChangePermission = 11
+	_ev = {
+		'onCreate','onDelete','onEnter','onLeave',
+		'onChangeRange','onChangeOwner','onChangeDescribe','onChangeName',
+		'onChangeTrust','onChangeSetting','onChangePermission'
 	},
-	_ev = {},
 	_cb = {},
 	Init = function()
+		EventSystem._ev_int = {}
 		EventSystem._cb = {
 			Before = {},
 			After = {}
 		}
-		for ev,id in pairs(EventSystem.EV) do
+		for id,ev in pairs(EventSystem._ev) do
 			EventSystem._cb.Before[id] = {}
 			EventSystem._cb.After[id] = {}
-			EventSystem._ev[id] = ev
+			EventSystem._ev_int[ev] = id
 		end
 		return true
 	end,
-	-- [enum] event, [string] Before|After, [table] extradata
-	Call = function(event,type,extradata)
+	-- [enum] event, [string] Before|After, [table] resources
+	Call = function(event,type,res)
+		local ed = {}
+		if type == 'Before' then
+			if event == EventSystem._ev_int['onAskLicense'] then
+				ed.mPlayer = res[1]
+			elseif event == EventSystem._ev_int['onCreate'] then
+				ed.mLandID = res[1]
+				ed.mPlayer = res[2]
+				ed.mRange = res[3]
+			elseif event == EventSystem._ev_int['onDelete'] then
+				ed.mLandID = res[1]
+			elseif event == EventSystem._ev_int['onChangeRange'] then
+				ed.mLandID = res[1]
+				ed.mNew = res[2]
+			elseif event == EventSystem._ev_int['onChangeOwner'] then
+				ed.mLandID = res[1]
+				ed.mNew = res[2]
+			elseif event == EventSystem._ev_int['onChangeTrust'] then
+				ed.mLandID = res[1]
+				ed.mActionType = res[2]
+				ed.mPlayer = res[3]
+			end
+		elseif type == 'After' then
+			if event == EventSystem._ev_int['onCreate'] then
+				ed.mLandID = res[1]
+				ed.mPlayer = res[2]
+			elseif event == EventSystem._ev_int['onDelete'] then
+				ed.mLandID = res[1]
+			elseif event == EventSystem._ev_int['onEnter'] then
+				ed.mLandID = res[1]
+				ed.mPlayer = res[2]
+			elseif event == EventSystem._ev_int['onLeave'] then
+				ed.mLandID = res[1]
+				ed.mPlayer = res[2]
+			end
+		end
 		local rtn = true
 		for n,func in pairs(EventSystem._cb[type][event]) do
 			if not func then
 				goto JUMPOUT_EV_CALL;
 			end
-			local m = func(extradata)
-			if m ~= nil and (m == 0 or not m) then
+			local stat,rtv = pcall(func,ed)
+			if stat and (rtv == 0 or not rtv) then
 				rtn = false
 			end
 			:: JUMPOUT_EV_CALL ::
@@ -3292,38 +3376,41 @@ Callback = {
 
 				local landId = Land.Query.Pos(player.blockPos)
 				if not landId then
+					if MEM[xuid].inland ~= 'null' then
+						EventSystem.Call(EventSystem._ev_int['onLeave'],'After',{landId,xuid})
+					end
 					MEM[xuid].inland = 'null'
 					goto JUMPOUT_LANDSIGN
 				end
-				if landId==MEM[xuid].inland then
+				if landId == MEM[xuid].inland then
 					goto JUMPOUT_LANDSIGN
+				else
+					EventSystem.Call(EventSystem._ev_int['onEnter'],'After',{landId,xuid})
 				end
 
 				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 				local ownerId = '?'
 				if ownerXuid then
-					ownerId = data.xuid2name(ownerXuid)
+					ownerId = data.xuid2name(ownerXuid) or '?'
 				end
 				local landcfg = DataStorage.Land.Raw[landId].settings
 
-				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
+				if Land.Util.CheckPerm(landId,xuid) then
 					-- owner/trusted
-					if not landcfg.signtome then
+					if landcfg.signtome then
 						goto JUMPOUT_LANDSIGN
 					end
 					SendTitle(player,
-						_Tr('sign.listener.ownertitle','<a>',Land.Options.Nickname.get(landId,2)),
-						_Tr('sign.listener.ownersubtitle')
-					)
+					_Tr('sign.listener.ownertitle','<a>',Land.Options.Nickname.get(landId,2)),
+					_Tr('sign.listener.ownersubtitle'))
 				else
 					-- visitor
-					if not landcfg.signtother then
+					if landcfg.signtother then
 						goto JUMPOUT_LANDSIGN
 					end
 					SendTitle(player,
-						_Tr('sign.listener.visitortitle'),
-						_Tr('sign.listener.visitorsubtitle','<a>',ownerId)
-					)
+					_Tr('sign.listener.visitortitle'),
+					_Tr('sign.listener.visitorsubtitle','<a>',ownerId))
 					if landcfg.describe~='' then
 						local des = table.clone(landcfg.describe)
 						des = string.gsub(des,'$visitor',player.name)
@@ -3356,9 +3443,9 @@ Callback = {
 				local ownerXuid = Land.RelationShip.Owner.getXuid(landId)
 				local ownerId = '?'
 				if ownerXuid then
-					ownerId = data.xuid2name(ownerXuid)
+					ownerId = data.xuid2name(ownerXuid) or '?'
 				end
-				if (xuid==ownerXuid or Land.RelationShip.Trusted.check(landId,xuid)) and landcfg.signtome then
+				if Land.Util.CheckPerm(landId,xuid) and landcfg.signtome then
 					player:sendText(_Tr('title.landsign.ownenrbuttom','<a>',Land.Options.Nickname.get(landId,3)),4)
 				else
 					if (xuid~=ownerXuid) and landcfg.signtother then
@@ -3450,8 +3537,11 @@ function Server.GetLink()
 	if tokenRaw.status~=200 then
 		return false
 	end
-	local id = JSON.decode(tokenRaw.data).token
-	return Server.link..id..'/iLand'
+	local res = JSON.parse(tokenRaw.data)
+	if res then
+		return Server.link..res.token..'/iLand'
+	end
+	return false
 end
 
 --#region Native Types Helper
@@ -3903,29 +3993,26 @@ function RegisterCommands()
 	end)
 	mc.regPlayerCmd('land new',_Tr('command.land_new'),function (player,args)
 		local xuid = player.xuid
-
+		if not EventSystem.Call(EventSystem._ev_int['onAskLicense'],'Before',{xuid}) then
+			return
+		end
 		if MEM[xuid].reselectLand then
 			SendText(player,_Tr('title.reselectland.fail.makingnewland'))
-			return
-		end
-		if MEM[xuid].newLand then
+		elseif MEM[xuid].newLand then
 			SendText(player,_Tr('title.getlicense.alreadyexists'))
-			return
-		end
-		if not Land.RelationShip.Operator.check(xuid) and #DataStorage.RelationShip.Raw['Owner'][xuid]>=cfg.land.max_lands then
+		elseif not Land.RelationShip.Operator.check(xuid) and #DataStorage.RelationShip.Raw['Owner'][xuid]>=cfg.land.max_lands then
 			SendText(player,_Tr('title.getlicense.limit'))
-			return
+		else
+			MEM[xuid].newLand = {}
+			RangeSelector.Create(player,function(player,cube,dimension)
+				MEM[xuid].keepingTitle = {
+					_Tr('title.selectland.complete1'),
+					_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
+				}
+				MEM[xuid].newLand.range = cube
+				MEM[xuid].newLand.dimension = dimension
+			end)	
 		end
-		MEM[xuid].newLand = {}
-		RangeSelector.Create(player,function(player,cube,dimension)
-			MEM[xuid].keepingTitle = {
-				_Tr('title.selectland.complete1'),
-				_Tr('title.selectland.complete2','<a>',cfg.features.selection.tool_name,'<b>','land buy')
-			}
-			MEM[xuid].newLand.range = cube
-			MEM[xuid].newLand.dimension = dimension
-		end)
-
 	end)
 	mc.regPlayerCmd('land giveup',_Tr('command.land_giveup'),function (player,args)
 		local xuid = player.xuid
@@ -4863,7 +4950,7 @@ mc.listen('onServerStarted',function()
 					ERROR(_Tr('console.getonline.failbycode','<a>',code))
 					return
 				end
-				local data = JSON.decode(result)
+				local data = JSON.parse(result)
 				Server.memData = data
 
 				-- Check Server Version

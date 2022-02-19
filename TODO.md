@@ -22,7 +22,7 @@
  - [x] 修复领地管理器配置项编辑不正常
  - [x] 修复OPLMgr-Land当自己无领地时编辑麻烦
  - [x] 重新设计OPLMgr-Land
- - [ ] 完成EventSystem，加入传入参数检查。
+ - [x] 完成EventSystem，加入传入参数检查。
  - [x] 【!NeedAutoUpdate】删除perpage
  - [x] 【!NeedAutoUpdate】`data.json`数据结构优化
  - [ ] 【!NeedAutoUpdate】默认关闭onDrop

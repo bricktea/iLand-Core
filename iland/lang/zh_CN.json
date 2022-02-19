@@ -350,11 +350,14 @@
     "console.loading.config.notfound": "配置文件（config.json）不存在，正在创建...",
     "console.loading.config.itemlost": "配置项 <a> 丢失，重设为默认值。",
     "console.loading.config.autocorrect": "配置项 <a> 有误，已自动修复。",
+    "console.loading.config.broken": "配置文件已损坏。",
     "console.loading.land.notfound": "领地数据文件（data.json）不存在，正在创建...",
     "console.loading.land.invalild": "领地（Id: <a>）范围信息丢失，已清除。",
+    "console.loading.land.broken": "领地数据文件已损坏。",
     "console.loading.relationship.notfound": "关系数据（relationship.json）不存在，正在创建...",
     "console.loading.relationship.xuidinvalid": "无效的XUID（<a>），跳过加载...",
     "console.loading.relationship.xuidinvalidtip": "一些玩家没有被加载，因为他们的XUID不在数据库中，令这些玩家重新进服可以解决此问题。",
+    "console.loading.relationship.broken": "领地关系数据文件已损坏。",
     "console.loading.map.load": "正在构建运行所需要的表...",
     "console.loading.map.complete": "完成，使用内存：<a>M。",
     "console.loading.fail.config": "读取配置文件时出错！",
@@ -394,6 +397,7 @@
     "console.getonline.failbycode": "获取云端信息失败，错误代码：<a>。",
     "console.getonline.failed": "云端信息获取失败。",
     "console.getonline.failbyver": "无法解析的云端信息文件版本（<a>），您的iLand可能已过时。",
+    "console.getonline.failbybroken": "无法解析云端信息，JSON解析失败。",
 
     "console.languages.sign": "此服务器正在使用 <a> 语言，版本为：<b>。",
     "console.languages.list.count": "已安装语言：<a> 个",
@@ -406,6 +410,7 @@
     "console.languages.install.fail.stat": "下载语言 <a> 时出错，安装进程已中断。",
     "console.languages.install.fail.verify": "校验语言 <a> 时出错，MD5不匹配，安装进程已中断。",
     "console.languages.install.fail.version": "正在安装的语言 <a> 与目前运行的iLand版本不匹配，安装进程已中断。",
+    "console.languages.install.fail.broken": "正在安装的语言包 <a> 已损坏，安装进程中断。",
     "console.languages.install.succeed": "语言包 <a> 安装成功！请使用 \"land language set <a>\" 设定使用的语言。",
     "console.languages.update.alreadylatest": "此语言版本已是最新，无需升级。",
     "console.languages.update.notfound": "语言包 <a> 找不到，请尝试用 \"land language install <a>\" 安装此语言。",
@@ -414,6 +419,7 @@
     "console.languages.update.completed": "已升级 <a> 个语言包。",
     "console.languages.update.all": "正在开始升级所有语言包...",
     "console.languages.update.single": "正在开始升级语言包 <a> ...",
+    "console.languages.update.broken": "获取到的 <a> 语言已损坏，升级失败。",
 
     "console.error.money.protocol": "正在使用未知的经济组件 '<a>'。",
     "console.error.money.scorenull": "无法访问计分板对象，可能对应的经济计分板不存在。请使用/land mgr更改为正确计分板或尝试重启服务器。"
