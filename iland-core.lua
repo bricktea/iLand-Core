@@ -941,9 +941,11 @@ DataStorage = {
 				end
 				if origin.version < 280 then
 					local ra = origin.Lands[landId].range
-					local dim = Dimension.Get(ra.dimid)
-					ra.start_position[2] = dim.min
-					ra.end_position[2] = dim.max
+					if ra.start_position[2] == -64 and ra.end_position[2] == 320 then
+						local dim = Dimension.Get(ra.dimid)
+						ra.start_position[2] = dim.min
+						ra.end_position[2] = dim.max
+					end
 				end
 			end
 			return true
