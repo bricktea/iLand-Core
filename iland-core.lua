@@ -1063,15 +1063,16 @@ DataStorage = {
 				WARN(_Tr('console.loading.relationship.notfound'))
 				File.writeTo(DATA_PATH..'relationship.json',JSON.stringify({
 					version = Plugin.Version.toNumber(),
-					Owner = {},
-					Operator = {}
+					Owner = {}
 				}))
 			end
 			local localdata = JSON.parse(File.readFrom(DATA_PATH..'relationship.json'))
 			if not localdata then
 				ERROR(_Tr('console.loading.relationship.notfound'))
 			elseif localdata.version ~= Plugin.Version.toNumber() then
-				rel.Update(localdata)
+				if not rel.Update(localdata) then
+					return false
+				end
 			end
 			--- Owner
 			rel.Raw['Owner'] = {}
@@ -1092,17 +1093,17 @@ DataStorage = {
 			return true
 		end,
 		Update = function(origin)
-			if not origin.version then
-
+			if not next(origin.Owner) and File.exists(DATA_PATH..'owners.json') then
+				origin.Owner = JSON.parse(File.readFrom(DATA_PATH..'owners.json'))
+				File.rename(DATA_PATH..'owners.json',DATA_PATH..'owners.bak')
 			end
-			return origin
+			return true
 		end,
 		Save = function()
 			local rel = DataStorage.RelationShip
 			local localdata = {
 				version = Plugin.Version.toNumber(),
-				Owner = table.concatEx(rel.Raw['Owner'],rel.Unloaded['Owner']),
-				Operator = rel.Raw['Operator']
+				Owner = table.concatEx(rel.Raw['Owner'],rel.Unloaded['Owner'])
 			}
 			File.writeTo(DATA_PATH..'relationship.json',JSON.stringify(localdata))
 		end
