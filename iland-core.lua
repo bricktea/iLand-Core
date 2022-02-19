@@ -894,7 +894,14 @@ DataStorage = {
 			if not localdata then
 				ERROR(_Tr('console.loading.land.broken'))
 			elseif localdata.version ~= Plugin.Version.toNumber() then
+				if not localdata.version then
+					localdata = {
+						version = 270,
+						Lands = table.clone(localdata)
+					}
+				end
 				DataStorage.Land.Update(localdata)
+				save = true
 			end
 
 			--- Load local land.
@@ -905,6 +912,7 @@ DataStorage = {
 				else
 					WARN(_Tr('console.loading.land.invalild','<a>',landId))
 					Land.RelationShip.Owner.destroy(landId)
+					save = true
 				end
 			end
 
@@ -915,13 +923,6 @@ DataStorage = {
 			return true
 		end,
 		Update = function(origin)
-			if not origin.version then
-				origin = {
-					version = 270,
-					Lands = table.clone(origin)
-				}
-			end
-			--- Update
 			for landId,res in pairs(origin.Lands) do
 				local perm = origin.Lands[landId].permissions
 				local setting = origin.Lands[landId].settings
@@ -1058,7 +1059,12 @@ DataStorage = {
 		Raw = {},
 		Unloaded = {},
 		Load = function()
+
+			--- Init.
 			local rel = DataStorage.RelationShip
+			local save = false
+
+			--- Check file.
 			if not File.exists(DATA_PATH..'relationship.json') then
 				WARN(_Tr('console.loading.relationship.notfound'))
 				File.writeTo(DATA_PATH..'relationship.json',JSON.stringify({
@@ -1067,14 +1073,22 @@ DataStorage = {
 				}))
 			end
 			local localdata = JSON.parse(File.readFrom(DATA_PATH..'relationship.json'))
+			if not next(localdata.Owner) and File.exists(DATA_PATH..'owners.json') then
+				localdata.Owner = JSON.parse(File.readFrom(DATA_PATH..'owners.json'))
+				File.rename(DATA_PATH..'owners.json',DATA_PATH..'owners.bak')
+				save = true
+			end
 			if not localdata then
 				ERROR(_Tr('console.loading.relationship.notfound'))
+				return false
 			elseif localdata.version ~= Plugin.Version.toNumber() then
+				save = true
 				if not rel.Update(localdata) then
 					return false
 				end
 			end
-			--- Owner
+
+			--- Load local owners.
 			rel.Raw['Owner'] = {}
 			rel.Unloaded['Owner'] = {}
 			local had_unloaded_xuid = false
@@ -1090,13 +1104,15 @@ DataStorage = {
 			if had_unloaded_xuid then
 				INFO(_Tr('console.loading.relationship.xuidinvalidtip'))
 			end
+
+			--- Save if needed.
+			if save then
+				DataStorage.Save({0,0,1})
+			end
+
 			return true
 		end,
 		Update = function(origin)
-			if not next(origin.Owner) and File.exists(DATA_PATH..'owners.json') then
-				origin.Owner = JSON.parse(File.readFrom(DATA_PATH..'owners.json'))
-				File.rename(DATA_PATH..'owners.json',DATA_PATH..'owners.bak')
-			end
 			return true
 		end,
 		Save = function()
@@ -1812,7 +1828,7 @@ Land = {
 			['GetVersion'] = function()
 				return Plugin.Version.toNumber()
 			end,
-			['SafeTeleport_Do'] = function(xuid,pos)
+			['SafeTeleport'] = function(xuid,pos)
 				assert(Land.API.Helper.CheckNilArgument(xuid,pos),Land.API.Helper.ErrMsg[1])
 				assert(Land.API.Helper.IsXuidOnline(xuid),Land.API.Helper.ErrMsg[3])
 				return SafeTeleport.Do(mc.getPlayer(xuid),pos)
@@ -2062,7 +2078,7 @@ OpenGUI = {
 								local owner = Land.RelationShip.Owner.getXuid(landId) or '?'
 								if owner ~= '?' then
 									owner = data.xuid2name(owner) or '?'
-								end 
+								end
 								list[#list+1] = string.gsubEx(
 									'<name> §lID: §r<landId>§r\n§l<dimension>§r <dim> §l<a>:§r <owner>',
 									'<a>',_Tr('talk.owner'),
@@ -2518,7 +2534,7 @@ OpenGUI = {
 								status_list[ID] = _Tr('gui.landtrust.rmsuccess')
 							end
 						end
-	
+
 						local text = "Completed."
 						for i,v in pairs(status_list) do
 							text = text..'\n'..i..' => '..v
@@ -2654,7 +2670,7 @@ OpenGUI = {
 					elseif owner == xuid then
 						Economy.Player.add(player,value)
 					end
-					
+
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
 						'Complete.',
@@ -2672,7 +2688,7 @@ ItemSelector = {
 	_perpage = 20,
 	Create = function (player,payload)
 
-		--[[ Payload: 
+		--[[ Payload:
 			- (string) title
 			- (string) tip_usage
 			- (string) tip_search
@@ -3307,7 +3323,7 @@ Array = {
 EventSystem = {
 
 	_ev = {
-		'onCreate','onDelete','onEnter','onLeave',
+		'onAskLicense','onCreate','onDelete','onEnter','onLeave',
 		'onChangeRange','onChangeOwner','onChangeDescribe','onChangeName',
 		'onChangeTrust','onChangeSetting','onChangePermission'
 	},
@@ -4036,7 +4052,7 @@ function RegisterCommands()
 				}
 				MEM[xuid].newLand.range = cube
 				MEM[xuid].newLand.dimension = dimension
-			end)	
+			end)
 		end
 	end)
 	mc.regPlayerCmd('land giveup',_Tr('command.land_giveup'),function (player,args)
