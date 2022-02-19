@@ -10,6 +10,7 @@
 * [指令表](/user/commands.md)
 * **开发者文档**
 * [ILAPI](/development/ilapi.md)
+* [事件](/development/event.md)
 * [语言包](/development/i18n.md)
 * **奇技淫巧**
 * [从其他领地系统迁移](/tools/transfrom.md)

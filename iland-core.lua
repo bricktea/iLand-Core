@@ -1265,7 +1265,7 @@ Land = {
 			Map.CachedQuery.SinglePos.check_noland_pos()
 
 			DataStorage.Save({0,1,1})
-			EventSystem.Call(EventSystem._ev_int['onCreate'],'After',{landId,xuid})
+			EventSystem.Call(EventSystem._ev_int['onCreate'],'After',{landId,xuid,AABB})
 			return landId
 
 		end,
@@ -3374,6 +3374,7 @@ EventSystem = {
 			if event == EventSystem._ev_int['onCreate'] then
 				ed.mLandID = res[1]
 				ed.mPlayer = res[2]
+				ed.mRange = res[3]
 			elseif event == EventSystem._ev_int['onDelete'] then
 				ed.mLandID = res[1]
 			elseif event == EventSystem._ev_int['onEnter'] then

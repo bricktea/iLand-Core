@@ -156,12 +156,6 @@
 
 是否包含记录到的所有玩家，关闭则只包含在线的玩家。
 
-##### 单页显示玩家数目
-
-?> config.json: `this.features.player_selector.items_perpage`
-
-每页显示多少玩家，建议值`20`。
-
 #### 其他功能
 
 ##### 领地传送
@@ -175,6 +169,12 @@
 ?> config.json: `this.features.force_talk`
 
 如果有别的插件占用了`Actionbar`，请开启此项。
+
+##### 关闭创造玩家入服警告
+
+?> config.json: `this.features.disable_creative_warn` 
+
+请确保您明白警告的含义后再关闭。
 
 ##### 区块边长
 
