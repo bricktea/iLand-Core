@@ -16,7 +16,7 @@ Plugin = {
 	Version = {
 		major = 2,
 		minor = 8,
-		revision = 0,
+		revision = 1,
 		toString = function()
 			local ver = Plugin.Version
 			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)
@@ -924,8 +924,10 @@ DataStorage = {
 		end,
 		Update = function(origin)
 			for landId,res in pairs(origin.Lands) do
-				local perm = origin.Lands[landId].permissions
-				local setting = origin.Lands[landId].settings
+				local land = origin.Lands[landId]
+				local perm = land.permissions
+				local setting = land.settings
+				local range = land.range
 				if origin.version < 240 then
 					return false
 				end
@@ -940,12 +942,14 @@ DataStorage = {
 					perm.useitem = nil
 				end
 				if origin.version < 280 then
-					local ra = origin.Lands[landId].range
-					if ra.start_position[2] == -64 and ra.end_position[2] == 320 then
-						local dim = Dimension.Get(ra.dimid)
-						ra.start_position[2] = dim.min
-						ra.end_position[2] = dim.max
+					if range.start_position[2] == -64 and range.end_position[2] == 320 then
+						local dim = Dimension.Get(range.dimid)
+						range.start_position[2] = dim.min
+						range.end_position[2] = dim.max
 					end
+				end
+				if origin.version < 281 then
+					land.settings.teleport = table.clone(land.range.end_position)
 				end
 			end
 			return true
