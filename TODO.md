@@ -1,5 +1,10 @@
-> **2.81**
- - [ ] SubLand
+> **2.82**
+ - [ ] 在含水方块放水
+ - [x] 管理员领地管理器搜索后打开的领地错误
+ - [ ] 冲突领地检测没有提示冲突坐标，领地名称未显示
+ - [ ] LandInfo 领地名称未显示
+ - [ ] Event:Before - onCreate 回传无mRange
+ - [ ] schedule随机性失效？
 
 > ILAPI 示例插件计划
  - [ ] Land Edge Shower

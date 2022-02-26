@@ -2691,138 +2691,153 @@ OpenGUI = {
 }
 
 ItemSelector = {
-	_perpage = 20,
+	_perpage = 2,
 	Create = function (player,payload)
 
 		--[[ Payload:
-			- (string) title
-			- (string) tip_usage
-			- (string) tip_search
-			- (table) list
-			- (function) callback [1|selected item] [2|position]
+			- (string)		title
+			- (string)		tip_usage
+			- (string)		tip_search
+			- (table)		list
+			- (function)	callback [1|selected item] [2|position]
 		]]
 
+		local function toPages()
+			local rtn = {}
+			for n,item in pairs(payload.list) do
+				local num = math.ceil(n/ItemSelector._perpage)
+				rtn[num] = rtn[num] or {}
+				rtn[num][#rtn[num]+1] = {n,item}
+			end
+			return rtn
+		end
+
 		local xuid = player.xuid
+		local pages = toPages()
 		MEM[xuid].isr = {
-			itemList = {},
 			payload = payload,
-			nowpage = 1,
-			filter = ''
+			runtime = {
+				origin = pages,
+				display = pages,
+				page = 1,
+				filter = ''
+			}
 		}
 
-		MEM[xuid].isr.itemList = ItemSelector.Helper.ToPages(payload.list)
 		ItemSelector.Callback(player,'#')
 
 	end,
-	Callback = function (player,data)
+
+	Callback = function (player,res)
+
+		--[[ Result(res):
+			- [1]	(string)		filter
+			- [...]	(boolean)		...
+			- [len]	(number)		nowPage - 1
+		]]
 		local xuid = player.xuid
-		if not data then
+		if not res then
 			MEM[xuid].isr = nil
 			return
 		end
 
-		-- get data
-		local psrdata = MEM[xuid].isr
-		local payload = psrdata.payload
+		-- Init.
+		local runtime = MEM[xuid].isr.runtime
+		local payload = MEM[xuid].isr.payload
+		local displayList = runtime.display[runtime.page]
+		local pageCount = #runtime.display
 
-		local function buildPage(num)
-			local tmp = {}
-			for i=1,num do
-				tmp[i] = _Tr('gui.itemselector.num','<a>',i)
+		local function buildPageTurner(pages)
+			local rtn = {}
+			for i=1,pages do
+				rtn[i] = _Tr('gui.itemselector.num','<a>',i)
 			end
-			return tmp
+			return rtn
+		end
+		local function setDisplayPage(pageNum)
+			runtime.page = pageNum
+			displayList = runtime.display[pageNum]
+		end
+		local function getItemCount()
+			local rtn = 0
+			for a,b in pairs(runtime.display) do
+				for c,d in pairs(b) do
+					rtn = rtn + 1
+				end
+			end
+			return rtn
 		end
 
-		local maxpage = #psrdata.itemList
-		local rawList = table.clone(psrdata.itemList[psrdata.nowpage])
+		-- Parse result if NOT_FIRST.
+		if type(res) == 'table' then
 
-		if type(data)=='table' then
-
-			-- refresh page
-			local npg = data[#data] + 1 -- custom page
-			if npg~=psrdata.nowpage and npg<=maxpage then
-				psrdata.nowpage = npg
-				rawList = table.clone(psrdata.itemList[npg])
-				goto JUMPOUT_PSR_OTHER
+			-- Update page if changed.
+			local nowPage = res[#res] + 1
+			if nowPage ~= runtime.page and nowPage <= pageCount then
+				setDisplayPage(nowPage)
+				goto JUMPOUT_ISR_PARSE
 			end
 
-			-- create filter
-			if data[1]~='' then
-				local findTarget = string.lower(data[1])
-				local tmpList = {}
-				for num,pagelist in pairs(psrdata.itemList) do
-					for page,name in pairs(pagelist) do
-						if string.find(string.lower(name),findTarget) then
-							tmpList[#tmpList+1] = name
-						end
+			-- Run filter.
+			if res[1] ~= runtime.filter then
+				runtime.display = {}
+				local findTarget = string.lower(res[1])
+				local count = 0
+				for n,str in pairs(payload.list) do
+					if string.find(string.lower(str),findTarget) then
+						count = count + 1
+						local num = math.ceil(count/ItemSelector._perpage)
+						runtime.display[num] = runtime.display[num] or {}
+						runtime.display[num][#runtime.display[num]+1] = {n,str}
 					end
 				end
-				local tableList = ItemSelector.Helper.ToPages(tmpList)
-				if psrdata.nowpage>#tableList then
-					psrdata.nowpage = 1
-				end
-				if not tableList[psrdata.nowpage] then
-					rawList = {}
-					maxpage = 1
-				else
-					rawList = tableList[psrdata.nowpage]
-					maxpage = #tableList
-				end
-				if psrdata.filter~=data[1] then
-					psrdata.filter = data[1]
-					goto JUMPOUT_PSR_OTHER
-				end
+				runtime.page = 1
+				displayList = runtime.display[1]
+				pageCount = #runtime.display
+				runtime.filter = res[1]
+				goto JUMPOUT_ISR_PARSE
 			end
-			psrdata.filter = data[1]
 
-			-- gen selects
+			-- Parse key.
 			local selected = {}
 			local selected_pos = {}
-			for num,key in pairs(data) do
-				if num~=1 and num~=#data and key==true then
-					selected[#selected+1] = rawList[num-1]
-					selected_pos[#selected_pos+1] = (psrdata.nowpage-1)*ItemSelector._perpage + num - 1
+			for num,key in pairs(res) do
+				if num ~= 1 and num ~= #res and key then
+					selected[#selected+1] = displayList[num-1][2]
+					selected_pos[#selected_pos+1] = displayList[num-1][1]
 				end
 			end
 			if next(selected) then
 				payload.callback(selected,selected_pos)
-				psrdata = nil
+				MEM[xuid].isr = nil
 				return
 			end
 
-			:: JUMPOUT_PSR_OTHER ::
 		end
+		:: JUMPOUT_ISR_PARSE ::
 
-		-- build form
+		-- Build Form
 		local Form = mc.newCustomForm()
 		Form:setTitle(payload.title)
 		Form:addLabel(_Tr('gui.itemselector.search.tip','<a>',payload.tip_usage))
 		Form:addLabel(_Tr('gui.itemselector.search.tip2','<a>',payload.tip_search))
-		Form:addInput(_Tr('gui.itemselector.search.type'),_Tr('gui.itemselector.search.ph'),psrdata.filter)
+		Form:addInput(_Tr('gui.itemselector.search.type'),_Tr('gui.itemselector.search.ph'),runtime.filter)
 		Form:addLabel(
 			_Tr('gui.itemselector.pages',
-				'<a>',psrdata.nowpage,
-				'<b>',maxpage,
-				'<c>',#rawList
+				'<a>',runtime.page,
+				'<b>',pageCount,
+				'<c>',getItemCount()
 			)
 		)
-		for n,plname in pairs(rawList) do
-			Form:addSwitch(plname,false)
-		end
-		Form:addStepSlider(_Tr('gui.itemselector.jumpto'),buildPage(maxpage),psrdata.nowpage-1)
-		player:sendForm(Form,ItemSelector.Callback)
-	end,
-	Helper = {
-		ToPages = function(list)
-			local rtn = {}
-			for n,pl in pairs(list) do
-				local num = math.ceil(n/ItemSelector._perpage)
-				rtn[num] = rtn[num] or {}
-				rtn[num][#rtn[num]+1] = pl
+
+		if displayList then
+			for n,pair in pairs(displayList) do
+				Form:addSwitch(pair[2],false)
 			end
-			return rtn
 		end
-	}
+		Form:addStepSlider(_Tr('gui.itemselector.jumpto'),buildPageTurner(pageCount),runtime.page - 1)
+		player:sendForm(Form,ItemSelector.Callback)
+	end
 }
 
 RangeSelector = {
