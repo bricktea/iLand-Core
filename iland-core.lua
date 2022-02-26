@@ -16,7 +16,7 @@ Plugin = {
 	Version = {
 		major = 2,
 		minor = 8,
-		revision = 1,
+		revision = 2,
 		toString = function()
 			local ver = Plugin.Version
 			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)
@@ -1463,10 +1463,30 @@ Land = {
 		IsCollision = function(AABB,ignoreList)
 			ignoreList = ignoreList or {}
 			local ignores = Array.ToKeyMap(ignoreList)
+
+			--- Check 1/2.
+			local edge = Cube.GetEdge(AABB)
+			for n,pos in pairs(edge) do
+				Pos.SetDimId(pos,AABB.dimid)
+				local Id = Land.Query.Pos(pos)
+				if Id and not ignores[Id] then
+					return {
+						status = false,
+						id = Id,
+						info = _Tr('gui.rangecheck.pos','<a>',Pos.ToString(pos))
+					}
+				end
+			end
+			
+			--- Check 2/2.
 			local lands = Land.Query.Area(AABB)
 			for i,landId in pairs(lands) do
 				if not ignores[landId] then
-					return { status = false, id = landId }
+					return {
+						status = false,
+						id = landId,
+						info = _Tr('gui.rangecheck.included')
+					}
 				end
 			end
 			return { status = true }
@@ -2981,12 +3001,22 @@ RangeSelector = {
 					local sp = cfg.land.min_space
 					local chkNearby = Land.Util.IsCollision(Cube.Create(Pos.Add(mem.posA,sp),Pos.Reduce(mem.posB,sp),dimid),chkIgnores)
 					if not chkNearby.status then
-						SendText(player,_Tr('title.rangeselector.fail.space','<a>',chkNearby.id))
+						player:sendModalForm(
+							_Tr('gui.rangecheck.title'),
+							_Tr('gui.rangecheck.msg','<a>',Land.Options.Nickname.get(chkNearby.id,3),'<b>',chkNearby.info),
+							_Tr('gui.general.iknow'),_Tr('gui.general.close'),
+							Callback.Form.NULL
+						)
 					else
 						passed = true
 					end
 				else
-					SendText(player,_Tr('title.rangeselector.fail.collision','<a>',chkColl.id))
+					player:sendModalForm(
+						_Tr('gui.rangecheck.title'),
+						_Tr('gui.rangecheck.msg','<a>',Land.Options.Nickname.get(chkColl.id,3),'<b>',chkColl.info),
+						_Tr('gui.general.iknow'),_Tr('gui.general.close'),
+						Callback.Form.NULL
+					)
 				end
 			end
 
@@ -3280,6 +3310,10 @@ Pos = {
 		if A.y>B.y then A.y,B.y = B.y,A.y end
 		if A.z>B.z then A.z,B.z = B.z,A.z end
 		return A,B
+	end,
+	SetDimId = function(pos,dimid)
+		pos.dimid = dimid
+		return pos
 	end
 }
 

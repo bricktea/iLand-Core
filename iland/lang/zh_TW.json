@@ -1,5 +1,5 @@
 {
-    "VERSION": 281,
+    "VERSION": 282,
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "強製過戶領地",
@@ -251,13 +251,16 @@
     "title.rangeselector.fail.toobig": "所圈領地太大，請重新圈地。\n",
     "title.rangeselector.fail.toosmall": "所圈領地太小，請重新圈地。\n",
     "title.rangeselector.fail.toolow": "所圈領地太低，請重新圈地\n",
-    "title.rangeselector.fail.collision": "圈地範圍與 <a> 存在衝突，請重新圈地。\n",
-    "title.rangeselector.fail.space": "圈地範圍與 <a> 距離太近，請重新圈地。\n",
     "title.rangeselector.fail.height": "不是有效的高度，請重新圈地",
     "title.rangeselector.largeparticle": "領地範圍較大，為避免卡頓已關閉粒子特效",
     "title.rangeselector.pointed": "點 <a> 已選定：<b> (<c>, <d>, <e>)",
     "title.selectland.complete1": "圈地完成",
     "title.selectland.complete2": "請手持 <a>\n使用 /<b> 或再次點擊任意方塊以創建訂單。",
+
+    "gui.rangecheck.included": "包含",
+    "gui.rangecheck.pos": "在 <a> 衝突",
+    "gui.rangecheck.title": "出現問題",
+    "gui.rangecheck.msg": "所選範圍與 §l<a>§r 存在衝突或距離太近。\n\n詳細信息: <b>",
 
     "title.land.nolicense": "請先使用 /land new 請求創建新領地",
     "title.getlicense.alreadyexists": "請勿重複請求\n",
@@ -287,7 +290,7 @@
     "title.landtp.fail.noland": "你需要先站在領地上一點",
     "title.landtp.fail.notowner": "你不是這塊領地的主人",
     "title.landtp.removed": "已移除這塊領地的傳送點",
-    "title.landtp.success":"傳送成功",
+    "title.landtp.success": "傳送成功",
 
     "sign.listener.ownertitle": "<a>",
     "sign.listener.ownersubtitle": "歡迎回來",
@@ -398,7 +401,8 @@
     "console.getonline.failbyver": "無法解析的雲端信息文件版本（<a>），您的iLand可能已過時。",
     "console.getonline.failbybroken": "無法解析雲端信息，JSON解析失敗。",
 
-    "console.languages.sign": "此服務器正在使用 <a> 語言，版本為：<b>。","console.languages.list.count": "已安裝語言：<a> 個",
+    "console.languages.sign": "此服務器正在使用 <a> 語言，版本為：<b>。 ",
+    "console.languages.list.count": "已安裝語言：<a> 個",
     "console.languages.list-online.wait": "請稍等，正在獲取語言倉庫數據...",
     "console.languages.official": "官方提供的語言：",
     "console.languages.3rd": "第三方提供的語言：",

@@ -1,5 +1,5 @@
 {
-    "VERSION": 281,
+    "VERSION": 282,
     "#1": "zh_CN 标准汉语翻译贡献者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
@@ -253,13 +253,16 @@
     "title.rangeselector.fail.toobig": "所圈领地太大，请重新圈地。\n",
     "title.rangeselector.fail.toosmall": "所圈领地太小，请重新圈地。\n",
     "title.rangeselector.fail.toolow": "所圈领地太低，请重新圈地\n",
-    "title.rangeselector.fail.collision": "圈地范围与 <a> 存在冲突，请重新圈地。\n",
-    "title.rangeselector.fail.space": "圈地范围与 <a> 距离太近，请重新圈地。\n",
     "title.rangeselector.fail.height": "不是有效的高度，请重新圈地",
     "title.rangeselector.largeparticle": "领地范围较大，为避免卡顿已关闭粒子特效",
     "title.rangeselector.pointed": "点 <a> 已选定：<b> (<c>, <d>, <e>)",
     "title.selectland.complete1": "圈地完成",
     "title.selectland.complete2": "请手持 <a>\n使用 /<b> 或再次点击任意方块以创建订单。",
+
+    "gui.rangecheck.included": "包含",
+    "gui.rangecheck.pos": "在 <a> 冲突",
+    "gui.rangecheck.title": "出现问题",
+    "gui.rangecheck.msg": "所选范围与 §l<a>§r 存在冲突或距离太近。\n\n详细信息: <b>",
 
     "title.land.nolicense": "请先使用 /land new 请求创建新领地",
     "title.getlicense.alreadyexists": "请勿重复请求\n",
