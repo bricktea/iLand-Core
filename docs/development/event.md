@@ -43,8 +43,6 @@ Before | ✔️ | After | ✔️ | Cancel | ✔️
    - mPlayer - `string` 操作玩家的XUID
    - mRange - `AABB` 将创建领地的范围
 
-!> `2.80` 使用After模式监听时，没有`mRange`回传，下个版本将解决此问题。
-
 ##### `onDelete` - 删除领地
 Before | ✔️ | After | ✔️ | Cancel | ✔️
 :-----:|:---:|:-----:|:--:|:------:|:---:
