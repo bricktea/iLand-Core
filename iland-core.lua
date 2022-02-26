@@ -2711,7 +2711,7 @@ OpenGUI = {
 }
 
 ItemSelector = {
-	_perpage = 2,
+	_perpage = 20,
 	Create = function (player,payload)
 
 		--[[ Payload:
