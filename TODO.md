@@ -1,7 +1,7 @@
 > **2.82**
  - [x] 修复`CreateLand`xuid不存在时报错。
  - [x] onFarmLandDecay,onStepOnPressurePlate 添加空坐标检查
- - [ ] 创建MEM时机改为prejoin
+ - [x] 创建MEM时机改为prejoin
  - [ ] nickname default?
  - [ ] 领地里关闭了使用桶，仍然可以把水里的美西螈装走
  - [ ] 领地昵称中有%导致的错误

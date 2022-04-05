@@ -4493,43 +4493,47 @@ end
 
 -- Minecraft Eventing.
 
-mc.listen('onJoin',function(player)
-	local xuid = player.xuid
-	MEM[xuid] = { inland = 'null' }
+mc.listen('onPreJoin',function(player)
 
-	local rel = DataStorage.RelationShip
-	if rel.Unloaded['Owner'][xuid] then
-		rel.Raw['Owner'][xuid] = table.clone(rel.Unloaded['Owner'][xuid])
-		for n,landId in pairs(rel.Raw['Owner'][xuid]) do
+	--- Check for xbox-auth.
+	if player.xuid=='' then
+		player:kick(_Tr('talk.prejoin.noxuid'))
+	end
+
+	local xuid = player.xuid
+	MEM[xuid] = {
+		inland = 'null'
+	}
+
+	--- Recover wrong owner's land.
+	local ship = DataStorage.RelationShip
+	if ship.Unloaded['Owner'][xuid] then
+		ship.Raw['Owner'][xuid] = table.clone(ship.Unloaded['Owner'][xuid])
+		for n,landId in pairs(ship.Raw['Owner'][xuid]) do
 			Map.Land.Owner.update(landId)
 		end
-		rel.Unloaded['Owner'][xuid] = nil
+		ship.Unloaded['Owner'][xuid] = nil
 	end
-	rel.Raw['Owner'][xuid] = rel.Raw['Owner'][xuid] or {}
+	ship.Raw['Owner'][xuid] = ship.Raw['Owner'][xuid] or {}
 
+	--- Check creative mode.
 	if not cfg.features.disable_creative_warn and player.gameMode == 1 then
 		WARN(_Tr('talk.gametype.creative','<a>',player.realName))
 	end
-end)
-mc.listen('onPreJoin',function(player)
-	if player.xuid=='' then -- no xuid
-		player:kick(_Tr('talk.prejoin.noxuid'))
-	end
+
 end)
 mc.listen('onLeft',function(player)
 
 	local xuid = player.xuid
-
 	if not MEM[xuid] then
 		return
+	else
+		if MEM[xuid].safetp then
+			SafeTeleport.Cancel(player)
+		end
+		MEM[xuid] = nil
 	end
 
-	--- SafeTp
-	if MEM[xuid].safetp then
-		SafeTeleport.Cancel(player)
-	end
-
-	MEM[xuid] = nil
 end)
 mc.listen('onDestroyBlock',function(player,block)
 
