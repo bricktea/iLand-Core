@@ -16,7 +16,7 @@ Plugin = {
 	Version = {
 		major = 2,
 		minor = 8,
-		revision = 2,
+		revision = 3,
 		toString = function()
 			local ver = Plugin.Version
 			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)
@@ -950,6 +950,10 @@ DataStorage = {
 				end
 				if origin.version < 281 then
 					land.settings.teleport = table.clone(land.range.end_position)
+				end
+				if origin.version < 283 then
+					setting.nickname = string.gsub(setting.nickname,'%%','％')
+					setting.describe = string.gsub(setting.describe,'%%','％')
 				end
 			end
 			return true
@@ -2587,7 +2591,7 @@ OpenGUI = {
 				Form,
 				function(player,res)
 					if not res then return end
-					DataStorage.Land.Raw[landId].settings.nickname = res[1]
+					DataStorage.Land.Raw[landId].settings.nickname = string.gsub(res[1],'%%','％')
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
@@ -2611,7 +2615,7 @@ OpenGUI = {
 				function(player,res)
 					if not res then return end
 
-					DataStorage.Land.Raw[landId].settings.describe=res[1]
+					DataStorage.Land.Raw[landId].settings.describe = string.gsub(res[1],'%%','％')
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
 						_Tr('gui.general.complete'),
