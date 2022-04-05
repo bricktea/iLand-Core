@@ -1602,6 +1602,7 @@ Land = {
 					return false
 				end
 				Land.RelationShip.Owner.destroy(landId)
+				DataStorage.RelationShip.Raw['Owner'][xuid] = DataStorage.RelationShip.Raw['Owner'][xuid] or {}
 				DataStorage.RelationShip.Raw['Owner'][xuid][#DataStorage.RelationShip.Raw['Owner'][xuid]+1] = landId
 				Map.Land.Owner.update(landId)
 				DataStorage.Save({0,0,1})
