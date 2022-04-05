@@ -1363,6 +1363,7 @@ Land = {
 	Query = {
 
 		Pos = function(pos,noAccessCache)
+
 			noAccessCache = noAccessCache or false
 			if not noAccessCache then
 				local hadCache,result = Map.CachedQuery.SinglePos.get(pos)
@@ -1477,7 +1478,7 @@ Land = {
 					}
 				end
 			end
-			
+
 			--- Check 2/2.
 			local lands = Land.Query.Area(AABB)
 			for i,landId in pairs(lands) do
@@ -4855,7 +4856,13 @@ mc.listen('onStepOnPressurePlate',function(entity,block)
 		return
 	end
 
-	local landId = Land.Query.Pos(entity.blockPos)
+	local pos = entity.blockPos
+	if not pos then
+		WARN('"onStepOnPressurePlate" An invalid position was sent!')
+		return
+	end
+
+	local landId = Land.Query.Pos(pos)
 	if not landId then return end
 
 	if DataStorage.Land.Raw[landId].permissions.use_pressure_plate then return end
@@ -4912,13 +4919,19 @@ mc.listen('onWitherBossDestroy',function(entity,posA,posB)
 
 	return true
 end)
-mc.listen('onFarmLandDecay',function(pos,entity)
+mc.listen('onFarmLandDecay',function(posn,entity)
 
 	if not Map.Listener.check('onFarmLandDecay') then
 		return
 	end
 
-	local landId = Land.Query.Pos(entity.blockPos)
+	local pos = entity.blockPos
+	if not pos then
+		WARN('"onFarmLandDecay" An invalid position was sent!')
+		return
+	end
+
+	local landId = Land.Query.Pos(pos)
 	if not landId then return end
 	if DataStorage.Land.Raw[landId].settings.ev_farmland_decay then return end -- EV Allow
 	return false
