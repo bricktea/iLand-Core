@@ -4029,14 +4029,14 @@ function GetPlayerList(mode,IncAll)
 	elseif mode == 1 then
 		for xuid,ex in pairs(base) do
 			local t = data.xuid2name(xuid)
-			if t then
+			if t and t ~= '' then
 				rtn[#rtn+1] = t
 			end
 		end
 	elseif mode == 2 then
 		for xuid,ex in pairs(base) do
 			local t = data.xuid2name(xuid)
-			if t then
+			if t or t ~= '' then
 				rtn[xuid] = t
 			end
 		end
