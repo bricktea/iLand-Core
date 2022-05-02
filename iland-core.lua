@@ -16,7 +16,7 @@ Plugin = {
 	Version = {
 		major = 2,
 		minor = 8,
-		revision = 3,
+		revision = 4,
 		toString = function()
 			local ver = Plugin.Version
 			return tostring(ver.major)..'.'..tostring(ver.minor*10 + ver.revision)

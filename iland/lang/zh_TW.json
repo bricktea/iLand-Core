@@ -1,5 +1,6 @@
 {
-    "VERSION": 283,
+    "VERSION": 284,
+    "#1": "zh_CN 標準漢語翻譯貢獻者：RedbeanW",
     
     "gui.land.title": "Land v<a>",
     "gui.oplandmgr.trsland.title": "強製過戶領地",
@@ -26,7 +27,7 @@
     "gui.general.cancel": "取消",
     "gui.general.plzchose": "請選擇",
     
-    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n暱稱: <c>\\n範圍:  §l<d>§r <e> <f> -> <g>\\n長/寬/高: <h>/<i>/<j>\\n底面積: <k> 平方格    體積: <l> 立方格",
+    "gui.landmgr.landinfo.content": "所有者:<a>\nLandID: <b>\n暱稱: <c>\n範圍:  §l<d>§r <e> <f> -> <g>\n長/寬/高: <h>/<i>/<j>\n底面積: <k> 平方格    體積: <l> 立方格",
     "gui.landmgr.unnamed": "<未命名>",
     "gui.landmgr.unmodified": "未修改",
     "gui.landmgr.options.landinfo": "查看領地信息",
@@ -173,7 +174,7 @@
     "gui.buyland.button.confirm": "確認購買",
     "gui.buyland.button.close": "暫存",
     "gui.buyland.button.cancel": "取消訂單",
-    "gui.delland.content": "您確定要刪除您的領地嗎？\\n如果確定，您將得到<a><b>退款。然後您的領地將失去保護，數據將立刻被刪除。",
+    "gui.delland.content": "您確定要刪除您的領地嗎？\n如果確定，您將得到<a><b>退款。然後您的領地將失去保護，數據將立刻被刪除。",
     "gui.landdescribe.tip": "領地備註會在其他訪客來到您的領地時發送給他們。\n\n支持變量：\n$visitor = 造訪者名稱\n$n = 換行符",
     "gui.landtrust.tip": "選擇操作模式",
     "gui.landtrust.addtrust": "添加受信任玩家",
@@ -186,7 +187,8 @@
     "gui.landtag.tip": "領地暱稱有助於您區分多個領地，而不改變原有的領地配置",
     "gui.landtransfer.tip": "領地過戶完成後，所有權限將被轉移，您不再是該領地的主人，但原領地的所有配置不會改變。",
     "gui.reselectland.title": "重新選擇領地範圍",
-    "gui.reselectland.tip": "重新圈地為完全重新選擇領地的範圍，非直接擴充/縮小現有領地範圍。\\n重新選擇的價格計算方式為\\\"新範圍價格 — 舊範圍價值\\\"，是否繼續？","gui.reselectland.content": "原領地範圍（<a>）價值：<b>，\\n現領地範圍（<c>）價值：<d>，\\n將<e>您<f><g>。",
+    "gui.reselectland.tip": "重新圈地為完全重新選擇領地的範圍，非直接擴充/縮小現有領地範圍。\n重新選擇的價格計算方式為\"新範圍價格 — 舊範圍價值\"，是否繼續？",
+    "gui.reselectland.content": "原領地範圍（<a>）價值：<b>，\n現領地範圍（<c>）價值：<d>，\n將<e>您<f><g>。 ",
     "gui.reselectland.refund": "退款給",
     "gui.reselectland.pay": "收取",
 
@@ -274,6 +276,7 @@
     "title.landtransfer.toomanyids": "不可以向多人過戶領地",
     "title.landtransfer.canttoown": "不可以向自己過戶領地。",
     "title.landtransfer.complete": "<a> 已過戶給 <b>",
+    "title.landtransfer.targetlimit": "目標玩家已經不能有更多領地",
     "title.oplandmgr.setselectool": "請手持欲選定的圈地工具破壞方塊",
     "title.oplandmgr.setsuccess": "成功！選定 <a> 作為圈地工具",
     "title.landmgr.failed": "沒有可以管理領地，使用\"/land new\"創建一個吧！",
@@ -399,9 +402,9 @@
     "console.getonline.failbycode": "獲取雲端信息失敗，錯誤代碼：<a>。",
     "console.getonline.failed": "雲端信息獲取失敗。",
     "console.getonline.failbyver": "無法解析的雲端信息文件版本（<a>），您的iLand可能已過時。",
-    "console.getonline.failbybroken": "無法解析雲端信息，JSON解析失敗。",
+    "console.getonline.failbybroken": "無法解析雲端信息，JSON解析失敗。 ",
 
-    "console.languages.sign": "此服務器正在使用 <a> 語言，版本為：<b>。 ",
+    "console.languages.sign": "此服務器正在使用 <a> 語言，版本為：<b>。",
     "console.languages.list.count": "已安裝語言：<a> 個",
     "console.languages.list-online.wait": "請稍等，正在獲取語言倉庫數據...",
     "console.languages.official": "官方提供的語言：",
