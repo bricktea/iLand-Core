@@ -4597,13 +4597,11 @@ mc.listen('onUseItemOn',function(player,item,block)
 		return
 	end
 
-	local landId = Land.Query.Pos(block.pos)
-	if not landId then return end
-
+	local bp = block.pos
+	local landId = Land.Query.Pos(bp)
 	local xuid = player.xuid
-	if Land.Util.CheckPerm(landId,xuid) then
-		return
-	end
+	local it = item.type
+	local bn = block.type
 
 	local IsConPlus = false
 	if not Map.Control.check(0,block.type) then
@@ -4614,42 +4612,67 @@ mc.listen('onUseItemOn',function(player,item,block)
 		end
 	end
 
-	local perm = DataStorage.Land.Raw[landId].permissions
+	if landId then
 
-	if IsConPlus then
-		local it = item.type
-		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
-		if string.sub(it,-3,-1) == 'axe' and perm.allow_place then return end -- 斧头给木头去皮（拓充）
-		if it == 'minecraft:skull' and perm.allow_place then return end -- 放置头颅（拓充）
-		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
-		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
-		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
-		if it == 'minecraft:flint_and_steel' and perm.use_firegen then return end -- 使用打火石
+		if Land.Util.CheckPerm(landId,xuid) then
+			return
+		end
+		local perm = DataStorage.Land.Raw[landId].permissions
+		if IsConPlus then
+			if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
+			if string.sub(it,-3,-1) == 'axe' and perm.allow_place then return end -- 斧头给木头去皮（拓充）
+			if it == 'minecraft:skull' and perm.allow_place then return end -- 放置头颅（拓充）
+			if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
+			if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
+			if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
+			if it == 'minecraft:flint_and_steel' and perm.use_firegen then return end -- 使用打火石
+		else
+			if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
+			if bn == 'minecraft:dragon_egg' and perm.allow_destroy then return end -- 右键龙蛋（拓充）
+			if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
+			if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
+			if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
+			if (bn == 'minecraft:campfire' or bn == 'minecraft:soul_campfire') and perm.use_campfire then return end -- 营火（烧烤）
+			if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
+			if (bn == 'minecraft:undyed_shulker_box' or bn == 'minecraft:shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
+			if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
+			if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
+			if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
+			if (bn == 'minecraft:daylight_detector_inverted' or bn == 'minecraft:daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
+			if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
+			if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
+			if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
+			if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
+			if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+			if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
+			if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
+		end
+		SendText(player,_Tr('title.landlimit.noperm'))
+		return false
+
 	else
-		local bn = block.type
-		if string.sub(bn,-6,-1) == 'button' and perm.use_button then return end -- 各种按钮
-		if bn == 'minecraft:dragon_egg' and perm.allow_destroy then return end -- 右键龙蛋（拓充）
-		if bn == 'minecraft:bed' and perm.use_bed then return end -- 床
-		if (bn == 'minecraft:chest' or bn == 'minecraft:trapped_chest') and perm.allow_open_chest then return end -- 箱子&陷阱箱
-		if bn == 'minecraft:crafting_table' and perm.use_crafting_table then return end -- 工作台
-		if (bn == 'minecraft:campfire' or bn == 'minecraft:soul_campfire') and perm.use_campfire then return end -- 营火（烧烤）
-		if bn == 'minecraft:composter' and perm.use_composter then return end -- 堆肥桶（放置肥料）
-		if (bn == 'minecraft:undyed_shulker_box' or bn == 'minecraft:shulker_box') and perm.use_shulker_box then return end -- 潜匿箱
-		if bn == 'minecraft:noteblock' and perm.use_noteblock then return end -- 音符盒（调音）
-		if bn == 'minecraft:jukebox' and perm.use_jukebox then return end -- 唱片机（放置/取出唱片）
-		if bn == 'minecraft:bell' and perm.use_bell then return end -- 钟（敲钟）
-		if (bn == 'minecraft:daylight_detector_inverted' or bn == 'minecraft:daylight_detector') and perm.use_daylight_detector then return end -- 光线传感器（切换日夜模式）
-		if bn == 'minecraft:lectern' and perm.use_lectern then return end -- 讲台
-		if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
-		if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
-		if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
-		if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
-		if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
-		if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
+
+		if IsConPlus then
+			if string.sub(it,-6,-1) == 'bucket' then
+				local r = 7
+				local lands = Land.Query.Area(Cube.Create(Pos.Add(bp,r),Pos.Reduce(bp,r),bp.dimid))
+				for i,Id in pairs(lands) do
+					if Land.Util.CheckPerm(Id,xuid) then
+						return
+					end
+				end --- had better method?
+				for i,Id in pairs(lands) do
+					if not DataStorage.Land.Raw[Id].permissions.use_bucket then
+						SendText(player,_Tr('title.landlimit.nearby'))
+						return false
+					end
+				end
+			end
+		end
+		return
+
 	end
 
-	SendText(player,_Tr('title.landlimit.noperm'))
-	return false
 end)
 mc.listen('onAttackBlock',function(player,block,item)
 
