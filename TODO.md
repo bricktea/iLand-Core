@@ -1,9 +1,6 @@
-> **2.83**
- - [x] 修复`CreateLand`xuid不存在时报错。
- - [x] onFarmLandDecay,onStepOnPressurePlate 添加空坐标检查
- - [x] 创建MEM时机改为prejoin
- - [x] 领地昵称中有%导致的错误
- - [x] 修复获取玩家列表中的一问题
+> **2.84**
+ - [x] 修复ModalForm中转义失效的问题
+ - [x] 修复可以通过领地过户超过领地数量限制的问题
 
 > ILAPI 示例插件计划
  - [ ] Land Edge Shower

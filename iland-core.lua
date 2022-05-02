@@ -1600,7 +1600,7 @@ Land = {
 				return nil
 			end,
 			getLand = function(xuid)
-				return DataStorage.RelationShip.Raw['Owner'][xuid]
+				return DataStorage.RelationShip.Raw['Owner'][xuid] or {}
 			end,
 			set = function(landId,xuid)
 				if not EventSystem.Call(EventSystem._ev_int['onChangeOwner'],'Before',{landId,xuid}) then
@@ -2043,10 +2043,8 @@ OpenGUI = {
 		)
 	end,
 	LMgr = function(player,targetXuid)
-		local xuid = player.xuid
-		local ownerXuid = targetXuid or xuid
-
-		local landlst = Land.RelationShip.Owner.getLand(ownerXuid)
+		local xuid = targetXuid or player.xuid
+		local landlst = Land.RelationShip.Owner.getLand(xuid)
 		if #landlst==0 then
 			SendText(player,_Tr('title.landmgr.failed'))
 			return
@@ -2649,6 +2647,10 @@ OpenGUI = {
 							local targetXuid = data.name2xuid(selected[1])
 							if Land.RelationShip.Owner.check(landId,targetXuid) then
 								SendText(pl,_Tr('title.landtransfer.canttoown'))
+								return
+							end
+							if #Land.RelationShip.Owner.getLand(targetXuid) > cfg.land.max_lands then
+								SendText(pl,_Tr('title.landtransfer.targetlimit'))
 								return
 							end
 							Land.RelationShip.Owner.set(landId,targetXuid)
