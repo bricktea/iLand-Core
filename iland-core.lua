@@ -364,7 +364,8 @@ Map = {
 					'minecraft:cartography_table','minecraft:smithing_table','minecraft:furnace','minecraft:blast_furnace',
 					'minecraft:smoker','minecraft:brewing_stand','minecraft:anvil','minecraft:grindstone','minecraft:enchanting_table',
 					'minecraft:barrel','minecraft:beacon','minecraft:hopper','minecraft:dropper','minecraft:dispenser',
-					'minecraft:loom','minecraft:stonecutter_block'
+					'minecraft:loom','minecraft:stonecutter_block','minecraft:lit_furnace','minecraft:lit_blast_furnace',
+					'minecraft:lit_smoker'
 				}),
 				-- # ItemWhiteList
 				[2] = Array.ToKeyMap({
@@ -4801,9 +4802,6 @@ mc.listen('onBlockInteracted',function(player,block)
 	local bn = block.type
 	if bn == 'minecraft:cartography_table' and perm.use_cartography_table then return end -- 制图台
 	if bn == 'minecraft:smithing_table' and perm.use_smithing_table then return end -- 锻造台
-	if bn == 'minecraft:furnace' and perm.use_furnace then return end -- 熔炉
-	if bn == 'minecraft:blast_furnace' and perm.use_blast_furnace then return end -- 高炉
-	if bn == 'minecraft:smoker' and perm.use_smoker then return end -- 烟熏炉
 	if bn == 'minecraft:brewing_stand' and perm.use_brewing_stand then return end -- 酿造台
 	if bn == 'minecraft:anvil' and perm.use_anvil then return end -- 铁砧
 	if bn == 'minecraft:grindstone' and perm.use_grindstone then return end -- 磨石
@@ -4815,6 +4813,9 @@ mc.listen('onBlockInteracted',function(player,block)
 	if bn == 'minecraft:dispenser' and perm.use_dispenser then return end -- 发射器
 	if bn == 'minecraft:loom' and perm.use_loom then return end -- 织布机
 	if bn == 'minecraft:stonecutter_block' and perm.use_stonecutter then return end -- 切石机
+	if string.sub(bn,-13,-1) == 'blast_furnace' and perm.use_blast_furnace then return end -- 高炉
+	if string.sub(bn,-7,-1) == 'furnace' and perm.use_furnace then return end -- 熔炉
+	if string.sub(bn,-6,-1) == 'smoker' and perm.use_smoker then return end -- 烟熏炉
 
 	SendText(player,_Tr('title.landlimit.noperm'))
 	return false
