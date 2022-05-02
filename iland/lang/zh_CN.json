@@ -27,7 +27,7 @@
     "gui.general.cancel": "取消",
     "gui.general.plzchose": "请选择",
     
-    "gui.landmgr.landinfo.content": "所有者:<a>\\nLandID: <b>\\n昵称: <c>\\n范围:  §l<d>§r <e> <f> -> <g>\\n长/宽/高: <h>/<i>/<j>\\n底面积: <k> 平方格    体积: <l> 立方格",
+    "gui.landmgr.landinfo.content": "所有者:<a>\nLandID: <b>\n昵称: <c>\n范围:  §l<d>§r <e> <f> -> <g>\n长/宽/高: <h>/<i>/<j>\n底面积: <k> 平方格    体积: <l> 立方格",
     "gui.landmgr.unnamed": "<未命名>",
     "gui.landmgr.unmodified": "未修改",
     "gui.landmgr.options.landinfo": "查看领地信息",
@@ -174,7 +174,7 @@
     "gui.buyland.button.confirm": "确认购买",
     "gui.buyland.button.close": "暂存",
     "gui.buyland.button.cancel": "取消订单",
-    "gui.delland.content": "您确定要删除您的领地吗？\\n如果确定，您将得到<a><b>退款。然后您的领地将失去保护，数据将立刻被删除。",
+    "gui.delland.content": "您确定要删除您的领地吗？\n如果确定，您将得到<a><b>退款。然后您的领地将失去保护，数据将立刻被删除。",
     "gui.landdescribe.tip": "领地备注会在其他访客来到您的领地时发送给他们。\n\n支持变量：\n$visitor = 造访者名称\n$n = 换行符",
     "gui.landtrust.tip": "选择操作模式",
     "gui.landtrust.addtrust": "添加受信任玩家",
@@ -187,8 +187,8 @@
     "gui.landtag.tip": "领地昵称有助于您区分多个领地，而不改变原有的领地配置",
     "gui.landtransfer.tip": "领地过户完成后，所有权限将被转移，您不再是该领地的主人，但原领地的所有配置不会改变。",
     "gui.reselectland.title": "重新选择领地范围",
-    "gui.reselectland.tip": "重新圈地为完全重新选择领地的范围，非直接扩充/缩小现有领地范围。\\n重新选择的价格计算方式为\\\"新范围价格 — 旧范围价值\\\"，是否继续？",
-    "gui.reselectland.content": "原领地范围（<a>）价值：<b>，\\n现领地范围（<c>）价值：<d>，\\n将<e>您<f><g>。",
+    "gui.reselectland.tip": "重新圈地为完全重新选择领地的范围，非直接扩充/缩小现有领地范围。\n重新选择的价格计算方式为\"新范围价格 — 旧范围价值\"，是否继续？",
+    "gui.reselectland.content": "原领地范围（<a>）价值：<b>，\n现领地范围（<c>）价值：<d>，\n将<e>您<f><g>。",
     "gui.reselectland.refund": "退款给",
     "gui.reselectland.pay": "收取",
 
