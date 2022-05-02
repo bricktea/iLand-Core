@@ -2652,7 +2652,7 @@ OpenGUI = {
 								SendText(pl,_Tr('title.landtransfer.canttoown'))
 								return
 							end
-							if #Land.RelationShip.Owner.getLand(targetXuid) > cfg.land.max_lands then
+							if #Land.RelationShip.Owner.getLand(targetXuid) >= cfg.land.max_lands then
 								SendText(pl,_Tr('title.landtransfer.targetlimit'))
 								return
 							end
