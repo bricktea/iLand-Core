@@ -8,7 +8,8 @@
 -|-
 1 | pfland
 2 | pland
-3 | land-g7
+3 | myland
+4 | land-g7
 
 ### Help
  - 如果您的领地数据不在上表内，可以提Issue（在转换器项目提）申请加入。
