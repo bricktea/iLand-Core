@@ -2657,6 +2657,7 @@ OpenGUI = {
 								return
 							end
 							Land.RelationShip.Owner.set(landId,targetXuid)
+							MEM[pl.xuid].BackToId = nil
 							pl:sendModalForm(
 								_Tr('gui.general.complete'),
 								_Tr('title.landtransfer.complete','<a>',Land.Options.Nickname.get(landId,3),'<b>',selected[1]),
@@ -2734,23 +2735,27 @@ ItemSelector = {
 		]]
 
 		local function toPages()
-			local rtn = {}
+			local pages = {}
+			local allpair = {}
 			for n,item in pairs(payload.list) do
-				local num = math.ceil(n/ItemSelector._perpage)
-				rtn[num] = rtn[num] or {}
-				rtn[num][#rtn[num]+1] = {n,item}
+				allpair[#allpair+1] = {n,item}
 			end
-			return rtn
+			for n,pair in pairs(allpair) do
+				local pn = math.ceil(n/ItemSelector._perpage)
+				pages[pn] = pages[pn] or {}
+				pages[pn][#pages[pn]+1] = pair
+			end
+			return pages,allpair
 		end
 
+		local pages,allpair = toPages()
 		local xuid = player.xuid
-		local pages = toPages()
 		MEM[xuid].isr = {
 			payload = payload,
 			runtime = {
-				origin = pages,
+				origin = allpair,
 				display = pages,
-				page = 1,
+				page_num = 1,
 				filter = ''
 			}
 		}
@@ -2775,7 +2780,7 @@ ItemSelector = {
 		-- Init.
 		local runtime = MEM[xuid].isr.runtime
 		local payload = MEM[xuid].isr.payload
-		local displayList = runtime.display[runtime.page]
+		local displayList = runtime.display[runtime.page_num]
 		local pageCount = #runtime.display
 
 		local function buildPageTurner(pages)
@@ -2786,7 +2791,7 @@ ItemSelector = {
 			return rtn
 		end
 		local function setDisplayPage(pageNum)
-			runtime.page = pageNum
+			runtime.page_num = pageNum
 			displayList = runtime.display[pageNum]
 		end
 		local function getItemCount()
@@ -2804,7 +2809,7 @@ ItemSelector = {
 
 			-- Update page if changed.
 			local nowPage = res[#res] + 1
-			if nowPage ~= runtime.page and nowPage <= pageCount then
+			if nowPage ~= runtime.page_num and nowPage <= pageCount then
 				setDisplayPage(nowPage)
 				goto JUMPOUT_ISR_PARSE
 			end
@@ -2814,15 +2819,15 @@ ItemSelector = {
 				runtime.display = {}
 				local findTarget = string.lower(res[1])
 				local count = 0
-				for n,str in pairs(payload.list) do
-					if string.find(string.lower(str),findTarget) then
+				for n,pair in pairs(runtime.origin) do
+					if string.find(string.lower(pair[2]),findTarget) then
 						count = count + 1
 						local num = math.ceil(count/ItemSelector._perpage)
 						runtime.display[num] = runtime.display[num] or {}
-						runtime.display[num][#runtime.display[num]+1] = {n,str}
+						runtime.display[num][#runtime.display[num]+1] = pair
 					end
 				end
-				runtime.page = 1
+				runtime.page_num = 1
 				displayList = runtime.display[1]
 				pageCount = #runtime.display
 				runtime.filter = res[1]
@@ -2855,7 +2860,7 @@ ItemSelector = {
 		Form:addInput(_Tr('gui.itemselector.search.type'),_Tr('gui.itemselector.search.ph'),runtime.filter)
 		Form:addLabel(
 			_Tr('gui.itemselector.pages',
-				'<a>',runtime.page,
+				'<a>',runtime.page_num,
 				'<b>',pageCount,
 				'<c>',getItemCount()
 			)
@@ -2866,7 +2871,7 @@ ItemSelector = {
 				Form:addSwitch(pair[2],false)
 			end
 		end
-		Form:addStepSlider(_Tr('gui.itemselector.jumpto'),buildPageTurner(pageCount),runtime.page - 1)
+		Form:addStepSlider(_Tr('gui.itemselector.jumpto'),buildPageTurner(pageCount),runtime.page_num - 1)
 		player:sendForm(Form,ItemSelector.Callback)
 	end
 }
@@ -4029,7 +4034,10 @@ function GetPlayerList(mode,IncAll)
 	end
 	if mode == 0 then
 		for xuid,ex in pairs(base) do
-			rtn[#rtn+1] = xuid
+			local t = data.xuid2name(xuid)
+			if t and t ~= '' then
+				rtn[#rtn+1] = xuid
+			end
 		end
 	elseif mode == 1 then
 		for xuid,ex in pairs(base) do
