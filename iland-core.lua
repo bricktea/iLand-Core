@@ -371,7 +371,9 @@ Map = {
 					'minecraft:glow_ink_sac','minecraft:end_crystal','minecraft:ender_eye','minecraft:axolotl_bucket',
 					'minecraft:powder_snow_bucket','minecraft:pufferfish_bucket','minecraft:tropical_fish_bucket',
 					'minecraft:salmon_bucket','minecraft:cod_bucket','minecraft:water_bucket','minecraft:cod_bucket',
-					'minecraft:lava_bucket','minecraft:bucket','minecraft:flint_and_steel'
+					'minecraft:lava_bucket','minecraft:bucket','minecraft:flint_and_steel','minecraft:skull',
+					'minecraft:wooden_axe','minecraft:stone_axe','minecraft:iron_axe','minecraft:golden_axe',
+					'minecraft:diamond_axe','minecraft:netherite_axe'
 				}),
 				-- # Special attack.
 				[3] = Array.ToKeyMap({
@@ -4617,6 +4619,8 @@ mc.listen('onUseItemOn',function(player,item,block)
 	if IsConPlus then
 		local it = item.type
 		if string.sub(it,-6,-1) == 'bucket' and perm.use_bucket then return end -- 各种桶
+		if string.sub(it,-3,-1) == 'axe' and perm.allow_place then return end -- 斧头给木头去皮（拓充）
+		if it == 'minecraft:skull' and perm.allow_place then return end -- 放置头颅（拓充）
 		if it == 'minecraft:glow_ink_sac' and perm.allow_place then return end -- 发光墨囊给木牌上色（拓充）
 		if it == 'minecraft:end_crystal' and perm.allow_place then return end -- 末地水晶（拓充）
 		if it == 'minecraft:ender_eye' and perm.allow_place then return end -- 放置末影之眼（拓充）
