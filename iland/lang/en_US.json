@@ -97,6 +97,7 @@
 	"gui.landmgr.landperm.other_options.respawn_anchor": "Allows the use of respawn anchors",
 	"gui.landmgr.landperm.other_options.fishing": "Allow fishing rods",
 	"gui.landmgr.landperm.other_options.bucket": "Allow buckets",
+	"gui.landmgr.landperm.other_options.flower_pot": "Allow editing flower pot",
 	"gui.landmgr.landperm.editevent": "To control events that can occur in (nearby) land, please go to the land settings tab.",
 	
 	"gui.fastlmgr.title": "Main Land Menu",
