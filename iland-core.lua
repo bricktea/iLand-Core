@@ -4653,7 +4653,7 @@ mc.listen('onUseItemOn',function(player,item,block)
 			if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 			if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
 			if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
-			if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+			if string.sub(bn,-5,-1) == '_door' and perm.use_door then return end -- 各种门
 			if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
 			if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
 		end
