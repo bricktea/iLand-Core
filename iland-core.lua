@@ -1799,9 +1799,10 @@ Land = {
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
 				return Land.RelationShip.Owner.check(landId,xuid)
 			end,
-			['IsLandOperator'] = function(xuid)
-				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
-				return Land.RelationShip.Operator.check(xuid)
+			['IsLandOperator'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId,landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Operator.check(landId,xuid)
 			end,
 			['GetAllTrustedLand'] = function(xuid)
 				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
