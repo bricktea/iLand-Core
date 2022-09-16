@@ -97,6 +97,7 @@
     "gui.landmgr.landperm.other_options.respawn_anchor": "允许使用重生锚",
     "gui.landmgr.landperm.other_options.fishing": "允许使用钓竿",
     "gui.landmgr.landperm.other_options.bucket": "允许使用桶",
+    "gui.landmgr.landperm.other_options.flower_pot": "允许操作花盆",
     "gui.landmgr.landperm.editevent": "控制领地内（附近）可发生的事件, 请移步领地设定选项卡。",
     
     "gui.fastlmgr.title": "Fast LMgr",

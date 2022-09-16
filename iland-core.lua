@@ -357,7 +357,7 @@ Map = {
 					'minecraft:dark_oak_fence_gate','minecraft:crimson_fence_gate','minecraft:warped_fence_gate',
 					'minecraft:wooden_door','minecraft:spruce_door','minecraft:birch_door','minecraft:jungle_door',
 					'minecraft:acacia_door','minecraft:dark_oak_door','minecraft:crimson_door','minecraft:warped_door',
-					'minecraft:dragon_egg'
+					'minecraft:dragon_egg','minecraft:flower_pot'
 				}),
 				-- # onBlockInteracted
 				[1] = Array.ToKeyMap({
@@ -1035,7 +1035,8 @@ DataStorage = {
 					eat = false,
 					allow_throw_potion = false,
 					allow_ride_entity = false,
-					allow_ride_trans = false
+					allow_ride_trans = false,
+					edit_flower_pot = false
 				}
 			},
 			Create = function()
@@ -1799,9 +1800,10 @@ Land = {
 				assert(Land.IDManager.IsVaild(landId),Land.API.Helper.ErrMsg[2])
 				return Land.RelationShip.Owner.check(landId,xuid)
 			end,
-			['IsLandOperator'] = function(xuid)
-				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
-				return Land.RelationShip.Operator.check(xuid)
+			['IsLandOperator'] = function(landId,xuid)
+				assert(Land.API.Helper.CheckNilArgument(landId,xuid),Land.API.Helper.ErrMsg[1])
+				assert(Land.IDManager.IsVaild(landId,landId),Land.API.Helper.ErrMsg[2])
+				return Land.RelationShip.Operator.check(landId,xuid)
 			end,
 			['GetAllTrustedLand'] = function(xuid)
 				assert(Land.API.Helper.CheckNilArgument(xuid),Land.API.Helper.ErrMsg[1])
@@ -2429,6 +2431,7 @@ OpenGUI = {
 			Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.respawn_anchor'),perm.use_respawn_anchor)
 			Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.fishing'),perm.use_fishing_hook)
 			Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.bucket'),perm.use_bucket)
+			Form:addSwitch(_Tr('gui.landmgr.landperm.other_options.flower_pot'),perm.edit_flower_pot)
 			Form:addLabel(_Tr('gui.landmgr.landperm.editevent'))
 			player:sendForm(
 				Form,
@@ -2498,6 +2501,7 @@ OpenGUI = {
 					perm.use_respawn_anchor = get()
 					perm.use_fishing_hook = get()
 					perm.use_bucket = get()
+					perm.edit_flower_pot = get()
 
 					DataStorage.Save({0,1,0})
 					player:sendModalForm(
@@ -4653,9 +4657,10 @@ mc.listen('onUseItemOn',function(player,item,block)
 			if bn == 'minecraft:cauldron' and perm.use_cauldron then return end -- 炼药锅
 			if bn == 'minecraft:lever' and perm.use_lever then return end -- 拉杆
 			if bn == 'minecraft:respawn_anchor' and perm.use_respawn_anchor then return end -- 重生锚（充能）
-			if string.sub(bn,-4,-1) == 'door' and perm.use_door then return end -- 各种门
+			if string.sub(bn,-5,-1) == '_door' and perm.use_door then return end -- 各种门
 			if string.sub(bn,-10,-1) == 'fence_gate' and perm.use_fence_gate then return end -- 各种栏栅门
 			if string.sub(bn,-8,-1) == 'trapdoor' and perm.use_trapdoor then return end -- 各种活板门
+			if bn == 'minecraft:flower_pot' and perm.edit_flower_pot then return end -- 花盆
 		end
 		SendText(player,_Tr('title.landlimit.noperm'))
 		return false
