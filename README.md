@@ -1,11 +1,11 @@
 # AirLand Project
 
-[![Discord](https://img.shields.io/discord/874503096137556018?style=for-the-badge)](https://discord.gg/fEdM9eRhkH)
-[
-![Latest Tag](https://img.shields.io/github/v/tag/LiteLScript-Dev/iLand-Core?label=LATEST%20TAG&style=for-the-badge)
+[![Latest Tag](https://img.shields.io/github/v/tag/LiteLScript-Dev/iLand-Core?label=LATEST%20TAG&style=for-the-badge)
 ![GitHub Releases](https://shields.io/github/downloads/LiteLScript-Dev/iLand-Core/total?style=for-the-badge)
 ](https://github.com/LiteLScript-Dev/iLand-Core/releases/latest)
 ![LICENSE](https://img.shields.io/github/license/LiteLScript-Dev/iLand-Core?style=for-the-badge)
+
+👉 Telegram Group: https://t.me/bdsplugin
 
 A full-featured, powerful [Bedrock Server](https://www.minecraft.net/en-us/download/server/bedrock) land plugin, written in Lua, based on the [LiteLoader](https://github.com/LiteLDev/LiteLoader) plugin platform.
 
